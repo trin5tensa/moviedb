@@ -1,4 +1,5 @@
 """Exclusive database connections."""
+from contextlib import contextmanager
 import datetime
 import sys
 from typing import Optional
@@ -127,6 +128,19 @@ class _Review(_SQLAlchemyBase):
 
 
 # Internal Module Functions
+def _session_scope():
+    """Provide a session scope around a series of operations."""
+    session = _Session()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
 def _update_metadata(**kwargs):
     # TODO 8
     pass
