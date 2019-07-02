@@ -131,6 +131,7 @@ class _Review(_SQLAlchemyBase):
 def _session_scope():
     """Provide a session scope around a series of operations."""
     session = _Session()
+    pass
     try:
         yield session
         session.commit()
