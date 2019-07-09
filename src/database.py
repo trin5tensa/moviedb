@@ -1,33 +1,32 @@
 """Exclusive database connections."""
-from contextlib import contextmanager
 import datetime
+from contextlib import contextmanager
 import sys
-from typing import Optional
 
 # Third party package imports
 
 import sqlalchemy.ext.hybrid
-from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, Sequence, String, Table, Text, UniqueConstraint
+from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, Sequence, String
+from sqlalchemy import Table, Text, UniqueConstraint
 from sqlalchemy.ext import declarative
 from sqlalchemy.ext.hybrid import hybrid_method
-from sqlalchemy.orm import relationship, session, sessionmaker
-
-# Project Imports
+from sqlalchemy.orm import relationship
+from sqlalchemy.orm.session import sessionmaker
 
 
 # Constants
 _SQLAlchemyBase = sqlalchemy.ext.declarative.declarative_base()
-_movies_tags = Table('movies_seers', _SQLAlchemyBase.metadata,
+_movies_tags = Table('_movies_tags', _SQLAlchemyBase.metadata,
                      Column('movies_id', ForeignKey('movies.id'), primary_key=True),
                      Column('tags_id', ForeignKey('tags.id'), primary_key=True))
 _movies_reviews = Table('_movies_reviews', _SQLAlchemyBase.metadata,
                         Column('movies_id', ForeignKey('movies.id'), primary_key=True),
                         Column('reviews_id', ForeignKey('reviews.id'), primary_key=True))
-
+database_fn = 'movies.db'
+_engine = sqlalchemy.create_engine(f"sqlite:///{database_fn}", echo=False)
+_Session = sessionmaker(bind=_engine)
 
 # Variables
-_engine: Optional[sqlalchemy.engine.base.Engine] = None
-_Session: Optional[session.sessionmaker] = None
 
 
 # Pure data Dataclasses
@@ -38,12 +37,6 @@ _Session: Optional[session.sessionmaker] = None
 
 
 # API Functions
-def connect_to_database(filename: str):
-    """Connect to the database in an external file. If the database does not exist it will be created."""
-    global _engine, _Session
-    _engine = sqlalchemy.create_engine(f"sqlite:///{filename}", echo=False)
-    _Session = sessionmaker(bind=_engine)
-    _update_metadata(date=str(datetime.datetime.now()))
 
 
 # Internal Module Classes
@@ -67,11 +60,11 @@ class _Movie(_SQLAlchemyBase):
     title = Column(String(80), nullable=False)
     director = Column(String(24), nullable=False)
     minutes = Column(Integer, nullable=False)
-    year = Column(Integer, CheckConstraint('year>1877'), CheckConstraint('year<10000'), nullable=False, )
+    year = Column(Integer, CheckConstraint('year>1877'), CheckConstraint('year<10000'), nullable=False)
     notes = Column(Text)
     UniqueConstraint(title, year)
 
-    seers = relationship('_Tag', secondary=_movies_tags, back_populates='movies')
+    tags = relationship('_Tag', secondary=_movies_tags, back_populates='movies')
     reviews = relationship('_Review', secondary=_movies_reviews, back_populates='movies')
 
     def __repr__(self):
@@ -124,13 +117,18 @@ class _Review(_SQLAlchemyBase):
 
     def __repr__(self):
         return (self.__class__.__qualname__ +
-                f"(reviewer={self.reviewer!r}, rating={self.rating!r}), max_rating={self.max_rating!r}), ")
+                f"(reviewer={self.reviewer!r}, rating={self.rating!r}),"
+                f" max_rating={self.max_rating!r}), ")
 
 
 # Internal Module Functions
+_SQLAlchemyBase.metadata.create_all(_engine)
+
+@contextmanager
 def _session_scope():
     """Provide a session scope around a series of operations."""
     session = _Session()
+    # noinspection PyPep8
     try:
         yield session
         session.commit()
@@ -141,14 +139,27 @@ def _session_scope():
         session.close()
 
 
-def _update_metadata(**kwargs):
-    # TODO 8
-    pass
+def _update_metadata(session: sqlalchemy.orm.session.Session):
+    # moviedatabase-#8
+    #  When does this get called and by what?
+
+    today = str(datetime.datetime.today())
+    try:
+        session.query(_MetaData).filter(_MetaData.name == 'date_created').one()
+    except sqlalchemy.orm.exc.NoResultFound:
+        session.add_all([_MetaData(name='date_last_accessed', value=today),
+                         _MetaData(name='date_created', value=today)])
+    else:
+        date_last_accessed = (session.query(_MetaData)
+                              .filter(_MetaData.name == 'date_last_accessed')
+                              .one())
+        date_last_accessed.value = today
 
 
 # noinspection PyMissingOrEmptyDocstring
 def main():
-    pass
+    with _session_scope() as session:
+        _update_metadata(session)
 
 
 if __name__ == '__main__':

@@ -7,3 +7,6 @@
 /misc.xml
 /inspectionProfiles/Project_Default.xml
 /vagrant.xml
+
+# Project files
+/movies.db
