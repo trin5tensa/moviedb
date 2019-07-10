@@ -1,6 +1,7 @@
 """Exclusive database connections."""
-import datetime
 from contextlib import contextmanager
+import datetime
+from typing import Optional
 import sys
 
 # Third party package imports
@@ -23,10 +24,10 @@ _movies_reviews = Table('_movies_reviews', _SQLAlchemyBase.metadata,
                         Column('movies_id', ForeignKey('movies.id'), primary_key=True),
                         Column('reviews_id', ForeignKey('reviews.id'), primary_key=True))
 database_fn = 'movies.db'
-_engine = sqlalchemy.create_engine(f"sqlite:///{database_fn}", echo=False)
-_Session = sessionmaker(bind=_engine)
 
 # Variables
+_engine: Optional[sqlalchemy.engine.base.Engine] = None
+_Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
 
 
 # Pure data Dataclasses
@@ -122,7 +123,6 @@ class _Review(_SQLAlchemyBase):
 
 
 # Internal Module Functions
-_SQLAlchemyBase.metadata.create_all(_engine)
 
 @contextmanager
 def _session_scope():
@@ -139,27 +139,38 @@ def _session_scope():
         session.close()
 
 
-def _update_metadata(session: sqlalchemy.orm.session.Session):
+def init_database_access(database_fn: str=database_fn):
     # moviedatabase-#8
     #  When does this get called and by what?
 
-    today = str(datetime.datetime.today())
-    try:
-        session.query(_MetaData).filter(_MetaData.name == 'date_created').one()
-    except sqlalchemy.orm.exc.NoResultFound:
-        session.add_all([_MetaData(name='date_last_accessed', value=today),
-                         _MetaData(name='date_created', value=today)])
-    else:
-        date_last_accessed = (session.query(_MetaData)
-                              .filter(_MetaData.name == 'date_last_accessed')
-                              .one())
-        date_last_accessed.value = today
+    # Create the database connection
+    global _engine, _Session
+    _engine = sqlalchemy.create_engine(f"sqlite:///{database_fn}", echo=False)
+    _Session = sessionmaker(bind=_engine)
+    _SQLAlchemyBase.metadata.create_all(_engine)
+
+    # Update metadata
+    with _session_scope() as session:
+        today = str(datetime.datetime.today())
+        try:
+            session.query(_MetaData).filter(_MetaData.name == 'date_created').one()
+
+        # NoResultFound means this is  a new database
+        except sqlalchemy.orm.exc.NoResultFound:
+            session.add_all([_MetaData(name='date_last_accessed', value=today),
+                             _MetaData(name='date_created', value=today)])
+
+        # Database already exists
+        else:
+            date_last_accessed = (session.query(_MetaData)
+                                  .filter(_MetaData.name == 'date_last_accessed')
+                                  .one())
+            date_last_accessed.value = today
 
 
 # noinspection PyMissingOrEmptyDocstring
 def main():
-    with _session_scope() as session:
-        _update_metadata(session)
+    init_database_access()
 
 
 if __name__ == '__main__':
