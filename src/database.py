@@ -1,18 +1,17 @@
 """Exclusive database connections."""
-from contextlib import contextmanager
 import datetime
+from contextlib import contextmanager
 from typing import Optional
-import sys
-
-# Third party package imports
 
 import sqlalchemy.ext.hybrid
-from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, Sequence, String
-from sqlalchemy import Table, Text, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, Integer, Sequence, String, Table, Text
+from sqlalchemy import CheckConstraint, UniqueConstraint
 from sqlalchemy.ext import declarative
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.session import sessionmaker
+
+# Third party package imports
 
 
 # Constants
@@ -24,6 +23,7 @@ _movies_reviews = Table('_movies_reviews', _SQLAlchemyBase.metadata,
                         Column('movies_id', ForeignKey('movies.id'), primary_key=True),
                         Column('reviews_id', ForeignKey('reviews.id'), primary_key=True))
 database_fn = 'movies.db'
+
 
 # Variables
 _engine: Optional[sqlalchemy.engine.base.Engine] = None
@@ -123,7 +123,6 @@ class _Review(_SQLAlchemyBase):
 
 
 # Internal Module Functions
-
 @contextmanager
 def _session_scope():
     """Provide a session scope around a series of operations."""
@@ -139,13 +138,11 @@ def _session_scope():
         session.close()
 
 
-def init_database_access(database_fn: str=database_fn):
-    # moviedatabase-#8
-    #  When does this get called and by what?
-
+def init_database_access(filename: str = database_fn):
+    """Make database available for use by this module."""
     # Create the database connection
     global _engine, _Session
-    _engine = sqlalchemy.create_engine(f"sqlite:///{database_fn}", echo=False)
+    _engine = sqlalchemy.create_engine(f"sqlite:///{filename}", echo=False)
     _Session = sessionmaker(bind=_engine)
     _SQLAlchemyBase.metadata.create_all(_engine)
 
@@ -166,12 +163,3 @@ def init_database_access(database_fn: str=database_fn):
                                   .filter(_MetaData.name == 'date_last_accessed')
                                   .one())
             date_last_accessed.value = today
-
-
-# noinspection PyMissingOrEmptyDocstring
-def main():
-    init_database_access()
-
-
-if __name__ == '__main__':
-    sys.exit(main())
