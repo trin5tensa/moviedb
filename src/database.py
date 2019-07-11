@@ -1,17 +1,17 @@
 """Exclusive database connections."""
 import datetime
 from contextlib import contextmanager
-import sys
-
-# Third party package imports
+from typing import Optional
 
 import sqlalchemy.ext.hybrid
-from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, Sequence, String
-from sqlalchemy import Table, Text, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, Integer, Sequence, String, Table, Text
+from sqlalchemy import CheckConstraint, UniqueConstraint
 from sqlalchemy.ext import declarative
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.session import sessionmaker
+
+# Third party package imports
 
 
 # Constants
@@ -23,10 +23,11 @@ _movies_reviews = Table('_movies_reviews', _SQLAlchemyBase.metadata,
                         Column('movies_id', ForeignKey('movies.id'), primary_key=True),
                         Column('reviews_id', ForeignKey('reviews.id'), primary_key=True))
 database_fn = 'movies.db'
-_engine = sqlalchemy.create_engine(f"sqlite:///{database_fn}", echo=False)
-_Session = sessionmaker(bind=_engine)
+
 
 # Variables
+_engine: Optional[sqlalchemy.engine.base.Engine] = None
+_Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
 
 
 # Pure data Dataclasses
@@ -122,8 +123,6 @@ class _Review(_SQLAlchemyBase):
 
 
 # Internal Module Functions
-_SQLAlchemyBase.metadata.create_all(_engine)
-
 @contextmanager
 def _session_scope():
     """Provide a session scope around a series of operations."""
@@ -139,28 +138,28 @@ def _session_scope():
         session.close()
 
 
-def _update_metadata(session: sqlalchemy.orm.session.Session):
-    # moviedatabase-#8
-    #  When does this get called and by what?
+def init_database_access(filename: str = database_fn):
+    """Make database available for use by this module."""
+    # Create the database connection
+    global _engine, _Session
+    _engine = sqlalchemy.create_engine(f"sqlite:///{filename}", echo=False)
+    _Session = sessionmaker(bind=_engine)
+    _SQLAlchemyBase.metadata.create_all(_engine)
 
-    today = str(datetime.datetime.today())
-    try:
-        session.query(_MetaData).filter(_MetaData.name == 'date_created').one()
-    except sqlalchemy.orm.exc.NoResultFound:
-        session.add_all([_MetaData(name='date_last_accessed', value=today),
-                         _MetaData(name='date_created', value=today)])
-    else:
-        date_last_accessed = (session.query(_MetaData)
-                              .filter(_MetaData.name == 'date_last_accessed')
-                              .one())
-        date_last_accessed.value = today
-
-
-# noinspection PyMissingOrEmptyDocstring
-def main():
+    # Update metadata
     with _session_scope() as session:
-        _update_metadata(session)
+        today = str(datetime.datetime.today())
+        try:
+            session.query(_MetaData).filter(_MetaData.name == 'date_created').one()
 
+        # NoResultFound means this is  a new database
+        except sqlalchemy.orm.exc.NoResultFound:
+            session.add_all([_MetaData(name='date_last_accessed', value=today),
+                             _MetaData(name='date_created', value=today)])
 
-if __name__ == '__main__':
-    sys.exit(main())
+        # Database already exists
+        else:
+            date_last_accessed = (session.query(_MetaData)
+                                  .filter(_MetaData.name == 'date_last_accessed')
+                                  .one())
+            date_last_accessed.value = today
