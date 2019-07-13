@@ -73,3 +73,27 @@ def test_add_movies(connection, session, hamlet, solaris):
                             database._Movie.year, )
               .all())
     assert result == expected
+
+
+def test_search(connection, session, hamlet):
+    expected = 'Hamlet'
+    database.add_movie(hamlet)
+    movie = database.search(dict(title='Hamlet'))
+    assert movie.title == expected
+
+
+def test_search_for_substring(connection, session, solaris):
+    expected = 'Tarkovsky'
+    database.add_movie(solaris)
+    movie = database.search(dict(director='Tark'))
+    assert movie.director == expected
+
+
+def test_edit_movies(connection, session, hamlet):
+    expected = 2000
+    database.add_movie(hamlet)
+    movie = database.search(dict(title='Hamlet'))
+    movie.edit(dict(year=2000))
+    result = (session.query(database._Movie.year)
+              .one())
+    assert result == expected
