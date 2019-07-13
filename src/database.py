@@ -1,15 +1,17 @@
 """Exclusive database connections."""
 import datetime
 from contextlib import contextmanager
-from typing import Optional
+from typing import Optional, Iterable, Dict
 
 import sqlalchemy.ext.hybrid
+import sqlalchemy.exc
 from sqlalchemy import Column, ForeignKey, Integer, Sequence, String, Table, Text
 from sqlalchemy import CheckConstraint, UniqueConstraint
 from sqlalchemy.ext import declarative
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.session import sessionmaker
+
 
 # Third party package imports
 
@@ -62,7 +64,7 @@ class _Movie(_SQLAlchemyBase):
     director = Column(String(24), nullable=False)
     minutes = Column(Integer, nullable=False)
     year = Column(Integer, CheckConstraint('year>1877'), CheckConstraint('year<10000'), nullable=False)
-    notes = Column(Text)
+    notes = Column(Text, default=None)
     UniqueConstraint(title, year)
 
     tags = relationship('_Tag', secondary=_movies_tags, back_populates='movies')
@@ -148,18 +150,42 @@ def init_database_access(filename: str = database_fn):
 
     # Update metadata
     with _session_scope() as session:
-        today = str(datetime.datetime.today())
+        timestamp = str(datetime.datetime.today())
         try:
             session.query(_MetaData).filter(_MetaData.name == 'date_created').one()
 
-        # NoResultFound means this is  a new database
+        # Code for a new database
         except sqlalchemy.orm.exc.NoResultFound:
-            session.add_all([_MetaData(name='date_last_accessed', value=today),
-                             _MetaData(name='date_created', value=today)])
+            session.add_all([_MetaData(name='date_last_accessed', value=timestamp),
+                             _MetaData(name='date_created', value=timestamp)])
 
-        # Database already exists
+        # Code for an existing database
         else:
             date_last_accessed = (session.query(_MetaData)
                                   .filter(_MetaData.name == 'date_last_accessed')
                                   .one())
-            date_last_accessed.value = today
+            date_last_accessed.value = timestamp
+
+
+def add_movie(movie: Dict):
+    """Add a movie.
+
+    Args:
+        movie: A dictionary which must contain title, director, minutes, and year.
+        It may contain notes.
+    """
+    movie = _Movie(**movie)
+    with _session_scope() as session:
+        session.add(movie)
+
+
+def add_movies(movies_args: Iterable[Dict]):
+    """Add one or more movies.
+
+    Args:
+        movies_args: An iterable of dictionaries which must contain title, director, minutes,
+        and year. It may contain 'notes'.
+    """
+    movies = [_Movie(**movie) for movie in movies_args]
+    with _session_scope() as session:
+        session.add_all(movies)
