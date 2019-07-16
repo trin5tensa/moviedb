@@ -1,17 +1,17 @@
 """Exclusive database connections."""
 import datetime
+import sys
 from contextlib import contextmanager
-from typing import Optional, Iterable, Dict
+from typing import Any, Dict, Iterable, Optional
 
-import sqlalchemy.ext.hybrid
 import sqlalchemy.exc
-from sqlalchemy import Column, ForeignKey, Integer, Sequence, String, Table, Text
-from sqlalchemy import CheckConstraint, UniqueConstraint
+import sqlalchemy.ext.hybrid
+from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, Sequence, String, Table, Text, \
+    UniqueConstraint
 from sqlalchemy.ext import declarative
 from sqlalchemy.ext.hybrid import hybrid_method
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import query, relationship
 from sqlalchemy.orm.session import sessionmaker
-
 
 # Third party package imports
 
@@ -95,8 +95,8 @@ class _Review(_SQLAlchemyBase):
 
     This table has been designed to provide a single row for a reviewer and rating value. So a 3.5/4 star
     rating from Ebert will be linked to none or more movies.
-    The reviewer can ba an individual like 'Ebert' ®or an aggregator like 'Rotten Tomatoes.
-    max_rating is part of the secondary key. THis allows for a particular reviewer changing
+    The reviewer can ba an individual like 'Ebert' for an aggregator like 'Rotten Tomatoes.
+    max_rating is part of the secondary key. This allows for a particular reviewer changing
     his/her/its rating system.
     """
     __tablename__ = 'reviews'
@@ -129,7 +129,6 @@ class _Review(_SQLAlchemyBase):
 def _session_scope():
     """Provide a session scope around a series of operations."""
     session = _Session()
-    # noinspection PyPep8
     try:
         yield session
         session.commit()
@@ -189,3 +188,63 @@ def add_movies(movies_args: Iterable[Dict]):
     movies = [_Movie(**movie) for movie in movies_args]
     with _session_scope() as session:
         session.add_all(movies)
+
+
+def search_movie(criteria: Dict[str, Any]) -> query.Query:
+    """Search for a movie using any criteria
+
+    Args:
+        criteria: A dictionary containing none or more of the following keys:
+            title: str. A matching column will be a superstring of this value..
+            director: str.A matching column will be a superstring of this value.
+            minutes: list. A matching column will be between the minimum and maximum values in this
+            iterable. A single value is permissible.
+            year:  list. A matching column will be between the minimum and maximum values in this
+            iterable. A single value is permissible.
+            notes: str. A matching column will be a superstring of this value.
+
+    Raises:
+        ValueError: If a criteria key is not a column name
+        TypeError: If a non-iterable is provided as a
+
+    Returns:
+        A sqlalchemy.orm.query.Query object. All Query methods are available including all(), one(),
+        count(), first(), and order_by()
+    """
+
+    # Validate criteria keys.
+    valid_keys = {'title', 'director', 'minutes', 'year', 'notes'}
+    invalid_keys = set(criteria.keys()) - valid_keys
+    if invalid_keys:
+        msg = f"Key(s) '{invalid_keys}' not in valid set '{valid_keys}'."
+        raise ValueError(msg)
+
+    # Execute searches
+    with _session_scope() as session:
+        movies = (session.query(_Movie))
+        if 'title' in criteria:
+            movies = movies.filter(_Movie.title.ilike(f"%{criteria['title']}%"))
+        if 'director' in criteria:
+            movies = movies.filter(_Movie.director.ilike(f"%{criteria['director']}%"))
+        if 'minutes' in criteria:
+            movies = movies.filter(_Movie.minutes.between(
+                min(criteria['minutes']),
+                max(criteria['minutes'])))
+        if 'year' in criteria:
+            movies = movies.filter(_Movie.year.between(
+                min(criteria['year']),
+                max(criteria['year'])))
+        if 'notes' in criteria:
+            movies = movies.filter(_Movie.title.ilike(f"%{criteria['notes']}%"))
+        return movies
+
+
+# noinspection PyMissingOrEmptyDocstring
+def main():
+    init_database_access(':memory:')
+    add_movie(dict(title='Hamlet', director='Branagh', minutes=242, year=1996))
+    print(search_movie(dict(title='Hamlet')))
+
+
+if __name__ == '__main__':
+    sys.exit(main())
