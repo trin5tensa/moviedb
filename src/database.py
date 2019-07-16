@@ -1,8 +1,7 @@
 """Exclusive database connections."""
 import datetime
-import sys
 from contextlib import contextmanager
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Dict, Iterable, Optional, List
 
 import sqlalchemy.exc
 import sqlalchemy.ext.hybrid
@@ -139,6 +138,58 @@ def _session_scope():
         session.close()
 
 
+def _search_movie(criteria: Dict[str, Any]) -> query.Query:
+    """Search for a movie using any criteria
+
+    THis function is not available for direct use because it returns an SQLAlchemy query. At the time
+    of writing the API calls are via wrapper functions such as 'search_movie_all()'. Other wrapper
+    functions may be added if there is a user case for their introduction..
+
+    Args:
+        criteria: A dictionary containing none or more of the following keys:
+            title: str. A matching column will be a superstring of this value..
+            director: str.A matching column will be a superstring of this value.
+            minutes: list. A matching column will be between the minimum and maximum values in this
+            iterable. A single value is permissible.
+            year:  list. A matching column will be between the minimum and maximum values in this
+            iterable. A single value is permissible.
+            notes: str. A matching column will be a superstring of this value.
+
+    Raises:
+        ValueError: If a criteria key is not a column name
+        TypeError: If a non-iterable is provided as a
+
+    Returns:
+        A sqlalchemy.orm.query.Query object.
+    """
+
+    # Validate criteria keys.
+    valid_keys = {'title', 'director', 'minutes', 'year', 'notes'}
+    invalid_keys = set(criteria.keys()) - valid_keys
+    if invalid_keys:
+        msg = f"Key(s) '{invalid_keys}' not in valid set '{valid_keys}'."
+        raise ValueError(msg)
+
+    # Execute searches
+    with _session_scope() as session:
+        movies = (session.query(_Movie))
+        if 'title' in criteria:
+            movies = movies.filter(_Movie.title.ilike(f"%{criteria['title']}%"))
+        if 'director' in criteria:
+            movies = movies.filter(_Movie.director.ilike(f"%{criteria['director']}%"))
+        if 'minutes' in criteria:
+            movies = movies.filter(_Movie.minutes.between(
+                min(criteria['minutes']),
+                max(criteria['minutes'])))
+        if 'year' in criteria:
+            movies = movies.filter(_Movie.year.between(
+                min(criteria['year']),
+                max(criteria['year'])))
+        if 'notes' in criteria:
+            movies = movies.filter(_Movie.title.ilike(f"%{criteria['notes']}%"))
+        return movies.order_by(_Movie.title)
+
+
 def init_database_access(filename: str = database_fn):
     """Make database available for use by this module."""
     # Create the database connection
@@ -190,61 +241,9 @@ def add_movies(movies_args: Iterable[Dict]):
         session.add_all(movies)
 
 
-def search_movie(criteria: Dict[str, Any]) -> query.Query:
-    """Search for a movie using any criteria
+def search_movie_all(criteria: Dict[str, Any]) -> List[_Movie]:
+    """Return a list of movies matching user supplied criteria.,
 
-    Args:
-        criteria: A dictionary containing none or more of the following keys:
-            title: str. A matching column will be a superstring of this value..
-            director: str.A matching column will be a superstring of this value.
-            minutes: list. A matching column will be between the minimum and maximum values in this
-            iterable. A single value is permissible.
-            year:  list. A matching column will be between the minimum and maximum values in this
-            iterable. A single value is permissible.
-            notes: str. A matching column will be a superstring of this value.
-
-    Raises:
-        ValueError: If a criteria key is not a column name
-        TypeError: If a non-iterable is provided as a
-
-    Returns:
-        A sqlalchemy.orm.query.Query object. All Query methods are available including all(), one(),
-        count(), first(), and order_by()
+    See the _search_Movie function for details of the criteria.
     """
-
-    # Validate criteria keys.
-    valid_keys = {'title', 'director', 'minutes', 'year', 'notes'}
-    invalid_keys = set(criteria.keys()) - valid_keys
-    if invalid_keys:
-        msg = f"Key(s) '{invalid_keys}' not in valid set '{valid_keys}'."
-        raise ValueError(msg)
-
-    # Execute searches
-    with _session_scope() as session:
-        movies = (session.query(_Movie))
-        if 'title' in criteria:
-            movies = movies.filter(_Movie.title.ilike(f"%{criteria['title']}%"))
-        if 'director' in criteria:
-            movies = movies.filter(_Movie.director.ilike(f"%{criteria['director']}%"))
-        if 'minutes' in criteria:
-            movies = movies.filter(_Movie.minutes.between(
-                min(criteria['minutes']),
-                max(criteria['minutes'])))
-        if 'year' in criteria:
-            movies = movies.filter(_Movie.year.between(
-                min(criteria['year']),
-                max(criteria['year'])))
-        if 'notes' in criteria:
-            movies = movies.filter(_Movie.title.ilike(f"%{criteria['notes']}%"))
-        return movies
-
-
-# noinspection PyMissingOrEmptyDocstring
-def main():
-    init_database_access(':memory:')
-    add_movie(dict(title='Hamlet', director='Branagh', minutes=242, year=1996))
-    print(search_movie(dict(title='Hamlet')))
-
-
-if __name__ == '__main__':
-    sys.exit(main())
+    return _search_movie(criteria).all()

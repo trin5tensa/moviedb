@@ -99,31 +99,37 @@ def test_add_movies(connection, session, hamlet, solaris):
 class TestsNeedingLoadedDatabase:
     def test_search_movie(self):
         expected = 'Hamlet'
-        movies = database.search_movie(dict(year=[1996]))
+        movies = database._search_movie(dict(year=[1996]))
         assert movies.one().title == expected
 
     def test_search_movie_with_substring(self):
         expected = 'Tarkovsky'
-        movies = database.search_movie(dict(director='Tark'))
+        movies = database._search_movie(dict(director='Tark'))
         assert movies.one().director == expected
 
     def test_search_movie_with_minute_range(self):
         expected = 169
-        movies = database.search_movie(dict(minutes=[170, 160]))
+        movies = database._search_movie(dict(minutes=[170, 160]))
         assert movies.one().minutes == expected
 
     def test_search_movie_with_minute_range_2(self):
         expected = 169
-        movies = database.search_movie(dict(minutes=[169]))
+        movies = database._search_movie(dict(minutes=[169]))
         assert movies.one().minutes == expected
 
     def test_search_movie_with_minute_range_3(self):
         with pytest.raises(TypeError) as exception:
-            database.search_movie(dict(minutes=169))
+            database._search_movie(dict(minutes=169))
         assert exception.type is TypeError
         assert exception.value.args == ("'int' object is not iterable",)
 
     def test_value_error_is_raised(self):
         with pytest.raises(ValueError) as exception:
-            database.search_movie(dict(months=[169]))
+            database._search_movie(dict(months=[169]))
         assert exception.type is ValueError
+
+    def test_search_movie_all(self):
+        expected = [119, 169]
+        movies = database.search_movie_all(dict(minutes=[170, 100]))
+        run_times = [database._Movie.minutes for database._Movie in movies]
+        assert run_times == expected
