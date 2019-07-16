@@ -5,14 +5,17 @@ import pytest
 
 import src.database as database
 
-@pytest.fixture(scope='function')
+
+@pytest.fixture()
 def connection():
     """Database access ."""
     database.init_database_access(filename=':memory:')
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture()
 def session():
+    """Provide a session scope."""
+    # noinspection PyProtectedMember
     with database._session_scope() as session:
         yield session
 
@@ -27,6 +30,23 @@ def hamlet() -> Dict:
 def solaris() -> Dict:
     """Provide test data for 'Solaris'."""
     return dict(title='Solaris', director='Tarkovsky', minutes=169, year=1972)
+
+
+@pytest.fixture(scope='module')
+def dreams() -> Dict:
+    """Provide test data for "Akira Kurosawa's Dreams"."""
+    return dict(title="Akira Kurosawa's Dreams", director='Kurosawa', minutes=119, year=1972)
+
+
+@pytest.fixture(scope='class')
+def loaded_database(hamlet, solaris, dreams):
+    """Provide a loaded database."""
+    database.init_database_access(filename=':memory:')
+    # noinspection PyProtectedMember
+    movies = [database._Movie(**movie) for movie in (hamlet, solaris, dreams)]
+    # noinspection PyProtectedMember,PyProtectedMember
+    with database._session_scope() as session:
+        session.add_all(movies)
 
 
 def test_init_database_access_with_new_database(connection):
@@ -59,7 +79,7 @@ def test_add_movie(connection, session, hamlet):
     result = (session.query(database._Movie.title,
                             database._Movie.director,
                             database._Movie.minutes,
-                            database._Movie.year,)
+                            database._Movie.year, )
               .one())
     assert result == expected
 
@@ -73,3 +93,37 @@ def test_add_movies(connection, session, hamlet, solaris):
                             database._Movie.year, )
               .all())
     assert result == expected
+
+
+@pytest.mark.usefixtures('loaded_database')
+class TestsNeedingLoadedDatabase:
+    def test_search_movie(self):
+        expected = 'Hamlet'
+        movies = database.search_movie(dict(year=[1996]))
+        assert movies.one().title == expected
+
+    def test_search_movie_with_substring(self):
+        expected = 'Tarkovsky'
+        movies = database.search_movie(dict(director='Tark'))
+        assert movies.one().director == expected
+
+    def test_search_movie_with_minute_range(self):
+        expected = 169
+        movies = database.search_movie(dict(minutes=[170, 160]))
+        assert movies.one().minutes == expected
+
+    def test_search_movie_with_minute_range_2(self):
+        expected = 169
+        movies = database.search_movie(dict(minutes=[169]))
+        assert movies.one().minutes == expected
+
+    def test_search_movie_with_minute_range_3(self):
+        with pytest.raises(TypeError) as exception:
+            database.search_movie(dict(minutes=169))
+        assert exception.type is TypeError
+        assert exception.value.args == ("'int' object is not iterable",)
+
+    def test_value_error_is_raised(self):
+        with pytest.raises(ValueError) as exception:
+            database.search_movie(dict(months=[169]))
+        assert exception.type is ValueError
