@@ -52,8 +52,8 @@ def loaded_database(hamlet, solaris, dreams):
 def test_init_database_access_with_new_database(connection):
     """Create a new database and test that date_created is today."""
     with database._session_scope() as session:
-        today = (session.query(database._MetaData.value)
-                 .filter(database._MetaData.name == 'date_created')
+        today = (session.query(database._MoviesMetaData.value)
+                 .filter(database._MoviesMetaData.name == 'date_created')
                  .one())
     assert today.value[0:10] == str(database.datetime.datetime.today())[0:10]
 
@@ -67,8 +67,8 @@ def test_init_database_access_with_existing_database(tmpdir):
     database.init_database_access(filename=path)
 
     with database._session_scope() as session:
-        today = (session.query(database._MetaData.value)
-                 .filter(database._MetaData.name == 'date_last_accessed')
+        today = (session.query(database._MoviesMetaData.value)
+                 .filter(database._MoviesMetaData.name == 'date_last_accessed')
                  .one())
     assert today.value[0:10] == str(database.datetime.datetime.today())[0:10]
 
@@ -99,37 +99,35 @@ def test_add_movies(connection, session, hamlet, solaris):
 class TestsNeedingLoadedDatabase:
     def test_search_movie(self):
         expected = 'Hamlet'
-        movies = database._search_movie(dict(year=[1996]))
-        assert movies.one().title == expected
+        for movie in database.search_movie(dict(year=[1996])):
+            assert movie.title == expected
 
     def test_search_movie_with_substring(self):
         expected = 'Tarkovsky'
-        movies = database._search_movie(dict(director='Tark'))
-        assert movies.one().director == expected
+        for movie in database.search_movie(dict(director='Tark')):
+            assert movie.director == expected
 
-    def test_search_movie_with_minute_range(self):
+    def test_search_movie_with_range_of_minutes(self):
         expected = 169
-        movies = database._search_movie(dict(minutes=[170, 160]))
-        assert movies.one().minutes == expected
+        for movie in database.search_movie(dict(minutes=[170, 160])):
+            assert movie.minutes == expected
 
-    def test_search_movie_with_minute_range_2(self):
+    def test_search_movie_with_range_of_minutes_2(self):
+        expected = [119, 169]
+        run_times = [movie.minutes
+                     for movie in database.search_movie(dict(minutes=[170, 100]))]
+        assert sorted(run_times) == expected
+
+    def test_search_movie_with_minute(self):
         expected = 169
-        movies = database._search_movie(dict(minutes=[169]))
-        assert movies.one().minutes == expected
-
-    def test_search_movie_with_minute_range_3(self):
-        with pytest.raises(TypeError) as exception:
-            database._search_movie(dict(minutes=169))
-        assert exception.type is TypeError
-        assert exception.value.args == ("'int' object is not iterable",)
+        for movie in database.search_movie(dict(minutes=[169])):
+            assert movie.minutes == expected
 
     def test_value_error_is_raised(self):
+        valid_set = {'title', 'director', 'minutes', 'year', 'notes'}
+        expected = f"Key(s) '{{'months'}}' not in valid set '{valid_set}'.",
         with pytest.raises(ValueError) as exception:
-            database._search_movie(dict(months=[169]))
+            for _ in database.search_movie(dict(months=[169])):
+                pass
         assert exception.type is ValueError
-
-    def test_search_movie_all(self):
-        expected = [119, 169]
-        movies = database.search_movie_all(dict(minutes=[170, 100]))
-        run_times = [database._Movie.minutes for database._Movie in movies]
-        assert run_times == expected
+        assert exception.value.args == expected

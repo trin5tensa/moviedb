@@ -1,7 +1,7 @@
 """Exclusive database connections."""
 import datetime
 from contextlib import contextmanager
-from typing import Any, Dict, Iterable, Optional, List
+from typing import Any, Dict, Iterable, Optional, Generator
 
 import sqlalchemy.exc
 import sqlalchemy.ext.hybrid
@@ -42,7 +42,7 @@ _Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
 
 
 # Internal Module Classes
-class _MetaData(_SQLAlchemyBase):
+class _MoviesMetaData(_SQLAlchemyBase):
     """Meta data table schema."""
     __tablename__ = 'meta_data'
 
@@ -138,12 +138,8 @@ def _session_scope():
         session.close()
 
 
-def _search_movie(criteria: Dict[str, Any]) -> query.Query:
+def search_movie(criteria: Dict[str, Any]) -> Generator[_Movie, None, None]:
     """Search for a movie using any criteria
-
-    THis function is not available for direct use because it returns an SQLAlchemy query. At the time
-    of writing the API calls are via wrapper functions such as 'search_movie_all()'. Other wrapper
-    functions may be added if there is a user case for their introduction..
 
     Args:
         criteria: A dictionary containing none or more of the following keys:
@@ -157,14 +153,15 @@ def _search_movie(criteria: Dict[str, Any]) -> query.Query:
 
     Raises:
         ValueError: If a criteria key is not a column name
-        TypeError: If a non-iterable is provided as a
 
-    Returns:
-        A sqlalchemy.orm.query.Query object.
+    Generates:
+        Yields: Compliant _Movie objects.
+        Sends: Not used.
+        Returns: Not used.
     """
 
     # Validate criteria keys.
-    valid_keys = {'title', 'director', 'minutes', 'year', 'notes'}
+    valid_keys = set(_Movie.__table__.columns.keys())
     invalid_keys = set(criteria.keys()) - valid_keys
     if invalid_keys:
         msg = f"Key(s) '{invalid_keys}' not in valid set '{valid_keys}'."
@@ -173,21 +170,24 @@ def _search_movie(criteria: Dict[str, Any]) -> query.Query:
     # Execute searches
     with _session_scope() as session:
         movies = (session.query(_Movie))
+        if 'id' in criteria:
+            movies = movies.filter(_Movie.id == criteria['id'])
         if 'title' in criteria:
-            movies = movies.filter(_Movie.title.ilike(f"%{criteria['title']}%"))
+            movies = movies.filter(_Movie.title.like(f"%{criteria['title']}%"))
         if 'director' in criteria:
-            movies = movies.filter(_Movie.director.ilike(f"%{criteria['director']}%"))
+            movies = movies.filter(_Movie.director.like(f"%{criteria['director']}%"))
         if 'minutes' in criteria:
-            movies = movies.filter(_Movie.minutes.between(
-                min(criteria['minutes']),
-                max(criteria['minutes'])))
+            movies = movies.filter(_Movie.minutes.between(min(criteria['minutes']),
+                                                          max(criteria['minutes'])))
         if 'year' in criteria:
-            movies = movies.filter(_Movie.year.between(
-                min(criteria['year']),
-                max(criteria['year'])))
+            movies = movies.filter(_Movie.year.between(min(criteria['year']),
+                                                       max(criteria['year'])))
         if 'notes' in criteria:
-            movies = movies.filter(_Movie.title.ilike(f"%{criteria['notes']}%"))
-        return movies.order_by(_Movie.title)
+            movies = movies.filter(_Movie.title.like(f"%{criteria['notes']}%"))
+
+        movies.order_by(_Movie.title)
+        for movie in movies:
+            yield movie
 
 
 def init_database_access(filename: str = database_fn):
@@ -202,17 +202,17 @@ def init_database_access(filename: str = database_fn):
     with _session_scope() as session:
         timestamp = str(datetime.datetime.today())
         try:
-            session.query(_MetaData).filter(_MetaData.name == 'date_created').one()
+            session.query(_MoviesMetaData).filter(_MoviesMetaData.name == 'date_created').one()
 
         # Code for a new database
         except sqlalchemy.orm.exc.NoResultFound:
-            session.add_all([_MetaData(name='date_last_accessed', value=timestamp),
-                             _MetaData(name='date_created', value=timestamp)])
+            session.add_all([_MoviesMetaData(name='date_last_accessed', value=timestamp),
+                             _MoviesMetaData(name='date_created', value=timestamp)])
 
         # Code for an existing database
         else:
-            date_last_accessed = (session.query(_MetaData)
-                                  .filter(_MetaData.name == 'date_last_accessed')
+            date_last_accessed = (session.query(_MoviesMetaData)
+                                  .filter(_MoviesMetaData.name == 'date_last_accessed')
                                   .one())
             date_last_accessed.value = timestamp
 
@@ -239,11 +239,3 @@ def add_movies(movies_args: Iterable[Dict]):
     movies = [_Movie(**movie) for movie in movies_args]
     with _session_scope() as session:
         session.add_all(movies)
-
-
-def search_movie_all(criteria: Dict[str, Any]) -> List[_Movie]:
-    """Return a list of movies matching user supplied criteria.,
-
-    See the _search_Movie function for details of the criteria.
-    """
-    return _search_movie(criteria).all()
