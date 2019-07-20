@@ -3,14 +3,15 @@ import datetime
 from contextlib import contextmanager
 from typing import Any, Dict, Iterable, Optional, Generator
 
+import sqlalchemy
 import sqlalchemy.exc
 import sqlalchemy.ext.hybrid
-from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, Sequence, String, Table, Text, \
-    UniqueConstraint
+from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, Sequence,
+                        String, Table, Text, UniqueConstraint)
 from sqlalchemy.ext import declarative
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import query, relationship
-from sqlalchemy.orm.session import sessionmaker
+from sqlalchemy.orm.session import sessionmaker, Session
 
 # Third party package imports
 
@@ -49,7 +50,7 @@ class _MoviesMetaData(_SQLAlchemyBase):
     name = Column(String(80), primary_key=True)
     value = Column(String(80))
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return (self.__class__.__qualname__ +
                 f"(name={self.name!r}, value={self.value!r}")
 
@@ -69,7 +70,7 @@ class _Movie(_SQLAlchemyBase):
     tags = relationship('_Tag', secondary=_movies_tags, back_populates='movies')
     reviews = relationship('_Review', secondary=_movies_reviews, back_populates='movies')
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return (self.__class__.__qualname__ +
                 f"(title={self.title!r}, director={self.director!r}, minutes={self.minutes!r}, "
                 f"year={self.year!r}, notes={self.notes!r})")
@@ -84,7 +85,7 @@ class _Tag(_SQLAlchemyBase):
 
     movies = relationship('_Movie', secondary=_movies_tags, back_populates='tags')
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return (self.__class__.__qualname__ +
                 f"(tag={self.tag!r})")
 
@@ -117,7 +118,7 @@ class _Review(_SQLAlchemyBase):
             self._percentage = int(100 * self.rating / self.max_rating)
         return self._percentage
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         return (self.__class__.__qualname__ +
                 f"(reviewer={self.reviewer!r}, rating={self.rating!r}),"
                 f" max_rating={self.max_rating!r}), ")
@@ -138,8 +139,8 @@ def _session_scope():
         session.close()
 
 
-def search_movie(criteria: Dict[str, Any]) -> Generator[_Movie, None, None]:
-    """Search for a movie using any criteria
+def _search_movie(criteria: Dict[str, Any]) -> Generator[_Movie, None, None]:
+    """Search for a movie using any supplied_keys
 
     Args:
         criteria: A dictionary containing none or more of the following keys:
@@ -152,42 +153,68 @@ def search_movie(criteria: Dict[str, Any]) -> Generator[_Movie, None, None]:
             notes: str. A matching column will be a superstring of this value.
 
     Raises:
-        ValueError: If a criteria key is not a column name
+        ValueError: If a supplied_keys key is not a column name
 
     Generates:
         Yields: Compliant _Movie objects.
         Sends: Not used.
         Returns: Not used.
     """
-
-    # Validate criteria keys.
-    valid_keys = set(_Movie.__table__.columns.keys())
-    invalid_keys = set(criteria.keys()) - valid_keys
-    if invalid_keys:
-        msg = f"Key(s) '{invalid_keys}' not in valid set '{valid_keys}'."
-        raise ValueError(msg)
+    _validate_column_names(criteria.keys())
 
     # Execute searches
     with _session_scope() as session:
-        movies = (session.query(_Movie))
-        if 'id' in criteria:
-            movies = movies.filter(_Movie.id == criteria['id'])
-        if 'title' in criteria:
-            movies = movies.filter(_Movie.title.like(f"%{criteria['title']}%"))
-        if 'director' in criteria:
-            movies = movies.filter(_Movie.director.like(f"%{criteria['director']}%"))
-        if 'minutes' in criteria:
-            movies = movies.filter(_Movie.minutes.between(min(criteria['minutes']),
-                                                          max(criteria['minutes'])))
-        if 'year' in criteria:
-            movies = movies.filter(_Movie.year.between(min(criteria['year']),
-                                                       max(criteria['year'])))
-        if 'notes' in criteria:
-            movies = movies.filter(_Movie.title.like(f"%{criteria['notes']}%"))
+        movies = _query_movie(session, criteria)
 
         movies.order_by(_Movie.title)
         for movie in movies:
             yield movie
+
+
+def _validate_column_names(supplied_keys: Iterable[str]):
+    """Check the list
+
+    Args:
+        supplied_keys:
+
+    Raises:
+        Value Error:
+
+    """
+    valid_keys = set(_Movie.__table__.columns.keys())
+    invalid_keys = set(supplied_keys) - valid_keys
+    if invalid_keys:
+        msg = f"Key(s) '{invalid_keys}' not in valid set '{valid_keys}'."
+        raise ValueError(msg)
+
+
+def _query_movie(session: Session, criteria: Dict[str, Any]) -> sqlalchemy.orm.query.Query:
+    """Build a query.
+
+    Args:
+        session: This function must be run inside a caller supplied Session object.
+        criteria: Record selection criteria. See _search_movie for detailed description.
+            e.g. 'title'-'Solaris'
+
+    Returns:
+        An SQL Query object
+    """
+    movies = (session.query(_Movie))
+    if 'id' in criteria:
+        movies = movies.filter(_Movie.id == criteria['id'])
+    if 'title' in criteria:
+        movies = movies.filter(_Movie.title.like(f"%{criteria['title']}%"))
+    if 'director' in criteria:
+        movies = movies.filter(_Movie.director.like(f"%{criteria['director']}%"))
+    if 'minutes' in criteria:
+        movies = movies.filter(_Movie.minutes.between(min(criteria['minutes']),
+                                                      max(criteria['minutes'])))
+    if 'year' in criteria:
+        movies = movies.filter(_Movie.year.between(min(criteria['year']),
+                                                   max(criteria['year'])))
+    if 'notes' in criteria:
+        movies = movies.filter(_Movie.title.like(f"%{criteria['notes']}%"))
+    return movies
 
 
 def init_database_access(filename: str = database_fn):
@@ -239,3 +266,20 @@ def add_movies(movies_args: Iterable[Dict]):
     movies = [_Movie(**movie) for movie in movies_args]
     with _session_scope() as session:
         session.add_all(movies)
+
+
+def edit_movie(criteria: Dict[str, Any], updates: Dict[str, Any]):
+    """Change fields in records.
+
+    Args:
+        criteria: Record selection criteria. See _search_movie for detailed description.
+            e.g. 'title'-'Solaris'
+        updates: Dictionary of fields to be updated. See _search_movie for detailed description.
+            e.g. 'notes'-'Science Fiction'
+    """
+    _validate_column_names(criteria.keys())
+    _validate_column_names(updates.keys())
+    with _session_scope() as session:
+        movie = _query_movie(session, criteria).one()
+        for key, value in updates.items():
+            setattr(movie, key, value)

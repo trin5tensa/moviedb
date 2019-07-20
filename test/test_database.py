@@ -49,6 +49,14 @@ def loaded_database(hamlet, solaris, dreams):
         session.add_all(movies)
 
 
+def test_session_rollback(connection):
+    with pytest.raises(ZeroDivisionError):
+        with database._session_scope() as session:
+            database._query_movie(session, dict(minutes=[169]))
+            # noinspection PyStatementEffect
+            42 / 0
+
+
 def test_init_database_access_with_new_database(connection):
     """Create a new database and test that date_created is today."""
     with database._session_scope() as session:
@@ -99,35 +107,42 @@ def test_add_movies(connection, session, hamlet, solaris):
 class TestsNeedingLoadedDatabase:
     def test_search_movie(self):
         expected = 'Hamlet'
-        for movie in database.search_movie(dict(year=[1996])):
+        for movie in database._search_movie(dict(year=[1996])):
             assert movie.title == expected
 
     def test_search_movie_with_substring(self):
         expected = 'Tarkovsky'
-        for movie in database.search_movie(dict(director='Tark')):
+        for movie in database._search_movie(dict(director='Tark')):
             assert movie.director == expected
 
     def test_search_movie_with_range_of_minutes(self):
         expected = 169
-        for movie in database.search_movie(dict(minutes=[170, 160])):
+        for movie in database._search_movie(dict(minutes=[170, 160])):
             assert movie.minutes == expected
 
     def test_search_movie_with_range_of_minutes_2(self):
         expected = [119, 169]
         run_times = [movie.minutes
-                     for movie in database.search_movie(dict(minutes=[170, 100]))]
+                     for movie in database._search_movie(dict(minutes=[170, 100]))]
         assert sorted(run_times) == expected
 
     def test_search_movie_with_minute(self):
         expected = 169
-        for movie in database.search_movie(dict(minutes=[169])):
+        for movie in database._search_movie(dict(minutes=[169])):
             assert movie.minutes == expected
 
     def test_value_error_is_raised(self):
-        valid_set = {'title', 'director', 'minutes', 'year', 'notes'}
+        valid_set = {'id', 'title', 'director', 'minutes', 'year', 'notes'}
         expected = f"Key(s) '{{'months'}}' not in valid set '{valid_set}'.",
         with pytest.raises(ValueError) as exception:
-            for _ in database.search_movie(dict(months=[169])):
+            for _ in database._search_movie(dict(months=[169])):
                 pass
         assert exception.type is ValueError
         assert exception.value.args == expected
+
+    def test_edit_movie(self):
+        new_note = 'Science Fiction'
+        database.edit_movie(dict(title='Solaris'), dict(notes=new_note))
+
+        for movie in database._search_movie(dict(title='Solaris')):
+            assert movie.notes == new_note
