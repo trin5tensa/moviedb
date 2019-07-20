@@ -75,10 +75,13 @@ def test_init_database_access_with_existing_database(tmpdir):
     database.init_database_access(filename=path)
 
     with database._session_scope() as session:
-        today = (session.query(database._MoviesMetaData.value)
-                 .filter(database._MoviesMetaData.name == 'date_last_accessed')
-                 .one())
-    assert today.value[0:10] == str(database.datetime.datetime.today())[0:10]
+        current = (session.query(database._MoviesMetaData.value)
+                   .filter(database._MoviesMetaData.name == 'date_last_accessed')
+                   .one())
+        previous = (session.query(database._MoviesMetaData.value)
+                   .filter(database._MoviesMetaData.name == 'date_created')
+                   .one())
+    assert current != previous
 
 
 def test_add_movie(connection, session, hamlet):
@@ -104,7 +107,7 @@ def test_add_movies(connection, session, hamlet, solaris):
 
 
 @pytest.mark.usefixtures('loaded_database')
-class TestsNeedingLoadedDatabase:
+class TestsNeedingLoadedDatabase1:
     def test_search_movie(self):
         expected = 'Hamlet'
         for movie in database._search_movie(dict(year=[1996])):
@@ -140,9 +143,20 @@ class TestsNeedingLoadedDatabase:
         assert exception.type is ValueError
         assert exception.value.args == expected
 
+
+@pytest.mark.usefixtures('loaded_database')
+class TestsNeedingLoadedDatabase2:
     def test_edit_movie(self):
         new_note = 'Science Fiction'
         database.edit_movie(dict(title='Solaris'), dict(notes=new_note))
 
         for movie in database._search_movie(dict(title='Solaris')):
             assert movie.notes == new_note
+
+
+@pytest.mark.usefixtures('loaded_database')
+class TestsNeedingLoadedDatabase3:
+    def test_delete_movie(self):
+        database.del_movie(dict(title='Solaris'))
+        movies = [movie for movie in database._search_movie(dict(title='Solaris'))]
+        assert not movies

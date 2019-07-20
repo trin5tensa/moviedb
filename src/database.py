@@ -67,8 +67,10 @@ class _Movie(_SQLAlchemyBase):
     notes = Column(Text, default=None)
     UniqueConstraint(title, year)
 
-    tags = relationship('_Tag', secondary=_movies_tags, back_populates='movies')
-    reviews = relationship('_Review', secondary=_movies_reviews, back_populates='movies')
+    tags = relationship('_Tag', secondary=_movies_tags,
+                        back_populates='movies', cascade='all')
+    reviews = relationship('_Review', secondary=_movies_reviews,
+                           back_populates='movies', cascade='all')
 
     def __repr__(self):  # pragma: no cover
         return (self.__class__.__qualname__ +
@@ -83,7 +85,7 @@ class _Tag(_SQLAlchemyBase):
     id = Column(sqlalchemy.Integer, Sequence('tag_id_sequence'), primary_key=True)
     tag = Column(String(24), nullable=False, unique=True)
 
-    movies = relationship('_Movie', secondary=_movies_tags, back_populates='tags')
+    movies = relationship('_Movie', secondary=_movies_tags, back_populates='tags', cascade = 'all')
 
     def __repr__(self):  # pragma: no cover
         return (self.__class__.__qualname__ +
@@ -107,7 +109,8 @@ class _Review(_SQLAlchemyBase):
     max_rating = Column(Integer, nullable=False)
     UniqueConstraint(reviewer, rating, max_rating)
 
-    movies = relationship('_Movie', secondary=_movies_reviews, back_populates='reviews')
+    movies = relationship('_Movie', secondary=_movies_reviews,
+                          back_populates='reviews', cascade = 'all')
 
     _percentage: int = None
 
@@ -283,3 +286,19 @@ def edit_movie(criteria: Dict[str, Any], updates: Dict[str, Any]):
         movie = _query_movie(session, criteria).one()
         for key, value in updates.items():
             setattr(movie, key, value)
+
+
+def del_movie(criteria: Dict[str, Any]):
+    """Change fields in records.
+
+    Args:
+        criteria: Record selection criteria. See _search_movie for detailed description.
+            e.g. 'title'-'Solaris'
+        updates: Dictionary of fields to be updated. See _search_movie for detailed description.
+            e.g. 'notes'-'Science Fiction'
+    """
+    _validate_column_names(criteria.keys())
+
+    with _session_scope() as session:
+        movie = _query_movie(session, criteria).one()
+        session.delete(movie)
