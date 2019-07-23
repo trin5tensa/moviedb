@@ -183,3 +183,19 @@ class TestAddTag:
                   .filter(database._Movie.tags.any(tag=test_tag)))
         result = {movie.title for movie in movies}
         assert result == expected
+
+    def test_edit_tag(self, session):
+        old_tag = 'old test tag'
+        movies = [('Solaris', 1972)]
+        database.add_tag_and_links(old_tag, movies)
+        old_tag_id, tag = (session.query(database._Tag.id, database._Tag.tag)
+                           .filter(database._Tag.tag == 'old test tag')
+                           .one())
+
+        new_tag = 'new test tag'
+        database.edit_tag(old_tag, new_tag)
+        new_tag_id, tag = (session.query(database._Tag.id, database._Tag.tag)
+                           .filter(database._Tag.tag == 'new test tag')
+                           .one())
+
+        assert old_tag_id == new_tag_id
