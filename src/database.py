@@ -38,7 +38,7 @@ _Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
 # API Classes
 
 
-# API Functions
+# API Functions—
 
 
 # Internal Module Classes
@@ -321,3 +321,15 @@ def add_tag_and_links(new_tag: str, movies: Optional[Iterable[Tuple[str, int]]] 
                          .filter(_Movie.title == title, _Movie.year == year)
                          .one())
                 movie.tags.append(tag)
+
+
+def edit_tag(old_tag: str, new_tag: str):
+    """Edit the tag string.
+
+    Args:
+        old_tag:
+        new_tag:
+    """
+    with _session_scope() as session:
+        tag = session.query(_Tag).filter(_Tag.tag == old_tag).one()
+        tag.tag = new_tag
