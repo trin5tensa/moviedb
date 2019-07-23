@@ -79,8 +79,8 @@ def test_init_database_access_with_existing_database(tmpdir):
                    .filter(database._MoviesMetaData.name == 'date_last_accessed')
                    .one())
         previous = (session.query(database._MoviesMetaData.value)
-                   .filter(database._MoviesMetaData.name == 'date_created')
-                   .one())
+                    .filter(database._MoviesMetaData.name == 'date_created')
+                    .one())
     assert current != previous
 
 
@@ -107,56 +107,79 @@ def test_add_movies(connection, session, hamlet, solaris):
 
 
 @pytest.mark.usefixtures('loaded_database')
-class TestsNeedingLoadedDatabase1:
+class TestQueryMovie:
     def test_search_movie(self):
         expected = 'Hamlet'
-        for movie in database._search_movie(dict(year=[1996])):
+        for movie in database._search_movies(dict(year=[1996])):
             assert movie.title == expected
 
     def test_search_movie_with_substring(self):
         expected = 'Tarkovsky'
-        for movie in database._search_movie(dict(director='Tark')):
+        for movie in database._search_movies(dict(director='Tark')):
             assert movie.director == expected
 
     def test_search_movie_with_range_of_minutes(self):
         expected = 169
-        for movie in database._search_movie(dict(minutes=[170, 160])):
+        for movie in database._search_movies(dict(minutes=[170, 160])):
             assert movie.minutes == expected
 
     def test_search_movie_with_range_of_minutes_2(self):
         expected = [119, 169]
         run_times = [movie.minutes
-                     for movie in database._search_movie(dict(minutes=[170, 100]))]
+                     for movie in database._search_movies(dict(minutes=[170, 100]))]
         assert sorted(run_times) == expected
 
     def test_search_movie_with_minute(self):
         expected = 169
-        for movie in database._search_movie(dict(minutes=[169])):
+        for movie in database._search_movies(dict(minutes=[169])):
             assert movie.minutes == expected
 
     def test_value_error_is_raised(self):
         valid_set = {'id', 'title', 'director', 'minutes', 'year', 'notes'}
         expected = f"Key(s) '{{'months'}}' not in valid set '{valid_set}'.",
         with pytest.raises(ValueError) as exception:
-            for _ in database._search_movie(dict(months=[169])):
+            for _ in database._search_movies(dict(months=[169])):
                 pass
         assert exception.type is ValueError
         assert exception.value.args == expected
 
 
 @pytest.mark.usefixtures('loaded_database')
-class TestsNeedingLoadedDatabase2:
+class TestEditMovie:
     def test_edit_movie(self):
         new_note = 'Science Fiction'
         database.edit_movie(dict(title='Solaris'), dict(notes=new_note))
 
-        for movie in database._search_movie(dict(title='Solaris')):
+        for movie in database._search_movies(dict(title='Solaris')):
             assert movie.notes == new_note
 
 
 @pytest.mark.usefixtures('loaded_database')
-class TestsNeedingLoadedDatabase3:
+class TestDeleteMovie:
     def test_delete_movie(self):
         database.del_movie(dict(title='Solaris'))
-        movies = [movie for movie in database._search_movie(dict(title='Solaris'))]
+        movies = [movie for movie in database._search_movies(dict(title='Solaris'))]
         assert not movies
+
+
+@pytest.mark.usefixtures('loaded_database')
+class TestAddTag:
+    def test_add_new_tag(self, session):
+        tag = 'Movie night candidate'
+        database.add_tag_and_links(tag)
+
+        count = (session.query(database._Tag)
+                 .filter(database._Tag.tag == 'Movie night candidate')
+                 .count())
+        assert count == 1
+
+    def test_add_links_to_movies(self, session):
+        expected = {'Solaris', "Akira Kurosawa's Dreams"}
+        test_tag = 'Foreign'
+        movies = [('Solaris', 1972), ("Akira Kurosawa's Dreams", 1972)]
+        database.add_tag_and_links(test_tag, movies)
+
+        movies = (session.query(database._Movie.title)
+                  .filter(database._Movie.tags.any(tag=test_tag)))
+        result = {movie.title for movie in movies}
+        assert result == expected

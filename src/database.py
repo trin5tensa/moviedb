@@ -1,7 +1,7 @@
 """Exclusive database connections."""
 import datetime
 from contextlib import contextmanager
-from typing import Any, Dict, Iterable, Optional, Generator
+from typing import Any, Dict, Iterable, Optional, Generator, Tuple
 
 import sqlalchemy
 import sqlalchemy.exc
@@ -18,14 +18,13 @@ from sqlalchemy.orm.session import sessionmaker, Session
 
 # Constants
 _SQLAlchemyBase = sqlalchemy.ext.declarative.declarative_base()
-_movies_tags = Table('_movies_tags', _SQLAlchemyBase.metadata,
-                     Column('movies_id', ForeignKey('movies.id'), primary_key=True),
-                     Column('tags_id', ForeignKey('tags.id'), primary_key=True))
-_movies_reviews = Table('_movies_reviews', _SQLAlchemyBase.metadata,
-                        Column('movies_id', ForeignKey('movies.id'), primary_key=True),
-                        Column('reviews_id', ForeignKey('reviews.id'), primary_key=True))
+_movie_tag = Table('_movie_tag', _SQLAlchemyBase.metadata,
+                   Column('movies_id', ForeignKey('movies.id'), primary_key=True),
+                   Column('tags_id', ForeignKey('tags.id'), primary_key=True))
+_movie_review = Table('_movie_review', _SQLAlchemyBase.metadata,
+                      Column('movies_id', ForeignKey('movies.id'), primary_key=True),
+                      Column('reviews_id', ForeignKey('reviews.id'), primary_key=True))
 database_fn = 'movies.db'
-
 
 # Variables
 _engine: Optional[sqlalchemy.engine.base.Engine] = None
@@ -67,9 +66,9 @@ class _Movie(_SQLAlchemyBase):
     notes = Column(Text, default=None)
     UniqueConstraint(title, year)
 
-    tags = relationship('_Tag', secondary=_movies_tags,
+    tags = relationship('_Tag', secondary=_movie_tag,
                         back_populates='movies', cascade='all')
-    reviews = relationship('_Review', secondary=_movies_reviews,
+    reviews = relationship('_Review', secondary=_movie_review,
                            back_populates='movies', cascade='all')
 
     def __repr__(self):  # pragma: no cover
@@ -85,7 +84,7 @@ class _Tag(_SQLAlchemyBase):
     id = Column(sqlalchemy.Integer, Sequence('tag_id_sequence'), primary_key=True)
     tag = Column(String(24), nullable=False, unique=True)
 
-    movies = relationship('_Movie', secondary=_movies_tags, back_populates='tags', cascade = 'all')
+    movies = relationship('_Movie', secondary=_movie_tag, back_populates='tags', cascade='all')
 
     def __repr__(self):  # pragma: no cover
         return (self.__class__.__qualname__ +
@@ -109,8 +108,8 @@ class _Review(_SQLAlchemyBase):
     max_rating = Column(Integer, nullable=False)
     UniqueConstraint(reviewer, rating, max_rating)
 
-    movies = relationship('_Movie', secondary=_movies_reviews,
-                          back_populates='reviews', cascade = 'all')
+    movies = relationship('_Movie', secondary=_movie_review,
+                          back_populates='reviews', cascade='all')
 
     _percentage: int = None
 
@@ -142,7 +141,7 @@ def _session_scope():
         session.close()
 
 
-def _search_movie(criteria: Dict[str, Any]) -> Generator[_Movie, None, None]:
+def _search_movies(criteria: Dict[str, Any]) -> Generator[_Movie, None, None]:
     """Search for a movie using any supplied_keys
 
     Args:
@@ -196,7 +195,7 @@ def _query_movie(session: Session, criteria: Dict[str, Any]) -> sqlalchemy.orm.q
 
     Args:
         session: This function must be run inside a caller supplied Session object.
-        criteria: Record selection criteria. See _search_movie for detailed description.
+        criteria: Record selection criteria. See _search_movies for detailed description.
             e.g. 'title'-'Solaris'
 
     Returns:
@@ -275,9 +274,9 @@ def edit_movie(criteria: Dict[str, Any], updates: Dict[str, Any]):
     """Change fields in records.
 
     Args:
-        criteria: Record selection criteria. See _search_movie for detailed description.
+        criteria: Record selection criteria. See _search_movies for detailed description.
             e.g. 'title'-'Solaris'
-        updates: Dictionary of fields to be updated. See _search_movie for detailed description.
+        updates: Dictionary of fields to be updated. See _search_movies for detailed description.
             e.g. 'notes'-'Science Fiction'
     """
     _validate_column_names(criteria.keys())
@@ -292,13 +291,33 @@ def del_movie(criteria: Dict[str, Any]):
     """Change fields in records.
 
     Args:
-        criteria: Record selection criteria. See _search_movie for detailed description.
+        criteria: Record selection criteria. See _search_movies for detailed description.
             e.g. 'title'-'Solaris'
-        updates: Dictionary of fields to be updated. See _search_movie for detailed description.
-            e.g. 'notes'-'Science Fiction'
     """
     _validate_column_names(criteria.keys())
 
     with _session_scope() as session:
         movie = _query_movie(session, criteria).one()
         session.delete(movie)
+
+
+def add_tag_and_links(new_tag: str, movies: Optional[Iterable[Tuple[str, int]]] = None):
+    """Add links between a tag and one or more movies. Create the tag if it does not exist..
+
+    Args:
+        new_tag:
+        movies: Tuples of a movie'a title and its year of release.
+    """
+    tag = _Tag(tag=new_tag)
+    with _session_scope() as session:
+        tags = session.query(_Tag).filter(_Tag.tag == new_tag)
+        if tags.count() is 0:
+            session.add(tag)
+
+        if movies:
+            tag = tags.one()
+            for title, year in movies:
+                movie = (session.query(_Movie)
+                         .filter(_Movie.title == title, _Movie.year == year)
+                         .one())
+                movie.tags.append(tag)
