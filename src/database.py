@@ -38,7 +38,7 @@ _Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
 # API Classes
 
 
-# API Functions—
+# API Functions
 
 
 # Internal Module Classes
@@ -219,7 +219,7 @@ def _query_movie(session: Session, criteria: Dict[str, Any]) -> sqlalchemy.orm.q
     return movies
 
 
-def init_database_access(filename: str = database_fn):
+def connect_to_database(filename: str = database_fn):
     """Make database available for use by this module."""
     # Create the database connection
     global _engine, _Session
@@ -333,3 +333,9 @@ def edit_tag(old_tag: str, new_tag: str):
     with _session_scope() as session:
         tag = session.query(_Tag).filter(_Tag.tag == old_tag).one()
         tag.tag = new_tag
+
+
+def del_tag(tag: str):
+    with _session_scope() as session:
+        tag_obj = session.query(_Tag).filter(_Tag.tag == tag).one()
+        session.delete(tag_obj)

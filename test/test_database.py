@@ -2,6 +2,7 @@
 from typing import Dict
 
 import pytest
+import sqlalchemy.orm.exc
 
 import src.database as database
 
@@ -9,7 +10,7 @@ import src.database as database
 @pytest.fixture()
 def connection():
     """Database access ."""
-    database.init_database_access(filename=':memory:')
+    database.connect_to_database(filename=':memory:')
 
 
 @pytest.fixture()
@@ -41,7 +42,7 @@ def dreams() -> Dict:
 @pytest.fixture(scope='class')
 def loaded_database(hamlet, solaris, dreams):
     """Provide a loaded database."""
-    database.init_database_access(filename=':memory:')
+    database.connect_to_database(filename=':memory:')
     # noinspection PyProtectedMember
     movies = [database._Movie(**movie) for movie in (hamlet, solaris, dreams)]
     # noinspection PyProtectedMember,PyProtectedMember
@@ -69,10 +70,10 @@ def test_init_database_access_with_new_database(connection):
 def test_init_database_access_with_existing_database(tmpdir):
     """Attach to an existing database and check tha date_last_accessed is today."""
     path = tmpdir.mkdir('tmpdir').join(database.database_fn)
-    database.init_database_access(filename=path)
+    database.connect_to_database(filename=path)
 
     # Reattach to the same database
-    database.init_database_access(filename=path)
+    database.connect_to_database(filename=path)
 
     with database._session_scope() as session:
         current = (session.query(database._MoviesMetaData.value)
@@ -163,7 +164,7 @@ class TestDeleteMovie:
 
 
 @pytest.mark.usefixtures('loaded_database')
-class TestAddTag:
+class TestTagOperations:
     def test_add_new_tag(self, session):
         tag = 'Movie night candidate'
         database.add_tag_and_links(tag)
@@ -199,3 +200,21 @@ class TestAddTag:
                            .one())
 
         assert old_tag_id == new_tag_id
+
+    def test_del_tag(self, session):
+        # Add a tag and links
+        test_tag = 'Going soon'
+        movies = [('Solaris', 1972), ('Hamlet', 1996)]
+        database.add_tag_and_links(test_tag, movies)
+
+        # Delete the tag
+        database.del_tag(test_tag)
+
+        # Is the tag still there?
+        with pytest.raises(sqlalchemy.orm.exc.NoResultFound):
+            session.query(database._Tag).filter(database._Tag.tag == test_tag).one()
+
+        # Do any movies still have the tag?
+        assert (session.query(database._Movie)
+                .filter(database._Movie.tags.any(tag=test_tag))
+                .all()) == []
