@@ -336,6 +336,11 @@ def edit_tag(old_tag: str, new_tag: str):
 
 
 def del_tag(tag: str):
+    """Delete a tag.
+
+    Args:
+        tag:
+    """
     with _session_scope() as session:
         tag_obj = session.query(_Tag).filter(_Tag.tag == tag).one()
         session.delete(tag_obj)
