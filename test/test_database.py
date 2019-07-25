@@ -26,6 +26,11 @@ def hamlet() -> Dict:
     """Provide test data for 'Hamlet'."""
     return dict(title='Hamlet', director='Branagh', minutes=242, year=1996)
 
+@pytest.fixture(scope='module')
+def revanche() -> Dict:
+    """Provide test data for 'Hamlet'."""
+    return dict(title='Revanche', director='Speilmann', minutes=122, year=2008, notes='Oscar nominated')
+
 
 @pytest.fixture(scope='module')
 def solaris() -> Dict:
@@ -92,6 +97,18 @@ def test_add_movie(connection, session, hamlet):
                             database._Movie.director,
                             database._Movie.minutes,
                             database._Movie.year, )
+              .one())
+    assert result == expected
+
+
+def test_add_movie_with_notes(connection, session, revanche):
+    expected = tuple(revanche.values())
+    database.add_movie(revanche)
+    result = (session.query(database._Movie.title,
+                            database._Movie.director,
+                            database._Movie.minutes,
+                            database._Movie.year,
+                            database._Movie.notes, )
               .one())
     assert result == expected
 
