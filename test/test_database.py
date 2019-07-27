@@ -26,6 +26,7 @@ def hamlet() -> Dict:
     """Provide test data for 'Hamlet'."""
     return dict(title='Hamlet', director='Branagh', minutes=242, year=1996)
 
+
 @pytest.fixture(scope='module')
 def revanche() -> Dict:
     """Provide test data for 'Hamlet'."""
@@ -45,11 +46,11 @@ def dreams() -> Dict:
 
 
 @pytest.fixture(scope='class')
-def loaded_database(hamlet, solaris, dreams):
+def loaded_database(hamlet, solaris, dreams, revanche):
     """Provide a loaded database."""
     database.connect_to_database(filename=':memory:')
     # noinspection PyProtectedMember
-    movies = [database._Movie(**movie) for movie in (hamlet, solaris, dreams)]
+    movies = [database._Movie(**movie) for movie in (hamlet, solaris, dreams, revanche)]
     # noinspection PyProtectedMember,PyProtectedMember
     with database._session_scope() as session:
         session.add_all(movies)
@@ -58,7 +59,7 @@ def loaded_database(hamlet, solaris, dreams):
 def test_session_rollback(connection):
     with pytest.raises(ZeroDivisionError):
         with database._session_scope() as session:
-            database._query_movie(session, dict(minutes=[169]))
+            database._build_movie_query(session, dict(minutes=[169]))
             # noinspection PyStatementEffect
             42 / 0
 
@@ -113,44 +114,47 @@ def test_add_movie_with_notes(connection, session, revanche):
     assert result == expected
 
 
-def test_add_movies(connection, session, hamlet, solaris):
-    expected = [tuple(hamlet.values()), tuple(solaris.values())]
-    database.add_movies(iter((hamlet, solaris)))
-    result = (session.query(database._Movie.title,
-                            database._Movie.director,
-                            database._Movie.minutes,
-                            database._Movie.year, )
-              .all())
-    assert result == expected
-
-
 @pytest.mark.usefixtures('loaded_database')
 class TestQueryMovie:
-    def test_search_movie(self):
-        expected = 'Hamlet'
-        for movie in database._search_movies(dict(year=[1996])):
-            assert movie.title == expected
+    def test_search_movie_year(self):
+        expected = ['Hamlet']
+        title = [movie.title for movie in database._search_movies(dict(year=[1996]))]
+        assert title == expected
 
-    def test_search_movie_with_substring(self):
-        expected = 'Tarkovsky'
-        for movie in database._search_movies(dict(director='Tark')):
-            assert movie.director == expected
+    def test_search_movie_id(self):
+        expected = ['Hamlet']
+        title = [movie.title for movie in database._search_movies(dict(id=1))]
+        assert title == expected
+
+    def test_search_movie_title(self):
+        expected = ['Hamlet']
+        title = [movie.title for movie in database._search_movies(dict(title='Ham'))]
+        assert title == expected
+
+    def test_search_movie_director(self):
+        expected = ['Tarkovsky']
+        director = [movie.director for movie in database._search_movies(dict(director='Tark'))]
+        assert director == expected
+
+    def test_search_movie_notes(self):
+        expected = ['Revanche']
+        title = [movie.title for movie in database._search_movies(dict(notes='Oscar'))]
+        assert title == expected
 
     def test_search_movie_with_range_of_minutes(self):
-        expected = 169
-        for movie in database._search_movies(dict(minutes=[170, 160])):
-            assert movie.minutes == expected
+        expected = [169]
+        minutes = [movie.minutes for movie in database._search_movies(dict(minutes=[170, 160]))]
+        assert minutes == expected
 
     def test_search_movie_with_range_of_minutes_2(self):
-        expected = [119, 169]
-        run_times = [movie.minutes
-                     for movie in database._search_movies(dict(minutes=[170, 100]))]
+        expected = [119, 122, 169]
+        run_times = [movie.minutes for movie in database._search_movies(dict(minutes=[170, 100]))]
         assert sorted(run_times) == expected
 
     def test_search_movie_with_minute(self):
-        expected = 169
-        for movie in database._search_movies(dict(minutes=[169])):
-            assert movie.minutes == expected
+        expected = [169]
+        minutes = [movie.minutes for movie in database._search_movies(dict(minutes=[169]))]
+        assert minutes == expected
 
     def test_value_error_is_raised(self):
         valid_set = {'id', 'title', 'director', 'minutes', 'year', 'notes'}
@@ -184,6 +188,16 @@ class TestDeleteMovie:
 class TestTagOperations:
     def test_add_new_tag(self, session):
         tag = 'Movie night candidate'
+        database.add_tag_and_links(tag)
+
+        count = (session.query(database._Tag)
+                 .filter(database._Tag.tag == 'Movie night candidate')
+                 .count())
+        assert count == 1
+
+    def test_add_existing_tag_ignored(self, session):
+        tag = 'Movie night candidate'
+        database.add_tag_and_links(tag)
         database.add_tag_and_links(tag)
 
         count = (session.query(database._Tag)

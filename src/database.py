@@ -1,34 +1,34 @@
 """Exclusive database connections."""
 import datetime
 from contextlib import contextmanager
-from typing import Any, Dict, Iterable, Optional, Generator, Tuple
+from typing import Any, Dict, Generator, Iterable, Optional, Tuple
 
 import sqlalchemy
 import sqlalchemy.exc
+import sqlalchemy.ext.declarative
 import sqlalchemy.ext.hybrid
 from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, Sequence,
                         String, Table, Text, UniqueConstraint)
-from sqlalchemy.ext import declarative
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import query, relationship
-from sqlalchemy.orm.session import sessionmaker, Session
+from sqlalchemy.orm.session import sessionmaker
 
 # Third party package imports
 
 
 # Constants
-_SQLAlchemyBase = sqlalchemy.ext.declarative.declarative_base()
-_movie_tag = Table('_movie_tag', _SQLAlchemyBase.metadata,
-                   Column('movies_id', ForeignKey('movies.id'), primary_key=True),
-                   Column('tags_id', ForeignKey('tags.id'), primary_key=True))
-_movie_review = Table('_movie_review', _SQLAlchemyBase.metadata,
-                      Column('movies_id', ForeignKey('movies.id'), primary_key=True),
-                      Column('reviews_id', ForeignKey('reviews.id'), primary_key=True))
+SQLAlchemyBase = sqlalchemy.ext.declarative.declarative_base()
+movie_tag = Table('movie_tag', SQLAlchemyBase.metadata,
+                  Column('movies_id', ForeignKey('movies.id'), primary_key=True),
+                  Column('tags_id', ForeignKey('tags.id'), primary_key=True))
+movie_review = Table('movie_review', SQLAlchemyBase.metadata,
+                     Column('movies_id', ForeignKey('movies.id'), primary_key=True),
+                     Column('reviews_id', ForeignKey('reviews.id'), primary_key=True))
 database_fn = 'movies.db'
 
 # Variables
-_engine: Optional[sqlalchemy.engine.base.Engine] = None
-_Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
+engine: Optional[sqlalchemy.engine.base.Engine] = None
+Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
 
 
 # Pure data Dataclasses
@@ -39,10 +39,123 @@ _Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
 
 
 # API Functions
+def connect_to_database(filename: str = database_fn):
+    """Make database available for use by this module."""
+
+    # Create the database connection
+    global engine, Session
+    engine = sqlalchemy.create_engine(f"sqlite:///{filename}", echo=False)
+    Session = sessionmaker(bind=engine)
+    SQLAlchemyBase.metadata.create_all(engine)
+
+    # Update metadata
+    with _session_scope() as session:
+        timestamp = str(datetime.datetime.today())
+        try:
+            session.query(_MoviesMetaData).filter(_MoviesMetaData.name == 'date_created').one()
+
+        # Code for a new database
+        except sqlalchemy.orm.exc.NoResultFound:
+            session.add_all([_MoviesMetaData(name='date_last_accessed', value=timestamp),
+                             _MoviesMetaData(name='date_created', value=timestamp)])
+
+        # Code for an existing database
+        else:
+            date_last_accessed = (session.query(_MoviesMetaData)
+                                  .filter(_MoviesMetaData.name == 'date_last_accessed')
+                                  .one())
+            date_last_accessed.value = timestamp
+
+
+def add_movie(movie: Dict):
+    """Add a movie to the database
+
+    Args:
+        movie: A dictionary which must contain title, director, minutes, and year.
+        It may contain notes.
+    """
+    _Movie(**movie).add()
+
+
+def edit_movie(criteria: Dict[str, Any], updates: Dict[str, Any]):
+    """Search for one movie and change one or more fields of that movie.
+
+    Args:
+        criteria: Record selection criteria. See _search_movies for detailed description.
+            e.g. 'title'-'Solaris'
+        updates: Dictionary of fields to be updated. See _search_movies for detailed description.
+            e.g. 'notes'-'Science Fiction'
+    """
+    _Movie.validate_columns(criteria.keys())
+    with _session_scope() as session:
+        _build_movie_query(session, criteria).one().edit(updates)
+
+
+def del_movie(criteria: Dict[str, Any]):
+    """Change fields in records.
+
+    Args:
+        criteria: Record selection criteria. See _search_movies for detailed description.
+            e.g. 'title'-'Solaris'
+    """
+    _Movie.validate_columns(criteria.keys())
+
+    with _session_scope() as session:
+        movie = _build_movie_query(session, criteria).one()
+        session.delete(movie)
+
+
+def add_tag_and_links(new_tag: str, movies: Optional[Iterable[Tuple[str, int]]] = None):
+    """Add links between a tag and one or more movies. Create the tag if it does not exist..
+
+    Args:
+        new_tag:
+        movies: Tuples of a movie'a title and its year of release.
+    """
+
+    # Add the tag unless it is already in the database.
+    try:
+        _Tag(new_tag).add()
+    except sqlalchemy.exc.IntegrityError:
+        pass
+
+    # Add links between movies and this tag.
+    if movies:
+        with _session_scope() as session:
+            tag = session.query(_Tag).filter(_Tag.tag == new_tag).one()
+
+            for title, year in movies:
+                movie = (session.query(_Movie)
+                         .filter(_Movie.title == title, _Movie.year == year)
+                         .one())
+                movie.tags.append(tag)
+
+
+def edit_tag(old_tag: str, new_tag: str):
+    """Edit the tag string.
+
+    Args:
+        old_tag:
+        new_tag:
+    """
+    with _session_scope() as session:
+        tag = session.query(_Tag).filter(_Tag.tag == old_tag).one()
+        tag.tag = new_tag
+
+
+def del_tag(tag: str):
+    """Delete a tag.
+
+    Args:
+        tag:
+    """
+    with _session_scope() as session:
+        tag_obj = session.query(_Tag).filter(_Tag.tag == tag).one()
+        session.delete(tag_obj)
 
 
 # Internal Module Classes
-class _MoviesMetaData(_SQLAlchemyBase):
+class _MoviesMetaData(SQLAlchemyBase):
     """Meta data table schema."""
     __tablename__ = 'meta_data'
 
@@ -54,7 +167,7 @@ class _MoviesMetaData(_SQLAlchemyBase):
                 f"(name={self.name!r}, value={self.value!r}")
 
 
-class _Movie(_SQLAlchemyBase):
+class _Movie(SQLAlchemyBase):
     """Movies table schema."""
     __tablename__ = 'movies'
 
@@ -66,32 +179,79 @@ class _Movie(_SQLAlchemyBase):
     notes = Column(Text, default=None)
     UniqueConstraint(title, year)
 
-    tags = relationship('_Tag', secondary=_movie_tag,
+    tags = relationship('_Tag', secondary=movie_tag,
                         back_populates='movies', cascade='all')
-    reviews = relationship('_Review', secondary=_movie_review,
+    reviews = relationship('_Review', secondary=movie_review,
                            back_populates='movies', cascade='all')
+
+    def __init__(self, title: str, director: str, minutes: int, year: int, notes: str = None):
+        self.title = title
+        self.director = director
+        self.minutes = minutes
+        self.year = year
+        self.notes = notes
 
     def __repr__(self):  # pragma: no cover
         return (self.__class__.__qualname__ +
                 f"(title={self.title!r}, director={self.director!r}, minutes={self.minutes!r}, "
                 f"year={self.year!r}, notes={self.notes!r})")
 
+    def add(self):
+        """Add self to database. """
+        with _session_scope() as session:
+            session.add(self)
 
-class _Tag(_SQLAlchemyBase):
+    def edit(self, updates: Dict[str, Any]):
+        """Edit any column of the table.
+
+        Args:
+            updates: Dictionary of fields to be updated. See _search_movies for detailed description.
+            e.g. {notes='Science Fiction}
+        """
+        self.validate_columns(updates.keys())
+        for key, value in updates.items():
+            setattr(self, key, value)
+
+    @classmethod
+    def validate_columns(cls, columns: Iterable[str]):
+        """Raise ValueError if any column item is not a column of this class.
+
+        Args:
+            columns: column names for validation
+
+        Raises:
+            Value Error: If any supplied keys are not valid column names.
+        """
+        valid_columns = set(cls.__table__.columns.keys())
+        invalid_keys = set(columns) - valid_columns
+        if invalid_keys:
+            msg = f"Key(s) '{invalid_keys}' not in valid set '{valid_columns}'."
+            raise ValueError(msg)
+
+
+class _Tag(SQLAlchemyBase):
     """Table schema for entities who have seen a movie."""
     __tablename__ = 'tags'
 
     id = Column(sqlalchemy.Integer, Sequence('tag_id_sequence'), primary_key=True)
     tag = Column(String(24), nullable=False, unique=True)
 
-    movies = relationship('_Movie', secondary=_movie_tag, back_populates='tags', cascade='all')
+    movies = relationship('_Movie', secondary=movie_tag, back_populates='tags', cascade='all')
+
+    def __init__(self, tag: str):
+        self.tag = tag
 
     def __repr__(self):  # pragma: no cover
         return (self.__class__.__qualname__ +
                 f"(tag={self.tag!r})")
 
+    def add(self):
+        """Add self to database. """
+        with _session_scope() as session:
+            session.add(self)
 
-class _Review(_SQLAlchemyBase):
+
+class _Review(SQLAlchemyBase):
     """Reviews tables schema.
 
     This table has been designed to provide a single row for a reviewer and rating value. So a 3.5/4 star
@@ -108,7 +268,7 @@ class _Review(_SQLAlchemyBase):
     max_rating = Column(Integer, nullable=False)
     UniqueConstraint(reviewer, rating, max_rating)
 
-    movies = relationship('_Movie', secondary=_movie_review,
+    movies = relationship('_Movie', secondary=movie_review,
                           back_populates='reviews', cascade='all')
 
     _percentage: int = None
@@ -130,7 +290,7 @@ class _Review(_SQLAlchemyBase):
 @contextmanager
 def _session_scope():
     """Provide a session scope around a series of operations."""
-    session = _Session()
+    session = Session()
     try:
         yield session
         session.commit()
@@ -162,35 +322,17 @@ def _search_movies(criteria: Dict[str, Any]) -> Generator[_Movie, None, None]:
         Sends: Not used.
         Returns: Not used.
     """
-    _validate_column_names(criteria.keys())
+    _Movie.validate_columns(criteria.keys())
 
     # Execute searches
     with _session_scope() as session:
-        movies = _query_movie(session, criteria)
-
+        movies = _build_movie_query(session, criteria)
         movies.order_by(_Movie.title)
         for movie in movies:
             yield movie
 
 
-def _validate_column_names(supplied_keys: Iterable[str]):
-    """Check the list
-
-    Args:
-        supplied_keys:
-
-    Raises:
-        Value Error:
-
-    """
-    valid_keys = set(_Movie.__table__.columns.keys())
-    invalid_keys = set(supplied_keys) - valid_keys
-    if invalid_keys:
-        msg = f"Key(s) '{invalid_keys}' not in valid set '{valid_keys}'."
-        raise ValueError(msg)
-
-
-def _query_movie(session: Session, criteria: Dict[str, Any]) -> sqlalchemy.orm.query.Query:
+def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy.orm.query.Query:
     """Build a query.
 
     Args:
@@ -215,132 +357,5 @@ def _query_movie(session: Session, criteria: Dict[str, Any]) -> sqlalchemy.orm.q
         movies = movies.filter(_Movie.year.between(min(criteria['year']),
                                                    max(criteria['year'])))
     if 'notes' in criteria:
-        movies = movies.filter(_Movie.title.like(f"%{criteria['notes']}%"))
+        movies = movies.filter(_Movie.notes.like(f"%{criteria['notes']}%"))
     return movies
-
-
-def connect_to_database(filename: str = database_fn):
-    """Make database available for use by this module."""
-    # Create the database connection
-    global _engine, _Session
-    _engine = sqlalchemy.create_engine(f"sqlite:///{filename}", echo=False)
-    _Session = sessionmaker(bind=_engine)
-    _SQLAlchemyBase.metadata.create_all(_engine)
-
-    # Update metadata
-    with _session_scope() as session:
-        timestamp = str(datetime.datetime.today())
-        try:
-            session.query(_MoviesMetaData).filter(_MoviesMetaData.name == 'date_created').one()
-
-        # Code for a new database
-        except sqlalchemy.orm.exc.NoResultFound:
-            session.add_all([_MoviesMetaData(name='date_last_accessed', value=timestamp),
-                             _MoviesMetaData(name='date_created', value=timestamp)])
-
-        # Code for an existing database
-        else:
-            date_last_accessed = (session.query(_MoviesMetaData)
-                                  .filter(_MoviesMetaData.name == 'date_last_accessed')
-                                  .one())
-            date_last_accessed.value = timestamp
-
-
-def add_movie(movie: Dict):
-    """Add a movie.
-
-    Args:
-        movie: A dictionary which must contain title, director, minutes, and year.
-        It may contain notes.
-    """
-    movie = _Movie(**movie)
-    with _session_scope() as session:
-        session.add(movie)
-
-
-def add_movies(movies_args: Iterable[Dict]):
-    """Add one or more movies.
-
-    Args:
-        movies_args: An iterable of dictionaries which must contain title, director, minutes,
-        and year. It may contain 'notes'.
-    """
-    movies = [_Movie(**movie) for movie in movies_args]
-    with _session_scope() as session:
-        session.add_all(movies)
-
-
-def edit_movie(criteria: Dict[str, Any], updates: Dict[str, Any]):
-    """Change fields in records.
-
-    Args:
-        criteria: Record selection criteria. See _search_movies for detailed description.
-            e.g. 'title'-'Solaris'
-        updates: Dictionary of fields to be updated. See _search_movies for detailed description.
-            e.g. 'notes'-'Science Fiction'
-    """
-    _validate_column_names(criteria.keys())
-    _validate_column_names(updates.keys())
-    with _session_scope() as session:
-        movie = _query_movie(session, criteria).one()
-        for key, value in updates.items():
-            setattr(movie, key, value)
-
-
-def del_movie(criteria: Dict[str, Any]):
-    """Change fields in records.
-
-    Args:
-        criteria: Record selection criteria. See _search_movies for detailed description.
-            e.g. 'title'-'Solaris'
-    """
-    _validate_column_names(criteria.keys())
-
-    with _session_scope() as session:
-        movie = _query_movie(session, criteria).one()
-        session.delete(movie)
-
-
-def add_tag_and_links(new_tag: str, movies: Optional[Iterable[Tuple[str, int]]] = None):
-    """Add links between a tag and one or more movies. Create the tag if it does not exist..
-
-    Args:
-        new_tag:
-        movies: Tuples of a movie'a title and its year of release.
-    """
-    tag = _Tag(tag=new_tag)
-    with _session_scope() as session:
-        tags = session.query(_Tag).filter(_Tag.tag == new_tag)
-        if tags.count() is 0:
-            session.add(tag)
-
-        if movies:
-            tag = tags.one()
-            for title, year in movies:
-                movie = (session.query(_Movie)
-                         .filter(_Movie.title == title, _Movie.year == year)
-                         .one())
-                movie.tags.append(tag)
-
-
-def edit_tag(old_tag: str, new_tag: str):
-    """Edit the tag string.
-
-    Args:
-        old_tag:
-        new_tag:
-    """
-    with _session_scope() as session:
-        tag = session.query(_Tag).filter(_Tag.tag == old_tag).one()
-        tag.tag = new_tag
-
-
-def del_tag(tag: str):
-    """Delete a tag.
-
-    Args:
-        tag:
-    """
-    with _session_scope() as session:
-        tag_obj = session.query(_Tag).filter(_Tag.tag == tag).one()
-        session.delete(tag_obj)
