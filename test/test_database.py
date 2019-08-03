@@ -54,6 +54,8 @@ def loaded_database(hamlet, solaris, dreams, revanche):
     # noinspection PyProtectedMember,PyProtectedMember
     with database._session_scope() as session:
         session.add_all(movies)
+    database.add_tag_and_links('blue', [('Hamlet', 1996)])
+    database.add_tag_and_links('yellow', [('Revanche', 2008)])
 
 
 def test_session_rollback(connection):
@@ -115,52 +117,57 @@ def test_add_movie_with_notes(connection, session, revanche):
 
 
 @pytest.mark.usefixtures('loaded_database')
-class TestQueryMovie:
+class TestFindMovie:
     def test_search_movie_year(self):
-        expected = ['Hamlet']
-        title = [movie.title for movie in database._search_movies(dict(year=[1996]))]
-        assert title == expected
+        test_year = 1996
+        for movie in database.find_movies(dict(year=[test_year])):
+            assert movie['year'] == test_year
 
     def test_search_movie_id(self):
-        expected = ['Hamlet']
-        title = [movie.title for movie in database._search_movies(dict(id=1))]
-        assert title == expected
+        test_title = 'Hamlet'
+        test_id = 1
+        for movie in database.find_movies(dict(id=test_id)):
+            assert movie['title'] == test_title
 
     def test_search_movie_title(self):
-        expected = ['Hamlet']
-        title = [movie.title for movie in database._search_movies(dict(title='Ham'))]
-        assert title == expected
+        expected = 'Hamlet'
+        for movie in database.find_movies(dict(title='Ham')):
+            assert movie['title'] == expected
 
     def test_search_movie_director(self):
-        expected = ['Tarkovsky']
-        director = [movie.director for movie in database._search_movies(dict(director='Tark'))]
-        assert director == expected
+        expected = 'Tarkovsky'
+        for movie in database.find_movies(dict(director='Tark')):
+            assert movie['director'] == expected
 
     def test_search_movie_notes(self):
-        expected = ['Revanche']
-        title = [movie.title for movie in database._search_movies(dict(notes='Oscar'))]
-        assert title == expected
+        expected = 'Revanche'
+        for movie in database.find_movies(dict(notes='Oscar')):
+            assert movie['title'] == expected
 
     def test_search_movie_with_range_of_minutes(self):
-        expected = [169]
-        minutes = [movie.minutes for movie in database._search_movies(dict(minutes=[170, 160]))]
-        assert minutes == expected
+        expected = 169
+        for movie in database.find_movies(dict(minutes=[170, 160])):
+            assert movie['minutes'] == expected
 
     def test_search_movie_with_range_of_minutes_2(self):
         expected = [119, 122, 169]
-        run_times = [movie.minutes for movie in database._search_movies(dict(minutes=[170, 100]))]
+        run_times = [movie['minutes'] for movie in database.find_movies(dict(minutes=[170, 100]))]
         assert sorted(run_times) == expected
 
     def test_search_movie_with_minute(self):
         expected = [169]
-        minutes = [movie.minutes for movie in database._search_movies(dict(minutes=[169]))]
+        minutes = [movie['minutes'] for movie in database.find_movies(dict(minutes=[169]))]
         assert minutes == expected
 
+    def test_search_movie_tag(self):
+        expected = ['Hamlet']
+        titles = [movie['title'] for movie in database.find_movies(dict(tags='blue'))]
+        assert titles == expected
+
     def test_value_error_is_raised(self):
-        valid_set = {'id', 'title', 'director', 'minutes', 'year', 'notes'}
-        expected = f"Key(s) '{{'months'}}' not in valid set '{valid_set}'.",
+        expected = f"Key(s) '{{'months'}}' is not a valid search key.",
         with pytest.raises(ValueError) as exception:
-            for _ in database._search_movies(dict(months=[169])):
+            for _ in database.find_movies(dict(months=[169])):
                 pass
         assert exception.type is ValueError
         assert exception.value.args == expected
@@ -172,16 +179,17 @@ class TestEditMovie:
         new_note = 'Science Fiction'
         database.edit_movie(dict(title='Solaris'), dict(notes=new_note))
 
-        for movie in database._search_movies(dict(title='Solaris')):
-            assert movie.notes == new_note
+        for movie in database.find_movies(dict(title='Solaris')):
+            assert movie['notes'] == new_note
 
 
 @pytest.mark.usefixtures('loaded_database')
 class TestDeleteMovie:
     def test_delete_movie(self):
+        expected = []
         database.del_movie(dict(title='Solaris'))
-        movies = [movie for movie in database._search_movies(dict(title='Solaris'))]
-        assert not movies
+        titles = [movie['title'] for movie in database.find_movies(dict(title='Solaris'))]
+        assert titles == expected
 
 
 @pytest.mark.usefixtures('loaded_database')
