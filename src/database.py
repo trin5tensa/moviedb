@@ -1,4 +1,4 @@
-"""Exclusive database connections."""
+"""A module encapsulating the database and all SQLAlchemy based code.."""
 import datetime
 from contextlib import contextmanager
 from typing import Any, Dict, Generator, Iterable, Optional, Tuple
@@ -77,13 +77,48 @@ def add_movie(movie: Dict):
     _Movie(**movie).add()
 
 
+def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
+    """Search for a movie using any supplied_keys.
+
+    yield record fields which persist after the session has ended.
+
+    Args:
+        criteria: A dictionary containing none or more of the following keys:
+            title: str. A matching column will be a superstring of this value..
+            director: str.A matching column will be a superstring of this value.
+            minutes: list. A matching column will be between the minimum and maximum values in this
+            iterable. A single value is permissible.
+            year:  list. A matching column will be between the minimum and maximum values in this
+            iterable. A single value is permissible.
+            notes: str. A matching column will be a superstring of this value.
+            tag: str. Movies matching this tag will be selected.
+
+    Raises:
+        ValueError: If a supplied_keys key is not a column name
+
+    Generates:
+        Yields: A dictionary of attributes and values copied from each found movie.
+        Sends: Not used.
+        Returns: Not used.
+    """
+    _Movie.validate_columns(criteria.keys())
+
+    # Execute searches
+    with _session_scope() as session:
+        movies = _build_movie_query(session, criteria)
+        movies.order_by(_Movie.title)
+        for movie in movies:
+            yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
+                       year=movie.year, notes=movie.notes, tags=movie.tags, reviews=movie.reviews)
+
+
 def edit_movie(criteria: Dict[str, Any], updates: Dict[str, Any]):
     """Search for one movie and change one or more fields of that movie.
 
     Args:
-        criteria: Record selection criteria. See _search_movies for detailed description.
+        criteria: Record selection criteria. See find_movies for detailed description.
             e.g. 'title'-'Solaris'
-        updates: Dictionary of fields to be updated. See _search_movies for detailed description.
+        updates: Dictionary of fields to be updated. See find_movies for detailed description.
             e.g. 'notes'-'Science Fiction'
     """
     _Movie.validate_columns(criteria.keys())
@@ -95,7 +130,7 @@ def del_movie(criteria: Dict[str, Any]):
     """Change fields in records.
 
     Args:
-        criteria: Record selection criteria. See _search_movies for detailed description.
+        criteria: Record selection criteria. See find_movies for detailed description.
             e.g. 'title'-'Solaris'
     """
     _Movie.validate_columns(criteria.keys())
@@ -205,7 +240,7 @@ class _Movie(SQLAlchemyBase):
         """Edit any column of the table.
 
         Args:
-            updates: Dictionary of fields to be updated. See _search_movies for detailed description.
+            updates: Dictionary of fields to be updated. See find_movies for detailed description.
             e.g. {notes='Science Fiction}
         """
         self.validate_columns(updates.keys())
@@ -222,10 +257,10 @@ class _Movie(SQLAlchemyBase):
         Raises:
             Value Error: If any supplied keys are not valid column names.
         """
-        valid_columns = set(cls.__table__.columns.keys())
+        valid_columns = set(cls.__table__.columns.keys()) | {'tags'}
         invalid_keys = set(columns) - valid_columns
         if invalid_keys:
-            msg = f"Key(s) '{invalid_keys}' not in valid set '{valid_columns}'."
+            msg = f"Key(s) '{invalid_keys}' is not a valid search key."
             raise ValueError(msg)
 
 
@@ -301,43 +336,12 @@ def _session_scope():
         session.close()
 
 
-def _search_movies(criteria: Dict[str, Any]) -> Generator[_Movie, None, None]:
-    """Search for a movie using any supplied_keys
-
-    Args:
-        criteria: A dictionary containing none or more of the following keys:
-            title: str. A matching column will be a superstring of this value..
-            director: str.A matching column will be a superstring of this value.
-            minutes: list. A matching column will be between the minimum and maximum values in this
-            iterable. A single value is permissible.
-            year:  list. A matching column will be between the minimum and maximum values in this
-            iterable. A single value is permissible.
-            notes: str. A matching column will be a superstring of this value.
-
-    Raises:
-        ValueError: If a supplied_keys key is not a column name
-
-    Generates:
-        Yields: Compliant _Movie objects.
-        Sends: Not used.
-        Returns: Not used.
-    """
-    _Movie.validate_columns(criteria.keys())
-
-    # Execute searches
-    with _session_scope() as session:
-        movies = _build_movie_query(session, criteria)
-        movies.order_by(_Movie.title)
-        for movie in movies:
-            yield movie
-
-
 def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy.orm.query.Query:
     """Build a query.
 
     Args:
         session: This function must be run inside a caller supplied Session object.
-        criteria: Record selection criteria. See _search_movies for detailed description.
+        criteria: Record selection criteria. See find_movies for detailed description.
             e.g. 'title'-'Solaris'
 
     Returns:
@@ -358,4 +362,7 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
                                                    max(criteria['year'])))
     if 'notes' in criteria:
         movies = movies.filter(_Movie.notes.like(f"%{criteria['notes']}%"))
+    if 'tags' in criteria:
+        # noinspection PyUnresolvedReferences
+        movies = movies.filter(_Movie.tags.any(tag=criteria['tags']))
     return movies
