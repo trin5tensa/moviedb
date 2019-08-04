@@ -8,7 +8,7 @@ import sqlalchemy.exc
 import sqlalchemy.ext.declarative
 import sqlalchemy.ext.hybrid
 from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, Sequence,
-                        String, Table, Text, UniqueConstraint)
+                        String, Text, UniqueConstraint)
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import query, relationship
 from sqlalchemy.orm.session import sessionmaker
@@ -17,13 +17,7 @@ from sqlalchemy.orm.session import sessionmaker
 
 
 # Constants
-SQLAlchemyBase = sqlalchemy.ext.declarative.declarative_base()
-movie_tag = Table('movie_tag', SQLAlchemyBase.metadata,
-                  Column('movies_id', ForeignKey('movies.id'), primary_key=True),
-                  Column('tags_id', ForeignKey('tags.id'), primary_key=True))
-movie_review = Table('movie_review', SQLAlchemyBase.metadata,
-                     Column('movies_id', ForeignKey('movies.id'), primary_key=True),
-                     Column('reviews_id', ForeignKey('reviews.id'), primary_key=True))
+Base = sqlalchemy.ext.declarative.declarative_base()
 database_fn = 'movies.db'
 
 # Variables
@@ -46,7 +40,7 @@ def connect_to_database(filename: str = database_fn):
     global engine, Session
     engine = sqlalchemy.create_engine(f"sqlite:///{filename}", echo=False)
     Session = sessionmaker(bind=engine)
-    SQLAlchemyBase.metadata.create_all(engine)
+    Base.metadata.create_all(engine)
 
     # Update metadata
     with _session_scope() as session:
@@ -110,6 +104,54 @@ def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
         for movie in movies:
             yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
                        year=movie.year, notes=movie.notes, tags=movie.tags, reviews=movie.reviews)
+
+
+def find_movies_join(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
+    """Search for a movie using any supplied_keys.
+
+    yield record fields which persist after the session has ended.
+
+    Args:
+        criteria: A dictionary containing none or more of the following keys:
+            title: str. A matching column will be a superstring of this value..
+            director: str.A matching column will be a superstring of this value.
+            minutes: list. A matching column will be between the minimum and maximum values in this
+            iterable. A single value is permissible.
+            year:  list. A matching column will be between the minimum and maximum values in this
+            iterable. A single value is permissible.
+            notes: str. A matching column will be a superstring of this value.
+            tag: str. Movies matching this tag will be selected.
+
+    Raises:
+        ValueError: If a supplied_keys key is not a column name
+
+    Generates:
+        Yields: A dictionary of attributes and values copied from each found movie.
+        Sends: Not used.
+        Returns: Not used.
+    """
+    _Movie.validate_columns(criteria.keys())
+
+    # Execute searches
+    with _session_scope() as session:
+        results = (session.query(_MovieTag, _Movie, _Tag)
+                   .filter(_Tag.tag.in_(criteria['tags']))
+                   .filter(_Tag.id == _MovieTag.tags_id)
+                   .filter(_Movie.id == _MovieTag.movies_id)
+                  )
+
+        print()
+        for result in results.all():
+            movie_tag, movie, tag = result
+            print(movie_tag.movies_id, movie_tag.tags_id, '\n\t',
+                  tag.id, tag.tag, '\n\t',
+                  movie.id, movie.title)
+
+        results.order_by(_Movie.title)
+        for result in results:
+            movie_tag, movie, tag = result
+            yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
+                       year=movie.year, notes=movie.notes, tags=tag.tag)
 
 
 def edit_movie(criteria: Dict[str, Any], updates: Dict[str, Any]):
@@ -190,7 +232,7 @@ def del_tag(tag: str):
 
 
 # Internal Module Classes
-class _MoviesMetaData(SQLAlchemyBase):
+class _MoviesMetaData(Base):
     """Meta data table schema."""
     __tablename__ = 'meta_data'
 
@@ -202,7 +244,7 @@ class _MoviesMetaData(SQLAlchemyBase):
                 f"(name={self.name!r}, value={self.value!r}")
 
 
-class _Movie(SQLAlchemyBase):
+class _Movie(Base):
     """Movies table schema."""
     __tablename__ = 'movies'
 
@@ -214,10 +256,8 @@ class _Movie(SQLAlchemyBase):
     notes = Column(Text, default=None)
     UniqueConstraint(title, year)
 
-    tags = relationship('_Tag', secondary=movie_tag,
-                        back_populates='movies', cascade='all')
-    reviews = relationship('_Review', secondary=movie_review,
-                           back_populates='movies', cascade='all')
+    tags = relationship('_Tag', secondary='movie_tag', back_populates='movies', cascade='all')
+    reviews = relationship('_Review', secondary='movie_review', back_populates='movies', cascade='all')
 
     def __init__(self, title: str, director: str, minutes: int, year: int, notes: str = None):
         self.title = title
@@ -259,19 +299,20 @@ class _Movie(SQLAlchemyBase):
         """
         valid_columns = set(cls.__table__.columns.keys()) | {'tags'}
         invalid_keys = set(columns) - valid_columns
+        # TODO Final cleanup: Change message to f"Invalid attibute '{invalid_keys}'."
         if invalid_keys:
             msg = f"Key(s) '{invalid_keys}' is not a valid search key."
             raise ValueError(msg)
 
 
-class _Tag(SQLAlchemyBase):
+class _Tag(Base):
     """Table schema for entities who have seen a movie."""
     __tablename__ = 'tags'
 
     id = Column(sqlalchemy.Integer, Sequence('tag_id_sequence'), primary_key=True)
     tag = Column(String(24), nullable=False, unique=True)
 
-    movies = relationship('_Movie', secondary=movie_tag, back_populates='tags', cascade='all')
+    movies = relationship('_Movie', secondary='movie_tag', back_populates='tags', cascade='all')
 
     def __init__(self, tag: str):
         self.tag = tag
@@ -286,7 +327,23 @@ class _Tag(SQLAlchemyBase):
             session.add(self)
 
 
-class _Review(SQLAlchemyBase):
+class _MovieTag(Base):
+    """Many to many link table for _Movie and _Tag."""
+    __tablename__ = 'movie_tag'
+
+    movies_id = Column(Integer, ForeignKey('movies.id'), primary_key=True)
+    tags_id = Column(Integer, ForeignKey('tags.id'), primary_key=True)
+
+
+class _MovieReview(Base):
+    """Many to many link table for _Movie and _Review."""
+    __tablename__ = 'movie_review'
+
+    movies_id = Column(Integer, ForeignKey('movies.id'), primary_key=True)
+    review_id = Column(Integer, ForeignKey('reviews.id'), primary_key=True)
+
+
+class _Review(Base):
     """Reviews tables schema.
 
     This table has been designed to provide a single row for a reviewer and rating value. So a 3.5/4 star
@@ -303,7 +360,7 @@ class _Review(SQLAlchemyBase):
     max_rating = Column(Integer, nullable=False)
     UniqueConstraint(reviewer, rating, max_rating)
 
-    movies = relationship('_Movie', secondary=movie_review,
+    movies = relationship('_Movie', secondary='movie_review',
                           back_populates='reviews', cascade='all')
 
     _percentage: int = None

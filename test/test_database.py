@@ -49,13 +49,14 @@ def dreams() -> Dict:
 def loaded_database(hamlet, solaris, dreams, revanche):
     """Provide a loaded database."""
     database.connect_to_database(filename=':memory:')
-    # noinspection PyProtectedMember
     movies = [database._Movie(**movie) for movie in (hamlet, solaris, dreams, revanche)]
-    # noinspection PyProtectedMember,PyProtectedMember
+    # noinspection PyProtectedMember
     with database._session_scope() as session:
         session.add_all(movies)
     database.add_tag_and_links('blue', [('Hamlet', 1996)])
     database.add_tag_and_links('yellow', [('Revanche', 2008)])
+    database.add_tag_and_links('green', [('Revanche', 2008)])
+    database.add_tag_and_links('green', [('Solaris', 1972)])
 
 
 def test_session_rollback(connection):
@@ -162,6 +163,11 @@ class TestFindMovie:
     def test_search_movie_tag(self):
         expected = ['Hamlet']
         titles = [movie['title'] for movie in database.find_movies(dict(tags='blue'))]
+        assert titles == expected
+
+    def test_search_movie_all_tags(self):
+        expected = ['Hamlet', 'Revanche']
+        titles = [movie['title'] for movie in database.find_movies_join(dict(tags=['blue', 'yellow']))]
         assert titles == expected
 
     def test_value_error_is_raised(self):
