@@ -49,6 +49,7 @@ def dreams() -> Dict:
 def loaded_database(hamlet, solaris, dreams, revanche):
     """Provide a loaded database."""
     database.connect_to_database(filename=':memory:')
+    # noinspection PyProtectedMember
     movies = [database._Movie(**movie) for movie in (hamlet, solaris, dreams, revanche)]
     # noinspection PyProtectedMember
     with database._session_scope() as session:
@@ -121,7 +122,7 @@ def test_add_movie_with_notes(connection, session, revanche):
 class TestFindMovie:
     def test_search_movie_year(self):
         test_year = 1996
-        for movie in database.find_movies(dict(year=[test_year])):
+        for movie in database.find_movies(dict(year=test_year)):
             assert movie['year'] == test_year
 
     def test_search_movie_id(self):
@@ -146,18 +147,18 @@ class TestFindMovie:
             assert movie['title'] == expected
 
     def test_search_movie_with_range_of_minutes(self):
-        expected = 169
-        for movie in database.find_movies(dict(minutes=[170, 160])):
-            assert movie['minutes'] == expected
+        expected = {122}
+        minutes = {movie['minutes'] for movie in database.find_movies(dict(minutes=[130, 120]))}
+        assert minutes == expected
 
     def test_search_movie_with_range_of_minutes_2(self):
-        expected = [119, 122, 169]
-        run_times = [movie['minutes'] for movie in database.find_movies(dict(minutes=[170, 100]))]
-        assert sorted(run_times) == expected
+        expected = {119, 122, 169}
+        minutes = {movie['minutes'] for movie in database.find_movies(dict(minutes=[170, 100]))}
+        assert minutes == expected
 
     def test_search_movie_with_minute(self):
-        expected = [169]
-        minutes = [movie['minutes'] for movie in database.find_movies(dict(minutes=[169]))]
+        expected = {169}
+        minutes = {movie['minutes'] for movie in database.find_movies(dict(minutes=169))}
         assert minutes == expected
 
     def test_search_movie_tag(self):
@@ -167,7 +168,7 @@ class TestFindMovie:
 
     def test_search_movie_all_tags(self):
         expected = ['Hamlet', 'Revanche']
-        titles = [movie['title'] for movie in database.find_movies_join(dict(tags=['blue', 'yellow']))]
+        titles = [movie['title'] for movie in database.find_movies(dict(tags=['blue', 'yellow']))]
         assert titles == expected
 
     def test_value_error_is_raised(self):
@@ -183,18 +184,17 @@ class TestFindMovie:
 class TestEditMovie:
     def test_edit_movie(self):
         new_note = 'Science Fiction'
-        database.edit_movie(dict(title='Solaris'), dict(notes=new_note))
-
-        for movie in database.find_movies(dict(title='Solaris')):
-            assert movie['notes'] == new_note
+        database.edit_movie('Solaris', 1972, dict(notes=new_note))
+        notes = {movie['notes'] for movie in database.find_movies(dict(title='Solaris'))}
+        assert notes == {new_note, }
 
 
 @pytest.mark.usefixtures('loaded_database')
 class TestDeleteMovie:
     def test_delete_movie(self):
-        expected = []
-        database.del_movie(dict(title='Solaris'))
-        titles = [movie['title'] for movie in database.find_movies(dict(title='Solaris'))]
+        expected = set()
+        database.del_movie('Solaris', 1972)
+        titles = {movie['title'] for movie in database.find_movies(dict(title='Solaris'))}
         assert titles == expected
 
 

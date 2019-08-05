@@ -74,7 +74,9 @@ def add_movie(movie: Dict):
 def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
     """Search for a movie using any supplied_keys.
 
-    yield record fields which persist after the session has ended.
+    Yield record fields which persist after the session has ended.
+    This will produce one record for each movie, tag, and review combination. Therefore one movie may
+    produce more than one return record.
 
     Args:
         criteria: A dictionary containing none or more of the following keys:
@@ -82,16 +84,16 @@ def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
             director: str.A matching column will be a superstring of this value.
             minutes: list. A matching column will be between the minimum and maximum values in this
             iterable. A single value is permissible.
-            year:  list. A matching column will be between the minimum and maximum values in this
+            year: list. A matching column will be between the minimum and maximum values in this
             iterable. A single value is permissible.
             notes: str. A matching column will be a superstring of this value.
-            tag: str. Movies matching this tag will be selected.
+            tag: list. Movies matching any tag in this list will be selected.
 
     Raises:
         ValueError: If a supplied_keys key is not a column name
 
     Generates:
-        Yields: A dictionary of attributes and values copied from each found movie.
+        Yields: A dictionary of attributes and values copied from each combination of movie and tag.
         Sends: Not used.
         Returns: Not used.
     """
@@ -101,84 +103,43 @@ def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
     with _session_scope() as session:
         movies = _build_movie_query(session, criteria)
         movies.order_by(_Movie.title)
-        for movie in movies:
-            yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
-                       year=movie.year, notes=movie.notes, tags=movie.tags, reviews=movie.reviews)
+        for movie, tag in movies:
+            if tag:
+                yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
+                           year=movie.year, notes=movie.notes, tag=tag.tag)
+            else:
+                yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
+                           year=movie.year, notes=movie.notes, tag=None)
 
 
-def find_movies_join(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
-    """Search for a movie using any supplied_keys.
-
-    yield record fields which persist after the session has ended.
-
-    Args:
-        criteria: A dictionary containing none or more of the following keys:
-            title: str. A matching column will be a superstring of this value..
-            director: str.A matching column will be a superstring of this value.
-            minutes: list. A matching column will be between the minimum and maximum values in this
-            iterable. A single value is permissible.
-            year:  list. A matching column will be between the minimum and maximum values in this
-            iterable. A single value is permissible.
-            notes: str. A matching column will be a superstring of this value.
-            tag: str. Movies matching this tag will be selected.
-
-    Raises:
-        ValueError: If a supplied_keys key is not a column name
-
-    Generates:
-        Yields: A dictionary of attributes and values copied from each found movie.
-        Sends: Not used.
-        Returns: Not used.
-    """
-    _Movie.validate_columns(criteria.keys())
-
-    # Execute searches
-    with _session_scope() as session:
-        results = (session.query(_MovieTag, _Movie, _Tag)
-                   .filter(_Tag.tag.in_(criteria['tags']))
-                   .filter(_Tag.id == _MovieTag.tags_id)
-                   .filter(_Movie.id == _MovieTag.movies_id)
-                  )
-
-        print()
-        for result in results.all():
-            movie_tag, movie, tag = result
-            print(movie_tag.movies_id, movie_tag.tags_id, '\n\t',
-                  tag.id, tag.tag, '\n\t',
-                  movie.id, movie.title)
-
-        results.order_by(_Movie.title)
-        for result in results:
-            movie_tag, movie, tag = result
-            yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
-                       year=movie.year, notes=movie.notes, tags=tag.tag)
-
-
-def edit_movie(criteria: Dict[str, Any], updates: Dict[str, Any]):
+def edit_movie(title: str, year: int, updates: Dict[str, Any]):
     """Search for one movie and change one or more fields of that movie.
 
+    Use edit_tag and edit_review to edit those fields.
+
     Args:
-        criteria: Record selection criteria. See find_movies for detailed description.
-            e.g. 'title'-'Solaris'
+        title: Movie title
+        year: Movie year
         updates: Dictionary of fields to be updated. See find_movies for detailed description.
             e.g. 'notes'-'Science Fiction'
     """
-    _Movie.validate_columns(criteria.keys())
+    criteria = dict(title=title, year=[year, ])
     with _session_scope() as session:
-        _build_movie_query(session, criteria).one().edit(updates)
+        # _build_movie_query(session, criteria).one().edit(updates)
+        movie, tag = _build_movie_query(session, criteria).one()
+        movie.edit(updates)
 
 
-def del_movie(criteria: Dict[str, Any]):
+def del_movie(title: str, year: int):
     """Change fields in records.
 
     Args:
-        criteria: Record selection criteria. See find_movies for detailed description.
-            e.g. 'title'-'Solaris'
+        title: Movie title
+        year: Movie year
     """
-    _Movie.validate_columns(criteria.keys())
-
+    criteria = dict(title=title, year=[year, ])
     with _session_scope() as session:
-        movie = _build_movie_query(session, criteria).one()
+        movie, tag = _build_movie_query(session, criteria).one()
         session.delete(movie)
 
 
@@ -299,7 +260,6 @@ class _Movie(Base):
         """
         valid_columns = set(cls.__table__.columns.keys()) | {'tags'}
         invalid_keys = set(columns) - valid_columns
-        # TODO Final cleanup: Change message to f"Invalid attibute '{invalid_keys}'."
         if invalid_keys:
             msg = f"Key(s) '{invalid_keys}' is not a valid search key."
             raise ValueError(msg)
@@ -404,7 +364,8 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
     Returns:
         An SQL Query object
     """
-    movies = (session.query(_Movie))
+    movies = (session.query(_Movie, _Tag).outerjoin(_Movie.tags))
+    # movies = (session.query(_Movie))
     if 'id' in criteria:
         movies = movies.filter(_Movie.id == criteria['id'])
     if 'title' in criteria:
@@ -412,14 +373,30 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
     if 'director' in criteria:
         movies = movies.filter(_Movie.director.like(f"%{criteria['director']}%"))
     if 'minutes' in criteria:
+        if not isinstance(criteria['minutes'], list):
+            criteria['minutes'] = [criteria['minutes'], ]
         movies = movies.filter(_Movie.minutes.between(min(criteria['minutes']),
                                                       max(criteria['minutes'])))
     if 'year' in criteria:
+        if not isinstance(criteria['year'], list):
+            criteria['year'] = [criteria['year'], ]
         movies = movies.filter(_Movie.year.between(min(criteria['year']),
                                                    max(criteria['year'])))
     if 'notes' in criteria:
         movies = movies.filter(_Movie.notes.like(f"%{criteria['notes']}%"))
     if 'tags' in criteria:
-        # noinspection PyUnresolvedReferences
-        movies = movies.filter(_Movie.tags.any(tag=criteria['tags']))
+        if not isinstance(criteria['tags'], list):
+            criteria['tags'] = [criteria['tags'], ]
+        movies = (movies
+                  .filter(_Tag.tag.in_(criteria['tags']))
+                  .filter(_Tag.id == _MovieTag.tags_id)
+                  .filter(_Movie.id == _MovieTag.movies_id))
+
+    # print()
+    # for movie, tag in movies.all():
+    #     if tag:
+    #         print(movie.id, movie.title, movie.minutes, movie.tags, tag.id, tag.tag)
+    #     else:
+    #         print(movie.id, movie.title, movie.minutes, movie.tags)
+
     return movies
