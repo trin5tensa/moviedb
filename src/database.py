@@ -105,13 +105,9 @@ def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
         movies = _build_movie_query(session, criteria)
         movies.order_by(_Movie.title)
         for movie, tag in movies:
-            # moviedatabase-#37 Refactor with only tag assignment inside 'if' statement.
-            if tag:
-                yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
-                           year=movie.year, notes=movie.notes, tag=tag.tag)
-            else:
-                yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
-                           year=movie.year, notes=movie.notes, tag=None)
+            tag = tag.tag if tag else None
+            yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
+                       year=movie.year, notes=movie.notes, tag=tag)
 
 
 def edit_movie(title: str, year: int, updates: Dict[str, Any]):
