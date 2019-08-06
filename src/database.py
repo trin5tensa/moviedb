@@ -1,4 +1,5 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
+import collections.abc as abc
 import datetime
 from contextlib import contextmanager
 from typing import Any, Dict, Generator, Iterable, Optional, Tuple
@@ -371,24 +372,27 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
     if 'director' in criteria:
         movies = movies.filter(_Movie.director.like(f"%{criteria['director']}%"))
     if 'minutes' in criteria:
-        if not isinstance(criteria['minutes'], list):
-            criteria['minutes'] = [criteria['minutes'], ]
-        movies = movies.filter(_Movie.minutes.between(min(criteria['minutes']),
-                                                      max(criteria['minutes'])))
+        length = criteria['minutes']
+        if not isinstance(length, abc.Iterable):
+            length = [length, ]
+        movies = movies.filter(_Movie.minutes.between(min(length),
+                                                      max(length)))
     if 'year' in criteria:
-        if not isinstance(criteria['year'], list):
-            criteria['year'] = [criteria['year'], ]
-        movies = movies.filter(_Movie.year.between(min(criteria['year']),
-                                                   max(criteria['year'])))
+        year = criteria['year']
+        if not isinstance(year, abc.Iterable):
+            year = [year, ]
+        movies = movies.filter(_Movie.year.between(min(year),
+                                                   max(year)))
     if 'notes' in criteria:
         movies = movies.filter(_Movie.notes.like(f"%{criteria['notes']}%"))
     if 'tags' in criteria:
-        if not isinstance(criteria['tags'], list):
-            criteria['tags'] = [criteria['tags'], ]
+        tags = criteria['tags']
+        if isinstance(tags, str) or not isinstance(tags, abc.Iterable):
+            tags = [tags, ]
         # moviedatabase-#37
         #   Is there any way of not using _MovieTag directly?
         movies = (movies
-                  .filter(_Tag.tag.in_(criteria['tags']))
+                  .filter(_Tag.tag.in_(tags))
                   .filter(_Tag.id == _MovieTag.tags_id)
                   .filter(_Movie.id == _MovieTag.movies_id))
 
