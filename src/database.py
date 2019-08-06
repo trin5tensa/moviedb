@@ -50,7 +50,8 @@ def connect_to_database(filename: str = database_fn):
 
         # Code for a new database
         except sqlalchemy.orm.exc.NoResultFound:
-            session.add_all([_MoviesMetaData(name='date_last_accessed', value=timestamp),
+            session.add_all([_MoviesMetaData(name='version', value='1'),
+                             _MoviesMetaData(name='date_last_accessed', value=timestamp),
                              _MoviesMetaData(name='date_created', value=timestamp)])
 
         # Code for an existing database
@@ -104,6 +105,7 @@ def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
         movies = _build_movie_query(session, criteria)
         movies.order_by(_Movie.title)
         for movie, tag in movies:
+            # moviedatabase-#37 Refactor with only tag assignment inside 'if' statement.
             if tag:
                 yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
                            year=movie.year, notes=movie.notes, tag=tag.tag)
@@ -123,7 +125,7 @@ def edit_movie(title: str, year: int, updates: Dict[str, Any]):
         updates: Dictionary of fields to be updated. See find_movies for detailed description.
             e.g. 'notes'-'Science Fiction'
     """
-    criteria = dict(title=title, year=[year, ])
+    criteria = dict(title=title, year=year)
     with _session_scope() as session:
         # _build_movie_query(session, criteria).one().edit(updates)
         movie, tag = _build_movie_query(session, criteria).one()
@@ -137,7 +139,7 @@ def del_movie(title: str, year: int):
         title: Movie title
         year: Movie year
     """
-    criteria = dict(title=title, year=[year, ])
+    criteria = dict(title=title, year=year)
     with _session_scope() as session:
         movie, tag = _build_movie_query(session, criteria).one()
         session.delete(movie)
@@ -261,6 +263,9 @@ class _Movie(Base):
         valid_columns = set(cls.__table__.columns.keys()) | {'tags'}
         invalid_keys = set(columns) - valid_columns
         if invalid_keys:
+            # moviedatabase-#37
+            #  Change the message to read:
+            #   f"Invalid attibute '{invalid_keys}'."
             msg = f"Key(s) '{invalid_keys}' is not a valid search key."
             raise ValueError(msg)
 
@@ -387,6 +392,8 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
     if 'tags' in criteria:
         if not isinstance(criteria['tags'], list):
             criteria['tags'] = [criteria['tags'], ]
+        # moviedatabase-#37
+        #   Is there any way of not using _MovieTag directly?
         movies = (movies
                   .filter(_Tag.tag.in_(criteria['tags']))
                   .filter(_Tag.id == _MovieTag.tags_id)
