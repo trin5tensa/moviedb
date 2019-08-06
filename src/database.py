@@ -259,10 +259,7 @@ class _Movie(Base):
         valid_columns = set(cls.__table__.columns.keys()) | {'tags'}
         invalid_keys = set(columns) - valid_columns
         if invalid_keys:
-            # moviedatabase-#37
-            #  Change the message to read:
-            #   f"Invalid attibute '{invalid_keys}'."
-            msg = f"Key(s) '{invalid_keys}' is not a valid search key."
+            msg = f"Invalid attribute '{invalid_keys}'."
             raise ValueError(msg)
 
 
