@@ -1,5 +1,4 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
-import collections.abc as abc
 import datetime
 from contextlib import contextmanager
 from typing import Any, Dict, Generator, Iterable, Optional, Tuple
@@ -8,8 +7,8 @@ import sqlalchemy
 import sqlalchemy.exc
 import sqlalchemy.ext.declarative
 import sqlalchemy.ext.hybrid
-from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, Sequence,
-                        String, Text, UniqueConstraint, Table)
+from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, Sequence, String, Table, Text,
+                        UniqueConstraint)
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import query, relationship
 from sqlalchemy.orm.session import sessionmaker
@@ -354,7 +353,6 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
         An SQL Query object
     """
     movies = (session.query(_Movie, _Tag).outerjoin(_Movie.tags))
-    # movies = (session.query(_Movie))
     if 'id' in criteria:
         movies = movies.filter(_Movie.id == criteria['id'])
     if 'title' in criteria:
@@ -362,34 +360,33 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
     if 'director' in criteria:
         movies = movies.filter(_Movie.director.like(f"%{criteria['director']}%"))
     if 'minutes' in criteria:
-        length = criteria['minutes']
-        # moviedatabase-#37 Ducktype!
-        if not isinstance(length, abc.Iterable):
-            length = [length, ]
-        movies = movies.filter(_Movie.minutes.between(min(length),
-                                                      max(length)))
+        minutes = criteria['minutes']
+        try:
+            low, high = min(minutes), max(minutes)
+        except TypeError:
+            low = high = minutes
+        movies = movies.filter(_Movie.minutes.between(low, high))
     if 'year' in criteria:
         year = criteria['year']
-        # moviedatabase-#37 Ducktype!
-        if not isinstance(year, abc.Iterable):
-            year = [year, ]
-        movies = movies.filter(_Movie.year.between(min(year),
-                                                   max(year)))
+        try:
+            low, high = min(year), max(year)
+        except TypeError:
+            low = high = year
+        movies = movies.filter(_Movie.year.between(low, high))
     if 'notes' in criteria:
         movies = movies.filter(_Movie.notes.like(f"%{criteria['notes']}%"))
     if 'tags' in criteria:
         tags = criteria['tags']
-        # moviedatabase-#37 Ducktype!
-        if isinstance(tags, str) or not isinstance(tags, abc.Iterable):
+        if isinstance(tags, str):
             tags = [tags, ]
         movies = (movies.filter(_Tag.tag.in_(tags)))
 
-    print()
-    for movie, tag in movies.all():
-        if tag:
-            tags = (tag.id, tag.tag)
-        else:
-            tags = (None,)
-        print(movie.id, movie.title, movie.minutes, *tags)
+    # print()
+    # for movie, tag in movies.all():
+    #     if tag:
+    #         tags = (tag.id, tag.tag)
+    #     else:
+    #         tags = (None,)
+    #     print(movie.id, movie.title, movie.minutes, *tags)
 
     return movies
