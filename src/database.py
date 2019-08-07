@@ -286,6 +286,8 @@ class _Tag(Base):
             session.add(self)
 
 
+# moviedatabase-#37
+#  Revert to pattern shown in SQLAlchemy manual
 class _MovieTag(Base):
     """Many to many link table for _Movie and _Tag."""
     __tablename__ = 'movie_tag'
@@ -294,6 +296,8 @@ class _MovieTag(Base):
     tags_id = Column(Integer, ForeignKey('tags.id'), primary_key=True)
 
 
+# moviedatabase-#37
+#  Revert to pattern shown in SQLAlchemy manual
 class _MovieReview(Base):
     """Many to many link table for _Movie and _Review."""
     __tablename__ = 'movie_review'
@@ -389,18 +393,14 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
         tags = criteria['tags']
         if isinstance(tags, str) or not isinstance(tags, abc.Iterable):
             tags = [tags, ]
-        # moviedatabase-#37
-        #   Is there any way of not using _MovieTag directly?
-        movies = (movies
-                  .filter(_Tag.tag.in_(tags))
-                  .filter(_Tag.id == _MovieTag.tags_id)
-                  .filter(_Movie.id == _MovieTag.movies_id))
+        movies = (movies.filter(_Tag.tag.in_(tags)))
 
     # print()
     # for movie, tag in movies.all():
     #     if tag:
-    #         print(movie.id, movie.title, movie.minutes, movie.tags, tag.id, tag.tag)
+    #         tags = (tag.id, tag.tag)
     #     else:
-    #         print(movie.id, movie.title, movie.minutes, movie.tags)
+    #         tags = (None, )
+    #     print(movie.id, movie.title, movie.minutes, *tags)
 
     return movies
