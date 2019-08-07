@@ -162,17 +162,18 @@ class TestFindMovie:
         assert minutes == expected
 
     def test_search_movie_tag(self):
-        expected = ['Hamlet']
-        titles = [movie['title'] for movie in database.find_movies(dict(tags='blue'))]
+        expected = {'Revanche', 'Solaris'}
+        titles = {movie['title'] for movie in database.find_movies(dict(tags='green'))}
         assert titles == expected
 
     def test_search_movie_all_tags(self):
-        expected = ['Hamlet', 'Revanche']
-        titles = [movie['title'] for movie in database.find_movies(dict(tags=['blue', 'yellow']))]
+        expected = {'Hamlet', 'Revanche'}
+        titles = {movie['title'] for movie in database.find_movies(dict(tags=['blue', 'yellow']))}
         assert titles == expected
 
     def test_value_error_is_raised(self):
-        expected = f"Key(s) '{{'months'}}' is not a valid search key.",
+        invalid_keys = {'months'}
+        expected = (f"Invalid attribute '{invalid_keys}'.", )
         with pytest.raises(ValueError) as exception:
             for _ in database.find_movies(dict(months=[169])):
                 pass

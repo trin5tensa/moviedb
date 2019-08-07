@@ -7,8 +7,8 @@ import sqlalchemy
 import sqlalchemy.exc
 import sqlalchemy.ext.declarative
 import sqlalchemy.ext.hybrid
-from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, Sequence,
-                        String, Text, UniqueConstraint)
+from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, Sequence, String, Table, Text,
+                        UniqueConstraint)
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import query, relationship
 from sqlalchemy.orm.session import sessionmaker
@@ -21,6 +21,12 @@ Base = sqlalchemy.ext.declarative.declarative_base()
 database_fn = 'movies.db'
 
 # Variables
+movie_tag = Table('movie_tag', Base.metadata,
+                  Column('movies_id', ForeignKey('movies.id'), primary_key=True),
+                  Column('tags_id', ForeignKey('tags.id'), primary_key=True))
+movie_review = Table('movie_review', Base.metadata,
+                     Column('movies_id', ForeignKey('movies.id'), primary_key=True),
+                     Column('reviews_id', ForeignKey('reviews.id'), primary_key=True))
 engine: Optional[sqlalchemy.engine.base.Engine] = None
 Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
 
@@ -105,13 +111,9 @@ def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
         movies = _build_movie_query(session, criteria)
         movies.order_by(_Movie.title)
         for movie, tag in movies:
-            # moviedatabase-#37 Refactor with only tag assignment inside 'if' statement.
-            if tag:
-                yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
-                           year=movie.year, notes=movie.notes, tag=tag.tag)
-            else:
-                yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
-                           year=movie.year, notes=movie.notes, tag=None)
+            tag = tag.tag if tag else None
+            yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
+                       year=movie.year, notes=movie.notes, tag=tag)
 
 
 def edit_movie(title: str, year: int, updates: Dict[str, Any]):
@@ -263,10 +265,7 @@ class _Movie(Base):
         valid_columns = set(cls.__table__.columns.keys()) | {'tags'}
         invalid_keys = set(columns) - valid_columns
         if invalid_keys:
-            # moviedatabase-#37
-            #  Change the message to read:
-            #   f"Invalid attibute '{invalid_keys}'."
-            msg = f"Key(s) '{invalid_keys}' is not a valid search key."
+            msg = f"Invalid attribute '{invalid_keys}'."
             raise ValueError(msg)
 
 
@@ -290,22 +289,6 @@ class _Tag(Base):
         """Add self to database. """
         with _session_scope() as session:
             session.add(self)
-
-
-class _MovieTag(Base):
-    """Many to many link table for _Movie and _Tag."""
-    __tablename__ = 'movie_tag'
-
-    movies_id = Column(Integer, ForeignKey('movies.id'), primary_key=True)
-    tags_id = Column(Integer, ForeignKey('tags.id'), primary_key=True)
-
-
-class _MovieReview(Base):
-    """Many to many link table for _Movie and _Review."""
-    __tablename__ = 'movie_review'
-
-    movies_id = Column(Integer, ForeignKey('movies.id'), primary_key=True)
-    review_id = Column(Integer, ForeignKey('reviews.id'), primary_key=True)
 
 
 class _Review(Base):
@@ -370,7 +353,6 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
         An SQL Query object
     """
     movies = (session.query(_Movie, _Tag).outerjoin(_Movie.tags))
-    # movies = (session.query(_Movie))
     if 'id' in criteria:
         movies = movies.filter(_Movie.id == criteria['id'])
     if 'title' in criteria:
@@ -378,32 +360,33 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
     if 'director' in criteria:
         movies = movies.filter(_Movie.director.like(f"%{criteria['director']}%"))
     if 'minutes' in criteria:
-        if not isinstance(criteria['minutes'], list):
-            criteria['minutes'] = [criteria['minutes'], ]
-        movies = movies.filter(_Movie.minutes.between(min(criteria['minutes']),
-                                                      max(criteria['minutes'])))
+        minutes = criteria['minutes']
+        try:
+            low, high = min(minutes), max(minutes)
+        except TypeError:
+            low = high = minutes
+        movies = movies.filter(_Movie.minutes.between(low, high))
     if 'year' in criteria:
-        if not isinstance(criteria['year'], list):
-            criteria['year'] = [criteria['year'], ]
-        movies = movies.filter(_Movie.year.between(min(criteria['year']),
-                                                   max(criteria['year'])))
+        year = criteria['year']
+        try:
+            low, high = min(year), max(year)
+        except TypeError:
+            low = high = year
+        movies = movies.filter(_Movie.year.between(low, high))
     if 'notes' in criteria:
         movies = movies.filter(_Movie.notes.like(f"%{criteria['notes']}%"))
     if 'tags' in criteria:
-        if not isinstance(criteria['tags'], list):
-            criteria['tags'] = [criteria['tags'], ]
-        # moviedatabase-#37
-        #   Is there any way of not using _MovieTag directly?
-        movies = (movies
-                  .filter(_Tag.tag.in_(criteria['tags']))
-                  .filter(_Tag.id == _MovieTag.tags_id)
-                  .filter(_Movie.id == _MovieTag.movies_id))
+        tags = criteria['tags']
+        if isinstance(tags, str):
+            tags = [tags, ]
+        movies = (movies.filter(_Tag.tag.in_(tags)))
 
     # print()
     # for movie, tag in movies.all():
     #     if tag:
-    #         print(movie.id, movie.title, movie.minutes, movie.tags, tag.id, tag.tag)
+    #         tags = (tag.id, tag.tag)
     #     else:
-    #         print(movie.id, movie.title, movie.minutes, movie.tags)
+    #         tags = (None,)
+    #     print(movie.id, movie.title, movie.minutes, *tags)
 
     return movies
