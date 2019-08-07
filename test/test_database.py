@@ -165,13 +165,11 @@ class TestFindMovie:
         expected = {'Revanche', 'Solaris'}
         titles = {movie['title'] for movie in database.find_movies(dict(tags='green'))}
         assert titles == expected
-        assert False
 
     def test_search_movie_all_tags(self):
         expected = {'Hamlet', 'Revanche'}
         titles = {movie['title'] for movie in database.find_movies(dict(tags=['blue', 'yellow']))}
         assert titles == expected
-        assert False
 
     def test_value_error_is_raised(self):
         invalid_keys = {'months'}

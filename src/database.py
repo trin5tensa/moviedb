@@ -9,7 +9,7 @@ import sqlalchemy.exc
 import sqlalchemy.ext.declarative
 import sqlalchemy.ext.hybrid
 from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, Sequence,
-                        String, Text, UniqueConstraint)
+                        String, Text, UniqueConstraint, Table)
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import query, relationship
 from sqlalchemy.orm.session import sessionmaker
@@ -22,6 +22,12 @@ Base = sqlalchemy.ext.declarative.declarative_base()
 database_fn = 'movies.db'
 
 # Variables
+movie_tag = Table('movie_tag', Base.metadata,
+                  Column('movies_id', ForeignKey('movies.id'), primary_key=True),
+                  Column('tags_id', ForeignKey('tags.id'), primary_key=True))
+movie_review = Table('movie_review', Base.metadata,
+                     Column('movies_id', ForeignKey('movies.id'), primary_key=True),
+                     Column('reviews_id', ForeignKey('reviews.id'), primary_key=True))
 engine: Optional[sqlalchemy.engine.base.Engine] = None
 Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
 
@@ -286,26 +292,6 @@ class _Tag(Base):
             session.add(self)
 
 
-# moviedatabase-#37
-#  Revert to pattern shown in SQLAlchemy manual
-class _MovieTag(Base):
-    """Many to many link table for _Movie and _Tag."""
-    __tablename__ = 'movie_tag'
-
-    movies_id = Column(Integer, ForeignKey('movies.id'), primary_key=True)
-    tags_id = Column(Integer, ForeignKey('tags.id'), primary_key=True)
-
-
-# moviedatabase-#37
-#  Revert to pattern shown in SQLAlchemy manual
-class _MovieReview(Base):
-    """Many to many link table for _Movie and _Review."""
-    __tablename__ = 'movie_review'
-
-    movies_id = Column(Integer, ForeignKey('movies.id'), primary_key=True)
-    review_id = Column(Integer, ForeignKey('reviews.id'), primary_key=True)
-
-
 class _Review(Base):
     """Reviews tables schema.
 
@@ -377,12 +363,14 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
         movies = movies.filter(_Movie.director.like(f"%{criteria['director']}%"))
     if 'minutes' in criteria:
         length = criteria['minutes']
+        # moviedatabase-#37 Ducktype!
         if not isinstance(length, abc.Iterable):
             length = [length, ]
         movies = movies.filter(_Movie.minutes.between(min(length),
                                                       max(length)))
     if 'year' in criteria:
         year = criteria['year']
+        # moviedatabase-#37 Ducktype!
         if not isinstance(year, abc.Iterable):
             year = [year, ]
         movies = movies.filter(_Movie.year.between(min(year),
@@ -391,16 +379,17 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
         movies = movies.filter(_Movie.notes.like(f"%{criteria['notes']}%"))
     if 'tags' in criteria:
         tags = criteria['tags']
+        # moviedatabase-#37 Ducktype!
         if isinstance(tags, str) or not isinstance(tags, abc.Iterable):
             tags = [tags, ]
         movies = (movies.filter(_Tag.tag.in_(tags)))
 
-    # print()
-    # for movie, tag in movies.all():
-    #     if tag:
-    #         tags = (tag.id, tag.tag)
-    #     else:
-    #         tags = (None, )
-    #     print(movie.id, movie.title, movie.minutes, *tags)
+    print()
+    for movie, tag in movies.all():
+        if tag:
+            tags = (tag.id, tag.tag)
+        else:
+            tags = (None,)
+        print(movie.id, movie.title, movie.minutes, *tags)
 
     return movies
