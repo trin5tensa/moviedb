@@ -54,10 +54,10 @@ def loaded_database(hamlet, solaris, dreams, revanche):
     # noinspection PyProtectedMember
     with database._session_scope() as session:
         session.add_all(movies)
-    database.add_tag_and_links('blue', [('Hamlet', 1996)])
-    database.add_tag_and_links('yellow', [('Revanche', 2008)])
-    database.add_tag_and_links('green', [('Revanche', 2008)])
-    database.add_tag_and_links('green', [('Solaris', 1972)])
+    database.add_tag_and_links('blue', [database.TitleYear('Hamlet', 1996)])
+    database.add_tag_and_links('yellow', [database.TitleYear('Revanche', 2008)])
+    database.add_tag_and_links('green', [database.TitleYear('Revanche', 2008)])
+    database.add_tag_and_links('green', [database.TitleYear('Solaris', 1972)])
 
 
 def test_session_rollback(connection):
@@ -185,7 +185,7 @@ class TestFindMovie:
 class TestEditMovie:
     def test_edit_movie(self):
         new_note = 'Science Fiction'
-        database.edit_movie('Solaris', 1972, dict(notes=new_note))
+        database.edit_movie(database.TitleYear('Solaris', 1972), dict(notes=new_note))
         notes = {movie['notes'] for movie in database.find_movies(dict(title='Solaris'))}
         assert notes == {new_note, }
 
@@ -194,7 +194,7 @@ class TestEditMovie:
 class TestDeleteMovie:
     def test_delete_movie(self):
         expected = set()
-        database.del_movie('Solaris', 1972)
+        database.del_movie(database.TitleYear('Solaris', 1972))
         titles = {movie['title'] for movie in database.find_movies(dict(title='Solaris'))}
         assert titles == expected
 
@@ -223,7 +223,8 @@ class TestTagOperations:
     def test_add_links_to_movies(self, session):
         expected = {'Solaris', "Akira Kurosawa's Dreams"}
         test_tag = 'Foreign'
-        movies = [('Solaris', 1972), ("Akira Kurosawa's Dreams", 1972)]
+        movies = [database.TitleYear('Solaris', 1972),
+                  database.TitleYear("Akira Kurosawa's Dreams", 1972)]
         database.add_tag_and_links(test_tag, movies)
 
         movies = (session.query(database._Movie.title)
@@ -233,7 +234,7 @@ class TestTagOperations:
 
     def test_edit_tag(self, session):
         old_tag = 'old test tag'
-        movies = [('Solaris', 1972)]
+        movies = [database.TitleYear('Solaris', 1972)]
         database.add_tag_and_links(old_tag, movies)
         old_tag_id, tag = (session.query(database._Tag.id, database._Tag.tag)
                            .filter(database._Tag.tag == 'old test tag')
@@ -250,7 +251,8 @@ class TestTagOperations:
     def test_del_tag(self, session):
         # Add a tag and links
         test_tag = 'Going soon'
-        movies = [('Solaris', 1972), ('Hamlet', 1996)]
+        movies = [database.TitleYear('Solaris', 1972),
+                  database.TitleYear('Hamlet', 1996)]
         database.add_tag_and_links(test_tag, movies)
 
         # Delete the tag
