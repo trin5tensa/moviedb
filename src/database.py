@@ -1,7 +1,8 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 import datetime
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Iterable, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, Generator, Iterable, Optional
 
 import sqlalchemy
 import sqlalchemy.exc
@@ -36,6 +37,15 @@ Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
 
 
 # API Classes
+@dataclass
+class TitleYear:
+    """
+    A data dataclass.
+
+    This was created to clarify the typing of parameters
+    """
+    title: str
+    year: int
 
 
 # API Functions
@@ -116,43 +126,41 @@ def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
                        year=movie.year, notes=movie.notes, tag=tag)
 
 
-def edit_movie(title: str, year: int, updates: Dict[str, Any]):
+def edit_movie(title_year: TitleYear, updates: Dict[str, Any]):
     """Search for one movie and change one or more fields of that movie.
 
     Use edit_tag and edit_review to edit those fields.
 
     Args:
-        title: Movie title
-        year: Movie year
+        title_year: A TitleYear object
         updates: Dictionary of fields to be updated. See find_movies for detailed description.
             e.g. 'notes'-'Science Fiction'
     """
-    criteria = dict(title=title, year=year)
+    criteria = dict(title=title_year.title, year=title_year.year)
     with _session_scope() as session:
         # _build_movie_query(session, criteria).one().edit(updates)
         movie, tag = _build_movie_query(session, criteria).one()
         movie.edit(updates)
 
 
-def del_movie(title: str, year: int):
+def del_movie(title_year: TitleYear):
     """Change fields in records.
 
     Args:
-        title: Movie title
-        year: Movie year
+        title_year: A TitleYear object
     """
-    criteria = dict(title=title, year=year)
+    criteria = dict(title=title_year.title, year=title_year.year)
     with _session_scope() as session:
         movie, tag = _build_movie_query(session, criteria).one()
         session.delete(movie)
 
 
-def add_tag_and_links(new_tag: str, movies: Optional[Iterable[Tuple[str, int]]] = None):
+def add_tag_and_links(new_tag: str, movies: Optional[Iterable[TitleYear]] = None):
     """Add links between a tag and one or more movies. Create the tag if it does not exist..
 
     Args:
         new_tag:
-        movies: Tuples of a movie'a title and its year of release.
+        movies: Tuples of TitleYear objects.
     """
 
     # Add the tag unless it is already in the database.
@@ -166,9 +174,9 @@ def add_tag_and_links(new_tag: str, movies: Optional[Iterable[Tuple[str, int]]] 
         with _session_scope() as session:
             tag = session.query(_Tag).filter(_Tag.tag == new_tag).one()
 
-            for title, year in movies:
+            for title_year in movies:
                 movie = (session.query(_Movie)
-                         .filter(_Movie.title == title, _Movie.year == year)
+                         .filter(_Movie.title == title_year.title, _Movie.year == title_year.year)
                          .one())
                 movie.tags.append(tag)
 
