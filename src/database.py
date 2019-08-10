@@ -19,7 +19,7 @@ from sqlalchemy.orm.session import sessionmaker
 
 # Constants
 Base = sqlalchemy.ext.declarative.declarative_base()
-database_fn = 'movies.db'
+database_fn = 'movies.sqlite3'
 
 # Variables
 movie_tag = Table('movie_tag', Base.metadata,
@@ -223,16 +223,17 @@ class _Movie(Base):
 
     id = Column(Integer, Sequence('movie_id_sequence'), primary_key=True)
     title = Column(String(80), nullable=False)
-    director = Column(String(24), nullable=False)
-    minutes = Column(Integer, nullable=False)
+    director = Column(String(24))
+    minutes = Column(Integer)
     year = Column(Integer, CheckConstraint('year>1877'), CheckConstraint('year<10000'), nullable=False)
-    notes = Column(Text, default=None)
+    notes = Column(Text)
     UniqueConstraint(title, year)
 
     tags = relationship('_Tag', secondary='movie_tag', back_populates='movies', cascade='all')
     reviews = relationship('_Review', secondary='movie_review', back_populates='movies', cascade='all')
 
-    def __init__(self, title: str, director: str, minutes: int, year: int, notes: str = None):
+    def __init__(self, title: str, year: int, director: str = None,
+                 minutes: int = None, notes: str = None):
         self.title = title
         self.director = director
         self.minutes = minutes
@@ -241,8 +242,8 @@ class _Movie(Base):
 
     def __repr__(self):  # pragma: no cover
         return (self.__class__.__qualname__ +
-                f"(title={self.title!r}, director={self.director!r}, minutes={self.minutes!r}, "
-                f"year={self.year!r}, notes={self.notes!r})")
+                f"(title={self.title!r}, year={self.year!r}, "
+                f"director={self.director!r}, minutes={self.minutes!r}, notes={self.notes!r})")
 
     def add(self):
         """Add self to database. """
