@@ -49,11 +49,10 @@ def import_movies(fn: str):
     """
     # Create reject filename.
     root, _ = tuple(str(fn).split('.'))
-    reject_fn = root + '.reject'
+    reject_fn = root + 'reject.csv'
 
     # Set up reject coroutine.
-    reject_coroutine = write_reject_coroutine(reject_fn)
-    print('\nc50 reject_coroutine =', reject_coroutine)
+    reject_coroutine = write_csv_file(reject_fn)
     next(reject_coroutine)
 
     # Read import file.
@@ -66,23 +65,22 @@ def import_movies(fn: str):
         valid_len = len(headers)
 
         # Send bad header to reject file.
-        reject_coroutine.send('Data Error: Bad header row.')
         reject_coroutine.send(headers)
+        # reject_coroutine.send(', '.join(headers))
 
         for row in movies_reader:
-            movie = {k: v for (k, v) in zip(headers, row)}
+            movie = dict(zip(headers, row))
             print()
             print(movie['Title'])
             print(movie)
 
             # Send bad record to reject file.
-            reject_coroutine.send('Bad data row.')
-            reject_coroutine.send(movie)
+            reject_coroutine.send(row)
 
     print('\nc200 Calling reject_coroutine.close(). ')
     reject_coroutine.throw(CoroutineCloseException)
 
-    # moviedatabase-#43 Are essential header fields preseent
+    # moviedatabase-#43 Are essential header fields present
     # moviedatabase-#43 Are any invalid header fields present
     # moviedatabase-#43 Save required record length
     # moviedatabase-#43 Derive reject file name
@@ -96,17 +94,22 @@ def import_movies(fn: str):
 
 
 # Internal Module Functions
-def write_reject_coroutine(reject_fn: str):
-    print(f'mcr100 write_reject_coroutine has been called with {reject_fn}', )
-    with open(reject_fn, 'w+', encoding='utf-8') as csvfile:
-        print(f"mcr150: File '{reject_fn}' opened for writing.")
+def write_csv_file(fn: str):
+    """Write a csv file.
+
+    received = yield:
+        A csv row formatted as a list of strings. Each item will become part of a column in the csv
+        table.
+    """
+    with open(fn, 'w+', encoding='utf-8') as csvfile:
+        csv_writer = csv.writer(csvfile)
         while True:
             try:
                 received = yield
             except CoroutineCloseException:
-                print('mcr300 Ending write_reject_coroutine')
+                pass
             else:
-                print('mcr200 received =', received)
+                csv_writer.writerow(received)
 
 
 if __name__ == '__main__':
