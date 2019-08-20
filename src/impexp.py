@@ -2,12 +2,13 @@
 import csv
 import sys
 
-
 # Third party package imports
 
 
 # Project Imports
+from src.error import CoroutineCloseException
 import src.database as database
+
 
 # Constants
 
@@ -20,11 +21,6 @@ import src.database as database
 
 
 # API Classes
-# moviedatabase-#43 DayBreak
-#  Commit and push - which probably requires setting up PyCharm link to github
-#  Move this to the error.py module
-class CoroutineCloseException(Exception):
-    """AN exception which permits a caller to terminate a coroutine."""
 
 
 # API Functions
@@ -91,9 +87,9 @@ def import_movies(fn: str):
     # moviedatabase-#43 Save required record length
     # moviedatabase-#43 Derive reject file name
     # moviedatabase-#43 Loop through import file records
-        # moviedatabase-#43 Validate record length
-        # moviedatabase-#43 Call database.add_record
-        # moviedatabase-#43 Write reject record to reject file
+    # moviedatabase-#43 Validate record length
+    # moviedatabase-#43 Call database.add_record
+    # moviedatabase-#43 Write reject record to reject file
 
 
 # Internal Module Classes
@@ -111,6 +107,7 @@ def write_reject_coroutine(reject_fn: str):
                 print('mcr300 Ending write_reject_coroutine')
             else:
                 print('mcr200 received =', received)
+
 
 if __name__ == '__main__':
     # sys.exit(import_movies('moviedatabase.py'))
