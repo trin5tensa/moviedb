@@ -271,11 +271,17 @@ class _Movie(Base):
         Raises:
             Value Error: If any supplied keys are not valid column names.
         """
+        # noinspection PyUnresolvedReferences
         valid_columns = set(cls.__table__.columns.keys()) | {'tags'}
         invalid_keys = set(columns) - valid_columns
         if invalid_keys:
             msg = f"Invalid attribute '{invalid_keys}'."
             raise ValueError(msg)
+
+    @classmethod
+    def valid_import_columns(cls):
+        """Return a set of columns which may be used for importing data."""
+        return set(cls.__table__.columns.keys()) - {'id'}
 
 
 class _Tag(Base):
@@ -340,6 +346,7 @@ class _Review(Base):
 def _session_scope():
     """Provide a session scope around a series of operations."""
     session = Session()
+    # noinspection PyPep8
     try:
         yield session
         session.commit()

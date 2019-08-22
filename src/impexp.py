@@ -1,4 +1,5 @@
 # Python package imports
+# TODO Remove layout reminder comments.
 import csv
 import sys
 
@@ -8,12 +9,11 @@ import sys
 # Project Imports
 from src.error import CoroutineCloseException
 import src.database as database
+import src.utilities as utilities
 
 
 # Constants
-
-
-# Variables
+REQUIRED_HEADERS = {'title', 'year'}
 
 
 # Pure data Dataclasses
@@ -28,8 +28,8 @@ def import_movies(fn: str):
     """Import a csv file into the database.
 
     File format
-    The first record will be a header row which must contain the column names 'title' and 'director'.
-    It may contain column names 'minutes', 'year', and 'notes'.
+    The first record will be a header row which must contain the column names 'title' and 'year'.
+    It may contain column names 'minutes', 'director', and 'notes'.
     Subsequent records must match the first row in number  of items and their position in the row.
 
     Validation
@@ -39,63 +39,81 @@ def import_movies(fn: str):
 
     Output FIle
     Rejected records will be written to a file of the same name with a suffix of '.reject'.
-    The header row will be written to that file as the first record.
+    The valid header row will be written to that file as the first record as a convenience.
 
     Args:
         fn:
 
     Raises:
+        ValueError if the header has invalid column names or if required column names are missing.
 
     """
     # Create reject filename.
     root, _ = tuple(str(fn).split('.'))
-    reject_fn = root + 'reject.csv'
+    reject_fn = root + '_reject.csv'
 
-    # Set up reject coroutine.
+    # Set up reject file writer.
     reject_coroutine = write_csv_file(reject_fn)
-    next(reject_coroutine)
 
     # Read import file.
     with open(fn, newline='', encoding='utf-8') as csvfile:
         movies_reader = csv.reader(csvfile)
 
-        # Validate headers.
+        # Get headers and validate.
         headers = next(movies_reader)
-        print('\nc100', headers)
+        headers = list(map(str.lower, headers))
+        # moviedatabase-#43 Replace with new API function valid_movie_columns.
+        valid_columns = database._Movie.valid_import_columns()
+
+        # Are 'title' and 'year' present?
+        # moviedatabase-#43 Try removing this title validation and using a 'try' around
+        #  database.add_movie.
+        missing_header = REQUIRED_HEADERS - set(headers)
+        if missing_header:
+            missing_header = ', '.join(missing_header)
+            msg = f"Required column(s) '{missing_header}' is or are missing from the header record."
+            # moviedatabase-#50 Add logging
+            raise ValueError(msg)
+
+        # Are there any fields which should not be present?
+        # moviedatabase-#43 Try removing this title validation and using a 'try' around
+        #  database.add_movie.
+        wrong_headers = set(headers) - valid_columns
+        if wrong_headers:
+            wrong_headers = ', '.join(wrong_headers)
+            msg = f"Invalid column name(s) '{wrong_headers}'."
+            # moviedatabase-#50 Add logging
+            raise ValueError(msg)
+
+        # Write valid headers to reject file.
+        reject_coroutine.send(headers)
         valid_len = len(headers)
 
-        # Send bad header to reject file.
-        reject_coroutine.send(headers)
-        # reject_coroutine.send(', '.join(headers))
-
         for row in movies_reader:
+            # Validate row length
+            if len(row) != valid_len:
+                # moviedatabase-#50 Add logging
+                reject_coroutine.send(row)
+                continue
+
+            # Write movie to database
             movie = dict(zip(headers, row))
-            print()
-            print(movie['Title'])
-            print(movie)
+            try:
+                database.add_movie(movie)
+            except database.sqlalchemy.exc.IntegrityError:
+                # moviedatabase-#50 Add logging
+                reject_coroutine.send(row)
 
-            # Send bad record to reject file.
-            reject_coroutine.send(row)
-
-    print('\nc200 Calling reject_coroutine.close(). ')
+    # moviedatabase-#43 CoroutineCloseException not necessary - remove
     reject_coroutine.throw(CoroutineCloseException)
-
-    # moviedatabase-#43 Are essential header fields present
-    # moviedatabase-#43 Are any invalid header fields present
-    # moviedatabase-#43 Save required record length
-    # moviedatabase-#43 Derive reject file name
-    # moviedatabase-#43 Loop through import file records
-    # moviedatabase-#43 Validate record length
-    # moviedatabase-#43 Call database.add_record
-    # moviedatabase-#43 Write reject record to reject file
 
 
 # Internal Module Classes
 
 
-# Internal Module Functions
+@utilities.coroutine_primer
 def write_csv_file(fn: str):
-    """Write a csv file.
+    """Coroutine: Write a csv file.
 
     received = yield:
         A csv row formatted as a list of strings. Each item will become part of a column in the csv
@@ -106,12 +124,17 @@ def write_csv_file(fn: str):
         while True:
             try:
                 received = yield
+            # moviedatabase-#43 CoroutineCloseException not necessary - remove
             except CoroutineCloseException:
                 pass
             else:
                 csv_writer.writerow(received)
 
 
+def main():
+    database.connect_to_database()
+    import_movies('movies.csv')
+
+
 if __name__ == '__main__':
-    # sys.exit(import_movies('moviedatabase.py'))
-    sys.exit(import_movies('movies.csv'))
+    sys.exit(main())
