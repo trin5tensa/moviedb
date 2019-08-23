@@ -1,4 +1,5 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
+# TODO Remove layout reminder comments.
 import datetime
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -82,8 +83,11 @@ def add_movie(movie: Dict):
     """Add a movie to the database
 
     Args:
-        movie: A dictionary which must contain title, director, minutes, and year.
-        It may contain notes.
+        movie: A dictionary which must contain keys of title and year.
+        It may contain keys of director, minutes, and notes.
+
+    Raises:
+        TypeError if required keys are missing or invalid keys are present.
     """
     _Movie(**movie).add()
 
@@ -271,10 +275,12 @@ class _Movie(Base):
         Raises:
             Value Error: If any supplied keys are not valid column names.
         """
+        # noinspection PyUnresolvedReferences
         valid_columns = set(cls.__table__.columns.keys()) | {'tags'}
         invalid_keys = set(columns) - valid_columns
         if invalid_keys:
             msg = f"Invalid attribute '{invalid_keys}'."
+            # moviedatabase-#50 Add logging
             raise ValueError(msg)
 
 
@@ -340,11 +346,13 @@ class _Review(Base):
 def _session_scope():
     """Provide a session scope around a series of operations."""
     session = Session()
+    # noinspection PyPep8
     try:
         yield session
         session.commit()
     except:
         session.rollback()
+        # moviedatabase-#50 Add logging
         raise
     finally:
         session.close()
