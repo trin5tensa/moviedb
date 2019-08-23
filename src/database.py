@@ -1,4 +1,5 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
+# TODO Remove layout reminder comments.
 import datetime
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -82,8 +83,11 @@ def add_movie(movie: Dict):
     """Add a movie to the database
 
     Args:
-        movie: A dictionary which must contain title, director, minutes, and year.
-        It may contain notes.
+        movie: A dictionary which must contain keys of title and year.
+        It may contain keys of director, minutes, and notes.
+
+    Raises:
+        TypeError if required keys are missing or invalid keys are present.
     """
     _Movie(**movie).add()
 
@@ -276,12 +280,8 @@ class _Movie(Base):
         invalid_keys = set(columns) - valid_columns
         if invalid_keys:
             msg = f"Invalid attribute '{invalid_keys}'."
+            # moviedatabase-#50 Add logging
             raise ValueError(msg)
-
-    @classmethod
-    def valid_import_columns(cls):
-        """Return a set of columns which may be used for importing data."""
-        return set(cls.__table__.columns.keys()) - {'id'}
 
 
 class _Tag(Base):
@@ -352,6 +352,7 @@ def _session_scope():
         session.commit()
     except:
         session.rollback()
+        # moviedatabase-#50 Add logging
         raise
     finally:
         session.close()

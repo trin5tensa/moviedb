@@ -3,12 +3,17 @@ import pytest
 
 import src.impexp as impexp
 
+
 GOOD_DATA = """title,year,minutes,notes
 Hamlet,1996,242,
 Revanche,2008,122,Oscar nominated"""
-NO_TITLE = 'year,director,minutes,notes,'
+NO_TITLE = """year,minutes,notes
+Hamlet,1996,242
+"""
 NO_YEAR = 'title,director,minutes,notes,'
-BAD_COLUMN = 'garbage'
+BAD_COLUMN = """title,year,garbage
+Hamlet,1996,242
+"""
 BAD_FIELD = """title,year
 Hamlet,1996,Branagh,242,this always will be,garbage,
 """
@@ -22,38 +27,6 @@ def path(tmpdir_factory):
     """Create a temporary directory."""
     path = tmpdir_factory.mktemp('tempdir')
     return path
-
-
-def test_missing_title_validation(path):
-    """Test validation of compulsory field 'title'. """
-    expected = f"Required column(s) 'title' is or are missing from the header record."
-    no_title_fn = path / 'no_title.csv'
-    no_title_fn.write(NO_TITLE)
-    with pytest.raises(ValueError) as exception:
-        impexp.import_movies(no_title_fn)
-    assert exception.value.args[0] == expected
-
-
-def test_year_validation(path):
-    """Test validation of compulsory field 'title'. """
-    expected = f"Required column(s) 'year' is or are missing from the header record."
-    no_year_fn = path / 'no_year.csv'
-    no_year_fn.write(NO_YEAR)
-    with pytest.raises(ValueError) as exception:
-        impexp.import_movies(no_year_fn)
-    assert exception.type is ValueError
-    assert exception.value.args[0] == expected
-
-
-def test_invalid_field_validation(path):
-    """Test validation of invalid field."""
-    expected = f"Invalid column name(s) '{BAD_COLUMN.strip(',')}'."
-    bad_column_fn = path / 'bad_column.csv'
-    bad_column_fn.write(BAD_COLUMN + ',' + ','.join(impexp.REQUIRED_HEADERS))
-    with pytest.raises(ValueError) as exception:
-        impexp.import_movies(bad_column_fn)
-    assert exception.type is ValueError
-    assert exception.value.args[0] == expected
 
 
 def test_row_length_validation(path):
@@ -81,6 +54,38 @@ def test_add_movie_called(path, monkeypatch):
 
     impexp.import_movies(good_data_fn)
     assert calls == expected
+
+
+def test_invalid_field_validation(path, monkeypatch):
+    """Test validation of invalid field."""
+
+    # noinspection PyUnusedLocal
+    def mock_add_movie(movie: dict):
+        """"""
+        raise TypeError
+
+    monkeypatch.setattr(impexp.database, 'add_movie', mock_add_movie, raising=True)
+    bad_column_fn = path / 'bad_column.csv'
+    bad_column_fn.write(BAD_COLUMN)
+    impexp.import_movies(bad_column_fn)
+    reject_fn = path / 'bad_column_reject.csv'
+    assert reject_fn.read() == BAD_COLUMN
+
+
+def test_missing_required_key(path, monkeypatch):
+    """Test validation of compulsory field 'title'. """
+
+    # noinspection PyUnusedLocal
+    def mock_add_movie(movie: dict):
+        """Accumulate the arguments of each call in an external list. """
+        raise TypeError
+
+    monkeypatch.setattr(impexp.database, 'add_movie', mock_add_movie, raising=True)
+    no_title_fn = path / 'no_title.csv'
+    no_title_fn.write(NO_TITLE)
+    impexp.import_movies(no_title_fn)
+    reject_fn = path / 'no_title_reject.csv'
+    assert reject_fn.read() == NO_TITLE
 
 
 def test_database_integrity_violation(path, monkeypatch):
