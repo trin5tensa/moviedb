@@ -55,7 +55,7 @@ def import_movies(fn: str):
         for row in movies_reader:
             # Validate row length
             if len(row) != valid_len:
-                # moviedatabase-#50 Add logging
+                reject_coroutine.send(("Row has too many or too few items.",))
                 reject_coroutine.send(row)
                 continue
 
@@ -63,12 +63,15 @@ def import_movies(fn: str):
             movie = dict(zip(headers, row))
             try:
                 database.add_movie(movie)
-            except TypeError:
-                # moviedatabase-#50 Add logging
+
+            except database.sqlalchemy.exc.IntegrityError as exception:
+                reject_coroutine.send((str(exception),))
                 reject_coroutine.send(row)
-            except database.sqlalchemy.exc.IntegrityError:
-                # moviedatabase-#50 Add logging
-                reject_coroutine.send(row)
+
+            # TypeError is raised by faulty headers so halt row processing.
+            except TypeError as exception:
+                reject_coroutine.send((str(exception),))
+                break
 
 
 @utilities.coroutine_primer
@@ -86,10 +89,12 @@ def write_csv_file(fn: str):
             csv_writer.writerow(received)
 
 
+# moviedatabase-#46 remove this function
 def main():  # pragma: no cover
     database.connect_to_database()
     import_movies('movies.csv')
 
 
+# moviedatabase-#46 remove this function
 if __name__ == '__main__':  # pragma: no cover
     sys.exit(main())
