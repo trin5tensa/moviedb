@@ -31,11 +31,14 @@ def path(tmpdir_factory):
 
 def test_row_length_validation(path):
     """Test validation of correct number of fields in data row."""
+    expected = ("title,year\n"
+                "Row has too many or too few items.\n"
+                "Hamlet,1996,Branagh,242,this always will be,garbage,\n")
     bad_field_fn = path / 'bad_field.csv'
     bad_field_fn.write(BAD_FIELD)
     reject_fn = path / 'bad_field_reject.csv'
     impexp.import_movies(bad_field_fn)
-    assert reject_fn.read() == BAD_FIELD
+    assert reject_fn.read() == expected
 
 
 def test_add_movie_called(path, monkeypatch):
@@ -56,41 +59,31 @@ def test_add_movie_called(path, monkeypatch):
     assert calls == expected
 
 
-def test_invalid_field_validation(path, monkeypatch):
+def test_column_heading_validation(path, monkeypatch):
     """Test validation of invalid field."""
+    expected = "title,year,garbage\ntest error message\n"
 
     # noinspection PyUnusedLocal
     def mock_add_movie(movie: dict):
         """"""
-        raise TypeError
+        raise TypeError("test error message")
 
     monkeypatch.setattr(impexp.database, 'add_movie', mock_add_movie, raising=True)
     bad_column_fn = path / 'bad_column.csv'
     bad_column_fn.write(BAD_COLUMN)
     impexp.import_movies(bad_column_fn)
     reject_fn = path / 'bad_column_reject.csv'
-    assert reject_fn.read() == BAD_COLUMN
-
-
-def test_missing_required_key(path, monkeypatch):
-    """Test validation of compulsory field 'title'. """
-
-    # noinspection PyUnusedLocal
-    def mock_add_movie(movie: dict):
-        """Accumulate the arguments of each call in an external list. """
-        raise TypeError
-
-    monkeypatch.setattr(impexp.database, 'add_movie', mock_add_movie, raising=True)
-    no_title_fn = path / 'no_title.csv'
-    no_title_fn.write(NO_TITLE)
-    impexp.import_movies(no_title_fn)
-    reject_fn = path / 'no_title_reject.csv'
-    assert reject_fn.read() == NO_TITLE
+    assert reject_fn.read() == expected
 
 
 def test_database_integrity_violation(path, monkeypatch):
     """Test database integrity violation causes record rejection."""
-    expected = 'title,year,notes\nHamlet,1996,2\n'
+    expected = ('title,year,notes\n'
+                '"(builtins.int) 3\n'
+                '[SQL: 1]\n'
+                '[parameters: 2]\n'
+                '(Background on this error at: http://sqlalche.me/e/gkpj)"\n'
+                'Hamlet,1996,2\n')
     calls = []
 
     def mock_add_movie(movie: dict):
