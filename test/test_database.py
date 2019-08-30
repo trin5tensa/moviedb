@@ -1,10 +1,11 @@
 """Functional pytests for database module. """
+#  Copyright© 2019. Stephen Rigden.
 from typing import Dict
 
 import pytest
 import sqlalchemy.orm.exc
 
-import src.database as database
+import database
 
 
 @pytest.fixture()

@@ -1,7 +1,8 @@
-"""Unit pytests for import module."""
+"""Tests for import module."""
+#  Copyright© 2019. Stephen Rigden.
 import pytest
 
-import src.impexp as impexp
+import impexp
 
 
 GOOD_DATA = """title,year,minutes,notes

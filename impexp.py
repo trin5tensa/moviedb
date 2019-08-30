@@ -1,9 +1,12 @@
 # Python package imports
+# moviedatabase-#46 Add copyright
+
+#  Copyright© 2019. Stephen Rigden.
 import csv
 import sys
 
-import src.database as database
-import src.utilities as utilities
+import database
+import utilities
 
 
 REQUIRED_HEADERS = {'title', 'year'}
