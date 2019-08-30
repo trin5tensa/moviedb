@@ -1,4 +1,5 @@
 """A collection of general purpose code."""
+#  Copyright© 2019. Stephen Rigden.
 from functools import wraps
 from typing import Callable
 

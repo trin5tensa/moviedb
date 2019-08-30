@@ -1,5 +1,6 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
-# TODO Remove layout reminder comments.
+#  Copyright© 2019. Stephen Rigden.
+
 import datetime
 from contextlib import contextmanager
 from dataclasses import dataclass
