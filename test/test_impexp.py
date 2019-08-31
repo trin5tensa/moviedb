@@ -62,11 +62,16 @@ def test_add_movie_called(path, monkeypatch):
 
 def test_column_heading_validation(path, monkeypatch):
     """Test validation of invalid field."""
-    expected = "title,year,garbage\ntest error message\n"
+    expected = ('title,year,garbage\n'
+                '"TypeError: The header row is bad.\n'
+                'It is missing a required column, has an invalid column, '
+                'or has a blank column.\n'
+                'Note that only the first error is reported.\n'
+                'test error message"\n')
 
     # noinspection PyUnusedLocal
     def mock_add_movie(movie: dict):
-        """"""
+        """Test dummy: Raise error"""
         raise TypeError("test error message")
 
     monkeypatch.setattr(impexp.database, 'add_movie', mock_add_movie, raising=True)

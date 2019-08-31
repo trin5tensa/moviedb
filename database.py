@@ -226,6 +226,9 @@ class _Movie(Base):
     """Movies table schema."""
     __tablename__ = 'movies'
 
+    # moviedatabase-#53
+    #   Blank titles are not flagged as integrity violation
+    #   Non integer minutes are not flagged as integrity violation
     id = Column(Integer, Sequence('movie_id_sequence'), primary_key=True)
     title = Column(String(80), nullable=False)
     director = Column(String(24))

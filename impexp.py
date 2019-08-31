@@ -67,13 +67,21 @@ def import_movies(fn: str):
             try:
                 database.add_movie(movie)
 
+            # moviedatabase-#53
+            #   Test handling of database integrity violations.
+
             except database.sqlalchemy.exc.IntegrityError as exception:
                 reject_coroutine.send((str(exception),))
                 reject_coroutine.send(row)
 
             # TypeError is raised by faulty headers so halt row processing.
             except TypeError as exception:
-                reject_coroutine.send((str(exception),))
+                msg = ("TypeError: The header row is bad.\n"
+                       "It is missing a required column, has an invalid column, or has a "
+                       "blank column.\n"
+                       "Note that only the first error is reported.\n"
+                       f"{exception!s}")
+                reject_coroutine.send((msg,))
                 break
 
 
