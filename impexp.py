@@ -1,15 +1,35 @@
-# Python package imports
-# moviedatabase-#46 Add copyright
+"""Import and export data."""
+
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #  Copyright© 2019. Stephen Rigden.
+#  Last modified 9/3/19, 7:43 AM by stephen.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import csv
 import sys
 
 import database
 import utilities
-
-
-REQUIRED_HEADERS = {'title', 'year'}
 
 
 def import_movies(fn: str):
@@ -67,20 +87,22 @@ def import_movies(fn: str):
             try:
                 database.add_movie(movie)
 
-            # moviedatabase-#53
-            #   Test handling of database integrity violations.
-
             except database.sqlalchemy.exc.IntegrityError as exception:
                 reject_coroutine.send((str(exception),))
                 reject_coroutine.send(row)
 
+            # ValueError is raised by invalid row values.
+            except ValueError:
+                reject_coroutine.send((f'{sys.exc_info()[0].__name__}: {sys.exc_info()[1]}',))
+                reject_coroutine.send(row)
+
             # TypeError is raised by faulty headers so halt row processing.
-            except TypeError as exception:
-                msg = ("TypeError: The header row is bad.\n"
+            except TypeError:
+                msg = (f"{sys.exc_info()[0].__name__}: The header row is bad.\n"
                        "It is missing a required column, has an invalid column, or has a "
                        "blank column.\n"
                        "Note that only the first error is reported.\n"
-                       f"{exception!s}")
+                       f"{sys.exc_info()[1]}")
                 reject_coroutine.send((msg,))
                 break
 

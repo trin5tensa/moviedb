@@ -1,5 +1,30 @@
 """Tests for import module."""
+
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #  Copyright© 2019. Stephen Rigden.
+#  Last modified 9/3/19, 7:47 AM by stephen.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 
 import impexp
@@ -21,6 +46,8 @@ Hamlet,1996,Branagh,242,this always will be,garbage,
 VIOLATION_DATA = """title,year,notes
 Hamlet,1996,1
 Hamlet,1996,2"""
+BAD_ROW_DATA = """title,year,notes
+Hamlet,1996,1"""
 
 
 @pytest.fixture(scope='session')
@@ -101,6 +128,25 @@ def test_database_integrity_violation(path, monkeypatch):
     monkeypatch.setattr(impexp.database, 'add_movie', mock_add_movie, raising=True)
     violation_data_fn = path / 'violation_data.csv'
     violation_data_fn.write(VIOLATION_DATA)
+    reject_fn = path / 'violation_data_reject.csv'
+    impexp.import_movies(violation_data_fn)
+    assert reject_fn.read() == expected
+
+
+def test_invalid_row_values(path, monkeypatch):
+    """Test database integrity violation causes record rejection."""
+    error_msg = 'Oops, I did it again'
+    expected = ('title,year,notes\n'
+                f'"ValueError: {error_msg}"\n'
+                'Hamlet,1996,1\n')
+
+    def mock_add_movie(movie: dict):
+        """Accumulate the arguments of each call in an external list. """
+        raise ValueError(error_msg)
+
+    monkeypatch.setattr(impexp.database, 'add_movie', mock_add_movie, raising=True)
+    violation_data_fn = path / 'violation_data.csv'
+    violation_data_fn.write(BAD_ROW_DATA)
     reject_fn = path / 'violation_data_reject.csv'
     impexp.import_movies(violation_data_fn)
     assert reject_fn.read() == expected

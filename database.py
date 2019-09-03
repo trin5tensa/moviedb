@@ -1,7 +1,32 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
-#  Copyright© 2019. Stephen Rigden.
 
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#  Copyright© 2019. Stephen Rigden.
+#  Last modified 9/3/19, 7:42 AM by stephen.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import datetime
+import itertools
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Dict, Generator, Iterable, Optional
@@ -226,9 +251,6 @@ class _Movie(Base):
     """Movies table schema."""
     __tablename__ = 'movies'
 
-    # moviedatabase-#53
-    #   Blank titles are not flagged as integrity violation
-    #   Non integer minutes are not flagged as integrity violation
     id = Column(Integer, Sequence('movie_id_sequence'), primary_key=True)
     title = Column(String(80), nullable=False)
     director = Column(String(24))
@@ -242,6 +264,15 @@ class _Movie(Base):
 
     def __init__(self, title: str, year: int, director: str = None,
                  minutes: int = None, notes: str = None):
+
+        # Carry out validation which is not done by SQLAlchemy or sqlite3
+        null_strings = set(itertools.filterfalse(lambda arg: arg != '', [title, year]))
+        if null_strings == {''}:
+            msg = 'Null values (empty strings) in row.'
+            raise ValueError(msg)
+        # noinspection PyStatementEffect
+        {int(arg) for arg in [minutes, year]}
+
         self.title = title
         self.director = director
         self.minutes = minutes
