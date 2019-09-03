@@ -21,15 +21,21 @@ def main():
     """Command line parse and dispatch."""
     args = _command_line_args()
 
+    # Intercept empty string (which is accepted by argparse as a valid filename).
+    if not args.filename:
+        raise ValueError("moviedatabase.py: the following arguments are required: filename")
+
+    non_default_database = args.database == '' or args.database
+
     if args.verbosity >= 1:
         print(f"Running {__file__}")
         print(f'Loading movies from {args.filename}')
-        if args.database:
+        if non_default_database:
             print(f"Adding movies to database '{args.database}'.")
         else:
             print("Adding movies to the default database.")
 
-    if args.database:
+    if non_default_database:
         database.connect_to_database(args.database)
     else:
         database.connect_to_database()

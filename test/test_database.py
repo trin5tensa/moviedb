@@ -1,5 +1,29 @@
 """Functional pytests for database module. """
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #  Copyright© 2019. Stephen Rigden.
+#  Last modified 9/3/19, 7:44 AM by stephen.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from typing import Dict
 
 import pytest
@@ -62,6 +86,7 @@ def loaded_database(hamlet, solaris, dreams, revanche):
 
 
 def test_session_rollback(connection):
+    # moviedatabase-#60 Refactor this test
     with pytest.raises(ZeroDivisionError):
         with database._session_scope() as session:
             database._build_movie_query(session, dict(minutes=[169]))
@@ -105,6 +130,23 @@ def test_add_movie(connection, session, hamlet):
                             database._Movie.year, )
               .one())
     assert result == expected
+
+
+def test_add_movie_with_empty_title_string(connection, session):
+    expected = 'Null values (empty strings) in row.'
+    bad_row = dict(title='Hamlet', director='Branagh', minutes=242, year='')
+    with pytest.raises(ValueError) as exception:
+        database.add_movie(bad_row)
+    assert str(exception.value) == expected
+
+
+def test_add_movie_with_non_numeric_values(connection, session):
+    bad_int = 'forty two'
+    expected = f"invalid literal for int() with base 10: '{bad_int}'"
+    bad_row = dict(title='Hamlet', director='Branagh', minutes=bad_int, year='1942')
+    with pytest.raises(ValueError) as exception:
+        database.add_movie(bad_row)
+    assert str(exception.value) == expected
 
 
 def test_add_movie_with_notes(connection, session, revanche):
