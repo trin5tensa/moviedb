@@ -1,5 +1,18 @@
 """Tests for import module."""
 
+#  Copyright© 2019. Stephen Rigden.
+#  Last modified 9/5/19, 7:31 AM by stephen.
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -12,19 +25,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/3/19, 7:47 AM by stephen.
-#
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 
 import impexp
@@ -65,7 +65,8 @@ def test_row_length_validation(path):
     bad_field_fn = path / 'bad_field.csv'
     bad_field_fn.write(BAD_FIELD)
     reject_fn = path / 'bad_field_reject.csv'
-    impexp.import_movies(bad_field_fn)
+    with pytest.raises(impexp.MoviedbInvalidImportData):
+        impexp.import_movies(bad_field_fn)
     assert reject_fn.read() == expected
 
 
@@ -104,7 +105,8 @@ def test_column_heading_validation(path, monkeypatch):
     monkeypatch.setattr(impexp.database, 'add_movie', mock_add_movie, raising=True)
     bad_column_fn = path / 'bad_column.csv'
     bad_column_fn.write(BAD_COLUMN)
-    impexp.import_movies(bad_column_fn)
+    with pytest.raises(impexp.MoviedbInvalidImportData):
+        impexp.import_movies(bad_column_fn)
     reject_fn = path / 'bad_column_reject.csv'
     assert reject_fn.read() == expected
 
@@ -129,7 +131,8 @@ def test_database_integrity_violation(path, monkeypatch):
     violation_data_fn = path / 'violation_data.csv'
     violation_data_fn.write(VIOLATION_DATA)
     reject_fn = path / 'violation_data_reject.csv'
-    impexp.import_movies(violation_data_fn)
+    with pytest.raises(impexp.MoviedbInvalidImportData):
+        impexp.import_movies(violation_data_fn)
     assert reject_fn.read() == expected
 
 
@@ -148,5 +151,6 @@ def test_invalid_row_values(path, monkeypatch):
     violation_data_fn = path / 'violation_data.csv'
     violation_data_fn.write(BAD_ROW_DATA)
     reject_fn = path / 'violation_data_reject.csv'
-    impexp.import_movies(violation_data_fn)
+    with pytest.raises(impexp.MoviedbInvalidImportData):
+        impexp.import_movies(violation_data_fn)
     assert reject_fn.read() == expected
