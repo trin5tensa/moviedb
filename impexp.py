@@ -1,7 +1,7 @@
 """Import and export data."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/5/19, 7:59 AM by stephen.
+#  Last modified 9/6/19, 8:41 AM by stephen.
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -24,13 +24,14 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import csv
 import sys
-from typing import List, Tuple, Callable
+from typing import List, Callable, Tuple
 
 import database
-from error import MoviedbInvalidImportData
 import utilities
+from error import MoviedbInvalidImportData
 
 
 def import_movies(fn: str):
@@ -57,13 +58,8 @@ def import_movies(fn: str):
         ValueError if the header has invalid column names or if required column names are missing.
 
     """
-    good_input = True
+    reject_file_created = False
 
-    # Create reject filename.
-    root, _ = tuple(str(fn).split('.'))
-    reject_fn = root + '_reject.csv'
-
-    # Read import file.
     with open(fn, newline='', encoding='utf-8') as csvfile:
         movies_reader = csv.reader(csvfile)
 
@@ -71,16 +67,14 @@ def import_movies(fn: str):
         header_row = next(movies_reader)
         header_row = list(map(str.lower, header_row))
         valid_len = len(header_row)
+        write_reject_file = create_reject_file(fn, header_row)
 
         for row in movies_reader:
             # Validate row length
             if len(row) != valid_len:
-                # moviedatabase-#57 DRY reduction
-                if good_input:
-                    good_input = False
-                    reject_coroutine = write_csv_file(reject_fn, header_row)
-                reject_coroutine.send(("Row has too many or too few items.",))
-                reject_coroutine.send(row)
+                msg = ("Row has too many or too few items.",)
+                write_reject_file(msg, row)
+                reject_file_created = True
                 continue
 
             # Write movie to database
@@ -89,39 +83,48 @@ def import_movies(fn: str):
                 database.add_movie(movie)
 
             except database.sqlalchemy.exc.IntegrityError as exception:
-                # moviedatabase-#57 DRY reduction
-                if good_input:
-                    good_input = False
-                    reject_coroutine = write_csv_file(reject_fn, header_row)
-                reject_coroutine.send((str(exception),))
-                reject_coroutine.send(row)
+                msg = (str(exception),)
+                write_reject_file(msg, row)
+                reject_file_created = True
 
             # ValueError is raised by invalid row values.
             except ValueError:
-                # moviedatabase-#57 DRY reduction
-                if good_input:
-                    good_input = False
-                    reject_coroutine = write_csv_file(reject_fn, header_row)
-                reject_coroutine.send((f'{sys.exc_info()[0].__name__}: {sys.exc_info()[1]}',))
-                reject_coroutine.send(row)
+                msg = (f'{sys.exc_info()[0].__name__}: {sys.exc_info()[1]}',)
+                write_reject_file(msg, row)
+                reject_file_created = True
 
             # TypeError is raised by faulty headers so halt row processing.
             except TypeError:
-                # moviedatabase-#57 DRY reduction
-                if good_input:
-                    good_input = False
-                    reject_coroutine = write_csv_file(reject_fn, header_row)
                 msg = (f"{sys.exc_info()[0].__name__}: The header row is bad.\n"
                        "It is missing a required column, has an invalid column, or has a "
                        "blank column.\n"
                        "Note that only the first error is reported.\n"
-                       f"{sys.exc_info()[1]}")
-                reject_coroutine.send((msg,))
+                       f"{sys.exc_info()[1]}"),
+                row = ('',)
+                write_reject_file(msg, row)
+                reject_file_created = True
                 break
 
-    if not good_input:
+    # Let the user know there if there are input data problems which need fixing.
+    if reject_file_created:
         msg = f"The import file '{fn}' has invalid data. See reject file for details."
         raise MoviedbInvalidImportData(msg)
+
+
+def create_reject_file(fn: str, header_row: List[str]) -> Callable:
+    root, _ = tuple(str(fn).split('.'))
+    reject_fn = root + '_reject.csv'
+    good_input = True
+    reject_coroutine = None
+
+    def wrapped(msg: Tuple[str], row: Tuple[str]):
+        nonlocal good_input, reject_coroutine
+        if good_input:
+            good_input = False
+            reject_coroutine = write_csv_file(reject_fn, header_row)
+        reject_coroutine.send(msg)
+        reject_coroutine.send(row)
+    return wrapped
 
 
 @utilities.coroutine_primer

@@ -1,7 +1,7 @@
 """Tests for import module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/5/19, 7:31 AM by stephen.
+#  Last modified 9/6/19, 8:25 AM by stephen.
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -95,7 +95,7 @@ def test_column_heading_validation(path, monkeypatch):
                 'It is missing a required column, has an invalid column, '
                 'or has a blank column.\n'
                 'Note that only the first error is reported.\n'
-                'test error message"\n')
+                'test error message"\n""\n')
 
     # noinspection PyUnusedLocal
     def mock_add_movie(movie: dict):
@@ -111,6 +111,7 @@ def test_column_heading_validation(path, monkeypatch):
     assert reject_fn.read() == expected
 
 
+# noinspection DuplicatedCode
 def test_database_integrity_violation(path, monkeypatch):
     """Test database integrity violation causes record rejection."""
     expected = ('title,year,notes\n'
@@ -136,6 +137,7 @@ def test_database_integrity_violation(path, monkeypatch):
     assert reject_fn.read() == expected
 
 
+# noinspection DuplicatedCode
 def test_invalid_row_values(path, monkeypatch):
     """Test database integrity violation causes record rejection."""
     error_msg = 'Oops, I did it again'
@@ -144,7 +146,7 @@ def test_invalid_row_values(path, monkeypatch):
                 'Hamlet,1996,1\n')
 
     def mock_add_movie(movie: dict):
-        """Accumulate the arguments of each call in an external list. """
+        """Force add_movie call to raise ValueError."""
         raise ValueError(error_msg)
 
     monkeypatch.setattr(impexp.database, 'add_movie', mock_add_movie, raising=True)
