@@ -1,7 +1,7 @@
 """Tests for moviedatabase."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/6/19, 9:06 AM by stephen.
+#  Last modified 9/7/19, 8:58 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -37,7 +37,7 @@ class ArgParser:
 
 
 def test_missing_filename_raises_error(monkeypatch):
-    expected = 'moviedatabase.py: the following arguments are required: filename'
+    expected = 'moviedb.py: the following arguments are required: filename'
     monkeypatch.setattr(moviedatabase, '_command_line_args', ArgParser(filename=''))
     monkeypatch.setattr(moviedatabase.database, 'connect_to_database', lambda: None)
     monkeypatch.setattr(moviedatabase.impexp, 'import_movies', lambda *args: None)

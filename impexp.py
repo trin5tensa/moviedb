@@ -1,7 +1,7 @@
 """Import and export data."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/6/19, 9:07 AM by stephen.
+#  Last modified 9/7/19, 8:59 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -28,23 +28,25 @@ def import_movies(fn: str):
     File format
     The first record will be a header row which must contain the column names 'title' and 'year'.
     It may contain column names 'minutes', 'director', and 'notes'.
-    Subsequent records must match the first row in number  of items and their position in the row.
+    The fields of each row must comply with the columns defined by the headed row.
 
     Validation
     The entire file will be rejected if there are any invalid names in the first row.
-    Individual records will be rejected if they are the wrong length.
-    They will also be rejected if they violate database integrity rules.
+    Individual records will be rejected if they are the wrong length or if they violate
+    the database's integrity rules.
 
     Output FIle
     Rejected records will be written to a file of the same name with a suffix of '.reject'.
-    The valid header row will be written to that file as the first record as a convenience.
+    The valid header row will be written to that file as the first record as a convenience to the user.
 
     Args:
         fn: Name of import file.
 
     Raises:
-        ValueError if the header has invalid column names or if required column names are missing.
-
+        ValueError if the rows contain invalid values. (These are caught during initialization of a
+        _Movie object as they are not intercepted as sqlite3 integrity violations.)
+        TypeError if the header has invalid column names or if required column names are missing.
+        database.sqlalchemy.exc.IntegrityError
     """
     reject_file_created = False
 
@@ -95,17 +97,33 @@ def import_movies(fn: str):
 
     # Let the user know there if there are input data problems which need fixing.
     if reject_file_created:
-        msg = f"The import file '{fn}' has invalid data. See reject file for details."
+        msg = (f"The import file '{fn}' has invalid data. "
+               f"See <filename>_reject.csv file for details.")
         raise MoviedbInvalidImportData(msg)
 
 
 def create_reject_file(fn: str, header_row: List[str]) -> Callable:
+    """
+
+    Args:
+        fn:
+        header_row:
+
+    Returns:
+
+    """
     root, _ = tuple(str(fn).split('.'))
     reject_fn = root + '_reject.csv'
     good_input = True
     reject_coroutine = None
 
     def wrapped(msg: Tuple[str], row: Tuple[str]):
+        """
+
+        Args:
+            msg:
+            row:
+        """
         nonlocal good_input, reject_coroutine
         if good_input:
             good_input = False
@@ -129,14 +147,3 @@ def write_csv_file(fn: str, header_row: List[str]):
         while True:
             received = yield
             csv_writer.writerow(received)
-
-
-# moviedatabase-#46 remove this function
-def main():  # pragma: no cover
-    database.connect_to_database()
-    import_movies('movies.csv')
-
-
-# moviedatabase-#46 remove this function
-if __name__ == '__main__':  # pragma: no cover
-    sys.exit(main())
