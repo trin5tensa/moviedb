@@ -1,7 +1,7 @@
 """Functional pytests for database module. """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/6/19, 9:06 AM by stephen.
+#  Last modified 9/7/19, 7:21 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -72,15 +72,6 @@ def loaded_database(hamlet, solaris, dreams, revanche):
     database.add_tag_and_links('yellow', [database.TitleYear('Revanche', 2008)])
     database.add_tag_and_links('green', [database.TitleYear('Revanche', 2008)])
     database.add_tag_and_links('green', [database.TitleYear('Solaris', 1972)])
-
-
-def test_session_rollback(connection):
-    # moviedatabase-#60 Refactor this test
-    with pytest.raises(ZeroDivisionError):
-        with database._session_scope() as session:
-            database._build_movie_query(session, dict(minutes=[169]))
-            # noinspection PyStatementEffect
-            42 / 0
 
 
 def test_init_database_access_with_new_database(connection):
