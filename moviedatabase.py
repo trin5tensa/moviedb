@@ -1,7 +1,7 @@
 """Main moviedatabase program"""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/6/19, 9:07 AM by stephen.
+#  Last modified 9/7/19, 8:58 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,6 +17,7 @@ import argparse
 import sys
 
 import database
+from error import MoviedbInvalidImportData
 import impexp
 
 
@@ -36,7 +37,7 @@ def main():
 
     # Intercept empty string (which is accepted by argparse as a valid filename).
     if not args.filename:
-        raise ValueError("moviedatabase.py: the following arguments are required: filename")
+        raise ValueError("moviedb.py: the following arguments are required: filename")
 
     non_default_database = args.database == '' or args.database
 
@@ -52,7 +53,11 @@ def main():
         database.connect_to_database(args.database)
     else:
         database.connect_to_database()
-    impexp.import_movies(args.filename)
+
+    try:
+        impexp.import_movies(args.filename)
+    except MoviedbInvalidImportData as exc:
+        print(exc)
 
 
 if __name__ == '__main__':  # pragma: no cover

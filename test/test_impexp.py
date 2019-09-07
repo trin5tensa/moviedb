@@ -1,7 +1,7 @@
 """Tests for import module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/6/19, 9:06 AM by stephen.
+#  Last modified 9/7/19, 8:58 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -128,9 +128,9 @@ def test_database_integrity_violation(path, monkeypatch):
 # noinspection DuplicatedCode
 def test_invalid_row_values(path, monkeypatch):
     """Test database integrity violation causes record rejection."""
-    error_msg = 'Oops, I did it again'
+    error_msg = 'Hid behind tapestry.'
     expected = ('title,year,notes\n'
-                f'"ValueError: {error_msg}"\n'
+                f'ValueError: {error_msg}\n'
                 'Hamlet,1996,1\n')
 
     def mock_add_movie(movie: dict):
