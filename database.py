@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/6/19, 9:07 AM by stephen.
+#  Last modified 9/10/19, 7:44 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -29,14 +29,10 @@ from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import query, relationship
 from sqlalchemy.orm.session import sessionmaker
 
-# Third party package imports
 
-
-# Constants
 Base = sqlalchemy.ext.declarative.declarative_base()
 database_fn = 'movies.sqlite3'
 
-# Variables
 movie_tag = Table('movie_tag', Base.metadata,
                   Column('movies_id', ForeignKey('movies.id'), primary_key=True),
                   Column('tags_id', ForeignKey('tags.id'), primary_key=True))
@@ -47,11 +43,6 @@ engine: Optional[sqlalchemy.engine.base.Engine] = None
 Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
 
 
-# Pure data Dataclasses
-# Named tuples
-
-
-# API Classes
 @dataclass
 class TitleYear:
     """
@@ -63,7 +54,6 @@ class TitleYear:
     year: int
 
 
-# API Functions
 def connect_to_database(filename: str = database_fn):
     """Make database available for use by this module."""
 
@@ -99,9 +89,6 @@ def add_movie(movie: Dict):
     Args:
         movie: A dictionary which must contain keys of title and year.
         It may contain keys of director, minutes, and notes.
-
-    Raises:
-        TypeError if required keys are missing or invalid keys are present.
     """
     _Movie(**movie).add()
 
@@ -111,7 +98,7 @@ def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
 
     Yield record fields which persist after the session has ended.
     This will produce one record for each movie, tag, and review combination. Therefore one movie may
-    produce more than one return record.
+    produce more than one yielded record.
 
     Args:
         criteria: A dictionary containing none or more of the following keys:
@@ -128,7 +115,7 @@ def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
         ValueError: If a supplied_keys key is not a column name
 
     Generates:
-        Yields: A dictionary of attributes and values copied from each combination of movie and tag.
+        Yields:  Each compliant movie as a dictionary of title, director, minutes, year, notes, and tag.
         Sends: Not used.
         Returns: Not used.
     """
@@ -147,8 +134,6 @@ def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
 def edit_movie(title_year: TitleYear, updates: Dict[str, Any]):
     """Search for one movie and change one or more fields of that movie.
 
-    Use edit_tag and edit_review to edit those fields.
-
     Args:
         title_year: A TitleYear object
         updates: Dictionary of fields to be updated. See find_movies for detailed description.
@@ -156,7 +141,6 @@ def edit_movie(title_year: TitleYear, updates: Dict[str, Any]):
     """
     criteria = dict(title=title_year.title, year=title_year.year)
     with _session_scope() as session:
-        # _build_movie_query(session, criteria).one().edit(updates)
         movie, tag = _build_movie_query(session, criteria).one()
         movie.edit(updates)
 
@@ -222,7 +206,6 @@ def del_tag(tag: str):
         session.delete(tag_obj)
 
 
-# Internal Module Classes
 class _MoviesMetaData(Base):
     """Meta data table schema."""
     __tablename__ = 'meta_data'
@@ -290,7 +273,7 @@ class _Movie(Base):
 
     @classmethod
     def validate_columns(cls, columns: Iterable[str]):
-        """Raise ValueError if any column item is not a column of this class.
+        """Raise ValueError if any column item is not a column of this class or the _Tag class.
 
         Args:
             columns: column names for validation
@@ -308,7 +291,7 @@ class _Movie(Base):
 
 
 class _Tag(Base):
-    """Table schema for entities who have seen a movie."""
+    """Table schema for tags."""
     __tablename__ = 'tags'
 
     id = Column(sqlalchemy.Integer, Sequence('tag_id_sequence'), primary_key=True)
@@ -332,8 +315,8 @@ class _Tag(Base):
 class _Review(Base):
     """Reviews tables schema.
 
-    This table has been designed to provide a single row for a reviewer and rating value. So a 3.5/4 star
-    rating from Ebert will be linked to none or more movies.
+    This table has been designed to provide a single row for a reviewer and rating value.
+    So a 3.5/4 star rating from Ebert will be linked to none or more movies.
     The reviewer can ba an individual like 'Ebert' for an aggregator like 'Rotten Tomatoes.
     max_rating is part of the secondary key. This allows for a particular reviewer changing
     his/her/its rating system.
@@ -364,7 +347,6 @@ class _Review(Base):
                 f" max_rating={self.max_rating!r}), ")
 
 
-# Internal Module Functions
 @contextmanager
 def _session_scope():
     """Provide a session scope around a series of operations."""
@@ -420,13 +402,5 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
         if isinstance(tags, str):
             tags = [tags, ]
         movies = (movies.filter(_Tag.tag.in_(tags)))
-
-    # print()
-    # for movie, tag in movies.all():
-    #     if tag:
-    #         tags = (tag.id, tag.tag)
-    #     else:
-    #         tags = (None,)
-    #     print(movie.id, movie.title, movie.minutes, *tags)
 
     return movies
