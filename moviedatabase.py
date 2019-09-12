@@ -1,7 +1,7 @@
 """Main moviedatabase program"""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/7/19, 8:58 AM by stephen.
+#  Last modified 9/12/19, 9:35 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,29 +21,37 @@ from error import MoviedbInvalidImportData
 import impexp
 
 
-def _command_line_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description='Import movies from a csv file.')
-    parser.add_argument('filename',
+def main():
+    print('Hello World')
+
+
+def _command_line_args() -> argparse.Namespace:  # pragma: no cover
+    description_msg = ("Invoke without arguments to run the gui. Invoke with the optional "
+                       "'import_csv' argument to import a csv delimited text file.")
+    parser = argparse.ArgumentParser(description=description_msg)
+    parser.add_argument('-i', '--import_csv', default=None,
                         help='a csv import file. See impexp.py for format requirements.')
-    parser.add_argument('-d', '--database', help='database filename. Enter an empty '
-                                                 'string to create an in-memory database')
+    parser.add_argument('-d', '--database', default=None,
+                        help='database filename. Enter an empty string to create an in-memory database')
     parser.add_argument('-v', '--verbosity', action='count', default=0, help='verbosity')
+    print(parser.parse_args())
     return parser.parse_args()
 
 
-def main():
+def command():
     """Command line parse and dispatch."""
     args = _command_line_args()
 
-    # Intercept empty string (which is accepted by argparse as a valid filename).
-    if not args.filename:
-        raise ValueError("moviedb.py: the following arguments are required: filename")
+    # Run GUI
+    if not args.import_csv:
+        return main()
 
+    # An empty string is a valid SQLAlchemy non-default value for the database name.
     non_default_database = args.database == '' or args.database
 
     if args.verbosity >= 1:
         print(f"Running {__file__}")
-        print(f'Loading movies from {args.filename}')
+        print(f'Loading movies from {args.import_csv}')
         if non_default_database:
             print(f"Adding movies to database '{args.database}'.")
         else:
@@ -55,10 +63,11 @@ def main():
         database.connect_to_database()
 
     try:
-        impexp.import_movies(args.filename)
+        impexp.import_movies(args.import_csv)
+    # moviedb-#50 Test this branch
     except MoviedbInvalidImportData as exc:
         print(exc)
 
 
 if __name__ == '__main__':  # pragma: no cover
-    sys.exit(main())
+    sys.exit(command())
