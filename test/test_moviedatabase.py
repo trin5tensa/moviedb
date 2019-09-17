@@ -1,7 +1,7 @@
 """Tests for moviedatabase."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/14/19, 10:19 AM by stephen.
+#  Last modified 9/17/19, 8:10 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,6 +20,9 @@ from dataclasses import dataclass
 import pytest
 
 import moviedatabase
+
+# moviedb-#59 Change all monkeypatch lambdas to match actual parameters of patched function.
+
 
 TEST_FN = 'test_filename.csv'
 
@@ -81,6 +84,7 @@ def test_start_logger(monkeypatch):
                         lambda *args, **kwargs: calls.append((args, kwargs)))
     moviedatabase.start_logger(log_root, log_fn)
     _, format_args = calls[0]
+    # moviedb-#59 Remove print statement
     print('t300', format_args)
     assert format_args == expected
 
@@ -94,7 +98,6 @@ class ArgParser:
     
     def __call__(self):
         return self
-
 
 @pytest.mark.usefixtures('monkeypatch')
 class TestCommand:

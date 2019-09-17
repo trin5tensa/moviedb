@@ -1,7 +1,7 @@
 """Functional pytests for database module. """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/7/19, 7:21 AM by stephen.
+#  Last modified 9/17/19, 8:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,12 +13,18 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from dataclasses import dataclass
 from typing import Dict
 
 import pytest
 import sqlalchemy.orm.exc
 
 import database
+
+
+class DatabaseTestException(Exception):
+    """Base class for exceptions in this module."""
+    pass
 
 
 @pytest.fixture()
@@ -112,23 +118,33 @@ def test_add_movie(connection, session, hamlet):
     assert result == expected
 
 
-def test_add_movie_with_empty_title_string(connection, session):
+def test_add_movie_with_empty_title_string(connection, session, monkeypatch):
     expected = 'Null values (empty strings) in row.'
+    calls = []
+    monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
+
     bad_row = dict(title='Hamlet', director='Branagh', minutes=242, year='')
     with pytest.raises(ValueError) as exception:
         database.add_movie(bad_row)
     assert str(exception.value) == expected
+    assert calls[0] == expected
 
 
-def test_add_movie_with_non_numeric_values(connection, session):
+def test_add_movie_with_non_numeric_values(connection, session, monkeypatch):
     bad_int = 'forty two'
     expected = f"invalid literal for int() with base 10: '{bad_int}'"
+    logging_msg = (f'{expected}\nA non-integer value has been supplied for either the year '
+                   f'or the minute column.')
+    calls = []
+    monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
+
     bad_row = dict(title='Hamlet', director='Branagh', minutes=bad_int, year='1942')
     with pytest.raises(ValueError) as exception:
         database.add_movie(bad_row)
     assert str(exception.value) == expected
+    assert calls[0] == logging_msg
 
-
+ 
 def test_add_movie_with_notes(connection, session, revanche):
     expected = tuple(revanche.values())
     database.add_movie(revanche)
@@ -141,7 +157,7 @@ def test_add_movie_with_notes(connection, session, revanche):
     assert result == expected
 
 
-@pytest.mark.usefixtures('loaded_database')
+@pytest.mark.usefixtures('loaded_database', 'monkeypatch')
 class TestFindMovie:
     def test_search_movie_year(self):
         test_year = 1996
@@ -194,14 +210,18 @@ class TestFindMovie:
         titles = {movie['title'] for movie in database.find_movies(dict(tags=['blue', 'yellow']))}
         assert titles == expected
 
-    def test_value_error_is_raised(self):
-        invalid_keys = {'months'}
-        expected = (f"Invalid attribute '{invalid_keys}'.", )
+    def test_value_error_is_raised(self, monkeypatch):
+        invalid_keys = {'months', }
+        expected = f"Invalid attribute '{invalid_keys}'."
+        calls = []
+        monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
+        
         with pytest.raises(ValueError) as exception:
             for _ in database.find_movies(dict(months=[169])):
                 pass
         assert exception.type is ValueError
-        assert exception.value.args == expected
+        assert exception.value.args == (expected, )
+        assert calls[0] == expected
 
 
 @pytest.mark.usefixtures('loaded_database')
@@ -289,3 +309,71 @@ class TestTagOperations:
         assert (session.query(database._Movie)
                 .filter(database._Movie.tags.any(tag=test_tag))
                 .all()) == []
+
+
+@dataclass
+class InstrumentedSession:
+    """A Session dummy with test instrumentation."""
+    commit_called = False
+    rollback_called = False
+    close_called = False
+    
+    def correct_function(self):
+        """A working test function"""
+        pass
+    
+    def incorrect_function(self):
+        """A broken test function"""
+        raise DatabaseTestException
+    
+    def commit(self):
+        """Register the calling of this function."""
+        self.commit_called = True
+    
+    def rollback(self):
+        """Register the calling of this function."""
+        self.rollback_called = True
+    
+    def close(self):
+        """Register the calling of this function."""
+        self.close_called = True
+
+
+@dataclass
+class InstrumentedLogging:
+    """A Logging dummy with test instrumentation."""
+    def __init__(self) -> None:
+        self.info_calls = []
+    
+    def info(self, msg):
+        """Register the arguments with which this function was called."""
+        self.info_calls.append(msg)
+
+
+def test_commit_called(monkeypatch):
+    monkeypatch.setattr(database, 'Session', InstrumentedSession)
+    with database._session_scope() as session:
+        session.correct_function()
+    assert session.commit_called
+    assert session.close_called
+
+
+def test_rollback_called(monkeypatch):
+    monkeypatch.setattr(database, 'Session', InstrumentedSession)
+    monkeypatch.setattr(database, 'logging', InstrumentedLogging())
+    with pytest.raises(DatabaseTestException):
+        with database._session_scope() as session:
+            session.incorrect_function()
+    assert session.rollback_called
+    assert session.close_called
+
+
+def test_logging_called(monkeypatch):
+    monkeypatch.setattr(database, 'Session', InstrumentedSession)
+    log = InstrumentedLogging()
+    monkeypatch.setattr(database, 'logging', log)
+    with pytest.raises(DatabaseTestException):
+        with database._session_scope() as session:
+            session.incorrect_function()
+    assert log.info_calls[0] == ("An incomplete database session has been rolled back "
+                                 "because of exception:\nDatabaseTestException")

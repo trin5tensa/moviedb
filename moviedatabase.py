@@ -1,7 +1,7 @@
 """Main moviedatabase program"""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/14/19, 10:23 AM by stephen.
+#  Last modified 9/17/19, 8:10 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,8 +25,6 @@ import impexp
 
 def main():
     """Initialize the program, run it, and execute close down activities."""
-    # moviedb-#50 DayBreak
-    #       Add logging calls throughout code
     start_up()
     print('Dummy call to GUI.')
     logging.info('THe program is running.')
@@ -62,7 +60,6 @@ def command_line_args() -> argparse.Namespace:
         Parsed arguments.
     """
     
-    # moviedb-#50 Testme (monkeypatch argparse.ArgumentParser )
     description_msg = ("Invoke without arguments to run the gui. Invoke with the optional "
                        "'import_csv' argument to import a csv delimited text file.")
     parser = argparse.ArgumentParser(description=description_msg)
