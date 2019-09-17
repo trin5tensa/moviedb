@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/10/19, 7:44 AM by stephen.
+#  Last modified 9/17/19, 8:10 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,10 +13,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import datetime
-import itertools
 from contextlib import contextmanager
 from dataclasses import dataclass
+import datetime
+import itertools
+import logging
+import sys
 from typing import Any, Dict, Generator, Iterable, Optional
 
 import sqlalchemy
@@ -240,9 +242,16 @@ class _Movie(Base):
         null_strings = set(itertools.filterfalse(lambda arg: arg != '', [title, year]))
         if null_strings == {''}:
             msg = 'Null values (empty strings) in row.'
+            logging.error(msg)
             raise ValueError(msg)
         # noinspection PyStatementEffect
-        {int(arg) for arg in [minutes, year]}
+        try:
+            {int(arg) for arg in [minutes, year]}
+        except ValueError as exc:
+            msg = (f"{exc}\nA non-integer value has been supplied for either the year "
+                   f"or the minute column.")
+            logging.error(msg)
+            raise
 
         self.title = title
         self.director = director
@@ -286,7 +295,7 @@ class _Movie(Base):
         invalid_keys = set(columns) - valid_columns
         if invalid_keys:
             msg = f"Invalid attribute '{invalid_keys}'."
-            # moviedatabase-#50 Add logging
+            logging.error(msg)
             raise ValueError(msg)
 
 
@@ -351,13 +360,14 @@ class _Review(Base):
 def _session_scope():
     """Provide a session scope around a series of operations."""
     session = Session()
-    # noinspection PyPep8
     try:
         yield session
         session.commit()
     except:
         session.rollback()
-        # moviedatabase-#50 Add logging
+        msg = (f'An incomplete database session has been rolled back because of exception:\n'
+               f'{sys.exc_info()[0].__name__}')
+        logging.info(msg)
         raise
     finally:
         session.close()
