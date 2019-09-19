@@ -1,7 +1,7 @@
 """Tests for moviedatabase."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/19/19, 6:41 AM by stephen.
+#  Last modified 9/19/19, 7:56 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -98,6 +98,7 @@ class ArgParser:
     
     def __call__(self):
         return self
+
 
 @pytest.mark.usefixtures('monkeypatch')
 class TestCommand:

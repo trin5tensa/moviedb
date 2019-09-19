@@ -1,7 +1,7 @@
 """Main moviedatabase program"""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/17/19, 8:10 AM by stephen.
+#  Last modified 9/19/19, 7:56 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,6 +23,10 @@ from error import MoviedbInvalidImportData
 import impexp
 
 
+# Program version.
+VERSION = '1.0.dev'
+
+
 def main():
     """Initialize the program, run it, and execute close down activities."""
     start_up()
@@ -33,9 +37,12 @@ def main():
 
 def start_up():
     """Initialize the program."""
+    # Start the logger.
     root_dir, program_name = os.path.split(__file__)
     program, _ = program_name.split('.')
     start_logger(root_dir, program)
+    
+    # moviedb-#59 Open the default database
 
 
 def close_down():
@@ -53,7 +60,7 @@ def start_logger(root_dir: str, program: str):
                         filename=q_name, filemode='w')
 
 
-def command_line_args() -> argparse.Namespace:
+def command_line_args() -> argparse.Namespace:  # pragma: no cover
     """Parse the command line arguments.
 
     Returns:
@@ -99,6 +106,7 @@ def command():
     try:
         impexp.import_movies(args.import_csv)
     except MoviedbInvalidImportData as exc:
+        # moviedb-#59 Test this branch
         print(exc)
 
 
