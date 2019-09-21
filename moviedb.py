@@ -1,7 +1,7 @@
 """Main moviedatabase program"""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/19/19, 7:56 AM by stephen.
+#  Last modified 9/21/19, 8:29 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -42,7 +42,8 @@ def start_up():
     program, _ = program_name.split('.')
     start_logger(root_dir, program)
     
-    # moviedb-#59 Open the default database
+    # Open the default database
+    database.connect_to_database()
 
 
 def close_down():
@@ -106,7 +107,6 @@ def command():
     try:
         impexp.import_movies(args.import_csv)
     except MoviedbInvalidImportData as exc:
-        # moviedb-#59 Test this branch
         print(exc)
 
 
