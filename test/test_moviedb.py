@@ -1,7 +1,7 @@
 """Tests for moviedatabase."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/19/19, 7:56 AM by stephen.
+#  Last modified 9/21/19, 8:29 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,13 +16,11 @@
 import io
 from contextlib import redirect_stdout
 from dataclasses import dataclass
+from typing import Tuple
 
 import pytest
 
 import moviedb
-
-# moviedb-#59 Change all monkeypatch lambdas to match actual parameters of patched function.
-
 
 TEST_FN = 'test_filename.csv'
 
@@ -31,44 +29,61 @@ TEST_FN = 'test_filename.csv'
 class TestMain:
     def test_start_up_called(self, monkeypatch):
         calls = []
-        monkeypatch.setattr(moviedb, 'start_up',
-                            lambda *args, **kwargs: calls.append((args, kwargs)))
+        monkeypatch.setattr(moviedb, 'start_up', lambda: calls.append(True))
         monkeypatch.setattr(moviedb, 'close_down', lambda: None)
         moviedb.main()
-        assert len(calls) == 1
+        assert calls == [True]
     
     def test_close_down_called(self, monkeypatch):
         monkeypatch.setattr(moviedb, 'start_up', lambda: None)
         calls = []
         monkeypatch.setattr(moviedb, 'close_down',
-                            lambda *args, **kwargs: calls.append((args, kwargs)))
+                            lambda: calls.append(True))
         moviedb.main()
-        assert len(calls) == 1
+        assert calls == [True]
 
 
 @pytest.mark.usefixtures('monkeypatch')
 class TestStartUp:
-    def test_start_logger_called(self, monkeypatch):
+    @pytest.fixture()
+    def monkeypatch_startup(self, monkeypatch) -> Tuple[list, list]:
+        """Class patches.
+
+        Args:
+            monkeypatch: pytest fixture
+
+        Returns:
+
+        """
+        logger_calls = []
+        monkeypatch.setattr(moviedb, 'start_logger',
+                            lambda *args: logger_calls.append(args))
+        connect_calls = []
+        monkeypatch.setattr(moviedb.database, 'connect_to_database',
+                            lambda: connect_calls.append(True))
+        return logger_calls, connect_calls
+    
+    def test_start_logger_called(self, monkeypatch_startup):
         expected_path = 'movies'
         expected_filename = 'moviedb'
-        calls = []
-        monkeypatch.setattr(moviedb, 'start_logger',
-                            lambda *args, **kwargs: calls.append((args, kwargs)))
+        logger_calls, _ = monkeypatch_startup
         moviedb.start_up()
-        path_filename, _ = calls[0]
-        path, filename = path_filename
-        assert path[-6:] == expected_path
+        path, filename = logger_calls[0]
+        assert path[-len(expected_path):] == expected_path
         assert filename == expected_filename
+    
+    def test_start_database_called(self, monkeypatch_startup):
+        _, connect_calls = monkeypatch_startup
+        moviedb.start_up()
+        assert connect_calls == [True]
 
 
-@pytest.mark.usefixtures('monkeypatch')
-class TestCloseDown:
-    def test_start_logger_called(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(moviedb.logging, 'shutdown',
-                            lambda *args, **kwargs: calls.append((args, kwargs)))
-        moviedb.close_down()
-        assert len(calls) == 1
+def test_start_logger_called(monkeypatch):
+    calls = []
+    monkeypatch.setattr(moviedb.logging, 'shutdown',
+                        lambda: calls.append(True))
+    moviedb.close_down()
+    assert calls == [True]
 
 
 def test_start_logger(monkeypatch):
@@ -81,11 +96,9 @@ def test_start_logger(monkeypatch):
                     filemode='w')
     calls = []
     monkeypatch.setattr(moviedb.logging, 'basicConfig',
-                        lambda *args, **kwargs: calls.append((args, kwargs)))
+                        lambda *args, **kwargs: calls.append(kwargs))
     moviedb.start_logger(log_root, log_fn)
-    _, format_args = calls[0]
-    # moviedb-#59 Remove print statement
-    print('t300', format_args)
+    format_args = calls[0]
     assert format_args == expected
 
 
@@ -104,10 +117,10 @@ class ArgParser:
 class TestCommand:
     def test_missing_filename_calls_main(self, monkeypatch):
         calls = []
-        monkeypatch.setattr(moviedb, 'main', lambda *args, **kwargs: calls.append((args, kwargs)))
+        monkeypatch.setattr(moviedb, 'main', lambda: calls.append(True))
         monkeypatch.setattr(moviedb, 'command_line_args', ArgParser())
         moviedb.command()
-        assert len(calls) == 1
+        assert calls == [True]
     
     def test_import_movies_called(self, monkeypatch):
         monkeypatch.setattr(moviedb, 'command_line_args', ArgParser(import_csv=TEST_FN))
@@ -117,14 +130,35 @@ class TestCommand:
         moviedb.command()
         assert calls == [TEST_FN]
     
+    def test_import_movies_raises_invalid_data_error(self, monkeypatch):
+        test_exc = 'Test Exception'
+        
+        def dummy_import_movies(_):
+            """Error raising dummy.
+
+            Args:
+                _: Unused
+            """
+            raise moviedb.MoviedbInvalidImportData(test_exc)
+        
+        print_file = io.StringIO()
+        with redirect_stdout(print_file):
+            monkeypatch.setattr(moviedb, 'command_line_args', ArgParser(import_csv=TEST_FN))
+            monkeypatch.setattr(moviedb.database, 'connect_to_database', lambda: None)
+            monkeypatch.setattr(moviedb.impexp, 'import_movies', dummy_import_movies)
+            moviedb.command()
+        
+        lines = [line for line in print_file.getvalue().split('\n')]
+        print('t100', lines[0])
+        assert lines[0] == test_exc
+    
     def test_default_database_called(self, monkeypatch):
         monkeypatch.setattr(moviedb, 'command_line_args', ArgParser(import_csv=TEST_FN))
         calls = []
-        monkeypatch.setattr(moviedb.database, 'connect_to_database',
-                            lambda *args, **kwargs: calls.append((args, kwargs)))
+        monkeypatch.setattr(moviedb.database, 'connect_to_database', lambda: calls.append(True))
         monkeypatch.setattr(moviedb.impexp, 'import_movies', lambda *args: None)
         moviedb.command()
-        assert calls == [((), {})]
+        assert calls == [True]
     
     def test_user_defined_database_called(self, monkeypatch):
         test_db = 'user_defined_filename'
@@ -132,10 +166,10 @@ class TestCommand:
                                                                     database=test_db))
         calls = []
         monkeypatch.setattr(moviedb.database, 'connect_to_database',
-                            lambda *args, **kwargs: calls.append((args, kwargs)))
+                            lambda database: calls.append(database))
         monkeypatch.setattr(moviedb.impexp, 'import_movies', lambda *args: None)
         moviedb.command()
-        assert calls == [((test_db,), {})]
+        assert calls[0] == test_db
     
     def test_verbosity_called_with_default_database(self, monkeypatch):
         expected_1 = "movies/moviedb.py"
@@ -147,7 +181,7 @@ class TestCommand:
             monkeypatch.setattr(moviedb, 'command_line_args', ArgParser(import_csv=TEST_FN,
                                                                         verbosity=42))
             monkeypatch.setattr(moviedb.database, 'connect_to_database', lambda: None)
-            monkeypatch.setattr(moviedb.impexp, 'import_movies', lambda *args: None)
+            monkeypatch.setattr(moviedb.impexp, 'import_movies', lambda database: None)
             moviedb.command()
         
         lines = [line for line in print_file.getvalue().split('\n')]
