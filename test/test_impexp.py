@@ -1,7 +1,7 @@
 """Tests for import module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/7/19, 8:58 AM by stephen.
+#  Last modified 9/24/19, 9:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -133,6 +133,7 @@ def test_invalid_row_values(path, monkeypatch):
                 f'ValueError: {error_msg}\n'
                 'Hamlet,1996,1\n')
 
+    # noinspection PyUnusedLocal
     def mock_add_movie(movie: dict):
         """Force add_movie call to raise ValueError."""
         raise ValueError(error_msg)
@@ -143,4 +144,28 @@ def test_invalid_row_values(path, monkeypatch):
     reject_fn = path / 'violation_data_reject.csv'
     with pytest.raises(impexp.MoviedbInvalidImportData):
         impexp.import_movies(violation_data_fn)
+    assert reject_fn.read() == expected
+
+
+def test_create_reject_file(path, monkeypatch):
+    error_msg = 'Unsuccessful bank robbery'
+    expected = ("title,year,minutes,notes\n"
+                f"ValueError: {error_msg}\n"
+                "Hamlet,1996,242,\n"
+                f"ValueError: {error_msg}\n"
+                "Revanche,2008,122,Oscar nominated\n")
+
+    # noinspection PyUnusedLocal
+    def mock_add_movie(movie: dict):
+        """Force add_movie call to raise ValueError."""
+        raise ValueError(error_msg)
+
+    monkeypatch.setattr(impexp.database, 'add_movie', mock_add_movie, raising=True)
+    data_fn = path / 'data.csv'
+    data_fn.write(GOOD_DATA)
+    reject_fn = path / 'data_reject.csv'
+
+    with pytest.raises(impexp.MoviedbInvalidImportData):
+        impexp.import_movies(data_fn)
+    
     assert reject_fn.read() == expected
