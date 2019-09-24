@@ -1,7 +1,7 @@
 """Tests for moviedatabase."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/21/19, 8:29 AM by stephen.
+#  Last modified 9/24/19, 9:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -139,7 +139,7 @@ class TestCommand:
             Args:
                 _: Unused
             """
-            raise moviedb.MoviedbInvalidImportData(test_exc)
+            raise moviedb.impexp.MoviedbInvalidImportData(test_exc)
         
         print_file = io.StringIO()
         with redirect_stdout(print_file):

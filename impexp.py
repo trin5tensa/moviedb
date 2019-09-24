@@ -1,7 +1,7 @@
 """Import and export data."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/7/19, 8:59 AM by stephen.
+#  Last modified 9/24/19, 9:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,7 +19,6 @@ from typing import List, Callable, Tuple
 
 import database
 import utilities
-from error import MoviedbInvalidImportData
 
 
 def import_movies(fn: str):
@@ -36,7 +35,7 @@ def import_movies(fn: str):
     the database's integrity rules.
 
     Output FIle
-    Rejected records will be written to a file of the same name with a suffix of '.reject'.
+    Rejected records will be written to a file of the same name with a suffix of '_reject.csv'.
     The valid header row will be written to that file as the first record as a convenience to the user.
 
     Args:
@@ -102,15 +101,25 @@ def import_movies(fn: str):
         raise MoviedbInvalidImportData(msg)
 
 
+class MoviedbInvalidImportData(Exception):
+    """Exception raised for bad import file data."""
+    
+    
 def create_reject_file(fn: str, header_row: List[str]) -> Callable:
-    """
+    """Return a reject file writer.
+    
+    On first call this write will create the reject file and write the column headers as the first row.
+    ON this and all subsequent calls the error and the line causing the error will be written.
 
     Args:
         fn:
         header_row:
 
     Returns:
-
+        A writer routine that will write an error to the reject file. The write will usually consist of:
+        1) THe headers if they have not already been written
+        2) The error message
+        3) The line at fault.
     """
     root, _ = tuple(str(fn).split('.'))
     reject_fn = root + '_reject.csv'
@@ -118,11 +127,11 @@ def create_reject_file(fn: str, header_row: List[str]) -> Callable:
     reject_coroutine = None
 
     def wrapped(msg: Tuple[str], row: Tuple[str]):
-        """
+        """Write an error message and the tuple to the reject file.
 
         Args:
-            msg:
-            row:
+            msg: The error message
+            row: The tuple read from the input csv file.
         """
         nonlocal good_input, reject_coroutine
         if good_input:
@@ -130,6 +139,7 @@ def create_reject_file(fn: str, header_row: List[str]) -> Callable:
             reject_coroutine = write_csv_file(reject_fn, header_row)
         reject_coroutine.send(msg)
         reject_coroutine.send(row)
+
     return wrapped
 
 
