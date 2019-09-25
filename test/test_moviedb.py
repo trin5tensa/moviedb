@@ -1,7 +1,7 @@
 """Tests for moviedatabase."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/24/19, 9:15 AM by stephen.
+#  Last modified 9/25/19, 8:32 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,12 +30,22 @@ class TestMain:
     def test_start_up_called(self, monkeypatch):
         calls = []
         monkeypatch.setattr(moviedb, 'start_up', lambda: calls.append(True))
+        monkeypatch.setattr(moviedb.gui, 'run', lambda: None)
+        monkeypatch.setattr(moviedb, 'close_down', lambda: None)
+        moviedb.main()
+        assert calls == [True]
+    
+    def test_gui_called(self, monkeypatch):
+        monkeypatch.setattr(moviedb, 'start_up', lambda: None)
+        calls = []
+        monkeypatch.setattr(moviedb.gui, 'run', lambda: calls.append(True))
         monkeypatch.setattr(moviedb, 'close_down', lambda: None)
         moviedb.main()
         assert calls == [True]
     
     def test_close_down_called(self, monkeypatch):
         monkeypatch.setattr(moviedb, 'start_up', lambda: None)
+        monkeypatch.setattr(moviedb.gui, 'run', lambda: None)
         calls = []
         monkeypatch.setattr(moviedb, 'close_down',
                             lambda: calls.append(True))
