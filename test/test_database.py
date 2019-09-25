@@ -1,7 +1,7 @@
 """Functional pytests for database module. """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/17/19, 8:11 AM by stephen.
+#  Last modified 9/25/19, 7:33 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -70,7 +70,7 @@ def loaded_database(hamlet, solaris, dreams, revanche):
     """Provide a loaded database."""
     database.connect_to_database(filename=':memory:')
     # noinspection PyProtectedMember
-    movies = [database._Movie(**movie) for movie in (hamlet, solaris, dreams, revanche)]
+    movies = [database.Movie(**movie) for movie in (hamlet, solaris, dreams, revanche)]
     # noinspection PyProtectedMember
     with database._session_scope() as session:
         session.add_all(movies)
@@ -83,8 +83,8 @@ def loaded_database(hamlet, solaris, dreams, revanche):
 def test_init_database_access_with_new_database(connection):
     """Create a new database and test that date_created is today."""
     with database._session_scope() as session:
-        today = (session.query(database._MoviesMetaData.value)
-                 .filter(database._MoviesMetaData.name == 'date_created')
+        today = (session.query(database.MoviesMetaData.value)
+                 .filter(database.MoviesMetaData.name == 'date_created')
                  .one())
     assert today.value[0:10] == str(database.datetime.datetime.today())[0:10]
 
@@ -98,11 +98,11 @@ def test_init_database_access_with_existing_database(tmpdir):
     database.connect_to_database(filename=path)
 
     with database._session_scope() as session:
-        current = (session.query(database._MoviesMetaData.value)
-                   .filter(database._MoviesMetaData.name == 'date_last_accessed')
+        current = (session.query(database.MoviesMetaData.value)
+                   .filter(database.MoviesMetaData.name == 'date_last_accessed')
                    .one())
-        previous = (session.query(database._MoviesMetaData.value)
-                    .filter(database._MoviesMetaData.name == 'date_created')
+        previous = (session.query(database.MoviesMetaData.value)
+                    .filter(database.MoviesMetaData.name == 'date_created')
                     .one())
     assert current != previous
 
@@ -110,10 +110,10 @@ def test_init_database_access_with_existing_database(tmpdir):
 def test_add_movie(connection, session, hamlet):
     expected = tuple(hamlet.values())
     database.add_movie(hamlet)
-    result = (session.query(database._Movie.title,
-                            database._Movie.director,
-                            database._Movie.minutes,
-                            database._Movie.year, )
+    result = (session.query(database.Movie.title,
+                            database.Movie.director,
+                            database.Movie.minutes,
+                            database.Movie.year, )
               .one())
     assert result == expected
 
@@ -148,11 +148,11 @@ def test_add_movie_with_non_numeric_values(connection, session, monkeypatch):
 def test_add_movie_with_notes(connection, session, revanche):
     expected = tuple(revanche.values())
     database.add_movie(revanche)
-    result = (session.query(database._Movie.title,
-                            database._Movie.director,
-                            database._Movie.minutes,
-                            database._Movie.year,
-                            database._Movie.notes, )
+    result = (session.query(database.Movie.title,
+                            database.Movie.director,
+                            database.Movie.minutes,
+                            database.Movie.year,
+                            database.Movie.notes, )
               .one())
     assert result == expected
 
@@ -248,8 +248,8 @@ class TestTagOperations:
         tag = 'Movie night candidate'
         database.add_tag_and_links(tag)
 
-        count = (session.query(database._Tag)
-                 .filter(database._Tag.tag == 'Movie night candidate')
+        count = (session.query(database.Tag)
+                 .filter(database.Tag.tag == 'Movie night candidate')
                  .count())
         assert count == 1
 
@@ -258,8 +258,8 @@ class TestTagOperations:
         database.add_tag_and_links(tag)
         database.add_tag_and_links(tag)
 
-        count = (session.query(database._Tag)
-                 .filter(database._Tag.tag == 'Movie night candidate')
+        count = (session.query(database.Tag)
+                 .filter(database.Tag.tag == 'Movie night candidate')
                  .count())
         assert count == 1
 
@@ -270,8 +270,8 @@ class TestTagOperations:
                   database.TitleYear("Akira Kurosawa's Dreams", 1972)]
         database.add_tag_and_links(test_tag, movies)
 
-        movies = (session.query(database._Movie.title)
-                  .filter(database._Movie.tags.any(tag=test_tag)))
+        movies = (session.query(database.Movie.title)
+                  .filter(database.Movie.tags.any(tag=test_tag)))
         result = {movie.title for movie in movies}
         assert result == expected
 
@@ -279,14 +279,14 @@ class TestTagOperations:
         old_tag = 'old test tag'
         movies = [database.TitleYear('Solaris', 1972)]
         database.add_tag_and_links(old_tag, movies)
-        old_tag_id, tag = (session.query(database._Tag.id, database._Tag.tag)
-                           .filter(database._Tag.tag == 'old test tag')
+        old_tag_id, tag = (session.query(database.Tag.id, database.Tag.tag)
+                           .filter(database.Tag.tag == 'old test tag')
                            .one())
 
         new_tag = 'new test tag'
         database.edit_tag(old_tag, new_tag)
-        new_tag_id, tag = (session.query(database._Tag.id, database._Tag.tag)
-                           .filter(database._Tag.tag == 'new test tag')
+        new_tag_id, tag = (session.query(database.Tag.id, database.Tag.tag)
+                           .filter(database.Tag.tag == 'new test tag')
                            .one())
 
         assert old_tag_id == new_tag_id
@@ -303,11 +303,11 @@ class TestTagOperations:
 
         # Is the tag still there?
         with pytest.raises(sqlalchemy.orm.exc.NoResultFound):
-            session.query(database._Tag).filter(database._Tag.tag == test_tag).one()
+            session.query(database.Tag).filter(database.Tag.tag == test_tag).one()
 
         # Do any movies still have the tag?
-        assert (session.query(database._Movie)
-                .filter(database._Movie.tags.any(tag=test_tag))
+        assert (session.query(database.Movie)
+                .filter(database.Movie.tags.any(tag=test_tag))
                 .all()) == []
 
 
