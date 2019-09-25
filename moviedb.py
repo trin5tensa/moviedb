@@ -1,7 +1,7 @@
 """Main moviedatabase program"""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/24/19, 9:15 AM by stephen.
+#  Last modified 9/25/19, 8:32 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,6 +19,7 @@ import os
 import sys
 
 import database
+import gui
 import impexp
 
 
@@ -29,9 +30,10 @@ VERSION = '1.0.dev'
 def main():
     """Initialize the program, run it, and execute close down activities."""
     start_up()
-    print('Dummy call to GUI.')
-    logging.info('THe program is running.')
+    logging.info('The program is running.')
+    gui.run()
     close_down()
+    logging.info('The program has ended.')
 
 
 def start_up():
