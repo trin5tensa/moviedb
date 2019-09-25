@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/17/19, 8:10 AM by stephen.
+#  Last modified 9/25/19, 7:40 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -69,18 +69,18 @@ def connect_to_database(filename: str = database_fn):
     with _session_scope() as session:
         timestamp = str(datetime.datetime.today())
         try:
-            session.query(_MoviesMetaData).filter(_MoviesMetaData.name == 'date_created').one()
+            session.query(MoviesMetaData).filter(MoviesMetaData.name == 'date_created').one()
 
         # Code for a new database
         except sqlalchemy.orm.exc.NoResultFound:
-            session.add_all([_MoviesMetaData(name='version', value='1'),
-                             _MoviesMetaData(name='date_last_accessed', value=timestamp),
-                             _MoviesMetaData(name='date_created', value=timestamp)])
+            session.add_all([MoviesMetaData(name='version', value='1'),
+                             MoviesMetaData(name='date_last_accessed', value=timestamp),
+                             MoviesMetaData(name='date_created', value=timestamp)])
 
         # Code for an existing database
         else:
-            date_last_accessed = (session.query(_MoviesMetaData)
-                                  .filter(_MoviesMetaData.name == 'date_last_accessed')
+            date_last_accessed = (session.query(MoviesMetaData)
+                                  .filter(MoviesMetaData.name == 'date_last_accessed')
                                   .one())
             date_last_accessed.value = timestamp
 
@@ -92,7 +92,7 @@ def add_movie(movie: Dict):
         movie: A dictionary which must contain keys of title and year.
         It may contain keys of director, minutes, and notes.
     """
-    _Movie(**movie).add()
+    Movie(**movie).add()
 
 
 def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
@@ -121,12 +121,12 @@ def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
         Sends: Not used.
         Returns: Not used.
     """
-    _Movie.validate_columns(criteria.keys())
+    Movie.validate_columns(criteria.keys())
 
     # Execute searches
     with _session_scope() as session:
         movies = _build_movie_query(session, criteria)
-        movies.order_by(_Movie.title)
+        movies.order_by(Movie.title)
         for movie, tag in movies:
             tag = tag.tag if tag else None
             yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
@@ -169,18 +169,18 @@ def add_tag_and_links(new_tag: str, movies: Optional[Iterable[TitleYear]] = None
 
     # Add the tag unless it is already in the database.
     try:
-        _Tag(new_tag).add()
+        Tag(new_tag).add()
     except sqlalchemy.exc.IntegrityError:
         pass
 
     # Add links between movies and this tag.
     if movies:
         with _session_scope() as session:
-            tag = session.query(_Tag).filter(_Tag.tag == new_tag).one()
+            tag = session.query(Tag).filter(Tag.tag == new_tag).one()
 
             for title_year in movies:
-                movie = (session.query(_Movie)
-                         .filter(_Movie.title == title_year.title, _Movie.year == title_year.year)
+                movie = (session.query(Movie)
+                         .filter(Movie.title == title_year.title, Movie.year == title_year.year)
                          .one())
                 movie.tags.append(tag)
 
@@ -193,7 +193,7 @@ def edit_tag(old_tag: str, new_tag: str):
         new_tag:
     """
     with _session_scope() as session:
-        tag = session.query(_Tag).filter(_Tag.tag == old_tag).one()
+        tag = session.query(Tag).filter(Tag.tag == old_tag).one()
         tag.tag = new_tag
 
 
@@ -204,11 +204,11 @@ def del_tag(tag: str):
         tag:
     """
     with _session_scope() as session:
-        tag_obj = session.query(_Tag).filter(_Tag.tag == tag).one()
+        tag_obj = session.query(Tag).filter(Tag.tag == tag).one()
         session.delete(tag_obj)
 
 
-class _MoviesMetaData(Base):
+class MoviesMetaData(Base):
     """Meta data table schema."""
     __tablename__ = 'meta_data'
 
@@ -220,7 +220,7 @@ class _MoviesMetaData(Base):
                 f"(name={self.name!r}, value={self.value!r}")
 
 
-class _Movie(Base):
+class Movie(Base):
     """Movies table schema."""
     __tablename__ = 'movies'
 
@@ -232,8 +232,8 @@ class _Movie(Base):
     notes = Column(Text)
     UniqueConstraint(title, year)
 
-    tags = relationship('_Tag', secondary='movie_tag', back_populates='movies', cascade='all')
-    reviews = relationship('_Review', secondary='movie_review', back_populates='movies', cascade='all')
+    tags = relationship('Tag', secondary='movie_tag', back_populates='movies', cascade='all')
+    reviews = relationship('Review', secondary='movie_review', back_populates='movies', cascade='all')
 
     def __init__(self, title: str, year: int, director: str = None,
                  minutes: int = None, notes: str = None):
@@ -282,7 +282,7 @@ class _Movie(Base):
 
     @classmethod
     def validate_columns(cls, columns: Iterable[str]):
-        """Raise ValueError if any column item is not a column of this class or the _Tag class.
+        """Raise ValueError if any column item is not a column of this class or the Tag class.
 
         Args:
             columns: column names for validation
@@ -299,14 +299,14 @@ class _Movie(Base):
             raise ValueError(msg)
 
 
-class _Tag(Base):
+class Tag(Base):
     """Table schema for tags."""
     __tablename__ = 'tags'
 
     id = Column(sqlalchemy.Integer, Sequence('tag_id_sequence'), primary_key=True)
     tag = Column(String(24), nullable=False, unique=True)
 
-    movies = relationship('_Movie', secondary='movie_tag', back_populates='tags', cascade='all')
+    movies = relationship('Movie', secondary='movie_tag', back_populates='tags', cascade='all')
 
     def __init__(self, tag: str):
         self.tag = tag
@@ -321,7 +321,7 @@ class _Tag(Base):
             session.add(self)
 
 
-class _Review(Base):
+class Review(Base):
     """Reviews tables schema.
 
     This table has been designed to provide a single row for a reviewer and rating value.
@@ -338,7 +338,7 @@ class _Review(Base):
     max_rating = Column(Integer, nullable=False)
     UniqueConstraint(reviewer, rating, max_rating)
 
-    movies = relationship('_Movie', secondary='movie_review',
+    movies = relationship('Movie', secondary='movie_review',
                           back_populates='reviews', cascade='all')
 
     _percentage: int = None
@@ -384,33 +384,33 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
     Returns:
         An SQL Query object
     """
-    movies = (session.query(_Movie, _Tag).outerjoin(_Movie.tags))
+    movies = (session.query(Movie, Tag).outerjoin(Movie.tags))
     if 'id' in criteria:
-        movies = movies.filter(_Movie.id == criteria['id'])
+        movies = movies.filter(Movie.id == criteria['id'])
     if 'title' in criteria:
-        movies = movies.filter(_Movie.title.like(f"%{criteria['title']}%"))
+        movies = movies.filter(Movie.title.like(f"%{criteria['title']}%"))
     if 'director' in criteria:
-        movies = movies.filter(_Movie.director.like(f"%{criteria['director']}%"))
+        movies = movies.filter(Movie.director.like(f"%{criteria['director']}%"))
     if 'minutes' in criteria:
         minutes = criteria['minutes']
         try:
             low, high = min(minutes), max(minutes)
         except TypeError:
             low = high = minutes
-        movies = movies.filter(_Movie.minutes.between(low, high))
+        movies = movies.filter(Movie.minutes.between(low, high))
     if 'year' in criteria:
         year = criteria['year']
         try:
             low, high = min(year), max(year)
         except TypeError:
             low = high = year
-        movies = movies.filter(_Movie.year.between(low, high))
+        movies = movies.filter(Movie.year.between(low, high))
     if 'notes' in criteria:
-        movies = movies.filter(_Movie.notes.like(f"%{criteria['notes']}%"))
+        movies = movies.filter(Movie.notes.like(f"%{criteria['notes']}%"))
     if 'tags' in criteria:
         tags = criteria['tags']
         if isinstance(tags, str):
             tags = [tags, ]
-        movies = (movies.filter(_Tag.tag.in_(tags)))
+        movies = (movies.filter(Tag.tag.in_(tags)))
 
     return movies
