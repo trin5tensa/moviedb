@@ -1,7 +1,7 @@
 """Tests for moviedatabase."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/25/19, 8:32 AM by stephen.
+#  Last modified 9/26/19, 9:59 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -81,6 +81,11 @@ class TestStartUp:
         path, filename = logger_calls[0]
         assert path[-len(expected_path):] == expected_path
         assert filename == expected_filename
+    
+    def test_config_data_initialized(self):
+        moviedb.start_up()
+        assert isinstance(moviedb.config.app, moviedb.config.Config)
+        assert moviedb.config.app.tkroot is None
     
     def test_start_database_called(self, monkeypatch_startup):
         _, connect_calls = monkeypatch_startup

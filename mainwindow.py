@@ -1,10 +1,7 @@
-"""GUI Controller
-
-This module controls all gui activity
-"""
+"""Main Window."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/26/19, 9:59 AM by stephen.
+#  Last modified 9/26/19, 9:56 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,7 +13,7 @@ This module controls all gui activity
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# moviedb-#77  Remove layout reminder comments.
+# TODO Remove layout reminder comments.
 # Python package imports
 
 
@@ -33,18 +30,24 @@ This module controls all gui activity
 
 
 # API Classes
+class MainWindow:
+    """Create and manage the menu bar and the application's main window. """
+    # moviedb-#75 Development Stub based on pigjar
+    pass
 
+    def tk_setup(self):
+        """This is the part of __init__ that handles everything that shouldn't be in __init__."""
+        # moviedb-#75
+        #   Development Stub based on pigjar
+        #   This is the part of pigjar's __init__ that hand;es everything that shouldn't be
+        #   in an __init__
+        pass
 
 # API Functions
-def run():
-    """Run the GUI."""
-    # moviedb-#77 Create config object in new config module.
-    # moviedb-#77 Save MainWindow object to config object.
-    # moviedb-#77 Run tk mainloop
-    pass
 
 
 # Internal Module Classes
 
 
 # Internal Module Functions
+
