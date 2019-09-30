@@ -1,7 +1,4 @@
-"""GUI Controller
-
-This module controls all gui activity
-"""
+"""Application configuration data """
 
 #  Copyright© 2019. Stephen Rigden.
 #  Last modified 9/30/19, 9:24 AM by stephen.
@@ -16,12 +13,19 @@ This module controls all gui activity
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import config
-import mainwindow
+from dataclasses import dataclass
+from typing import Optional
 
 
-def run():
-    """Run the GUI."""
-    config.app.root_window = mainwindow.MainWindow()
-    config.app.root_window.__post_init__()
-    config.app.root_window.tk_parent.mainloop()
+mainwindow: 'mainwindow'
+
+
+@dataclass
+class Config:
+    """The applications configuration data.
+    
+    A single object of this class is created in the application's start_up() function."""
+    root_window: 'mainwindow.MainWindow' = None
+
+
+app: Optional[Config] = None
