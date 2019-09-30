@@ -1,7 +1,7 @@
 """Main moviedatabase program"""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/26/19, 9:59 AM by stephen.
+#  Last modified 9/30/19, 9:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -59,7 +59,6 @@ def close_down():
 def start_logger(root_dir: str, program: str):
     """Start the logger."""
     q_name = os.path.normpath(os.path.join(root_dir, f"{program}.log"))
-    print(q_name)
     logging.basicConfig(format='{asctime} {levelname:8} {lineno:4d} {module:20} {message}',
                         style='{',
                         level='INFO',

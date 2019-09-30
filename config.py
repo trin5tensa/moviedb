@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/26/19, 9:59 AM by stephen.
+#  Last modified 9/30/19, 9:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,9 +14,10 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from dataclasses import dataclass
+from typing import Optional
 
 
-app = None
+mainwindow: 'mainwindow'
 
 
 @dataclass
@@ -24,4 +25,7 @@ class Config:
     """The applications configuration data.
     
     A single object of this class is created in the application's start_up() function."""
-    tkroot = None
+    root_window: 'mainwindow.MainWindow' = None
+
+
+app: Optional[Config] = None

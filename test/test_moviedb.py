@@ -1,7 +1,7 @@
 """Tests for moviedatabase."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/26/19, 9:59 AM by stephen.
+#  Last modified 9/30/19, 9:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -63,7 +63,7 @@ class TestStartUp:
             monkeypatch: pytest fixture
 
         Returns:
-
+            # moviedb-#82 Update docs
         """
         logger_calls = []
         monkeypatch.setattr(moviedb, 'start_logger',
@@ -85,7 +85,7 @@ class TestStartUp:
     def test_config_data_initialized(self):
         moviedb.start_up()
         assert isinstance(moviedb.config.app, moviedb.config.Config)
-        assert moviedb.config.app.tkroot is None
+        assert moviedb.config.app.root_window is None
     
     def test_start_database_called(self, monkeypatch_startup):
         _, connect_calls = monkeypatch_startup
@@ -164,7 +164,6 @@ class TestCommand:
             moviedb.command()
         
         lines = [line for line in print_file.getvalue().split('\n')]
-        print('t100', lines[0])
         assert lines[0] == test_exc
     
     def test_default_database_called(self, monkeypatch):

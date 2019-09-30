@@ -4,7 +4,7 @@ This module controls all gui activity
 """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/26/19, 9:59 AM by stephen.
+#  Last modified 9/30/19, 9:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,35 +16,12 @@ This module controls all gui activity
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# moviedb-#77  Remove layout reminder comments.
-# Python package imports
+import config
+import mainwindow
 
 
-# Third party package imports
-
-
-# Project Imports
-
-
-# Constants
-
-
-# Pure data Dataclasses & Named tuples
-
-
-# API Classes
-
-
-# API Functions
 def run():
     """Run the GUI."""
-    # moviedb-#77 Create config object in new config module.
-    # moviedb-#77 Save MainWindow object to config object.
-    # moviedb-#77 Run tk mainloop
-    pass
-
-
-# Internal Module Classes
-
-
-# Internal Module Functions
+    config.app.root_window = mainwindow.MainWindow()
+    config.app.root_window.__post_init__()
+    config.app.root_window.tk_parent.mainloop()
