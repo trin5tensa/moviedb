@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/30/19, 9:24 AM by stephen.
+#  Last modified 10/8/19, 6:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -33,26 +33,26 @@ class DummyTk:
 @dataclass
 class DummyMainWindow:
     """Test dummy for application's main window."""
-    tk_parent = None
-    tk_setup_called = False
+    parent = None
+    _tk_init_called = False
     
     def __post_init__(self):
-        self.tk_parent = DummyTk()
-        self.tk_setup_called = True
+        self.parent = DummyTk()
+        self._tk_init_called = True
         
 
 class TestRun:
     @pytest.fixture()
     def test_run_setup(self, monkeypatch):
         monkeypatch.setattr(gui.mainwindow, 'MainWindow', DummyMainWindow)
-        gui.config.app = gui.config.Config()
+        gui.config.app = gui.config.Config('test moviedb')
         gui.run()
     
     def test_root_window_initialized(self, test_run_setup):
         assert isinstance(gui.config.app.root_window, DummyMainWindow)
         
-    def test_tk_setup_called(self, test_run_setup):
-        assert gui.config.app.root_window.tk_setup_called
+    def test_tk_init_called(self, test_run_setup):
+        assert gui.config.app.root_window._tk_init_called
         
     def test_mainloop_called(self, test_run_setup):
-        assert gui.config.app.root_window.tk_parent.mainloop_called
+        assert gui.config.app.root_window.parent.mainloop_called

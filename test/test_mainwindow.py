@@ -1,10 +1,7 @@
-"""GUI Controller
-
-This module controls all gui activity
-"""
+"""Test Module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/8/19, 6:58 AM by stephen.
+#  Last modified 10/8/19, 6:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,11 +13,6 @@ This module controls all gui activity
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import config
 import mainwindow
 
-
-def run():
-    """Run the GUI."""
-    config.app.root_window = mainwindow.MainWindow()
-    config.app.root_window.parent.mainloop()
+# DayBreak Write tests
