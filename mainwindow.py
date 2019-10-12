@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/8/19, 6:58 AM by stephen.
+#  Last modified 10/12/19, 8:54 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,7 +19,7 @@ import logging
 import re
 import tkinter as tk
 import tkinter.ttk as ttk
-from typing import Optional, Sequence, Callable, Union, Tuple
+from typing import Optional, Sequence, Callable, Union, Tuple, List
 
 import config
 
@@ -45,7 +45,7 @@ class MainWindow:
         self.parent.title(config.app.name)
         self.parent.option_add('*tearOff', False)
         self.parent.geometry(self.set_geometry())
-        self.place_menubar()
+        self.place_menubar(MenuBar().menus)
         # moviedb-#75 Add tk_shutdown to menu item 'exit'
         config.app.ttk_main_pane = ttk.Frame(self.parent)
         config.app.ttk_main_pane.pack(fill='both', expand=True)
@@ -102,11 +102,11 @@ class MainWindow:
                 length = available
         return str(length), '{:+}'.format(offset)
 
-    def place_menubar(self):
+    def place_menubar(self, menus: List['Menu']):
         """Create menubar."""
         menubar = tk.Menu(self.parent)
         self.parent.config(menu=menubar)
-        for menu in MenuBar().menus:
+        for menu in menus:
             self.place_menu(menubar, menu)
             
     @staticmethod
@@ -184,7 +184,7 @@ class Menu:
 @dataclass
 class MenuBar:
     """Data for construction and management of the menu."""
-    def __post_init__(self):  # pragma: no cover
+    def __post_init__(self):
         """Initialize the applications menu bar data.
         
         Menu separators: Use '-' or any other character of type str.
