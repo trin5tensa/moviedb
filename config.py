@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/12/19, 8:54 AM by stephen.
+#  Last modified 10/14/19, 8:55 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -27,9 +27,10 @@ class Config:
     A single object of this class is created in the application's start_up() function.
     """
     name: str
+    geometry: str = None
+    
     root_window: 'mainwindow.MainWindow' = None
     ttk_main_pane: 'mainwindow.ttk.Frame' = None
-    geometry: str = None
 
 
 app: Optional[Config] = None

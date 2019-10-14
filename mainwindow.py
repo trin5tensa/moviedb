@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/12/19, 8:54 AM by stephen.
+#  Last modified 10/14/19, 8:55 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -44,12 +44,15 @@ class MainWindow:
         self.parent = tk.Tk()
         self.parent.title(config.app.name)
         self.parent.option_add('*tearOff', False)
+        # moviedb-#75 Save geometry to app.geometry
         self.parent.geometry(self.set_geometry())
         self.place_menubar(MenuBar().menus)
+        self.parent.protocol('WM_DELETE_WINDOW', self.tk_shutdown)
         # moviedb-#75 Add tk_shutdown to menu item 'exit'
+
+        # moviedb-#75 Make ttk_main_pane an attribute of MainWindow
         config.app.ttk_main_pane = ttk.Frame(self.parent)
         config.app.ttk_main_pane.pack(fill='both', expand=True)
-        self.parent.protocol('WM_DELETE_WINDOW', self.tk_shutdown)
 
     def set_geometry(self) -> str:
         """Set window geometry from a default value or app.geometry and make sure it will
@@ -94,12 +97,14 @@ class MainWindow:
         req_length = length + abs(offset)
         available = int(available)
         if req_length > available:
+            # TODO Use f string
             msg = ('The saved screen geometry dimension {} and offset {} was too large for '
-                   'this screen {}'.format(length, offset, available))
+                   'this screen (>{})'.format(length, offset, available))
             logging.info(msg=msg)
             offset = 0
             if length > available:
                 length = available
+        # TODO Use f string
         return str(length), '{:+}'.format(offset)
 
     def place_menubar(self, menus: List['Menu']):
