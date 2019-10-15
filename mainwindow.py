@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/14/19, 8:55 AM by stephen.
+#  Last modified 10/15/19, 7:49 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -97,15 +97,13 @@ class MainWindow:
         req_length = length + abs(offset)
         available = int(available)
         if req_length > available:
-            # TODO Use f string
-            msg = ('The saved screen geometry dimension {} and offset {} was too large for '
-                   'this screen (>{})'.format(length, offset, available))
+            msg = (f'The saved screen geometry dimension {length} and offset {offset} is too large for '
+                   f'this monitor (>{available})')
             logging.info(msg=msg)
             offset = 0
             if length > available:
                 length = available
-        # TODO Use f string
-        return str(length), '{:+}'.format(offset)
+        return str(length), f'{offset:+}'
 
     def place_menubar(self, menus: List['Menu']):
         """Create menubar."""
