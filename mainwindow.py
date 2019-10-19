@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/15/19, 7:49 AM by stephen.
+#  Last modified 10/19/19, 9:03 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -27,7 +27,6 @@ import config
 @dataclass
 class MainWindow:
     """Create and manage the menu bar and the application's main window. """
-    menu_data: Sequence['Menu'] = None
     parent: Optional[tk.Tk] = None
     tk_args: Sequence = None
     tk_kwargs: Mapping = None
@@ -41,6 +40,7 @@ class MainWindow:
         
         The separation of this code allows this method to be monkeypatched thus ensuring that Tk does
         not get invoked during testing."""
+        # moviedb-#75 Can this be incorporated with __post_init__?
         self.parent = tk.Tk()
         self.parent.title(config.app.name)
         self.parent.option_add('*tearOff', False)
@@ -97,8 +97,8 @@ class MainWindow:
         req_length = length + abs(offset)
         available = int(available)
         if req_length > available:
-            msg = (f'The saved screen geometry dimension {length} and offset {offset} is too large for '
-                   f'this monitor (>{available})')
+            msg = (f'The saved screen geometry {length=} and {offset=} '
+                   f'is too large for this monitor ({available=})')
             logging.info(msg=msg)
             offset = 0
             if length > available:
@@ -142,7 +142,7 @@ class MainWindow:
 
             # Unhandled conditions: Not a separator and with a non callable selection_handler.
             else:
-                msg = (f"The menu item '{menu_item.name}' is not a separator and does not "
+                msg = (f"The menu item '{menu_item.name=}' is not a separator and does not "
                        f"contain a callable handler.")
                 logging.error(msg=msg)
                 cascade.add_command(label=menu_item.name, state=tk.DISABLED)
@@ -152,8 +152,10 @@ class MainWindow:
 
     def tk_shutdown(self):
         """Carry out actions needed when main window is closed."""
+        # Save geometry in config.app for future permanent storage.
         config.app.geometry = self.parent.winfo_geometry()
-        self.parent.destroy()  # Destroy all widgets and end mainloop.
+        # Destroy all widgets and end mainloop.
+        self.parent.destroy()
 
 
 # noinspection PyUnresolvedReferences
