@@ -1,7 +1,7 @@
 """Tests for moviedatabase."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/30/19, 9:24 AM by stephen.
+#  Last modified 10/20/19, 1:46 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -83,6 +83,9 @@ class TestStartUp:
         assert filename == expected_filename
     
     def test_config_data_initialized(self):
+        # moviedb-#82
+        #  Why is the test run creating movies.sqlite3 in the test directory?
+        #  -> Add monkeypatch_startup to patch the call to database.connect_to_database()—
         moviedb.start_up()
         assert isinstance(moviedb.config.app, moviedb.config.Config)
         assert moviedb.config.app.root_window is None
