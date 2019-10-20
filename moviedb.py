@@ -1,7 +1,7 @@
 """Main moviedatabase program"""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/19/19, 9:03 AM by stephen.
+#  Last modified 10/20/19, 1:46 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -39,7 +39,7 @@ def main():
 
 def start_up():
     """Initialize the program."""
-    # TODO Load the config object
+    # moviedb-#84 Load the config object
     # Start the logger.
     root_dir, program_name = os.path.split(__file__)
     program, _ = program_name.split('.')
@@ -54,8 +54,9 @@ def start_up():
 
 def close_down():
     """Execute close down activities."""
-    # TODO Update config object with dynamic values
-    # TODO Save the config object
+    # moviedb-#84
+    #   Update config object with dynamic values
+    #   Save the config object
     logging.shutdown()
 
 

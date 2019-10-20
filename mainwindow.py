@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/19/19, 9:03 AM by stephen.
+#  Last modified 10/20/19, 1:48 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,35 +24,28 @@ from typing import Optional, Sequence, Callable, Union, Tuple, List
 import config
 
 
+# The quit item needs special processing.
+QUIT_ITEM = 'Quit'
+
+
 @dataclass
 class MainWindow:
     """Create and manage the menu bar and the application's main window. """
     parent: Optional[tk.Tk] = None
     tk_args: Sequence = None
     tk_kwargs: Mapping = None
+    ttk_main_pane: ttk.Frame = None
     
     def __post_init__(self):
         """This is the part of __init__ that handles everything that shouldn't be in __init__."""
-        self._tk_init()
-
-    def _tk_init(self):
-        """Parts of __post_init__ which set up tk.
-        
-        The separation of this code allows this method to be monkeypatched thus ensuring that Tk does
-        not get invoked during testing."""
-        # moviedb-#75 Can this be incorporated with __post_init__?
         self.parent = tk.Tk()
         self.parent.title(config.app.name)
         self.parent.option_add('*tearOff', False)
-        # moviedb-#75 Save geometry to app.geometry
         self.parent.geometry(self.set_geometry())
-        self.place_menubar(MenuBar().menus)
+        self.place_menubar(MenuData().menus)
         self.parent.protocol('WM_DELETE_WINDOW', self.tk_shutdown)
-        # moviedb-#75 Add tk_shutdown to menu item 'exit'
-
-        # moviedb-#75 Make ttk_main_pane an attribute of MainWindow
-        config.app.ttk_main_pane = ttk.Frame(self.parent)
-        config.app.ttk_main_pane.pack(fill='both', expand=True)
+        self.ttk_main_pane = ttk.Frame(self.parent)
+        self.ttk_main_pane.pack(fill='both', expand=True)
 
     def set_geometry(self) -> str:
         """Set window geometry from a default value or app.geometry and make sure it will
@@ -111,9 +104,8 @@ class MainWindow:
         self.parent.config(menu=menubar)
         for menu in menus:
             self.place_menu(menubar, menu)
-            
-    @staticmethod
-    def place_menu(menubar: tk.Menu, menu: 'Menu'):
+    
+    def place_menu(self, menubar: tk.Menu, menu: 'Menu'):
         """Create a menu with its menu items.
 
         Args:
@@ -128,6 +120,11 @@ class MainWindow:
             if isinstance(menu_item, str):
                 cascade.add_separator()
 
+            # Create the program exit item
+            elif menu_item.name == QUIT_ITEM:
+                cascade.add_command(label=f"{QUIT_ITEM} {config.app.name.title()}",
+                                    command=self.tk_shutdown, state=tk.NORMAL)
+
             # Add a menu item which has a handler
             elif callable(menu_item.selection_handler):
                 cascade.add_command(label=menu_item.name, command=menu_item.selection_handler)
@@ -135,7 +132,7 @@ class MainWindow:
                     cascade.entryconfig(menu_item_ix, state=tk.NORMAL)
                 else:
                     cascade.entryconfig(menu_item_ix, state=tk.DISABLED)
-        
+
             # Add a disabled menu item if there is no handler.
             elif not menu_item.selection_handler:
                 cascade.add_command(label=menu_item.name, state=tk.DISABLED)
@@ -187,24 +184,25 @@ class Menu:
 
 
 @dataclass
-class MenuBar:
+class MenuData:
     """Data for construction and management of the menu."""
+    
     def __post_init__(self):
         """Initialize the applications menu bar data.
         
         Menu separators: Use '-' or any other character of type str.
         """
         self.menus = [
-            Menu('Moviesdb', [
-                MenuItem('About…'),
-                MenuItem('Quit'), ]),
-            Menu('File', [
-                MenuItem('New…'),
-                MenuItem('Open…'),
-                MenuItem('Save As…'),
-                '-',
-                MenuItem('Import csv'), ]),
-            Menu('Edit', [
-                MenuItem('Cut'),
-                MenuItem('Copy'),
-                MenuItem("Paste"), ]), ]
+                Menu('Moviedb', [
+                        MenuItem('About…'),
+                        MenuItem(QUIT_ITEM), ]),
+                Menu('File', [
+                        MenuItem('New…'),
+                        MenuItem('Open…'),
+                        MenuItem('Save As…'),
+                        '-',
+                        MenuItem('Import csv'), ]),
+                Menu('Edit', [
+                        MenuItem('Cut'),
+                        MenuItem('Copy'),
+                        MenuItem("Paste"), ]), ]

@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/19/19, 9:15 AM by stephen.
+#  Last modified 10/20/19, 1:48 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,7 @@
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Callable, List, Literal, NewType, Optional, Tuple
+from typing import Callable, List, Literal, NewType, Optional, Tuple, Dict, Any
 
 import pytest
 
@@ -36,28 +36,30 @@ class TestMainWindowInit:
     def test_parent_initialized(self, class_patches):
         with self.init_context():
             assert isinstance(self.root_window.parent, InstrumentedTk)
-            assert mainwindow.config.app.ttk_main_pane == InstrumentedTtkFrame(parent=InstrumentedTk())
+            assert self.root_window.ttk_main_pane == InstrumentedTtkFrame(
+                    parent=InstrumentedTk(), pack_args=dict(fill='both', expand=True))
     
     def test_title_set(self, class_patches):
         with self.init_context():
             assert self.root_window.parent.title_args == TEST_TITLE
-    
+
     def test_tear_off_suppressed(self, class_patches):
         with self.init_context():
             assert self.root_window.parent.option_add_args == ('*tearOff', False)
-    
+
     def test_geometry_called(self, class_patches):
         with self.init_context():
             assert self.root_window.parent.geometry_args == ('test geometry args',)
-    
+
     def test_place_menubar_called(self, class_patches):
         with self.init_context():
-            assert self.place_menubar == (mainwindow.MenuBar().menus,)
-    
+            assert self.place_menubar == (mainwindow.MenuData().menus,)
+
     def test_main_pane_geometry_set(self, class_patches):
         with self.init_context():
-            assert mainwindow.config.app.ttk_main_pane.pack_args == dict(fill='both', expand=True)
-    
+            # noinspection PyUnresolvedReferences
+            assert self.root_window.ttk_main_pane.pack_args == dict(fill='both', expand=True)
+
     def test_tk_shutdown_protocol_set(self, class_patches):
         with self.init_context():
             assert self.root_window.parent.protocol_args == ('WM_DELETE_WINDOW',
@@ -186,7 +188,7 @@ class TestMainWindowPlaceMenuBar:
             assert label == 'Item 3'
             assert command is None
             assert state == 'disabled'
-    
+
     def test_add_command_called_for_menu_item_with_uncallable_handler(self, class_patches):
         with self.menu_context():
             label, command, state = self.root_window.parent.menu.menu.menu_items[4]
@@ -195,18 +197,25 @@ class TestMainWindowPlaceMenuBar:
             assert state == 'disabled'
             assert self.logging_msg == ("The menu item 'menu_item.name='Item 4'' is not a separator "
                                         "and does not contain a callable handler.")
-    
+
+    def test_add_command_called_for_quit_menu_item(self, class_patches):
+        with self.menu_context():
+            label, command, state = self.root_window.parent.menu.menu.menu_items[5]
+            assert label == 'Quit Test Moviedb'
+            assert command == self.root_window.tk_shutdown
+            assert state == 'normal'
+
     def test_menu_added_to_menubar(self, class_patches):
         with self.menu_context():
             assert self.root_window.parent.menu.label == TEST_MENU
-    
+
     # noinspection PyMissingOrEmptyDocstring
     @pytest.fixture()
     def class_patches(self, monkeypatch):
         monkeypatch.setattr(mainwindow.tk, 'Tk', InstrumentedTk)
         monkeypatch.setattr(mainwindow.ttk, 'Frame', InstrumentedTtkFrame)
         monkeypatch.setattr(mainwindow.tk, 'Menu', InstrumentedTkMenu)
-        monkeypatch.setattr(mainwindow, 'MenuBar', DummyMenuBar)
+        monkeypatch.setattr(mainwindow, 'MenuData', DummyMenuData)
         monkeypatch.setattr(mainwindow.tk, 'NORMAL', 'normal')
         monkeypatch.setattr(mainwindow.tk, 'DISABLED', 'disabled')
         monkeypatch.setattr(mainwindow.MainWindow, 'set_geometry', lambda *args: None)
@@ -306,7 +315,8 @@ class InstrumentedTk:
 @dataclass
 class InstrumentedTtkFrame:
     parent: InstrumentedTk
-    pack_args = None
+    # pack_args = None
+    pack_args: Optional[Dict[str, Any]] = None
     
     def pack(self, **kwargs):
         self.pack_args = kwargs
@@ -341,7 +351,7 @@ class InstrumentedTkMenu:
 
 
 @dataclass
-class DummyMenuBar:
+class DummyMenuData:
     """Dummy menu."""
     
     def __post_init__(self):
@@ -351,4 +361,6 @@ class DummyMenuBar:
                 mainwindow.MenuItem('Item 1', lambda: 'Item 1 handler'),
                 mainwindow.MenuItem('Item 2', lambda: 'Item 2 handler', active=False),
                 mainwindow.MenuItem('Item 3'),
-                mainwindow.MenuItem('Item 4', 42), ])]
+                mainwindow.MenuItem('Item 4', 42),
+                mainwindow.MenuItem(mainwindow.QUIT_ITEM),
+                ])]
