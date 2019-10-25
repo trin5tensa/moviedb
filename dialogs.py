@@ -1,7 +1,7 @@
 """Manager of tkinter dialogs."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/24/19, 1:57 PM by stephen.
+#  Last modified 10/25/19, 8:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -127,24 +127,27 @@ class Dialog:
     # Key: Internal button name used by program. e.g. ok, cancel
     # Value: Button label seen by user. e.g. OK, Cancel
     button_labels: Dict[str, str]
-    window_title: Optional[str] = None
+    title: Optional[str] = None
     
     def __post_init__(self):
         # Organize the buttons
         self.buttons = {name: Button(label) for name, label in self.button_labels.items()}
         # Set the rightmost button as the 'cancel dialog' button.
         self.cancel_button = list(self.buttons.keys())[-1]
-        
+    
         # Create window
         self.window = tk.Toplevel(self.parent)
+        self.window.title(self.title)
         self.window.transient()
         self.window.resizable(width=False, height=False)
+        self.set_geometry()
+    
+        # Bind key presses and window closure.
         self.window.bind('<Return>', self.do_button_action)
         self.window.bind('<Escape>', self.destroy)
         self.window.protocol('WM_DELETE_WINDOW',
                              lambda: self.destroy(button_name=self.cancel_button))
-        self.set_geometry()
-        
+    
         # Create button frame and buttons.
         self.outer_button_frame = ttk.Frame(self.window)
         self.outer_button_frame.grid(row=1, sticky=tk.EW)
@@ -155,12 +158,17 @@ class Dialog:
             else:
                 ttk_button = self.make_button(buttonbox_frame, name, self.do_button_action)
             self.buttons[name].ttk_button = ttk_button
-        
+        if len(self.buttons) == 1:
+            # Center a single button
+            buttonbox_frame.pack()
+        else:
+            buttonbox_frame.pack(side='right')
+    
         # Create body frame and body.
         self.body_frame = ttk.Frame(self.window, padding=BODY_PADDING)
         self.body_frame.grid(row=0, sticky=tk.NSEW)
         body_focus = self.make_body(self.body_frame)
-        
+    
         # Set focus
         if body_focus:
             self.initial_focus: FocuseeWidget = body_focus
@@ -171,10 +179,6 @@ class Dialog:
         self.window.wait_window()
     
     # TODO __call__(self) -> str:
-    
-    def set_geometry(self):
-        # TODO Write tests
-        pass
     
     def destroy(self, event: Optional[tk.Event] = None, button_name: str = None):
         # TODO Write tests
@@ -200,6 +204,10 @@ class Dialog:
         """
         # TODO Write tests
         raise NotImplementedError
+
+    def set_geometry(self):
+        # TODO Was place_dialog. Write tests
+        pass
 
 
 @dataclass

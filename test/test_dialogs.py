@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/24/19, 1:57 PM by stephen.
+#  Last modified 10/25/19, 8:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -45,35 +45,49 @@ class TestDialogInit:
     def test_toplevel_window_created(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             assert dialog.window == TkToplevel(TtkFrame(DummyTk()))
-    
+
     def test_transient_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             assert dialog.window.transient_called
-    
+
     def test_resizable_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             assert dialog.window.resizable_called_with == dict(width=False, height=False)
-    
+
+    def test_title_called(self, class_patches):
+        with self.init_context(dict(ok='OK', cancel='Cancel'), title='test title') as dialog:
+            assert dialog.window.title_called_with == ('test title',)
+
     def test_outer_button_frame_created(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             assert dialog.outer_button_frame == TtkFrame(TkToplevel(TtkFrame(DummyTk())))
-    
+
     def test_outer_button_frame_gridded(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             assert dialog.outer_button_frame.grid_calls.popleft() == dict(row=1, sticky=dialogs.tk.EW)
-    
+
     def test_buttonbox_created(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             expected = TtkFrame(dialog.outer_button_frame, padding=dialogs.BODY_PADDING)
             buttonbox_frame = dialog.outer_button_frame.children[0]
             assert buttonbox_frame == expected
-    
+
+    def test_buttonbox_packed(self, class_patches):
+        with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            buttonbox_frame = dialog.outer_button_frame.children[0]
+            assert buttonbox_frame.pack_calls.popleft() == (dict(side='right'))
+
+    def test_buttonbox_packed_with_single_button(self, class_patches):
+        with self.init_context(dict(ok='OK')) as dialog:
+            buttonbox_frame = dialog.outer_button_frame.children[0]
+            assert buttonbox_frame.pack_calls.popleft() == {}
+
     def test_make_button_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             buttonbox_frame = dialog.outer_button_frame.children[0]
             assert self.make_button_args == [(buttonbox_frame, 'ok', dialog.do_button_action),
                                              (buttonbox_frame, 'cancel', dialog.destroy), ]
-    
+
     def test_body_frame_created(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             assert dialog.body_frame == TtkFrame(dialog.window, padding=dialogs.BODY_PADDING)
@@ -101,9 +115,12 @@ class TestDialogInit:
     def test_protocol_called(self, class_patches):
         print()
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
-            assert (dialog.window.protocol_args.popleft() ==
-                    'WM_DELETE_WINDOW',
-                    lambda: dialog.destroy(button_name=dialog.cancel_button))
+            actual_call = dialog.window.protocol_args[0]
+            assert actual_call[0] == 'WM_DELETE_WINDOW'
+    
+            destroy_call = actual_call[1]
+            destroy_call()
+            assert self.destroy_called_with.popleft() == dict(button_name='cancel')
     
     def test_set_geometry_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')):
@@ -112,7 +129,7 @@ class TestDialogInit:
     def test_wait_window_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             assert dialog.window.wait_window_called
-    
+
     @pytest.fixture()
     def class_patches(self, monkeypatch):
         monkeypatch.setattr(dialogs.tk, 'Tk', DummyTk)
@@ -122,25 +139,30 @@ class TestDialogInit:
         monkeypatch.setattr(dialogs.Dialog, 'make_button', self.make_button)
         monkeypatch.setattr(dialogs.Dialog, 'make_body', self.make_body)
         monkeypatch.setattr(dialogs.Dialog, 'set_geometry', self.set_geometry)
-    
+        monkeypatch.setattr(dialogs.Dialog, 'destroy', self.destroy)
+
     @contextmanager
-    def init_context(self, buttons: Dict[str, str]):
+    def init_context(self, buttons: Dict[str, str], title=None):
         self.make_button_args = []
         self.make_body_args = []
         self.set_geometry_called = False
+        self.destroy_called_with = deque()
         # noinspection PyTypeChecker
-        yield dialogs.Dialog(TtkFrame(DummyTk()), buttons)
-    
+        yield dialogs.Dialog(TtkFrame(DummyTk()), buttons, title)
+
     def make_button(self, *args):
         self.make_button_args.append(args)
         return dialogs.ttk.Button(args[0])
-    
+
     def make_body(self, *args):
         self.make_body_args.append(args)
         return None
-    
+
     def set_geometry(self):
         self.set_geometry_called = True
+
+    def destroy(self, **kwargs):
+        self.destroy_called_with.append(kwargs)
 
 
 @dataclass
@@ -163,14 +185,18 @@ class TtkFrame:
     missing in the source code."""
     parent: Union[DummyTk, 'TkToplevel']
     padding: str = None
-    
+
     def __post_init__(self):
         self.children = deque()
         self.parent.children.append(self)
         self.grid_calls = deque()
-    
+        self.pack_calls = deque()
+
     def grid(self, **kwargs):
         self.grid_calls.append(kwargs)
+
+    def pack(self, **kwargs):
+        self.pack_calls.append(kwargs)
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -187,22 +213,26 @@ class TkToplevel:
         self.parent.children.append(self)
         self.transient_called = False
         self.resizable_called_with = None
+        self.title_called_with = None
         self.wait_window_called = False
         self.bind_args = deque()
         self.protocol_args = deque()
-    
+
     def transient(self):
         self.transient_called = True
-    
+
+    def title(self, *args):
+        self.title_called_with = args
+
     def resizable(self, **kwargs):
         self.resizable_called_with = kwargs
-    
+
     def wait_window(self):
         self.wait_window_called = True
-    
+
     def bind(self, *args):
         self.bind_args.append(args)
-    
+
     def protocol(self, *args):
         self.protocol_args.append(args)
 
