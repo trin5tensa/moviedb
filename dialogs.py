@@ -1,7 +1,7 @@
 """Manager of tkinter dialogs."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/25/19, 8:53 AM by stephen.
+#  Last modified 10/29/19, 9:10 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +20,7 @@ import tkinter.ttk as ttk
 # TODO Remove layout reminder comments.
 # TODO Remove the functions main() and suite beginning "if __name__ == '__main__'" if not needed.
 # Python package imports
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Dict, Optional, TypeVar
 
 
@@ -32,6 +32,7 @@ from typing import Callable, Dict, Optional, TypeVar
 
 # Constants
 BODY_PADDING = '2m'
+BUTTON_PADDING = '1m'
 
 # Pure data Dataclasses & Named tuples
 FocuseeWidget = TypeVar('FocuseeWidget', ttk.Entry, ttk.Button)
@@ -121,19 +122,22 @@ class Dialog:
     (http://effbot.org/tkinterbook/tkinter-dialog-windows.htm) For testability, however, the
     tk classes are not a superclass of Dialog but are implemented as attributes.
     """
-    
     # Tkinter parent widget
     parent: ttk.Frame
     # Key: Internal button name used by program. e.g. ok, cancel
     # Value: Button label seen by user. e.g. OK, Cancel
     button_labels: Dict[str, str]
     title: Optional[str] = None
-    
+
+    button_clicked: str = field(default=None, init=False, repr=False, compare=False)
+
     def __post_init__(self):
         # Organize the buttons
         self.buttons = {name: Button(label) for name, label in self.button_labels.items()}
         # Set the rightmost button as the 'cancel dialog' button.
         self.cancel_button = list(self.buttons.keys())[-1]
+    
+        # TODO Should all following code in this method be part of __call__?
     
         # Create window
         self.window = tk.Toplevel(self.parent)
@@ -174,25 +178,34 @@ class Dialog:
             self.initial_focus: FocuseeWidget = body_focus
         else:
             self.initial_focus: FocuseeWidget = self.buttons[self.cancel_button].ttk_button
-        
+
+    def __call__(self) -> str:
         # Make window modal
         self.window.wait_window()
-    
-    # TODO __call__(self) -> str:
-    
-    def destroy(self, event: Optional[tk.Event] = None, button_name: str = None):
-        # TODO Write tests
-        pass
-    
-    def do_button_action(self, button_name: str = None):
-        # TODO Write tests
-        pass
-    
+        return self.button_clicked
+
     def make_button(self, buttonbox_frame: ttk.Frame, button_name: str, command: Callable
                     ) -> ttk.Button:
-        # TODO Write tests
-        pass
-    
+        """Create a ttk button.
+
+        Args:
+            buttonbox_frame: Parent
+            button_name: Internal button name
+            command: Handler when button is clicked either do_button_action method or destroy method.
+
+        Returns:
+            The ttk button.
+        """
+        ttk_button = ttk.Button(buttonbox_frame, text=self.buttons[button_name].label,
+                                name=button_name)
+        ttk_button.configure(command=lambda b=button_name: command(button_name=b))
+        ttk_button.pack(side='left', padx=BUTTON_PADDING, pady=BUTTON_PADDING)
+        # TODO This way of setting of the <Return> bind doesn't make much sense. Why every button?
+        ttk_button.bind('<Return>', lambda event, b=ttk_button: b.invoke())
+        if button_name == self.cancel_button:
+            self.window.bind('<Escape>', lambda event, b=ttk_button: b.invoke())
+        return ttk_button
+
     def make_body(self, body_frame: ttk.Frame):
         """Overridable class for creating the widgets of the dialog body.
 
@@ -207,6 +220,15 @@ class Dialog:
 
     def set_geometry(self):
         # TODO Was place_dialog. Write tests
+        pass
+
+    def destroy(self, event: Optional[tk.Event] = None, button_name: str = None):
+        # TODO Write tests
+        pass
+
+    def do_button_action(self, button_name: str = None):
+        # TODO Write tests
+        self.button_clicked = button_name
         pass
 
 
@@ -224,4 +246,4 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main)
+    sys.exit(main())
