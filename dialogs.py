@@ -1,7 +1,7 @@
 """Manager of tkinter dialogs."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/29/19, 9:10 AM by stephen.
+#  Last modified 10/31/19, 11:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -46,7 +46,7 @@ FocuseeWidget = TypeVar('FocuseeWidget', ttk.Entry, ttk.Button)
 
 # Internal Module Classes
 @dataclass
-class Dialog:
+class ModalDialog:
     """This class provides the core functionality for a modal dialog.
 
     It offers two vertically arranged frames which are seen by the user. The lower is the
@@ -119,7 +119,7 @@ class Dialog:
 
 
     The module is based on Fredrik Lundh's "An Introduction to Tkinter" November 2005.
-    (http://effbot.org/tkinterbook/tkinter-dialog-windows.htm) For testability, however, the
+    (http://effbot.org/tkinterbook/tkinter-dialog-windows.htm) the except the
     tk classes are not a superclass of Dialog but are implemented as attributes.
     """
     # Tkinter parent widget
@@ -127,7 +127,7 @@ class Dialog:
     # Key: Internal button name used by program. e.g. ok, cancel
     # Value: Button label seen by user. e.g. OK, Cancel
     button_labels: Dict[str, str]
-    title: Optional[str] = None
+    title: str = field(default='')
 
     button_clicked: str = field(default=None, init=False, repr=False, compare=False)
 
@@ -135,13 +135,15 @@ class Dialog:
         # Organize the buttons
         self.buttons = {name: Button(label) for name, label in self.button_labels.items()}
         # Set the rightmost button as the 'cancel dialog' button.
-        self.cancel_button = list(self.buttons.keys())[-1]
+        self.destroy_button = list(self.buttons.keys())[-1]
     
         # TODO Should all following code in this method be part of __call__?
     
         # Create window
         self.window = tk.Toplevel(self.parent)
+        self.window.withdraw()
         self.window.title(self.title)
+        self.window.grab_set()
         self.window.transient()
         self.window.resizable(width=False, height=False)
         self.set_geometry()
@@ -150,14 +152,14 @@ class Dialog:
         self.window.bind('<Return>', self.do_button_action)
         self.window.bind('<Escape>', self.destroy)
         self.window.protocol('WM_DELETE_WINDOW',
-                             lambda: self.destroy(button_name=self.cancel_button))
+                             lambda: self.destroy(button_name=self.destroy_button))
     
         # Create button frame and buttons.
         self.outer_button_frame = ttk.Frame(self.window)
         self.outer_button_frame.grid(row=1, sticky=tk.EW)
         buttonbox_frame = ttk.Frame(self.outer_button_frame, padding=BODY_PADDING)
         for name in self.buttons:
-            if name == self.cancel_button:
+            if name == self.destroy_button:
                 ttk_button = self.make_button(buttonbox_frame, name, self.destroy)
             else:
                 ttk_button = self.make_button(buttonbox_frame, name, self.do_button_action)
@@ -175,12 +177,13 @@ class Dialog:
     
         # Set focus
         if body_focus:
-            self.initial_focus: FocuseeWidget = body_focus
+            # TODO Test this branch
+            body_focus.focus_set()
         else:
-            self.initial_focus: FocuseeWidget = self.buttons[self.cancel_button].ttk_button
+            self.buttons[self.destroy_button].ttk_button.focus_set()
+        self.window.deiconify()
 
     def __call__(self) -> str:
-        # Make window modal
         self.window.wait_window()
         return self.button_clicked
 
@@ -201,9 +204,9 @@ class Dialog:
         ttk_button.configure(command=lambda b=button_name: command(button_name=b))
         ttk_button.pack(side='left', padx=BUTTON_PADDING, pady=BUTTON_PADDING)
         # TODO This way of setting of the <Return> bind doesn't make much sense. Why every button?
-        ttk_button.bind('<Return>', lambda event, b=ttk_button: b.invoke())
-        if button_name == self.cancel_button:
-            self.window.bind('<Escape>', lambda event, b=ttk_button: b.invoke())
+        # ttk_button.bind('<Return>', lambda event, b=ttk_button: b.invoke())
+        # if button_name == self.destroy_button:
+        #     self.window.bind('<Escape>', lambda event, b=ttk_button: b.invoke())
         return ttk_button
 
     def make_body(self, body_frame: ttk.Frame):
