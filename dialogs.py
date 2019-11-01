@@ -1,7 +1,7 @@
 """Manager of tkinter dialogs."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/31/19, 11:48 AM by stephen.
+#  Last modified 11/1/19, 7:25 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -137,8 +137,6 @@ class ModalDialog:
         # Set the rightmost button as the 'cancel dialog' button.
         self.destroy_button = list(self.buttons.keys())[-1]
     
-        # TODO Should all following code in this method be part of __call__?
-    
         # Create window
         self.window = tk.Toplevel(self.parent)
         self.window.withdraw()
@@ -147,10 +145,6 @@ class ModalDialog:
         self.window.transient()
         self.window.resizable(width=False, height=False)
         self.set_geometry()
-    
-        # Bind key presses and window closure.
-        self.window.bind('<Return>', self.do_button_action)
-        self.window.bind('<Escape>', self.destroy)
         self.window.protocol('WM_DELETE_WINDOW',
                              lambda: self.destroy(button_name=self.destroy_button))
     
@@ -177,7 +171,7 @@ class ModalDialog:
     
         # Set focus
         if body_focus:
-            # TODO Test this branch
+            # TODO Test this branch when make_body written
             body_focus.focus_set()
         else:
             self.buttons[self.destroy_button].ttk_button.focus_set()
@@ -185,6 +179,7 @@ class ModalDialog:
 
     def __call__(self) -> str:
         self.window.wait_window()
+        self.parent.focus_set()
         return self.button_clicked
 
     def make_button(self, buttonbox_frame: ttk.Frame, button_name: str, command: Callable
@@ -203,11 +198,16 @@ class ModalDialog:
                                 name=button_name)
         ttk_button.configure(command=lambda b=button_name: command(button_name=b))
         ttk_button.pack(side='left', padx=BUTTON_PADDING, pady=BUTTON_PADDING)
-        # TODO This way of setting of the <Return> bind doesn't make much sense. Why every button?
-        # ttk_button.bind('<Return>', lambda event, b=ttk_button: b.invoke())
-        # if button_name == self.destroy_button:
-        #     self.window.bind('<Escape>', lambda event, b=ttk_button: b.invoke())
+        # If any button has focus and <Return> is pressed, treat it as a click on that button.
+        ttk_button.bind('<Return>', lambda event, b=ttk_button: b.invoke(button_name))
+        # If the destroy button has focus and <Escape> is pressed, treat it as a click on that button.
+        if button_name == self.destroy_button:
+            self.window.bind('<Escape>', lambda event, b=ttk_button: b.invoke(button_name))
         return ttk_button
+
+    def set_geometry(self):
+        # TODO DayBreak Was place_dialog. Write tests
+        pass
 
     def make_body(self, body_frame: ttk.Frame):
         """Overridable class for creating the widgets of the dialog body.
@@ -221,15 +221,12 @@ class ModalDialog:
         # TODO Write tests
         raise NotImplementedError
 
-    def set_geometry(self):
-        # TODO Was place_dialog. Write tests
-        pass
-
-    def destroy(self, event: Optional[tk.Event] = None, button_name: str = None):
+    def destroy(self, button_name: str):
         # TODO Write tests
+        self.button_clicked = button_name
         pass
 
-    def do_button_action(self, button_name: str = None):
+    def do_button_action(self, button_name: str):
         # TODO Write tests
         self.button_clicked = button_name
         pass
