@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/1/19, 7:27 AM by stephen.
+#  Last modified 11/3/19, 12:11 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -31,105 +31,125 @@ class TestDialogInitAndCall:
     def test_parent_init(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             assert dialog.parent == TtkFrame(DummyTk())
-    
+
     # Tests of __post_init__
-    
-    def test_buttons_init(self, class_patches):
-        with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
-            buttonbox = dialog.outer_button_frame.children.pop()
-            buttons = buttonbox.children
-            assert dialog.buttons == dict(ok=dialogs.Button('OK', buttons.popleft()),
-                                          cancel=dialogs.Button('Cancel', buttons.popleft()))
 
     def test_destroy_button(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             assert dialog.destroy_button == 'cancel'
 
+    def test_button_clicked_initialized_to_none(self, class_patches):
+        with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            assert dialog.button_clicked is None
+
+    # Tests of __call__
+
+    def test_buttons_init(self, class_patches):
+        with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
+            buttonbox = dialog.outer_button_frame.children.pop()
+            buttons = buttonbox.children
+            assert dialog.buttons == dict(ok=dialogs.Button('OK', buttons.popleft()),
+                                          cancel=dialogs.Button('Cancel', buttons.popleft()))
+
     def test_toplevel_window_created(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             assert dialog.window == TkToplevel(TtkFrame(DummyTk()))
 
     def test_withdraw_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             assert dialog.window.withdraw_calls.popleft()
 
     def test_transient_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             assert dialog.window.transient_calls.popleft()
 
     def test_grab_set_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             assert dialog.window.grab_set_calls.popleft()
 
     def test_resizable_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             assert dialog.window.resizable_calls.popleft() == dict(width=False, height=False)
 
     def test_set_geometry_called(self, class_patches):
-        with self.init_context(dict(ok='OK', cancel='Cancel')):
+        with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             assert self.set_geometry_called
 
     def test_title_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel'), title='test title') as dialog:
+            dialog()
             assert dialog.window.title_calls.popleft() == ('test title',)
 
     def test_outer_button_frame_created(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             assert dialog.outer_button_frame == TtkFrame(TkToplevel(TtkFrame(DummyTk())))
 
     def test_outer_button_frame_gridded(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             assert dialog.outer_button_frame.grid_calls.popleft() == dict(row=1, sticky=dialogs.tk.EW)
     
     def test_buttonbox_created(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             expected = TtkFrame(dialog.outer_button_frame, padding=dialogs.BODY_PADDING)
             buttonbox_frame = dialog.outer_button_frame.children[0]
             assert buttonbox_frame == expected
     
     def test_buttonbox_packed(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             buttonbox_frame = dialog.outer_button_frame.children[0]
             assert buttonbox_frame.pack_calls.popleft() == (dict(side='right'))
     
     def test_buttonbox_packed_with_single_button(self, class_patches):
         with self.init_context(dict(ok='OK')) as dialog:
+            dialog()
             buttonbox_frame = dialog.outer_button_frame.children[0]
             assert buttonbox_frame.pack_calls.popleft() == {}
     
     def test_make_button_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             buttonbox_frame = dialog.outer_button_frame.children[0]
             assert self.make_button_args == [(buttonbox_frame, 'ok', dialog.do_button_action),
                                              (buttonbox_frame, 'cancel', dialog.destroy), ]
     
-    def test_button_clicked_initialized_to_none(self, class_patches):
-        with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
-            assert dialog.button_clicked is None
-    
     def test_body_frame_created(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             assert dialog.body_frame == TtkFrame(dialog.window, padding=dialogs.BODY_PADDING)
     
     def test_body_frame_gridded(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             assert dialog.body_frame.grid_calls.popleft() == dict(row=0, sticky=dialogs.tk.NSEW)
     
     def test_make_body_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             assert self.make_body_args[0][0] == dialog.body_frame
     
     def test_initial_focus_set_to_cancel_button(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             buttonbox = dialog.outer_button_frame.children.popleft()
             cancel_button = buttonbox.children.pop()
             assert cancel_button.focus_set_calls
 
     def test_protocol_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
             actual_call = dialog.window.protocol_calls[0]
             assert actual_call[0] == 'WM_DELETE_WINDOW'
-        
             destroy_call = actual_call[1]
             destroy_call()
             assert self.destroy_called_with.popleft() == dict(button_name='cancel')
@@ -138,8 +158,6 @@ class TestDialogInitAndCall:
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             dialog()
             assert dialog.window.deiconify_calls.popleft()
-
-    # Tests of __call__
 
     def test_focus_set_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
@@ -194,6 +212,8 @@ class TestDialogInitAndCall:
 
 # noinspection PyMissingOrEmptyDocstring
 class TestDialogMakeButton:
+    destroy_calls = field(default_factory=deque, init=False, repr=False, compare=False)
+    do_button_action_calls = field(default_factory=deque, init=False, repr=False, compare=False)
     
     # noinspection PyTypeChecker
     def test_button_object_created(self, class_patches):
@@ -243,6 +263,7 @@ class TestDialogMakeButton:
         monkeypatch.setattr(dialogs.ttk, 'Button', TtkButton)
         monkeypatch.setattr(dialogs.ttk, 'Frame', TtkFrame)
         monkeypatch.setattr(dialogs.ModalDialog, 'make_body', lambda *args: None)
+        monkeypatch.setattr(dialogs.ModalDialog, 'set_geometry', lambda *args: None)
         monkeypatch.setattr(dialogs.ModalDialog, 'destroy', self.destroy)
         monkeypatch.setattr(dialogs.ModalDialog, 'do_button_action', self.do_button_action)
     
@@ -252,6 +273,7 @@ class TestDialogMakeButton:
         self.do_button_action_calls = deque()
         # noinspection PyTypeChecker
         dialog = dialogs.ModalDialog(TtkFrame(DummyTk()), buttons)
+        dialog()
         outer_frame = dialog.outer_button_frame
         inner_frame = outer_frame.children.popleft()
         ok_button = inner_frame.children.popleft()
@@ -263,6 +285,31 @@ class TestDialogMakeButton:
     
     def do_button_action(self, **kwargs):
         self.do_button_action_calls.append(kwargs)
+
+
+class TestSetGeometry:
+    
+    def test_geometry_set(self):
+        with self.set_geometry_context(dict(ok='OK'), 250, 125) as dialog:
+            assert dialog.window.geometry_calls.popleft() == '+475+238'
+    
+    def test_geometry_set_for_excessively_wide_dialog(self):
+        with self.set_geometry_context(dict(ok='OK'), 2000, 125) as dialog:
+            assert dialog.window.geometry_calls.popleft() == '+0+238'
+    
+    def test_geometry_set_for_excessively_high_dialog(self):
+        with self.set_geometry_context(dict(ok='OK'), 250, 2000) as dialog:
+            assert dialog.window.geometry_calls.popleft() == '+475+0'
+    
+    @contextmanager
+    def set_geometry_context(self, buttons: Dict[str, str], width: int, height: int):
+        # noinspection PyTypeChecker
+        dialog = dialogs.ModalDialog(TtkFrame(DummyTk()), buttons)
+        dialog.window = TkToplevel(TtkFrame(DummyTk()))
+        dialog.window.width = width
+        dialog.window.height = height
+        dialog.set_geometry()
+        yield dialog
 
 
 @dataclass
@@ -302,6 +349,21 @@ class TtkFrame:
     def focus_set(self):
         self.focus_set_calls.append(True)
 
+    def update_idletasks(self):
+        pass
+
+    def winfo_width(self):
+        return 1000
+
+    def winfo_rootx(self):
+        return 100
+
+    def winfo_height(self):
+        return 500
+
+    def winfo_rooty(self):
+        return 50
+
 
 # noinspection PyMissingOrEmptyDocstring
 @dataclass
@@ -312,7 +374,7 @@ class TkToplevel:
     missing in the source code.
     """
     parent: TtkFrame
-
+    
     children: deque = field(default_factory=deque, init=False, repr=False, compare=False)
     withdraw_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
     transient_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
@@ -323,13 +385,17 @@ class TkToplevel:
     deiconify_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
     bind_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
     protocol_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
-
+    geometry_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
+    
+    width: int = field(default=0, init=False, repr=False, compare=False)
+    height: int = field(default=0, init=False, repr=False, compare=False)
+    
     def __post_init__(self):
         self.parent.children.append(self)
-
+    
     def transient(self):
         self.transient_calls.append(True)
-
+    
     def withdraw(self):
         self.withdraw_calls.append(True)
 
@@ -344,16 +410,24 @@ class TkToplevel:
 
     def wait_window(self):
         self.wait_window_calls.append(True)
-
+    
     def deiconify(self):
         self.deiconify_calls.append(True)
-
+    
     def bind(self, *args):
         self.bind_calls.append(args)
-
+    
     def protocol(self, *args):
         self.protocol_calls.append(args)
-
+    
+    def geometry(self, geometry_string):
+        self.geometry_calls.append(geometry_string)
+    
+    def winfo_width(self):
+        return self.width
+    
+    def winfo_height(self):
+        return self.height
 
 # noinspection PyMissingOrEmptyDocstring
 @dataclass

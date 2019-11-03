@@ -1,7 +1,7 @@
 """Manager of tkinter dialogs."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/1/19, 7:25 AM by stephen.
+#  Last modified 11/3/19, 12:11 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -129,6 +129,7 @@ class ModalDialog:
     button_labels: Dict[str, str]
     title: str = field(default='')
 
+    window: tk.Toplevel = field(default=None, init=False, repr=False, compare=False)
     button_clicked: str = field(default=None, init=False, repr=False, compare=False)
 
     def __post_init__(self):
@@ -136,7 +137,8 @@ class ModalDialog:
         self.buttons = {name: Button(label) for name, label in self.button_labels.items()}
         # Set the rightmost button as the 'cancel dialog' button.
         self.destroy_button = list(self.buttons.keys())[-1]
-    
+
+    def __call__(self) -> str:
         # Create window
         self.window = tk.Toplevel(self.parent)
         self.window.withdraw()
@@ -144,7 +146,6 @@ class ModalDialog:
         self.window.grab_set()
         self.window.transient()
         self.window.resizable(width=False, height=False)
-        self.set_geometry()
         self.window.protocol('WM_DELETE_WINDOW',
                              lambda: self.destroy(button_name=self.destroy_button))
     
@@ -163,7 +164,7 @@ class ModalDialog:
             buttonbox_frame.pack()
         else:
             buttonbox_frame.pack(side='right')
-    
+
         # Create body frame and body.
         self.body_frame = ttk.Frame(self.window, padding=BODY_PADDING)
         self.body_frame.grid(row=0, sticky=tk.NSEW)
@@ -175,9 +176,11 @@ class ModalDialog:
             body_focus.focus_set()
         else:
             self.buttons[self.destroy_button].ttk_button.focus_set()
+    
+        # Make window visible to user
+        self.set_geometry()
         self.window.deiconify()
-
-    def __call__(self) -> str:
+    
         self.window.wait_window()
         self.parent.focus_set()
         return self.button_clicked
@@ -206,8 +209,17 @@ class ModalDialog:
         return ttk_button
 
     def set_geometry(self):
-        # TODO DayBreak Was place_dialog. Write tests
-        pass
+        """Center dialog on parent window."""
+        self.parent.update_idletasks()
+        parent_center_x = int(self.parent.winfo_width() / 2) + self.parent.winfo_rootx()
+        parent_center_y = int(self.parent.winfo_height() / 2) + self.parent.winfo_rooty()
+        dialog_x = parent_center_x - int(self.window.winfo_width() / 2)
+        if dialog_x < 0:
+            dialog_x = 0
+        dialog_y = parent_center_y - int(self.window.winfo_height() / 2)
+        if dialog_y < 0:
+            dialog_y = 0
+        self.window.geometry(f"+{dialog_x}+{dialog_y}")
 
     def make_body(self, body_frame: ttk.Frame):
         """Overridable class for creating the widgets of the dialog body.
