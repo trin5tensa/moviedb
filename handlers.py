@@ -4,7 +4,7 @@ Thos module is the gluw between the user's awlwarion of a menu item and the guo.
 """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/24/19, 1:31 PM by stephen.
+#  Last modified 11/4/19, 8:42 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -48,8 +48,9 @@ import sys
 
 
 def main():
+    # TODO Integration tests
     pass
 
 
 if __name__ == '__main__':
-    sys.exit(main)
+    sys.exit(main())

@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/3/19, 12:11 PM by stephen.
+#  Last modified 11/4/19, 9:33 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -175,11 +175,7 @@ class TestDialogInitAndCall:
             assert dialog() == 'test clicked button'
 
     @pytest.fixture()
-    def class_patches(self, monkeypatch):
-        monkeypatch.setattr(dialogs.tk, 'Tk', DummyTk)
-        monkeypatch.setattr(dialogs.tk, 'Toplevel', TkToplevel)
-        monkeypatch.setattr(dialogs.ttk, 'Button', TtkButton)
-        monkeypatch.setattr(dialogs.ttk, 'Frame', TtkFrame)
+    def class_patches(self, monkeypatch, module_patches):
         monkeypatch.setattr(dialogs.ModalDialog, 'make_button', self.make_button)
         monkeypatch.setattr(dialogs.ModalDialog, 'make_body', self.make_body)
         monkeypatch.setattr(dialogs.ModalDialog, 'set_geometry', self.set_geometry)
@@ -255,13 +251,9 @@ class TestDialogMakeButton:
             assert key == '<Return>'
             command('<Button-1>')
             assert cancel_button.invoke_calls.popleft() == ('cancel',)
-    
+
     @pytest.fixture()
-    def class_patches(self, monkeypatch):
-        monkeypatch.setattr(dialogs.tk, 'Tk', DummyTk)
-        monkeypatch.setattr(dialogs.tk, 'Toplevel', TkToplevel)
-        monkeypatch.setattr(dialogs.ttk, 'Button', TtkButton)
-        monkeypatch.setattr(dialogs.ttk, 'Frame', TtkFrame)
+    def class_patches(self, monkeypatch, module_patches):
         monkeypatch.setattr(dialogs.ModalDialog, 'make_body', lambda *args: None)
         monkeypatch.setattr(dialogs.ModalDialog, 'set_geometry', lambda *args: None)
         monkeypatch.setattr(dialogs.ModalDialog, 'destroy', self.destroy)
@@ -287,6 +279,7 @@ class TestDialogMakeButton:
         self.do_button_action_calls.append(kwargs)
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestSetGeometry:
     
     def test_geometry_set(self):
@@ -309,6 +302,88 @@ class TestSetGeometry:
         dialog.window.width = width
         dialog.window.height = height
         dialog.set_geometry()
+        yield dialog
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestMakeBody:
+    
+    def test_not_implemented_raised(self, class_patches):
+        with pytest.raises(NotImplementedError):
+            with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+                dialog()
+    
+    @pytest.fixture()
+    def class_patches(self, monkeypatch, module_patches):
+        monkeypatch.setattr(dialogs.ModalDialog, 'make_button', self.make_button)
+    
+    @contextmanager
+    def init_context(self, buttons: Dict[str, str], title=None):
+        # noinspection PyTypeChecker
+        yield dialogs.ModalDialog(TtkFrame(DummyTk()), buttons, title)
+    
+    # noinspection PyMethodMayBeStatic
+    def make_button(self, *args):
+        parent, name, _ = args
+        return dialogs.ttk.Button(parent, text=name, name=name)
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestDoButtonAction:
+    
+    def test_button_clicked_set_to_ok(self):
+        buttons = dict(ok='OK')
+        with self.button_action_context(buttons) as dialog:
+            assert dialog.button_clicked == list(buttons.keys()).pop()
+    
+    def test_destroy_called(self):
+        with self.button_action_context(dict(ok='OK')) as dialog:
+            assert dialog.window.destroy_calls.popleft()
+    
+    @contextmanager
+    def button_action_context(self, buttons: Dict[str, str]):
+        # noinspection PyTypeChecker
+        dialog = dialogs.ModalDialog(TtkFrame(DummyTk()), buttons)
+        dialog.window = TkToplevel(TtkFrame(DummyTk()))
+        button = list(buttons.keys()).pop()
+        dialog.do_button_action(button)
+        yield dialog
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestDestroy:
+    
+    def test_button_clicked_set_to_cancel_for_event_invocation(self):
+        buttons = dict(cancel='Cancel')
+        button_name = list(buttons.keys()).pop()
+        event = TkEvent(keysym='Escape')
+        with self.button_action_context(buttons, event=event, button_name=None) as dialog:
+            assert dialog.button_clicked == button_name
+    
+    def test_button_clicked_set_to_cancel_for_button_click_invocation(self):
+        buttons = dict(cancel='Cancel')
+        button_name = list(buttons.keys()).pop()
+        with self.button_action_context(buttons, event=None, button_name=button_name) as dialog:
+            assert dialog.button_clicked == button_name
+    
+    def test_withdraw_called(self):
+        with self.button_action_context(dict(cancel='Cancel'), event=None, button_name=None) as dialog:
+            assert dialog.window.withdraw_calls.popleft()
+    
+    def test_update_idletasks_called(self):
+        with self.button_action_context(dict(cancel='Cancel'), event=None, button_name=None) as dialog:
+            assert dialog.window.update_idletasks_calls.popleft()
+    
+    def test_destroy_called(self):
+        with self.button_action_context(dict(cancel='Cancel'), event=None, button_name=None) as dialog:
+            assert dialog.window.destroy_calls.popleft()
+    
+    @contextmanager
+    def button_action_context(self, buttons: Dict[str, str], event, button_name):
+        # noinspection PyTypeChecker
+        dialog = dialogs.ModalDialog(TtkFrame(DummyTk()), buttons)
+        dialog.window = TkToplevel(TtkFrame(DummyTk()))
+        dialog.destroy(event, button_name)
         yield dialog
 
 
@@ -352,16 +427,20 @@ class TtkFrame:
     def update_idletasks(self):
         pass
 
-    def winfo_width(self):
+    @staticmethod
+    def winfo_width():
         return 1000
 
-    def winfo_rootx(self):
+    @staticmethod
+    def winfo_rootx():
         return 100
 
-    def winfo_height(self):
+    @staticmethod
+    def winfo_height():
         return 500
 
-    def winfo_rooty(self):
+    @staticmethod
+    def winfo_rooty():
         return 50
 
 
@@ -386,13 +465,15 @@ class TkToplevel:
     bind_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
     protocol_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
     geometry_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
-    
+    destroy_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
+    update_idletasks_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
+
     width: int = field(default=0, init=False, repr=False, compare=False)
     height: int = field(default=0, init=False, repr=False, compare=False)
-    
+
     def __post_init__(self):
         self.parent.children.append(self)
-    
+
     def transient(self):
         self.transient_calls.append(True)
     
@@ -419,15 +500,22 @@ class TkToplevel:
     
     def protocol(self, *args):
         self.protocol_calls.append(args)
-    
+
     def geometry(self, geometry_string):
         self.geometry_calls.append(geometry_string)
-    
+
     def winfo_width(self):
         return self.width
-    
+
     def winfo_height(self):
         return self.height
+
+    def update_idletasks(self):
+        self.update_idletasks_calls.append(True)
+
+    def destroy(self):
+        self.destroy_calls.append(True)
+
 
 # noinspection PyMissingOrEmptyDocstring
 @dataclass
@@ -456,12 +544,27 @@ class TtkButton:
 
     def pack(self, **kwargs):
         self.pack_calls.append(kwargs)
-
+    
     def bind(self, *args):
         self.bind_calls.append(args)
-
+    
     def invoke(self, *args):
         self.invoke_calls.append(args)
-
+    
     def focus_set(self):
         self.focus_set_calls.append(True)
+
+
+# noinspection PyMissingOrEmptyDocstring
+@dataclass
+class TkEvent:
+    keysym: str
+
+
+# noinspection PyMissingOrEmptyDocstring
+@pytest.fixture()
+def module_patches(monkeypatch):
+    monkeypatch.setattr(dialogs.tk, 'Tk', DummyTk)
+    monkeypatch.setattr(dialogs.tk, 'Toplevel', TkToplevel)
+    monkeypatch.setattr(dialogs.ttk, 'Button', TtkButton)
+    monkeypatch.setattr(dialogs.ttk, 'Frame', TtkFrame)
