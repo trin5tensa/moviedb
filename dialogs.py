@@ -1,7 +1,7 @@
 """Manager of tkinter dialogs."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/4/19, 9:06 AM by stephen.
+#  Last modified 11/6/19, 6:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,7 +16,7 @@
 import sys
 import tkinter as tk
 import tkinter.ttk as ttk
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable, Dict, Optional, TypeVar
 
 
@@ -27,7 +27,7 @@ FocuseeWidget = TypeVar('FocuseeWidget', ttk.Entry, ttk.Button)
 
 
 @dataclass
-class ModalDialog:
+class ModalDialogBase:
     """This class provides the core functionality for a modal dialog.
 
     It offers two vertically arranged frames which are seen by the user. The lower is the
@@ -87,22 +87,27 @@ class ModalDialog:
     (http://effbot.org/tkinterbook/tkinter-dialog-windows.htm) the except the
     tk classes are not a superclass of Dialog but are implemented as attributes.
     """
-    # Tkinter parent widget
-    parent: ttk.Frame
-    # Key: Internal button name used by program. e.g. ok, cancel
-    # Value: Button label seen by user. e.g. OK, Cancel
-    button_labels: Dict[str, str]
-    title: str = field(default='')
-
-    window: tk.Toplevel = field(default=None, init=False, repr=False, compare=False)
-    button_clicked: str = field(default=None, init=False, repr=False, compare=False)
-
-    def __post_init__(self):
+    
+    def __init__(self, parent: ttk.Frame, button_labels: Dict[str, str], title: str = ''):
+        """Args:
+            parent: Tkinter parent widget
+            button_labels:
+                Key: Internal button name used by program. e.g. ok, cancel
+                Value: Button label seen by user. e.g. OK, Cancel
+            title: Optional window title
+        """
+        self.parent = parent
+        self.button_labels = button_labels
+        self.title = title
+        
         # Organize the buttons
         self.buttons = {name: Button(label) for name, label in self.button_labels.items()}
         # Set the rightmost button as the 'cancel dialog' button.
         self.destroy_button = list(self.buttons.keys())[-1]
-
+        
+        self.window: Optional[tk.Toplevel] = None
+        self.button_clicked: Optional[str] = None
+    
     def __call__(self) -> str:
         # Create the window
         self.window = tk.Toplevel(self.parent)
@@ -185,8 +190,8 @@ class ModalDialog:
         if dialog_y < 0:
             dialog_y = 0
         self.window.geometry(f"+{dialog_x}+{dialog_y}")
-
-    def make_body(self, body_frame: ttk.Frame) -> FocuseeWidget:
+    
+    def make_body(self, body_frame: ttk.Frame) -> Optional[FocuseeWidget]:
         """Create the widgets of the dialog body.
 
         Args:
@@ -221,6 +226,28 @@ class ModalDialog:
 
 
 @dataclass
+class ModalDialog(ModalDialogBase):
+    """his creates a simple dialog with two lines of text.
+
+    It offers the framework for any alert or simple dialog. Callers are responsible for
+    providing the text seen by the user.
+
+    If called, the class will return the button clicked by the user.
+    """
+    
+    def __init__(self, text: str, sub_text: str, parent: ttk.Frame, button_labels: Dict[str, str],
+                 title: str = ''):
+        """Args:
+            text: Text of dialog body.
+            sub_text: Sub text of dialog body.
+            See superclass docs for its arguments.
+        """
+        super().__init__(parent, button_labels, title)
+        self.text = text
+        self.sub_text = sub_text
+
+
+@dataclass
 class Button:
     """Data for managing a ttk button."""
     # Internal button name.
@@ -230,6 +257,7 @@ class Button:
 
 
 def main():
+    """Integration tests."""
     # TODO Integration tests
     pass
 

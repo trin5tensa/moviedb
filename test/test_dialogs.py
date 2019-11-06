@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/4/19, 9:33 AM by stephen.
+#  Last modified 11/6/19, 6:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,20 +24,28 @@ import dialogs
 
 
 # noinspection PyMissingOrEmptyDocstring
-class TestDialogInitAndCall:
+class TestDialogBaseInitAndCall:
     
     # Test implied __init__
-
+    
     def test_parent_init(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             assert dialog.parent == TtkFrame(DummyTk())
-
+    
+    def test_button_labels_init(self, class_patches):
+        with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            assert dialog.button_labels == dict(ok='OK', cancel='Cancel')
+    
+    def test_title_init(self, class_patches):
+        with self.init_context(dict(ok='OK', cancel='Cancel'), title='Test title') as dialog:
+            assert dialog.title == 'Test title'
+    
     # Tests of __post_init__
-
+    
     def test_destroy_button(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             assert dialog.destroy_button == 'cancel'
-
+    
     def test_button_clicked_initialized_to_none(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             assert dialog.button_clicked is None
@@ -173,13 +181,13 @@ class TestDialogInitAndCall:
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             dialog.button_clicked = 'test clicked button'
             assert dialog() == 'test clicked button'
-
+    
     @pytest.fixture()
     def class_patches(self, monkeypatch, module_patches):
-        monkeypatch.setattr(dialogs.ModalDialog, 'make_button', self.make_button)
-        monkeypatch.setattr(dialogs.ModalDialog, 'make_body', self.make_body)
-        monkeypatch.setattr(dialogs.ModalDialog, 'set_geometry', self.set_geometry)
-        monkeypatch.setattr(dialogs.ModalDialog, 'destroy', self.destroy)
+        monkeypatch.setattr(dialogs.ModalDialogBase, 'make_button', self.make_button)
+        monkeypatch.setattr(dialogs.ModalDialogBase, 'make_body', self.make_body)
+        monkeypatch.setattr(dialogs.ModalDialogBase, 'set_geometry', self.set_geometry)
+        monkeypatch.setattr(dialogs.ModalDialogBase, 'destroy', self.destroy)
     
     @contextmanager
     def init_context(self, buttons: Dict[str, str], title=None):
@@ -188,7 +196,7 @@ class TestDialogInitAndCall:
         self.set_geometry_called = False
         self.destroy_called_with = deque()
         # noinspection PyTypeChecker
-        yield dialogs.ModalDialog(TtkFrame(DummyTk()), buttons, title)
+        yield dialogs.ModalDialogBase(TtkFrame(DummyTk()), buttons, title)
     
     def make_button(self, *args):
         self.make_button_args.append(args)
@@ -207,7 +215,7 @@ class TestDialogInitAndCall:
 
 
 # noinspection PyMissingOrEmptyDocstring
-class TestDialogMakeButton:
+class TestMakeButton:
     destroy_calls = field(default_factory=deque, init=False, repr=False, compare=False)
     do_button_action_calls = field(default_factory=deque, init=False, repr=False, compare=False)
     
@@ -251,20 +259,20 @@ class TestDialogMakeButton:
             assert key == '<Return>'
             command('<Button-1>')
             assert cancel_button.invoke_calls.popleft() == ('cancel',)
-
+    
     @pytest.fixture()
     def class_patches(self, monkeypatch, module_patches):
-        monkeypatch.setattr(dialogs.ModalDialog, 'make_body', lambda *args: None)
-        monkeypatch.setattr(dialogs.ModalDialog, 'set_geometry', lambda *args: None)
-        monkeypatch.setattr(dialogs.ModalDialog, 'destroy', self.destroy)
-        monkeypatch.setattr(dialogs.ModalDialog, 'do_button_action', self.do_button_action)
+        monkeypatch.setattr(dialogs.ModalDialogBase, 'make_body', lambda *args: None)
+        monkeypatch.setattr(dialogs.ModalDialogBase, 'set_geometry', lambda *args: None)
+        monkeypatch.setattr(dialogs.ModalDialogBase, 'destroy', self.destroy)
+        monkeypatch.setattr(dialogs.ModalDialogBase, 'do_button_action', self.do_button_action)
     
     @contextmanager
     def make_button_context(self, buttons: Dict[str, str]) -> Tuple['TtkButton', 'TtkButton']:
         self.destroy_calls = deque()
         self.do_button_action_calls = deque()
         # noinspection PyTypeChecker
-        dialog = dialogs.ModalDialog(TtkFrame(DummyTk()), buttons)
+        dialog = dialogs.ModalDialogBase(TtkFrame(DummyTk()), buttons)
         dialog()
         outer_frame = dialog.outer_button_frame
         inner_frame = outer_frame.children.popleft()
@@ -297,7 +305,7 @@ class TestSetGeometry:
     @contextmanager
     def set_geometry_context(self, buttons: Dict[str, str], width: int, height: int):
         # noinspection PyTypeChecker
-        dialog = dialogs.ModalDialog(TtkFrame(DummyTk()), buttons)
+        dialog = dialogs.ModalDialogBase(TtkFrame(DummyTk()), buttons)
         dialog.window = TkToplevel(TtkFrame(DummyTk()))
         dialog.window.width = width
         dialog.window.height = height
@@ -315,12 +323,12 @@ class TestMakeBody:
     
     @pytest.fixture()
     def class_patches(self, monkeypatch, module_patches):
-        monkeypatch.setattr(dialogs.ModalDialog, 'make_button', self.make_button)
+        monkeypatch.setattr(dialogs.ModalDialogBase, 'make_button', self.make_button)
     
     @contextmanager
     def init_context(self, buttons: Dict[str, str], title=None):
         # noinspection PyTypeChecker
-        yield dialogs.ModalDialog(TtkFrame(DummyTk()), buttons, title)
+        yield dialogs.ModalDialogBase(TtkFrame(DummyTk()), buttons, title)
     
     # noinspection PyMethodMayBeStatic
     def make_button(self, *args):
@@ -343,7 +351,7 @@ class TestDoButtonAction:
     @contextmanager
     def button_action_context(self, buttons: Dict[str, str]):
         # noinspection PyTypeChecker
-        dialog = dialogs.ModalDialog(TtkFrame(DummyTk()), buttons)
+        dialog = dialogs.ModalDialogBase(TtkFrame(DummyTk()), buttons)
         dialog.window = TkToplevel(TtkFrame(DummyTk()))
         button = list(buttons.keys()).pop()
         dialog.do_button_action(button)
@@ -377,14 +385,60 @@ class TestDestroy:
     def test_destroy_called(self):
         with self.button_action_context(dict(cancel='Cancel'), event=None, button_name=None) as dialog:
             assert dialog.window.destroy_calls.popleft()
-    
+
     @contextmanager
     def button_action_context(self, buttons: Dict[str, str], event, button_name):
         # noinspection PyTypeChecker
-        dialog = dialogs.ModalDialog(TtkFrame(DummyTk()), buttons)
+        dialog = dialogs.ModalDialogBase(TtkFrame(DummyTk()), buttons)
         dialog.window = TkToplevel(TtkFrame(DummyTk()))
         dialog.destroy(event, button_name)
         yield dialog
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestDialogInit:
+    
+    def test_text_init(self, class_patches):
+        with self.init_context('Text', 'Sub-text', TtkFrame(DummyTk()),
+                               dict(ok='OK', cancel='Cancel')) as dialog:
+            assert dialog.text == 'Text'
+    
+    def test_sub_text_init(self, class_patches):
+        with self.init_context('Text', 'Sub-text', TtkFrame(DummyTk()),
+                               dict(ok='OK', cancel='Cancel')) as dialog:
+            assert dialog.sub_text == 'Sub-text'
+    
+    def test_parent_init(self, class_patches):
+        with self.init_context('Text', 'Sub-text', TtkFrame(DummyTk()),
+                               dict(ok='OK', cancel='Cancel')) as dialog:
+            assert dialog.parent == TtkFrame(DummyTk())
+    
+    def test_button_labels_init(self, class_patches):
+        with self.init_context('Text', 'Sub-text', TtkFrame(DummyTk()),
+                               dict(ok='OK', cancel='Cancel')) as dialog:
+            assert dialog.button_labels == dict(ok='OK', cancel='Cancel')
+    
+    def test_title_init(self, class_patches):
+        with self.init_context('Text', 'Sub-text', TtkFrame(DummyTk()),
+                               dict(ok='OK', cancel='Cancel'), title='Test title') as dialog:
+            assert dialog.title == 'Test title'
+    
+    @pytest.fixture()
+    def class_patches(self, monkeypatch, module_patches):
+        pass
+    
+    @contextmanager
+    def init_context(self, text, sub_text, parent, button_labels, title=''):
+        # noinspection PyTypeChecker
+        yield dialogs.ModalDialog(text, sub_text, parent, button_labels, title=title)
+
+
+# class TestBody:
+#     # TODO def test_text_packed
+#     pass
+#
+#     # TODO def test_sub_text_packed
+#     pass
 
 
 @dataclass
