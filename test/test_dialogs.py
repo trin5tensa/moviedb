@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/6/19, 6:41 AM by stephen.
+#  Last modified 11/6/19, 9:13 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -396,49 +396,78 @@ class TestDestroy:
 
 
 # noinspection PyMissingOrEmptyDocstring
-class TestDialogInit:
+# noinspection PyTypeChecker
+class TestModalDialogInit:
     
-    def test_text_init(self, class_patches):
-        with self.init_context('Text', 'Sub-text', TtkFrame(DummyTk()),
-                               dict(ok='OK', cancel='Cancel')) as dialog:
-            assert dialog.text == 'Text'
+    def test_text_init(self):
+        dialog = dialogs.ModalDialog('Text', TtkFrame(DummyTk()), dict(ok='OK', cancel='Cancel'),
+                                     sub_text='Sub-text')
+        assert dialog.text == 'Text'
     
-    def test_sub_text_init(self, class_patches):
-        with self.init_context('Text', 'Sub-text', TtkFrame(DummyTk()),
-                               dict(ok='OK', cancel='Cancel')) as dialog:
-            assert dialog.sub_text == 'Sub-text'
+    def test_sub_text_init(self):
+        dialog = dialogs.ModalDialog('Text', TtkFrame(DummyTk()), dict(ok='OK', cancel='Cancel'),
+                                     sub_text='Sub-text')
+        assert dialog.sub_text == 'Sub-text'
     
-    def test_parent_init(self, class_patches):
-        with self.init_context('Text', 'Sub-text', TtkFrame(DummyTk()),
-                               dict(ok='OK', cancel='Cancel')) as dialog:
-            assert dialog.parent == TtkFrame(DummyTk())
+    def test_parent_init(self):
+        dialog = dialogs.ModalDialog('Text', TtkFrame(DummyTk()), dict(ok='OK', cancel='Cancel'),
+                                     sub_text='Sub-text')
+        assert dialog.parent == TtkFrame(DummyTk())
     
-    def test_button_labels_init(self, class_patches):
-        with self.init_context('Text', 'Sub-text', TtkFrame(DummyTk()),
-                               dict(ok='OK', cancel='Cancel')) as dialog:
-            assert dialog.button_labels == dict(ok='OK', cancel='Cancel')
+    def test_button_labels_init(self):
+        dialog = dialogs.ModalDialog('Text', TtkFrame(DummyTk()), dict(ok='OK', cancel='Cancel'),
+                                     sub_text='Sub-text')
+        assert dialog.button_labels == dict(ok='OK', cancel='Cancel')
     
-    def test_title_init(self, class_patches):
-        with self.init_context('Text', 'Sub-text', TtkFrame(DummyTk()),
-                               dict(ok='OK', cancel='Cancel'), title='Test title') as dialog:
-            assert dialog.title == 'Test title'
+    def test_title_init(self):
+        dialog = dialogs.ModalDialog('Text', TtkFrame(DummyTk()), dict(ok='OK', cancel='Cancel'),
+                                     sub_text='Sub-text', title='Test title')
+        assert dialog.title == 'Test title'
+
+
+class TestModalDialogMakeBody:
     
-    @pytest.fixture()
-    def class_patches(self, monkeypatch, module_patches):
-        pass
+    def test_text_label_created(self, module_patches):
+        with self.make_body_context('Text', TtkFrame(DummyTk()), dict(ok='OK', cancel='Cancel'),
+                                    sub_text='Sub-text') as body_frame:
+            text_label = body_frame.children.popleft()
+            assert text_label.text == 'Text'
     
+    def test_text_packed(self, module_patches):
+        with self.make_body_context('Text', TtkFrame(DummyTk()), dict(ok='OK', cancel='Cancel'),
+                                    sub_text='Sub-text') as body_frame:
+            text_label = body_frame.children.popleft()
+            args, kwargs = text_label.pack_calls.popleft()
+            assert args == ()
+            assert kwargs == dict(anchor='nw', expand=True, fill='both')
+    
+    def test_sub_text_label_created(self, module_patches):
+        with self.make_body_context('Text', TtkFrame(DummyTk()), dict(ok='OK', cancel='Cancel'),
+                                    sub_text='Sub-text') as body_frame:
+            text_label = body_frame.children.pop()
+            assert text_label.text == 'Sub-text'
+    
+    def test_sub_text_packed(self, module_patches):
+        with self.make_body_context('Text', TtkFrame(DummyTk()), dict(ok='OK', cancel='Cancel'),
+                                    sub_text='Sub-text') as body_frame:
+            text_label = body_frame.children.pop()
+            args, kwargs = text_label.pack_calls.popleft()
+            assert args == ()
+            assert kwargs == dict(anchor='nw', expand=True, fill='both')
+    
+    def test_sub_text_not_packed(self, module_patches):
+        with self.make_body_context('Text', TtkFrame(DummyTk()),
+                                    dict(ok='OK', cancel='Cancel')) as body_frame:
+            assert len(body_frame.children) is 1
+    
+    # noinspection PyMissingOrEmptyDocstring
     @contextmanager
-    def init_context(self, text, sub_text, parent, button_labels, title=''):
+    def make_body_context(self, text, dialog_parent, button_labels, sub_text='', title=''):
+        dialog = dialogs.ModalDialog(text, dialog_parent, button_labels, sub_text, title)
+        body_frame = TtkFrame(TkToplevel(TtkFrame(DummyTk())))
         # noinspection PyTypeChecker
-        yield dialogs.ModalDialog(text, sub_text, parent, button_labels, title=title)
-
-
-# class TestBody:
-#     # TODO def test_text_packed
-#     pass
-#
-#     # TODO def test_sub_text_packed
-#     pass
+        dialog.make_body(body_frame)
+        yield body_frame
 
 
 @dataclass
@@ -574,7 +603,7 @@ class TkToplevel:
 # noinspection PyMissingOrEmptyDocstring
 @dataclass
 class TtkButton:
-    """Test dummy for Tk.Button.
+    """Test dummy for Ttk.Button.
 
     The dummy Tk/Ttk classes need to mimic Tk's parent/child structure as explicit references are
     missing in the source code.
@@ -592,10 +621,10 @@ class TtkButton:
     
     def __post_init__(self):
         self.parent.children.append(self)
-
+    
     def configure(self, **kwargs):
         self.configure_calls.append(kwargs)
-
+    
     def pack(self, **kwargs):
         self.pack_calls.append(kwargs)
     
@@ -611,6 +640,27 @@ class TtkButton:
 
 # noinspection PyMissingOrEmptyDocstring
 @dataclass
+class TtkLabel:
+    """Test dummy for Ttk.Label.
+
+    The dummy Tk/Ttk classes need to mimic Tk's parent/child structure as explicit references are
+    missing in the source code.
+    """
+    parent: TtkFrame
+    text: str
+    
+    children: deque = field(default_factory=deque, init=False, repr=False, compare=False)
+    pack_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
+    
+    def __post_init__(self):
+        self.parent.children.append(self)
+    
+    def pack(self, *args, **kwargs):
+        self.pack_calls.append((args, kwargs))
+
+
+# noinspection PyMissingOrEmptyDocstring
+@dataclass
 class TkEvent:
     keysym: str
 
@@ -622,3 +672,4 @@ def module_patches(monkeypatch):
     monkeypatch.setattr(dialogs.tk, 'Toplevel', TkToplevel)
     monkeypatch.setattr(dialogs.ttk, 'Button', TtkButton)
     monkeypatch.setattr(dialogs.ttk, 'Frame', TtkFrame)
+    monkeypatch.setattr(dialogs.ttk, 'Label', TtkLabel)

@@ -1,7 +1,7 @@
 """Manager of tkinter dialogs."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/6/19, 6:41 AM by stephen.
+#  Last modified 11/6/19, 9:13 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -118,7 +118,7 @@ class ModalDialogBase:
         self.window.resizable(width=False, height=False)
         self.window.protocol('WM_DELETE_WINDOW',
                              lambda: self.destroy(button_name=self.destroy_button))
-    
+
         # Create button frame and buttons.
         self.outer_button_frame = ttk.Frame(self.window)
         self.outer_button_frame.grid(row=1, sticky=tk.EW)
@@ -139,17 +139,17 @@ class ModalDialogBase:
         self.body_frame = ttk.Frame(self.window, padding=BODY_PADDING)
         self.body_frame.grid(row=0, sticky=tk.NSEW)
         body_focus = self.make_body(self.body_frame)
-    
+
         # Set focus
         if body_focus:
             body_focus.focus_set()
         else:
             self.buttons[self.destroy_button].ttk_button.focus_set()
-    
+
         # Make window visible to user
         self.set_geometry()
         self.window.deiconify()
-    
+
         # Wait for user then give back control to Tk parent
         self.window.wait_window()
         self.parent.focus_set()
@@ -234,8 +234,8 @@ class ModalDialog(ModalDialogBase):
 
     If called, the class will return the button clicked by the user.
     """
-    
-    def __init__(self, text: str, sub_text: str, parent: ttk.Frame, button_labels: Dict[str, str],
+
+    def __init__(self, text: str, parent: ttk.Frame, button_labels: Dict[str, str], sub_text: str = '',
                  title: str = ''):
         """Args:
             text: Text of dialog body.
@@ -245,6 +245,21 @@ class ModalDialog(ModalDialogBase):
         super().__init__(parent, button_labels, title)
         self.text = text
         self.sub_text = sub_text
+
+    def make_body(self, body_frame: ttk.Frame):
+        """Create the body widgets.
+
+        Args:
+            body_frame: The parent widget for the body widgets.
+
+        Returns:
+            Nothing since there are no widgets that should get focus.
+        """
+        text = ttk.Label(body_frame, text=self.text)
+        text.pack(anchor='nw', fill='both', expand=True)
+        if self.sub_text:
+            explanation = ttk.Label(body_frame, text=self.sub_text)
+            explanation.pack(anchor='nw', fill='both', expand=True)
 
 
 @dataclass
