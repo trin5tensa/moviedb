@@ -1,7 +1,7 @@
 """Manager of tkinter dialogs."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/6/19, 9:13 AM by stephen.
+#  Last modified 11/7/19, 9:13 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,8 +22,10 @@ from typing import Callable, Dict, Optional, TypeVar
 
 BODY_PADDING = '2m'
 BUTTON_PADDING = '1m'
+ROOTY_OFFSET = 11
 
 FocuseeWidget = TypeVar('FocuseeWidget', ttk.Entry, ttk.Button)
+DialogParent = TypeVar('DialogParent', tk.Tk, ttk.Frame)
 
 
 @dataclass
@@ -87,8 +89,8 @@ class ModalDialogBase:
     (http://effbot.org/tkinterbook/tkinter-dialog-windows.htm) the except the
     tk classes are not a superclass of Dialog but are implemented as attributes.
     """
-    
-    def __init__(self, parent: ttk.Frame, button_labels: Dict[str, str], title: str = ''):
+
+    def __init__(self, parent: DialogParent, button_labels: Dict[str, str], title: str = ''):
         """Args:
             parent: Tkinter parent widget
             button_labels:
@@ -147,10 +149,14 @@ class ModalDialogBase:
             self.buttons[self.destroy_button].ttk_button.focus_set()
 
         # Make window visible to user
-        self.set_geometry()
+        # The pattern withdraw/update_idletasks/deiconify/set_geometry causes the dialog to be drawn
+        # without flickering or ghosting in front of the parent.
+        self.parent.update_idletasks()
         self.window.deiconify()
+        self.set_geometry()
 
         # Wait for user then give back control to Tk parent
+        self.parent.update_idletasks()
         self.window.wait_window()
         self.parent.focus_set()
         return self.button_clicked
@@ -172,17 +178,17 @@ class ModalDialogBase:
         ttk_button.configure(command=lambda b=button_name: command(button_name=b))
         ttk_button.pack(side='left', padx=BUTTON_PADDING, pady=BUTTON_PADDING)
         # If any button has focus and <Return> is pressed, treat it as a click on that button.
-        ttk_button.bind('<Return>', lambda event, b=ttk_button: b.invoke(button_name))
-        # If the destroy button has focus and <Escape> is pressed, treat it as a click on that button.
+        ttk_button.bind('<Return>', lambda event, b=ttk_button: b.invoke())
+        # If <Escape> is pressed treat it as a click on the destroy_button.
         if button_name == self.destroy_button:
-            self.window.bind('<Escape>', lambda event, b=ttk_button: b.invoke(button_name))
+            self.window.bind('<Escape>', lambda event, b=ttk_button: b.invoke())
         return ttk_button
 
     def set_geometry(self):
         """Center dialog on parent window."""
         self.parent.update_idletasks()
         parent_center_x = int(self.parent.winfo_width() / 2) + self.parent.winfo_rootx()
-        parent_center_y = int(self.parent.winfo_height() / 2) + self.parent.winfo_rooty()
+        parent_center_y = int(self.parent.winfo_height() / 2) + self.parent.winfo_rooty() - ROOTY_OFFSET
         dialog_x = parent_center_x - int(self.window.winfo_width() / 2)
         if dialog_x < 0:
             dialog_x = 0
@@ -234,9 +240,9 @@ class ModalDialog(ModalDialogBase):
 
     If called, the class will return the button clicked by the user.
     """
-
-    def __init__(self, text: str, parent: ttk.Frame, button_labels: Dict[str, str], sub_text: str = '',
-                 title: str = ''):
+    
+    def __init__(self, text: str, parent: DialogParent, button_labels: Dict[str, str],
+                 sub_text: str = '', title: str = ''):
         """Args:
             text: Text of dialog body.
             sub_text: Sub text of dialog body.
@@ -245,7 +251,7 @@ class ModalDialog(ModalDialogBase):
         super().__init__(parent, button_labels, title)
         self.text = text
         self.sub_text = sub_text
-
+    
     def make_body(self, body_frame: ttk.Frame):
         """Create the body widgets.
 
@@ -273,8 +279,20 @@ class Button:
 
 def main():
     """Integration tests."""
-    # TODO Integration tests
-    pass
+    root = tk.Tk()
+    root.geometry('400x100+250+200')
+    
+    tk.Button(root, text='Hello').pack()
+    
+    button = ModalDialog('One Button', root, dict(ok='OK'), 'This is a one button dialog',
+                         'Modal Dialog')()
+    print(f'One button dialog: {button=}')
+    
+    button = ModalDialog('Two Button', root, dict(ok='OK', cancel='Cancel'),
+                         'This is a two button dialog', 'Modal Dialog')()
+    print(f'Two button dialog: {button=}')
+    
+    root.mainloop()
 
 
 if __name__ == '__main__':

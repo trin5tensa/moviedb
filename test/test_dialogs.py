@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/6/19, 9:13 AM by stephen.
+#  Last modified 11/7/19, 9:13 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -88,7 +88,7 @@ class TestDialogBaseInitAndCall:
     def test_set_geometry_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             dialog()
-            assert self.set_geometry_called
+            assert self.set_geometry_called == deque((True,))
 
     def test_title_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel'), title='test title') as dialog:
@@ -167,6 +167,11 @@ class TestDialogBaseInitAndCall:
             dialog()
             assert dialog.window.deiconify_calls.popleft()
 
+    def test_update_idletasks_called(self, class_patches):
+        with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
+            dialog()
+            assert dialog.parent.update_idletasks_calls == deque((True, True))
+
     def test_focus_set_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             dialog()
@@ -193,7 +198,7 @@ class TestDialogBaseInitAndCall:
     def init_context(self, buttons: Dict[str, str], title=None):
         self.make_button_args = []
         self.make_body_args = []
-        self.set_geometry_called = False
+        self.set_geometry_called = deque()
         self.destroy_called_with = deque()
         # noinspection PyTypeChecker
         yield dialogs.ModalDialogBase(TtkFrame(DummyTk()), buttons, title)
@@ -208,7 +213,7 @@ class TestDialogBaseInitAndCall:
         return None
     
     def set_geometry(self):
-        self.set_geometry_called = True
+        self.set_geometry_called.append(True)
     
     def destroy(self, **kwargs):
         self.destroy_called_with.append(kwargs)
@@ -251,14 +256,14 @@ class TestMakeButton:
             key, command = ok_button.bind_calls.popleft()
             assert key == '<Return>'
             command('<Button-1>')
-            assert ok_button.invoke_calls.popleft() == ('ok',)
+            assert ok_button.invoke_calls.popleft()
     
     def test_cancel_button_bound(self, class_patches):
         with self.make_button_context(dict(ok='OK', cancel='Cancel')) as (_, cancel_button):
             key, command = cancel_button.bind_calls.popleft()
             assert key == '<Return>'
             command('<Button-1>')
-            assert cancel_button.invoke_calls.popleft() == ('cancel',)
+            assert cancel_button.invoke_calls.popleft()
     
     @pytest.fixture()
     def class_patches(self, monkeypatch, module_patches):
@@ -292,11 +297,11 @@ class TestSetGeometry:
     
     def test_geometry_set(self):
         with self.set_geometry_context(dict(ok='OK'), 250, 125) as dialog:
-            assert dialog.window.geometry_calls.popleft() == '+475+238'
+            assert dialog.window.geometry_calls.popleft() == '+475+227'
     
     def test_geometry_set_for_excessively_wide_dialog(self):
         with self.set_geometry_context(dict(ok='OK'), 2000, 125) as dialog:
-            assert dialog.window.geometry_calls.popleft() == '+0+238'
+            assert dialog.window.geometry_calls.popleft() == '+0+227'
     
     def test_geometry_set_for_excessively_high_dialog(self):
         with self.set_geometry_context(dict(ok='OK'), 250, 2000) as dialog:
@@ -494,6 +499,7 @@ class TtkFrame:
     grid_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
     pack_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
     focus_set_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
+    update_idletasks_calls: deque = field(default_factory=deque, init=False, repr=False, compare=False)
 
     def __post_init__(self):
         self.parent.children.append(self)
@@ -508,7 +514,7 @@ class TtkFrame:
         self.focus_set_calls.append(True)
 
     def update_idletasks(self):
-        pass
+        self.update_idletasks_calls.append(True)
 
     @staticmethod
     def winfo_width():
@@ -621,19 +627,19 @@ class TtkButton:
     
     def __post_init__(self):
         self.parent.children.append(self)
-    
+
     def configure(self, **kwargs):
         self.configure_calls.append(kwargs)
-    
+
     def pack(self, **kwargs):
         self.pack_calls.append(kwargs)
-    
+
     def bind(self, *args):
         self.bind_calls.append(args)
-    
-    def invoke(self, *args):
-        self.invoke_calls.append(args)
-    
+
+    def invoke(self):
+        self.invoke_calls.append(True)
+
     def focus_set(self):
         self.focus_set_calls.append(True)
 
