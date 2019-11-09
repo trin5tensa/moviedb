@@ -1,10 +1,9 @@
-""">enu handlers.
+"""Menu handlers.
 
-Thos module is the gluw between the user's awlwarion of a menu item and the guo.
-"""
+This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/4/19, 8:42 AM by stephen.
+#  Last modified 11/9/19, 8:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,40 +15,30 @@ Thos module is the gluw between the user's awlwarion of a menu item and the guo.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# TODO Update module title and description
-# TODO Remove layout reminder comments.
-# TODO Remove the functions main() and suite beginnng "if __name__ == '__main__'" if not needed.
-# Python package imports
 import sys
 
-
-# Third party package imports
-
-
-# Project Imports
+import config
+import dialogs
 
 
-# Constants
-
-
-# Pure data Dataclasses & Named tuples
-
-
-# API Classes
-
-
-# API Functions
-
-
-# Internal Module Classes
-
-
-# Internal Module Functions
+def about_dialog():
+    """Display the about dialog."""
+    dialogs.ModalDialog(f'{config.app.name}', config.app.root_window, dict(ok='OK'),
+                        f'{config.app.version}')()
 
 
 def main():
-    # TODO Integration tests
-    pass
+    """Integration tests."""
+    # Set up test environment.
+    root = dialogs.tk.Tk()
+    root.geometry('400x300+250+200')
+    dialogs.tk.Label(root, text='Integration Test').pack()
+    config.app = config.Config('Test program name', 'Test version 42.0.0.0')
+    config.app.root_window = root
+    
+    # About Dialog.
+    about_dialog()
+    print('About dialog called.')
 
 
 if __name__ == '__main__':

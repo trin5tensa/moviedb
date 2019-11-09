@@ -1,7 +1,7 @@
 """Manager of tkinter dialogs."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/7/19, 9:13 AM by stephen.
+#  Last modified 11/9/19, 8:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -291,8 +291,6 @@ def main():
     button = ModalDialog('Two Button', root, dict(ok='OK', cancel='Cancel'),
                          'This is a two button dialog', 'Modal Dialog')()
     print(f'Two button dialog: {button=}')
-    
-    root.mainloop()
 
 
 if __name__ == '__main__':

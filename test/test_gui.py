@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/20/19, 1:48 PM by stephen.
+#  Last modified 11/9/19, 8:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -53,7 +53,7 @@ class TestRun:
     @contextmanager
     def test_context(self):
         app_hold = gui.config.app
-        gui.config.app = gui.config.Config('test moviedb')
+        gui.config.app = gui.config.Config('test moviedb', 'test version')
         try:
             yield gui.run()
         finally:

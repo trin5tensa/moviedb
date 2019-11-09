@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/20/19, 1:48 PM by stephen.
+#  Last modified 11/9/19, 8:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,7 @@
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Callable, List, Literal, NewType, Optional, Tuple, Dict, Any
+from typing import Any, Callable, Dict, List, Literal, NewType, Optional, Tuple
 
 import pytest
 
@@ -23,6 +23,7 @@ import mainwindow
 
 
 TEST_TITLE = 'test moviedb'
+TEST_VERSION = 'Test version'
 TEST_MENU = 'Test Menu'
 
 tk_state = NewType('tk_state', Literal['mainwindow.tk.DISABLED', 'mainwindow.tk.NORMAL'])
@@ -77,7 +78,7 @@ class TestMainWindowInit:
     @contextmanager
     def init_context(self):
         app_hold = mainwindow.config.app
-        mainwindow.config.app = mainwindow.config.Config(TEST_TITLE)
+        mainwindow.config.app = mainwindow.config.Config(TEST_TITLE, TEST_VERSION)
         self.root_window = mainwindow.MainWindow()
         try:
             yield
@@ -134,7 +135,7 @@ class TestMainWindowGeometry:
     @contextmanager
     def geometry_context(self, desired_geometry):
         app_hold = mainwindow.config.app
-        mainwindow.config.app = mainwindow.config.Config('test name')
+        mainwindow.config.app = mainwindow.config.Config(TEST_TITLE, TEST_VERSION)
         mainwindow.config.app.geometry = desired_geometry
         self.root_window = mainwindow.MainWindow()
         try:
@@ -225,7 +226,7 @@ class TestMainWindowPlaceMenuBar:
     @contextmanager
     def menu_context(self):
         app_hold = mainwindow.config.app
-        mainwindow.config.app = mainwindow.config.Config(TEST_TITLE)
+        mainwindow.config.app = mainwindow.config.Config(TEST_TITLE, TEST_VERSION)
         self.root_window = mainwindow.MainWindow()
         try:
             yield
@@ -260,7 +261,7 @@ class TestMainWindowShutdown:
     @contextmanager
     def shutdown_context(self):
         app_hold = mainwindow.config.app
-        mainwindow.config.app = mainwindow.config.Config(TEST_TITLE)
+        mainwindow.config.app = mainwindow.config.Config(TEST_TITLE, TEST_VERSION)
         self.root_window = mainwindow.MainWindow()
         self.root_window.tk_shutdown()
         try:

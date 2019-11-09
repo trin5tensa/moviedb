@@ -1,7 +1,7 @@
 """Main moviedatabase program"""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/20/19, 1:46 PM by stephen.
+#  Last modified 11/9/19, 8:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,7 +25,7 @@ import impexp
 
 
 # Program version.
-VERSION = '1.0.dev'
+VERSION = '1.0.0.dev'
 
 
 def main():
@@ -46,7 +46,7 @@ def start_up():
     start_logger(root_dir, program)
     
     # Initialize application configuration data.
-    config.app = config.Config(program)
+    config.app = config.Config(program, VERSION)
     
     # Open the default database
     database.connect_to_database()
