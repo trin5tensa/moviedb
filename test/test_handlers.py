@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/9/19, 8:14 AM by stephen.
+#  Last modified 11/12/19, 5:07 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,8 +25,8 @@ import handlers
 class TestAboutDialogCalled:
     
     def test_about_dialog_called(self, class_patches):
-        with self.about_context() as root_window:
-            dialog = root_window.children.popleft()
+        with self.about_context() as tk_root:
+            dialog = tk_root.children.popleft()
             assert dialog == ModalDialog(text='test program name', parent=DummyParent(),
                                          buttons={'ok': 'OK'}, sub_text='test version')
     
@@ -35,12 +35,16 @@ class TestAboutDialogCalled:
         test_app = handlers.config.Config('test program name', 'test version')
         monkeypatch.setattr(handlers.config, 'app', test_app)
         monkeypatch.setattr(handlers.dialogs, 'ModalDialog', ModalDialog)
-    
+
     @contextmanager
     def about_context(self):
-        handlers.config.app.root_window = DummyParent()
+        hold_app = handlers.config.app
+        handlers.config.app.tk_root = DummyParent()
         handlers.about_dialog()
-        yield handlers.config.app.root_window
+        try:
+            yield handlers.config.app.tk_root
+        finally:
+            handlers.config.app = hold_app
 
 
 @dataclass

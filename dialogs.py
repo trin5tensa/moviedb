@@ -1,7 +1,7 @@
 """Manager of tkinter dialogs."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/9/19, 8:14 AM by stephen.
+#  Last modified 11/12/19, 5:05 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -158,7 +158,6 @@ class ModalDialogBase:
         # Wait for user then give back control to Tk parent
         self.parent.update_idletasks()
         self.window.wait_window()
-        self.parent.focus_set()
         return self.button_clicked
 
     def make_button(self, buttonbox_frame: ttk.Frame, button_name: str, command: Callable

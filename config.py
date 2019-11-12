@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/9/19, 8:14 AM by stephen.
+#  Last modified 11/12/19, 4:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 
+tk: 'tk'
 mainwindow: 'mainwindow'
 
 
@@ -33,7 +34,8 @@ class Config:
     geometry: str = None
 
     # Save the root window for easy access for testing.
-    root_window: 'mainwindow.MainWindow' = None
+    tk_root: 'tk.Tk' = None
+    root_pane: 'mainwindow.MainWindow' = None
 
 
 app: Optional[Config] = None

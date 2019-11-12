@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/9/19, 8:14 AM by stephen.
+#  Last modified 11/12/19, 5:06 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,8 +23,8 @@ import dialogs
 
 def about_dialog():
     """Display the about dialog."""
-    dialogs.ModalDialog(f'{config.app.name}', config.app.root_window, dict(ok='OK'),
-                        f'{config.app.version}')()
+    dialogs.ModalDialog(config.app.name, config.app.tk_root, dict(ok='OK'),
+                        config.app.version)()
 
 
 def main():

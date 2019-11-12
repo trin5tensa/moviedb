@@ -1,7 +1,7 @@
 """Main moviedatabase program"""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/9/19, 8:14 AM by stephen.
+#  Last modified 11/12/19, 7:22 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -85,12 +85,14 @@ def command_line_args() -> argparse.Namespace:  # pragma: no cover
     parser.add_argument('-d', '--database', default=None,
                         help='database filename. Enter an empty string to create an in-memory database')
     parser.add_argument('-v', '--verbosity', action='count', default=0, help='verbosity')
-    print(parser.parse_args())
     return parser.parse_args()
 
 
 def command():
-    """Command line parse and dispatch."""
+    """Run the program.
+    
+    Command line parse and dispatch.
+    """
     args = command_line_args()
     
     # Run GUI

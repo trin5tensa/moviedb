@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/7/19, 9:13 AM by stephen.
+#  Last modified 11/12/19, 12:18 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -171,11 +171,6 @@ class TestDialogBaseInitAndCall:
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
             dialog()
             assert dialog.parent.update_idletasks_calls == deque((True, True))
-
-    def test_focus_set_called(self, class_patches):
-        with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
-            dialog()
-            assert dialog.parent.focus_set_calls.popleft()
 
     def test_wait_window_called(self, class_patches):
         with self.init_context(dict(ok='OK', cancel='Cancel')) as dialog:
