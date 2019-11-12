@@ -1,7 +1,7 @@
 """Tests for moviedatabase."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/20/19, 1:46 PM by stephen.
+#  Last modified 11/12/19, 5:07 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,6 +21,7 @@ from typing import Tuple
 import pytest
 
 import moviedb
+
 
 TEST_FN = 'test_filename.csv'
 
@@ -85,10 +86,14 @@ class TestStartUp:
     def test_config_data_initialized(self):
         # moviedb-#82
         #  Why is the test run creating movies.sqlite3 in the test directory?
-        #  -> Add monkeypatch_startup to patch the call to database.connect_to_database()—
+        #  -> Add monkeypatch_startup to patch the call to database.connect_to_database()
         moviedb.start_up()
         assert isinstance(moviedb.config.app, moviedb.config.Config)
-        assert moviedb.config.app.root_window is None
+        assert moviedb.config.app.name == 'moviedb'
+        assert moviedb.config.app.version == '1.0.0.dev'
+        assert moviedb.config.app.geometry is None
+        assert moviedb.config.app.tk_root is None
+        assert moviedb.config.app.root_pane is None
     
     def test_start_database_called(self, monkeypatch_startup):
         _, connect_calls = monkeypatch_startup

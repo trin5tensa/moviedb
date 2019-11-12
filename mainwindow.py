@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 10/20/19, 1:48 PM by stephen.
+#  Last modified 11/12/19, 5:07 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,15 +13,16 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from collections.abc import Mapping
-from dataclasses import dataclass
 import logging
 import re
 import tkinter as tk
 import tkinter.ttk as ttk
-from typing import Optional, Sequence, Callable, Union, Tuple, List
+from collections.abc import Mapping
+from dataclasses import dataclass
+from typing import Callable, List, Sequence, Tuple, Union
 
 import config
+import handlers
 
 
 # The quit item needs special processing.
@@ -31,14 +32,13 @@ QUIT_ITEM = 'Quit'
 @dataclass
 class MainWindow:
     """Create and manage the menu bar and the application's main window. """
-    parent: Optional[tk.Tk] = None
+    parent: tk.Tk
     tk_args: Sequence = None
     tk_kwargs: Mapping = None
     ttk_main_pane: ttk.Frame = None
     
     def __post_init__(self):
         """This is the part of __init__ that handles everything that shouldn't be in __init__."""
-        self.parent = tk.Tk()
         self.parent.title(config.app.name)
         self.parent.option_add('*tearOff', False)
         self.parent.geometry(self.set_geometry())
@@ -194,7 +194,7 @@ class MenuData:
         """
         self.menus = [
                 Menu('Moviedb', [
-                        MenuItem('About…'),
+                        MenuItem('About…', handlers.about_dialog),
                         MenuItem(QUIT_ITEM), ]),
                 Menu('File', [
                         MenuItem('New…'),
