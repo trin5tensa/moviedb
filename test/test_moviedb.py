@@ -1,7 +1,7 @@
 """Tests for moviedatabase."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/12/19, 5:07 PM by stephen.
+#  Last modified 11/13/19, 7:29 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -56,16 +56,10 @@ class TestMain:
 
 @pytest.mark.usefixtures('monkeypatch')
 class TestStartUp:
+    
+    # noinspection PyMissingOrEmptyDocstring
     @pytest.fixture()
     def monkeypatch_startup(self, monkeypatch) -> Tuple[list, list]:
-        """Class patches.
-
-        Args:
-            monkeypatch: pytest fixture
-
-        Returns:
-            # moviedb-#82 Update docs
-        """
         logger_calls = []
         monkeypatch.setattr(moviedb, 'start_logger',
                             lambda *args: logger_calls.append(args))
@@ -83,10 +77,7 @@ class TestStartUp:
         assert path[-len(expected_path):] == expected_path
         assert filename == expected_filename
     
-    def test_config_data_initialized(self):
-        # moviedb-#82
-        #  Why is the test run creating movies.sqlite3 in the test directory?
-        #  -> Add monkeypatch_startup to patch the call to database.connect_to_database()
+    def test_config_data_initialized(self, monkeypatch_startup):
         moviedb.start_up()
         assert isinstance(moviedb.config.app, moviedb.config.Config)
         assert moviedb.config.app.name == 'moviedb'
