@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/18/19, 7:56 AM by stephen.
+#  Last modified 11/18/19, 8:34 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,12 +25,8 @@ import impexp
 
 def about_dialog():
     """Display the about dialog."""
-    dialogs.ModalDialog(config.app.name, config.app.tk_root, dict(ok='OK'),
-                        config.app.version)()
-    # moviedb-#98
-    #   tkinter.messagebox
-    #   messagebox.showinfo(parent=config.app.tk_root, message=config.app.name,
-    #                       detail=config.app.version)
+    messagebox.showinfo(parent=config.app.tk_root, message=config.app.name,
+                        detail=config.app.version)
 
 
 def import_movies():
