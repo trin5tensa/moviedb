@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/12/19, 5:07 PM by stephen.
+#  Last modified 11/17/19, 4:07 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -205,4 +205,7 @@ class MenuData:
                 Menu('Edit', [
                         MenuItem('Cut'),
                         MenuItem('Copy'),
-                        MenuItem("Paste"), ]), ]
+                        MenuItem('Paste'), ]),
+                Menu('Movie', [
+                        MenuItem('Import…', handlers.import_movies)])
+                ]
