@@ -1,7 +1,7 @@
 """Import and export data."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/24/19, 9:15 AM by stephen.
+#  Last modified 11/18/19, 7:56 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,7 @@
 
 import csv
 import sys
-from typing import List, Callable, Tuple
+from typing import Callable, List, Tuple
 
 import database
 import utilities
@@ -40,12 +40,6 @@ def import_movies(fn: str):
 
     Args:
         fn: Name of import file.
-
-    Raises:
-        ValueError if the rows contain invalid values. (These are caught during initialization of a
-        _Movie object as they are not intercepted as sqlite3 integrity violations.)
-        TypeError if the header has invalid column names or if required column names are missing.
-        database.sqlalchemy.exc.IntegrityError
     """
     reject_file_created = False
 
@@ -97,7 +91,7 @@ def import_movies(fn: str):
     # Let the user know there if there are input data problems which need fixing.
     if reject_file_created:
         msg = (f"The import file '{fn}' has invalid data. "
-               f"See <filename>_reject.csv file for details.")
+               f"See '{fn}_reject.csv' file for details.")
         raise MoviedbInvalidImportData(msg)
 
 
