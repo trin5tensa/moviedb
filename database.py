@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 9/25/19, 7:40 AM by stephen.
+#  Last modified 11/19/19, 12:35 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,20 +13,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from contextlib import contextmanager
-from dataclasses import dataclass
 import datetime
 import itertools
 import logging
 import sys
-from typing import Any, Dict, Generator, Iterable, Optional
+from contextlib import contextmanager
+from typing import Any, Dict, Generator, Iterable, List, Optional, TypedDict
 
 import sqlalchemy
 import sqlalchemy.exc
 import sqlalchemy.ext.declarative
 import sqlalchemy.ext.hybrid
 from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, Sequence, String, Table, Text,
-                        UniqueConstraint)
+                        UniqueConstraint, )
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import query, relationship
 from sqlalchemy.orm.session import sessionmaker
@@ -45,26 +44,58 @@ engine: Optional[sqlalchemy.engine.base.Engine] = None
 Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
 
 
-@dataclass
-class TitleYear:
-    """
-    A data dataclass.
-
-    This was created to clarify the typing of parameters
-    """
+class TitleYearDict(TypedDict):
+    """Mandatory fields for a movie."""
     title: str
     year: int
 
 
+class MovieDict(TitleYearDict, total=False):
+    """Optional fields for a movie."""
+    director: str
+    minutes: int
+    notes: str
+
+
+class FindMovieDict(TypedDict, total=False):
+    """A dictionary containing none or more of the following keys:
+            title: str. A matching column will be a superstring of this value..
+            director: str.A matching column will be a superstring of this value.
+            minutes: list. A matching column will be between the minimum and maximum values in this
+            iterable. A single value is permissible.
+            year: list. A matching column will be between the minimum and maximum values in this
+            iterable. A single value is permissible.
+            notes: str. A matching column will be a superstring of this value.
+            tag: list. Movies matching any tag in this list will be selected.
+    """
+    id: int
+    title: str
+    director: str
+    year: List[int]
+    minutes: List[int]
+    notes: str
+    tag: List[str]
+
+
+class MovieUpdateDict(TypedDict, total=False):
+    """A dictionary of fields for updating."""
+    title: str
+    director: str
+    year: int
+    minutes: int
+    notes: str
+    tag: str
+
+
 def connect_to_database(filename: str = database_fn):
     """Make database available for use by this module."""
-
+    
     # Create the database connection
     global engine, Session
     engine = sqlalchemy.create_engine(f"sqlite:///{filename}", echo=False)
     Session = sessionmaker(bind=engine)
     Base.metadata.create_all(engine)
-
+    
     # Update metadata
     with _session_scope() as session:
         timestamp = str(datetime.datetime.today())
@@ -85,17 +116,16 @@ def connect_to_database(filename: str = database_fn):
             date_last_accessed.value = timestamp
 
 
-def add_movie(movie: Dict):
+def add_movie(movie: MovieDict):
     """Add a movie to the database
 
     Args:
-        movie: A dictionary which must contain keys of title and year.
-        It may contain keys of director, minutes, and notes.
+        movie: The movie to be added.
     """
     Movie(**movie).add()
 
 
-def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
+def find_movies(criteria: FindMovieDict) -> Generator[dict, None, None]:
     """Search for a movie using any supplied_keys.
 
     Yield record fields which persist after the session has ended.
@@ -103,7 +133,7 @@ def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
     produce more than one yielded record.
 
     Args:
-        criteria: A dictionary containing none or more of the following keys:
+        criteria: FindMovieDict. A dictionary containing none or more of the following keys:
             title: str. A matching column will be a superstring of this value..
             director: str.A matching column will be a superstring of this value.
             minutes: list. A matching column will be between the minimum and maximum values in this
@@ -122,7 +152,7 @@ def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
         Returns: Not used.
     """
     Movie.validate_columns(criteria.keys())
-
+    
     # Execute searches
     with _session_scope() as session:
         movies = _build_movie_query(session, criteria)
@@ -133,46 +163,43 @@ def find_movies(criteria: Dict[str, Any]) -> Generator[dict, None, None]:
                        year=movie.year, notes=movie.notes, tag=tag)
 
 
-def edit_movie(title_year: TitleYear, updates: Dict[str, Any]):
+def edit_movie(title_year: TitleYearDict, updates: MovieUpdateDict):
     """Search for one movie and change one or more fields of that movie.
 
     Args:
-        title_year: A TitleYear object
-        updates: Dictionary of fields to be updated. See find_movies for detailed description.
-            e.g. 'notes'-'Science Fiction'
+        title_year: Specifies the movie to be selected.
+        updates: Contains the fields which will be updated in the selected movie.
     """
-    criteria = dict(title=title_year.title, year=title_year.year)
     with _session_scope() as session:
-        movie, tag = _build_movie_query(session, criteria).one()
+        movie, tag = _build_movie_query(session, title_year).one()
         movie.edit(updates)
 
 
-def del_movie(title_year: TitleYear):
+def del_movie(title_year: TitleYearDict):
     """Change fields in records.
 
     Args:
-        title_year: A TitleYear object
+        title_year: Specifies teh movie to be deleted.
     """
-    criteria = dict(title=title_year.title, year=title_year.year)
     with _session_scope() as session:
-        movie, tag = _build_movie_query(session, criteria).one()
+        movie, tag = _build_movie_query(session, title_year).one()
         session.delete(movie)
 
 
-def add_tag_and_links(new_tag: str, movies: Optional[Iterable[TitleYear]] = None):
+def add_tag_and_links(new_tag: str, movies: Optional[Iterable[TitleYearDict]] = None):
     """Add links between a tag and one or more movies. Create the tag if it does not exist..
 
     Args:
-        new_tag:
-        movies: Tuples of TitleYear objects.
+        new_tag: Text of new tag.
+        movies: Iterable of movies which will be tagged with the new tag.
     """
-
+    
     # Add the tag unless it is already in the database.
     try:
         Tag(new_tag).add()
     except sqlalchemy.exc.IntegrityError:
         pass
-
+    
     # Add links between movies and this tag.
     if movies:
         with _session_scope() as session:
@@ -180,7 +207,7 @@ def add_tag_and_links(new_tag: str, movies: Optional[Iterable[TitleYear]] = None
 
             for title_year in movies:
                 movie = (session.query(Movie)
-                         .filter(Movie.title == title_year.title, Movie.year == title_year.year)
+                         .filter(Movie.title == title_year['title'], Movie.year == title_year['year'])
                          .one())
                 movie.tags.append(tag)
 
@@ -237,7 +264,7 @@ class Movie(Base):
 
     def __init__(self, title: str, year: int, director: str = None,
                  minutes: int = None, notes: str = None):
-
+    
         # Carry out validation which is not done by SQLAlchemy or sqlite3
         null_strings = set(itertools.filterfalse(lambda arg: arg != '', [title, year]))
         if null_strings == {''}:
@@ -252,7 +279,7 @@ class Movie(Base):
                    f"or the minute column.")
             logging.error(msg)
             raise
-
+    
         self.title = title
         self.director = director
         self.minutes = minutes
@@ -269,12 +296,12 @@ class Movie(Base):
         with _session_scope() as session:
             session.add(self)
 
-    def edit(self, updates: Dict[str, Any]):
+    def edit(self, updates: MovieUpdateDict):
         """Edit any column of the table.
 
         Args:
             updates: Dictionary of fields to be updated. See find_movies for detailed description.
-            e.g. {notes='Science Fiction}
+            e.g. {notes='Science Fiction'}
         """
         self.validate_columns(updates.keys())
         for key, value in updates.items():
