@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/18/19, 8:34 AM by stephen.
+#  Last modified 11/19/19, 4:40 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,22 +16,22 @@ This module is the glue between the user's selection of a menu item and the gui.
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-from tkinter import filedialog, messagebox
+from tkinter import Button, Tk, filedialog, messagebox
 
 import config
-import dialogs
 import impexp
 
 
 def about_dialog():
     """Display the about dialog."""
+    print()
+    print(f"{config.app.tk_root=}")
     messagebox.showinfo(parent=config.app.tk_root, message=config.app.name,
                         detail=config.app.version)
 
 
 def import_movies():
     """Open a csv file and load the contents into the database."""
-    
     csv_fn = filedialog.askopenfilename(parent=config.app.tk_root,
                                         filetypes=(('Movie import files', '*.csv'),))
     try:
@@ -45,11 +45,13 @@ def import_movies():
 def main():
     """Integration tests."""
     # Set up test environment.
-    root = dialogs.tk.Tk()
+    root = Tk()
+    print()
+    print(f"{root=}")
     root.geometry('400x300+250+200')
-    dialogs.tk.Label(root, text='Integration Test').pack()
+    Button(root, text='Integration Test').pack()
     config.app = config.Config('Test program name', 'Test version 42.0.0.0')
-    config.app.root_window = root
+    config.app.tk_root = root
     
     # About Dialog.
     about_dialog()
