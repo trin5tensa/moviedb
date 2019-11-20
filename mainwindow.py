@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/17/19, 4:07 PM by stephen.
+#  Last modified 11/20/19, 6:58 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,7 +16,6 @@
 import logging
 import re
 import tkinter as tk
-import tkinter.ttk as ttk
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Callable, List, Sequence, Tuple, Union
@@ -35,7 +34,6 @@ class MainWindow:
     parent: tk.Tk
     tk_args: Sequence = None
     tk_kwargs: Mapping = None
-    ttk_main_pane: ttk.Frame = None
     
     def __post_init__(self):
         """This is the part of __init__ that handles everything that shouldn't be in __init__."""
@@ -44,8 +42,6 @@ class MainWindow:
         self.parent.geometry(self.set_geometry())
         self.place_menubar(MenuData().menus)
         self.parent.protocol('WM_DELETE_WINDOW', self.tk_shutdown)
-        self.ttk_main_pane = ttk.Frame(self.parent)
-        self.ttk_main_pane.pack(fill='both', expand=True)
 
     def set_geometry(self) -> str:
         """Set window geometry from a default value or app.geometry and make sure it will

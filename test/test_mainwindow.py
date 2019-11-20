@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/12/19, 5:07 PM by stephen.
+#  Last modified 11/20/19, 7:00 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -34,12 +34,6 @@ class TestMainWindowInit:
     root_pane: mainwindow.MainWindow = None
     place_menubar = None
     
-    def test_parent_initialized(self, class_patches):
-        with self.init_context():
-            assert isinstance(self.root_pane.parent, InstrumentedTk)
-            assert self.root_pane.ttk_main_pane == InstrumentedTtkFrame(
-                    parent=InstrumentedTk(), pack_args=dict(fill='both', expand=True))
-    
     def test_title_set(self, class_patches):
         with self.init_context():
             assert self.root_pane.parent.title_args == TEST_TITLE
@@ -56,11 +50,6 @@ class TestMainWindowInit:
         with self.init_context():
             assert self.place_menubar == (mainwindow.MenuData().menus,)
 
-    def test_main_pane_geometry_set(self, class_patches):
-        with self.init_context():
-            # noinspection PyUnresolvedReferences
-            assert self.root_pane.ttk_main_pane.pack_args == dict(fill='both', expand=True)
-
     def test_tk_shutdown_protocol_set(self, class_patches):
         with self.init_context():
             assert self.root_pane.parent.protocol_args == ('WM_DELETE_WINDOW',
@@ -72,7 +61,6 @@ class TestMainWindowInit:
         monkeypatch.setattr(mainwindow.tk, 'Tk', InstrumentedTk)
         monkeypatch.setattr(mainwindow.MainWindow, 'set_geometry', lambda *args: 'test geometry args')
         monkeypatch.setattr(mainwindow.MainWindow, 'place_menubar', self.dummy_place_menubar)
-        monkeypatch.setattr(mainwindow.ttk, 'Frame', InstrumentedTtkFrame)
 
     # noinspection PyMissingOrEmptyDocstring, PyTypeChecker
     @contextmanager
@@ -128,7 +116,6 @@ class TestMainWindowGeometry:
     @pytest.fixture()
     def class_patches(self, monkeypatch):
         monkeypatch.setattr(mainwindow.tk, 'Tk', InstrumentedTk)
-        monkeypatch.setattr(mainwindow.ttk, 'Frame', InstrumentedTtkFrame)
         monkeypatch.setattr(mainwindow.logging, 'info', self.save_log_message)
         monkeypatch.setattr(mainwindow.MainWindow, 'place_menubar', lambda *args: None)
     
@@ -215,7 +202,6 @@ class TestMainWindowPlaceMenuBar:
     @pytest.fixture()
     def class_patches(self, monkeypatch):
         monkeypatch.setattr(mainwindow.tk, 'Tk', InstrumentedTk)
-        monkeypatch.setattr(mainwindow.ttk, 'Frame', InstrumentedTtkFrame)
         monkeypatch.setattr(mainwindow.tk, 'Menu', InstrumentedTkMenu)
         monkeypatch.setattr(mainwindow, 'MenuData', DummyMenuData)
         monkeypatch.setattr(mainwindow.tk, 'NORMAL', 'normal')
@@ -256,7 +242,6 @@ class TestMainWindowShutdown:
         monkeypatch.setattr(mainwindow.tk, 'Tk', InstrumentedTk)
         monkeypatch.setattr(mainwindow.MainWindow, 'set_geometry', lambda *args: None)
         monkeypatch.setattr(mainwindow.MainWindow, 'place_menubar', lambda *args: None)
-        monkeypatch.setattr(mainwindow.ttk, 'Frame', InstrumentedTtkFrame)
 
     # noinspection PyMissingOrEmptyDocstring,PyTypeChecker
     @contextmanager

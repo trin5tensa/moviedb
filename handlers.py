@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/19/19, 4:40 PM by stephen.
+#  Last modified 11/20/19, 7:06 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -40,6 +40,14 @@ def import_movies():
         messagebox.showinfo(parent=config.app.tk_root,
                             message='Errors were found in the input file.',
                             detail=exc.args[0], icon='warning')
+
+
+# moviedb-#94
+#   Create new widgets module
+#   Create generic movie input form with:
+#       Body frame with input fields. Investigate multiple selection options for tags.
+#       Button frame for buttons
+#       Observers: Commit button is only active if title and year have values
 
 
 def main():
