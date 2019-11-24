@@ -1,7 +1,7 @@
-"""The Observer pattern and usabilty functionalit ."""
+"""The Observer pattern and usabilty functionality."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/20/19, 7:06 AM by stephen.
+#  Last modified 11/24/19, 12:40 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -28,9 +28,8 @@ class Observer:
     3) Call the method notify to call all of the observers.
     4) Call the method deregister to remove a observer and stop it from being called.
     """
-    
-    # moviedb-#94 Test this class
-    notifees: List[Callable] = field(default_factory=list)
+
+    notifees: List[Callable] = field(default_factory=list, init=False, repr=False)
     
     def register(self, notifee):
         """Register an observer.

@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/20/19, 6:58 AM by stephen.
+#  Last modified 11/24/19, 12:40 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -188,6 +188,7 @@ class MenuData:
         
         Menu separators: Use '-' or any other character of type str.
         """
+
         self.menus = [
                 Menu('Moviedb', [
                         MenuItem('About…', handlers.about_dialog),
@@ -203,5 +204,6 @@ class MenuData:
                         MenuItem('Copy'),
                         MenuItem('Paste'), ]),
                 Menu('Movie', [
-                        MenuItem('Import…', handlers.import_movies)])
+                        MenuItem('Add Movie…', handlers.add_movie),
+                        MenuItem('Import…', handlers.import_movies), ]),
                 ]

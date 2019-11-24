@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/20/19, 7:06 AM by stephen.
+#  Last modified 11/24/19, 12:40 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,15 +19,20 @@ import sys
 from tkinter import Button, Tk, filedialog, messagebox
 
 import config
+import guiwidgets
 import impexp
 
 
 def about_dialog():
     """Display the about dialog."""
-    print()
-    print(f"{config.app.tk_root=}")
     messagebox.showinfo(parent=config.app.tk_root, message=config.app.name,
                         detail=config.app.version)
+
+
+def add_movie():
+    # moviedb-#94
+    #   Stub
+    guiwidgets.MovieGUI(config.app.tk_root, add_movie_callback)
 
 
 def import_movies():
@@ -42,12 +47,10 @@ def import_movies():
                             detail=exc.args[0], icon='warning')
 
 
-# moviedb-#94
-#   Create new widgets module
-#   Create generic movie input form with:
-#       Body frame with input fields. Investigate multiple selection options for tags.
-#       Button frame for buttons
-#       Observers: Commit button is only active if title and year have values
+def add_movie_callback(fields: guiwidgets.MovieDict):
+    # moviedb-#94
+    #   Stub
+    pass
 
 
 def main():
