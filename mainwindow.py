@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/24/19, 12:40 PM by stephen.
+#  Last modified 12/3/19, 9:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -41,6 +41,8 @@ class MainWindow:
         self.parent.option_add('*tearOff', False)
         self.parent.geometry(self.set_geometry())
         self.place_menubar(MenuData().menus)
+        # moviedb-#94 Test next line
+        self.parent.bind('<Escape>', self.tk_shutdown)
         self.parent.protocol('WM_DELETE_WINDOW', self.tk_shutdown)
 
     def set_geometry(self) -> str:
@@ -143,8 +145,13 @@ class MainWindow:
         # Add menu to menubar
         menubar.add_cascade(label=menu.name, menu=cascade)
 
-    def tk_shutdown(self):
-        """Carry out actions needed when main window is closed."""
+    # noinspection PyUnusedLocal
+    def tk_shutdown(self, *args):
+        """Carry out actions needed when main window is closed.
+        
+        Args:
+            *args: Not used. Required for compatability with caller
+        """
         # Save geometry in config.app for future permanent storage.
         config.app.geometry = self.parent.winfo_geometry()
         # Destroy all widgets and end mainloop.
@@ -205,5 +212,6 @@ class MenuData:
                         MenuItem('Paste'), ]),
                 Menu('Movie', [
                         MenuItem('Add Movie…', handlers.add_movie),
+                        '-',
                         MenuItem('Import…', handlers.import_movies), ]),
                 ]

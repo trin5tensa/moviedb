@@ -4,7 +4,7 @@ This module controls all gui activity
 """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/12/19, 5:07 PM by stephen.
+#  Last modified 11/28/19, 5:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,5 +25,5 @@ import mainwindow
 def run():
     """Run the GUI."""
     config.app.tk_root = tk.Tk()
-    config.app.root_pane = mainwindow.MainWindow(config.app.tk_root)
+    config.app.gui_environment = mainwindow.MainWindow(config.app.tk_root)
     config.app.tk_root.mainloop()

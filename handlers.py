@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/24/19, 12:40 PM by stephen.
+#  Last modified 11/28/19, 1:18 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -50,6 +50,7 @@ def import_movies():
 def add_movie_callback(fields: guiwidgets.MovieDict):
     # moviedb-#94
     #   Stub
+    print(f'\nFunction add_movie_callback called with {fields=}')
     pass
 
 

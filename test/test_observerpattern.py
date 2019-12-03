@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/24/19, 12:40 PM by stephen.
+#  Last modified 12/3/19, 10:05 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -49,8 +49,11 @@ class TestObserver:
     def observer_context(self):
         # noinspection PyTypeChecker
         yield observerpattern.Observer()
-    
+
     def test_notifee(self, *args, **kwargs):
         if not self.test_notifee_calls:
             self.test_notifee_calls = []
         self.test_notifee_calls.append((args, kwargs), )
+
+# moviedb-#94
+#  Test Neuron class

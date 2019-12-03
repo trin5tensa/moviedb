@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/20/19, 7:00 AM by stephen.
+#  Last modified 12/3/19, 10:05 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -264,27 +264,31 @@ class InstrumentedTk:
     option_add_args = None
     geometry_args = None
     protocol_args = None
+    bind_args = None
     menu = None
     destroy_called = False
     
     def title(self, *args):
         self.title_args, = args
-    
+
     def option_add(self, *args):
         self.option_add_args = args
-    
+
     def geometry(self, *args):
         self.geometry_args = args
-    
+
     def protocol(self, *args):
         self.protocol_args = args
-    
+
+    def bind(self, *args):
+        self.bind_args = args
+
     def config(self, **kwargs):
         self.menu = kwargs.get('menu')
-    
+
     def destroy(self):
         self.destroy_called = True
-    
+
     @staticmethod
     def winfo_screenwidth():
         return '2000'

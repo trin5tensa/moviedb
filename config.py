@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/12/19, 4:00 PM by stephen.
+#  Last modified 11/28/19, 5:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -35,7 +35,7 @@ class Config:
 
     # Save the root window for easy access for testing.
     tk_root: 'tk.Tk' = None
-    root_pane: 'mainwindow.MainWindow' = None
+    gui_environment: 'mainwindow.MainWindow' = None
 
 
 app: Optional[Config] = None

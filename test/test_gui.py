@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/12/19, 5:07 PM by stephen.
+#  Last modified 11/28/19, 5:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -29,7 +29,7 @@ class TestRun:
 
     def test_root_pane_initialized(self, main_window_patch):
         with self.test_context():
-            assert isinstance(gui.config.app.root_pane, DummyMainWindow)
+            assert isinstance(gui.config.app.gui_environment, DummyMainWindow)
 
     def test_mainloop_called(self, main_window_patch):
         with self.test_context():
