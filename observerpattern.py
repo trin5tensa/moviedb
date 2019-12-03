@@ -1,7 +1,7 @@
 """The Observer pattern and usabilty functionality."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/3/19, 10:05 AM by stephen.
+#  Last modified 12/3/19, 12:39 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -29,7 +29,6 @@ class Observer:
         the arguments supplied to the notify method.
     4) Call the method deregister to remove a observer and stop it from being called.
     """
-    
     notifees: List[Callable] = field(default_factory=list, init=False, repr=False)
     
     def register(self, notifee):
