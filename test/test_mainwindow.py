@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/3/19, 10:05 AM by stephen.
+#  Last modified 12/3/19, 12:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -50,11 +50,15 @@ class TestMainWindowInit:
         with self.init_context():
             assert self.place_menubar == (mainwindow.MenuData().menus,)
 
+    def test_bind_escape(self, class_patches):
+        with self.init_context():
+            assert self.root_pane.parent.bind_args == ('<Escape>', self.root_pane.tk_shutdown)
+
     def test_tk_shutdown_protocol_set(self, class_patches):
         with self.init_context():
             assert self.root_pane.parent.protocol_args == ('WM_DELETE_WINDOW',
                                                            self.root_pane.tk_shutdown)
-    
+
     # noinspection PyMissingOrEmptyDocstring
     @pytest.fixture()
     def class_patches(self, monkeypatch):

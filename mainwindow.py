@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/3/19, 9:11 AM by stephen.
+#  Last modified 12/3/19, 12:43 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -41,7 +41,6 @@ class MainWindow:
         self.parent.option_add('*tearOff', False)
         self.parent.geometry(self.set_geometry())
         self.place_menubar(MenuData().menus)
-        # moviedb-#94 Test next line
         self.parent.bind('<Escape>', self.tk_shutdown)
         self.parent.protocol('WM_DELETE_WINDOW', self.tk_shutdown)
 
