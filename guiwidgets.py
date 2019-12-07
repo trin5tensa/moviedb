@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/3/19, 10:05 AM by stephen.
+#  Last modified 12/7/19, 2:55 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,15 +20,16 @@ callers.
 import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, TypedDict
+from typing import Callable, Dict, List, Sequence, TypedDict
 
 import observerpattern
 
 
-INTERNAL_NAMES = ('title', 'year', 'director', 'length', 'notes', 'tags')
-FIELD_TEXTS = ('Title *', 'Year *', 'Director', 'Length (minutes)', 'Notes', 'Tags')
+INTERNAL_NAMES = ('title', 'year', 'director', 'length', 'notes')
+FIELD_TEXTS = ('Title *', 'Year *', 'Director', 'Length (minutes)', 'Notes')
 COMMIT_TEXT = 'Commit'
 CANCEL_TEXT = 'Cancel'
+SELECT_TAGS_TEXT = 'Select tags'
 
 
 class MovieDict(TypedDict, total=False):
@@ -45,47 +46,68 @@ class MovieDict(TypedDict, total=False):
 class MovieGUI:
     """ Create a form for entering or editing a movie."""
     parent: tk.Tk
+    # List of all tags in the database.
+    tags: Sequence[str]
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[MovieDict], None]
     
     caller_fields: MovieDict = field(default_factory=dict)
-    outerframe: ttk.Frame = field(default=None, init=False, repr=False)
-    fields: Dict[str, 'MovieField'] = field(default_factory=dict, init=False, repr=False)
+    outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
+    entry_fields: Dict[str, 'MovieField'] = field(default_factory=dict, init=False, repr=False)
     title_year_neuron: observerpattern.Neuron = field(default_factory=observerpattern.Neuron,
                                                       init=False, repr=False)
+    selected_tags: List[str] = field(default_factory=list, init=False, repr=False)
     
     def __post_init__(self):
-        self.fields = {internal_name: MovieField(field_text, self.caller_fields.get(internal_name, ''))
-                       for internal_name, field_text
-                       in zip(INTERNAL_NAMES, FIELD_TEXTS)}
+        self.entry_fields = {internal_name: MovieField(field_text,
+                                                       self.caller_fields.get(internal_name, ''))
+                             for internal_name, field_text
+                             in zip(INTERNAL_NAMES, FIELD_TEXTS)}
         
         self.parent.columnconfigure(0, weight=1)
         self.parent.rowconfigure(0, weight=1)
         
-        self.outerframe = ttk.Frame(self.parent)
-        self.outerframe.grid(column=0, row=0, sticky='nsew')
-        self.outerframe.columnconfigure(0, weight=1)
-        self.outerframe.rowconfigure(0, weight=1)
-        self.outerframe.rowconfigure(1, minsize=35)
+        self.outer_frame = ttk.Frame(self.parent)
+        self.outer_frame.grid(column=0, row=0, sticky='nsew')
+        self.outer_frame.columnconfigure(0, weight=1)
+        self.outer_frame.rowconfigure(0, weight=1)
+        self.outer_frame.rowconfigure(1, minsize=35)
         
-        self.create_body(self.outerframe)
-        self.create_buttonbox(self.outerframe)
+        self.create_body(self.outer_frame)
+        self.create_buttonbox(self.outer_frame)
     
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form."""
-        bodyframe = ttk.Frame(outerframe, padding=(10, 25, 10, 0))
-        bodyframe.grid(column=0, row=0, sticky='n')
-        bodyframe.columnconfigure(0, weight=1, minsize=30)
-        bodyframe.columnconfigure(1, weight=1)
-        
-        # moviedb-#94
-        #   Make tags field into multiple choice from caller supplied list. New tags permitted.
+        body_frame = ttk.Frame(outerframe, padding=(10, 25, 10, 0))
+        body_frame.grid(column=0, row=0, sticky='n')
+        body_frame.columnconfigure(0, weight=1, minsize=30)
+        body_frame.columnconfigure(1, weight=1)
+    
+        # Entry fields
         for row_ix, internal_name in enumerate(INTERNAL_NAMES):
-            label = ttk.Label(bodyframe, text=self.fields[internal_name].label_text)
+            label = ttk.Label(body_frame, text=self.entry_fields[internal_name].label_text)
             label.grid(column=0, row=row_ix, sticky='e', padx=5)
-            entry = ttk.Entry(bodyframe, textvariable=self.fields[internal_name].textvariable, width=36)
+            entry = ttk.Entry(body_frame, textvariable=self.entry_fields[internal_name].textvariable,
+                              width=36)
             entry.grid(column=1, row=row_ix)
-        
+    
+        # Tag selection treeview
+        # moviedb-#95 The tags of an existing record should be shown as selected.
+        label = ttk.Label(body_frame, text=SELECT_TAGS_TEXT)
+        label.grid(column=0, row=6, sticky='e', padx=5)
+        tags_frame = ttk.Frame(body_frame, padding=5)
+        tags_frame.grid(column=1, row=6, sticky='w')
+        tree = ttk.Treeview(tags_frame, columns=('tags',), height=5, selectmode='extended',
+                            show='tree', padding=5)
+        tree.grid(column=0, row=0, sticky='w')
+        tree.column('tags', width=100)
+        for tag in self.tags:
+            tree.insert('', 'end', tag, text=tag, tags='tags')
+        tree.tag_bind('tags', '<<TreeviewSelect>>', callback=self.treeview_callback(tree))
+        scrollbar = ttk.Scrollbar(tags_frame, orient=tk.VERTICAL, command=tree.yview)
+        scrollbar.grid(column=1, row=0)
+        tree.configure(yscrollcommand=scrollbar.set)
+    
         # Link title and year fields to a single neuron.
         self.neuron_linker('title', self.title_year_neuron, self.field_callback)
         self.neuron_linker('year', self.title_year_neuron, self.field_callback)
@@ -111,21 +133,27 @@ class MovieGUI:
     def neuron_linker(self, internal_name: str, neuron: observerpattern.Neuron,
                       field_callback: Callable):
         """Link a field to a neuron."""
-        self.fields[internal_name].textvariable.trace_add('write',
-                                                          field_callback(internal_name, neuron))
+        self.entry_fields[internal_name].textvariable.trace_add('write',
+                                                                field_callback(internal_name, neuron))
         neuron.register_event(internal_name)
     
     def field_callback(self, internal_name: str, neuron: observerpattern.Neuron) -> Callable:
         """Create the callback for an observed field.
         
-        This will be registered as the 'trace_add' callback for an entry field."""
-        
-        def change_neuron_state():
-            """Call the neuron when the field changes,"""
-            state = (self.fields[internal_name].textvariable.get()
-                     != self.fields[internal_name].database_value)
+        This will be registered as the 'trace_add' callback for an entry field.
+        """
+    
+        # noinspection PyUnusedLocal
+        def change_neuron_state(*args):
+            """Call the neuron when the field changes.
+            
+            Args:
+                *args: Not used. Required to match unused arguments from caller..
+            """
+            state = (self.entry_fields[internal_name].textvariable.get()
+                     != self.entry_fields[internal_name].database_value)
             neuron(internal_name, state)
-        
+    
         return change_neuron_state
     
     @staticmethod
@@ -133,31 +161,51 @@ class MovieGUI:
         """Create the callback for a button.
         
         This will be registered with a neuron as s notifee."""
-        
+
         def change_button_state(state: bool):
             """Enable or disable the commit button when the title or year field change."""
             if state:
                 button.state(['!disabled'])
             else:
                 button.state(['disabled'])
-        
+
         return change_button_state
+    
+    def treeview_callback(self, tree: ttk.Treeview):
+        """Create a callback which will be called whenever the user selection is changed.
+        
+        Args:
+            tree:
+
+        Returns: The callback.
+        """
+        
+        # noinspection PyUnusedLocal
+        def update_tag_selection(*args):
+            """Save the newly changed user selection.
+            
+            Args:
+                *args: Not used. Needed for compatibility with Tk:Tcl caller.
+            """
+            self.selected_tags = tree.selection()
+        
+        return update_tag_selection
     
     def commit(self):
         """The user clicked the commit button."""
         return_fields = {internal_name: movie_field.textvariable.get()
-                         for internal_name, movie_field in self.fields.items()}
-        self.callback(return_fields)
+                         for internal_name, movie_field in self.entry_fields.items()}
+        self.callback(return_fields, self.selected_tags)
         self.destroy()
     
     def destroy(self):
         """Destroy all widgets of this class."""
-        self.outerframe.destroy()
+        self.outer_frame.destroy()
 
 
 @dataclass
 class MovieField:
-    """A support class for attributes of a gui field."""
+    """A support class for attributes of a gui entry field."""
     label_text: str
     database_value: str
     textvariable: tk.StringVar = None

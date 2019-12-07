@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/28/19, 1:18 PM by stephen.
+#  Last modified 12/5/19, 9:55 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,6 +17,7 @@ This module is the glue between the user's selection of a menu item and the gui.
 
 import sys
 from tkinter import Button, Tk, filedialog, messagebox
+from typing import Sequence
 
 import config
 import guiwidgets
@@ -32,7 +33,9 @@ def about_dialog():
 def add_movie():
     # moviedb-#94
     #   Stub
-    guiwidgets.MovieGUI(config.app.tk_root, add_movie_callback)
+    tags = ['Western', 'Movie night seen', 'Seen', 'Movie night candidate', 'Bollywood', 'Noir',
+            'Musical']
+    guiwidgets.MovieGUI(config.app.tk_root, tags, add_movie_callback)
 
 
 def import_movies():
@@ -47,11 +50,10 @@ def import_movies():
                             detail=exc.args[0], icon='warning')
 
 
-def add_movie_callback(fields: guiwidgets.MovieDict):
+def add_movie_callback(fields: guiwidgets.MovieDict, tags: Sequence[str]):
     # moviedb-#94
     #   Stub
-    print(f'\nFunction add_movie_callback called with {fields=}')
-    pass
+    print(f'\nFunction add_movie_callback called with {fields=}, {tags=}')
 
 
 def main():

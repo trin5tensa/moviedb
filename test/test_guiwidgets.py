@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/3/19, 10:05 AM by stephen.
+#  Last modified 12/7/19, 2:55 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,7 @@
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Callable, Tuple, Union
+from typing import Callable, Sequence, Tuple, Union
 
 import pytest
 
@@ -23,6 +23,8 @@ import guiwidgets
 
 
 class TestMovieInit:
+    
+    # Test Basic Initialization
     
     def test_parent_initialized(self, class_patches):
         with self.movie_context() as movie_gui:
@@ -35,27 +37,28 @@ class TestMovieInit:
     def test_fields_initialized(self, class_patches):
         with self.movie_context() as movie_gui:
             for internal_name in guiwidgets.INTERNAL_NAMES:
-                assert isinstance(movie_gui.fields[internal_name], guiwidgets.MovieField)
+                assert isinstance(movie_gui.entry_fields[internal_name], guiwidgets.MovieField)
     
     def test_fields_label_text(self, class_patches):
         with self.movie_context() as movie_gui:
             for internal_name, label_text in zip(guiwidgets.INTERNAL_NAMES, guiwidgets.FIELD_TEXTS):
-                assert movie_gui.fields[internal_name].label_text == label_text
+                assert movie_gui.entry_fields[internal_name].label_text == label_text
     
     def test_fields_database_value(self, class_patches):
         with self.movie_context() as movie_gui:
             for internal_name, label_text in zip(guiwidgets.INTERNAL_NAMES, guiwidgets.FIELD_TEXTS):
-                assert movie_gui.fields[internal_name].database_value == ''
+                assert movie_gui.entry_fields[internal_name].database_value == ''
     
     def test_fields_text_variable(self, class_patches):
         with self.movie_context() as movie_gui:
             for internal_name, label_text in zip(guiwidgets.INTERNAL_NAMES, guiwidgets.FIELD_TEXTS):
-                assert isinstance(movie_gui.fields[internal_name].textvariable, guiwidgets.tk.StringVar)
+                assert isinstance(movie_gui.entry_fields[internal_name].textvariable,
+                                  guiwidgets.tk.StringVar)
     
     def test_fields_observer(self, class_patches):
         with self.movie_context() as movie_gui:
             for internal_name, label_text in zip(guiwidgets.INTERNAL_NAMES, guiwidgets.FIELD_TEXTS):
-                assert isinstance(movie_gui.fields[internal_name].observer,
+                assert isinstance(movie_gui.entry_fields[internal_name].observer,
                                   guiwidgets.observerpattern.Observer)
     
     def test_parent_column_configured(self, class_patches):
@@ -68,7 +71,7 @@ class TestMovieInit:
     
     def test_outer_frame_created(self, class_patches):
         with self.movie_context() as movie_gui:
-            assert movie_gui.outerframe == TtkFrame(parent=DummyTk())
+            assert movie_gui.outer_frame == TtkFrame(parent=DummyTk())
     
     def test_outer_frame_column_configured(self, class_patches):
         with self.movie_context() as movie_gui:
@@ -86,6 +89,8 @@ class TestMovieInit:
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
             assert outerframe.grid_calls[0] == dict(column=0, row=0, sticky='nsew')
+    
+    # Test Body Initialization
     
     def test_body_frame_created(self, class_patches):
         with self.movie_context() as movie_gui:
@@ -129,7 +134,7 @@ class TestMovieInit:
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
             bodyframe = outerframe.children[0]
-            labels = bodyframe.children[::2]
+            labels = bodyframe.children[:4:2]
             for row_ix, label in enumerate(labels):
                 assert label.grid_calls[0] == dict(column=0, row=row_ix, sticky='e', padx=5)
     
@@ -137,7 +142,7 @@ class TestMovieInit:
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
             bodyframe = outerframe.children[0]
-            entries = bodyframe.children[1::2]
+            entries = bodyframe.children[1:4:2]
             for entry in entries:
                 assert entry == TtkEntry(TtkFrame(TtkFrame(DummyTk()), padding=(10, 25, 10, 0)),
                                          textvariable=TkStringVar(), width=36)
@@ -147,9 +152,107 @@ class TestMovieInit:
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
             bodyframe = outerframe.children[0]
-            entries = bodyframe.children[1::2]
+            entries = bodyframe.children[1:4:2]
             for row_ix, entry in enumerate(entries):
                 assert entry.grid_calls[0] == dict(column=1, row=row_ix)
+    
+    def test_tags_label_called(self, class_patches):
+        with self.movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            label = bodyframe.children[-2::2]
+            assert label[0] == TtkLabel(TtkFrame(TtkFrame(DummyTk()), padding=(10, 25, 10, 0)),
+                                        text=guiwidgets.SELECT_TAGS_TEXT)
+    
+    def test_tags_label_gridded(self, class_patches):
+        with self.movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            label = bodyframe.children[-2::2]
+            assert label[0].grid_calls[0] == dict(column=0, row=6, sticky='e', padx=5)
+    
+    def test_tags_frame_created(self, class_patches):
+        with self.movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            assert bodyframe.children[-1] == TtkFrame(parent=TtkFrame(parent=TtkFrame(
+                    parent=DummyTk()), padding=(10, 25, 10, 0)), padding=5)
+    
+    def test_tags_frame_gridded(self, class_patches):
+        with self.movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            assert bodyframe.children[-1].grid_calls[0] == dict(column=1, row=6, sticky='w')
+    
+    def test_tree_created(self, class_patches):
+        with self.movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            tags_frame = bodyframe.children[-1]
+            assert tags_frame.children[0] == TtkTreeview(parent=TtkFrame(parent=TtkFrame(
+                    parent=TtkFrame(parent=DummyTk()), padding=(10, 25, 10, 0)), padding=5),
+                    columns=('tags',), height=5, selectmode='extended', show='tree', padding=5)
+    
+    def test_tree_gridded(self, class_patches):
+        with self.movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            tags_frame = bodyframe.children[-1]
+            tree = tags_frame.children[0]
+            assert tree.grid_calls[0] == dict(column=0, row=0, sticky='w')
+    
+    def test_tree_column_sized(self, class_patches):
+        with self.movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            tags_frame = bodyframe.children[-1]
+            tree = tags_frame.children[0]
+            assert tree.column_calls[0] == (('tags',), dict(width=100))
+    
+    def test_tree_insert(self, class_patches):
+        with self.movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            tags_frame = bodyframe.children[-1]
+            tree = tags_frame.children[0]
+            assert tree.insert_calls == [(('', 'end', tag), dict(text=tag, tags='tags'))
+                                         for tag in movie_gui.tags]
+    
+    def test_tree_tag_bind(self, class_patches):
+        with self.movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            tags_frame = bodyframe.children[-1]
+            tree = tags_frame.children[0]
+            assert tree.tag_bind_calls[0][0] == ('tags', '<<TreeviewSelect>>')
+            
+            tree.tag_bind_calls[0][1]['callback']()
+            assert movie_gui.selected_tags == ['test tag 1', 'test tag 2']
+    
+    def test_scrollbar_created(self, class_patches):
+        with self.movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            tags_frame = bodyframe.children[-1]
+            tree, scrollbar = tags_frame.children
+            assert scrollbar == TtkScrollbar(tags_frame, orient=guiwidgets.tk.VERTICAL,
+                                             command=tree.yview)
+    
+    def test_scrollbar_gridded(self, class_patches):
+        with self.movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            tags_frame = bodyframe.children[-1]
+            tree, scrollbar = tags_frame.children
+            assert scrollbar.grid_calls[0] == dict(column=1, row=0)
+    
+    def test_tree_configured_with_scrollbar(self, class_patches):
+        with self.movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            tags_frame = bodyframe.children[-1]
+            tree, scrollbar = tags_frame.children
+            assert tree.configure_calls[0] == dict(yscrollcommand=scrollbar.set)
     
     def test_neuron_linker_called(self, class_patches, monkeypatch):
         calls = []
@@ -159,6 +262,8 @@ class TestMovieInit:
             assert calls == [
                     (movie_gui, 'title', movie_gui.title_year_neuron, movie_gui.field_callback),
                     (movie_gui, 'year', movie_gui.title_year_neuron, movie_gui.field_callback)]
+    
+    # Test Buttonbox Initialization
     
     def test_buttonbox_created(self, class_patches):
         with self.movie_context() as movie_gui:
@@ -229,12 +334,14 @@ class TestMovieInit:
             button = movie_gui.parent.children[0].children[1].children[1]
             assert button.focus_set_calls[0] is True
     
+    # Test Neuron Link Initialization
+    
     def test_trace_add_called(self, class_patches, monkeypatch):
         calls = []
         monkeypatch.setattr(guiwidgets.MovieGUI, 'field_callback',
                             lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
-            assert movie_gui.fields['title'].textvariable.trace_add_calls[0][0] == 'write'
+            assert movie_gui.entry_fields['title'].textvariable.trace_add_calls[0][0] == 'write'
             assert calls[0][0] == movie_gui
             assert calls[0][1] == 'title'
             assert isinstance(calls[0][2], guiwidgets.observerpattern.Neuron)
@@ -251,6 +358,8 @@ class TestMovieInit:
             # Are  'title' and 'year' fields linked to the same neuron?
             assert calls[0][0] == calls[1][0]
     
+    # Test Miscellaneous Methods
+    
     def test_field_callback(self, class_patches):
         with self.movie_context() as movie_gui:
             neuron = movie_gui.title_year_neuron
@@ -266,7 +375,7 @@ class TestMovieInit:
     def test_commit_method(self, class_patches):
         with self.movie_context() as movie_gui:
             movie_gui.destroy()
-            assert movie_gui.outerframe.destroy_calls[0]
+            assert movie_gui.outer_frame.destroy_calls[0]
     
     def test_destroy_method(self, class_patches, monkeypatch):
         calls = []
@@ -274,8 +383,8 @@ class TestMovieInit:
             monkeypatch.setattr(movie_gui, 'callback', lambda *args: calls.append(args))
             movie_gui.commit()
             assert calls[0][0] == dict(title='42', year='42', director='42',
-                                       length='42', notes='42', tags='42')
-            assert movie_gui.outerframe.destroy_calls[0]
+                                       length='42', notes='42')
+            assert movie_gui.outer_frame.destroy_calls[0]
     
     # noinspection PyMissingOrEmptyDocstring
     @pytest.fixture()
@@ -286,12 +395,15 @@ class TestMovieInit:
         monkeypatch.setattr(guiwidgets.ttk, 'Label', TtkLabel)
         monkeypatch.setattr(guiwidgets.ttk, 'Entry', TtkEntry)
         monkeypatch.setattr(guiwidgets.ttk, 'Button', TtkButton)
+        monkeypatch.setattr(guiwidgets.ttk, 'Treeview', TtkTreeview)
+        monkeypatch.setattr(guiwidgets.ttk, 'Scrollbar', TtkScrollbar)
     
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def movie_context(self):
+        tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
-        yield guiwidgets.MovieGUI(DummyTk(), movie_gui_callback)
+        yield guiwidgets.MovieGUI(DummyTk(), tags, movie_gui_callback)
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -339,7 +451,7 @@ class TtkFrame:
     missing in the source code.
     """
     parent: Union[DummyTk, 'TtkFrame']
-    padding: Union[Tuple[int, int], Tuple[int, int, int, int]] = None
+    padding: Union[int, Tuple[int, int], Tuple[int, int, int, int]] = None
     
     children: list = field(default_factory=list, init=False, repr=False, compare=False)
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -425,15 +537,75 @@ class TtkButton:
     
     def bind(self, *args):
         self.bind_calls.append(args, )
-    
+
     def state(self, state):
         self.state_calls.append(state)
-    
+
     def focus_set(self):
         self.focus_set_calls.append(True)
-    
+
     def invoke(self):
         self.invoke_calls.append(True)
+
+
+@dataclass
+class TtkTreeview:
+    parent: TtkFrame
+    columns: Sequence[str]
+    height: int
+    selectmode: str
+    show: str
+    padding: int
+    
+    grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    column_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    insert_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    tag_bind_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    yview_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    configure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    
+    def __post_init__(self):
+        self.parent.children.append(self)
+    
+    def grid(self, **kwargs):
+        self.grid_calls.append(kwargs, )
+    
+    def column(self, *args, **kwargs):
+        self.column_calls.append((args, kwargs))
+    
+    def insert(self, *args, **kwargs):
+        self.insert_calls.append((args, kwargs))
+    
+    def tag_bind(self, *args, **kwargs):
+        self.tag_bind_calls.append((args, kwargs))
+    
+    def yview(self, *args, **kwargs):
+        self.yview_calls.append((args, kwargs))
+    
+    def configure(self, **kwargs):
+        self.configure_calls.append(kwargs)
+    
+    def selection(self):
+        return ['test tag 1', 'test tag 2']
+
+
+@dataclass
+class TtkScrollbar:
+    parent: TtkFrame
+    orient: str
+    command: Callable
+    
+    set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    
+    def __post_init__(self):
+        self.parent.children.append(self)
+    
+    def set(self, *args, **kwargs):
+        self.set_calls.append((args, kwargs))
+    
+    def grid(self, **kwargs):
+        self.grid_calls.append(kwargs)
 
 
 # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring
