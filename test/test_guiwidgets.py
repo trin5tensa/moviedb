@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/7/19, 2:55 PM by stephen.
+#  Last modified 12/12/19, 12:35 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -47,7 +47,7 @@ class TestMovieInit:
     def test_fields_database_value(self, class_patches):
         with self.movie_context() as movie_gui:
             for internal_name, label_text in zip(guiwidgets.INTERNAL_NAMES, guiwidgets.FIELD_TEXTS):
-                assert movie_gui.entry_fields[internal_name].database_value == ''
+                assert movie_gui.entry_fields[internal_name].original_value == ''
     
     def test_fields_text_variable(self, class_patches):
         with self.movie_context() as movie_gui:
@@ -260,8 +260,8 @@ class TestMovieInit:
                             lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
             assert calls == [
-                    (movie_gui, 'title', movie_gui.title_year_neuron, movie_gui.field_callback),
-                    (movie_gui, 'year', movie_gui.title_year_neuron, movie_gui.field_callback)]
+                    (movie_gui, 'title', movie_gui.commit_neuron, movie_gui.neuron_callback),
+                    (movie_gui, 'year', movie_gui.commit_neuron, movie_gui.neuron_callback)]
     
     # Test Buttonbox Initialization
     
@@ -338,7 +338,7 @@ class TestMovieInit:
     
     def test_trace_add_called(self, class_patches, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.MovieGUI, 'field_callback',
+        monkeypatch.setattr(guiwidgets.MovieGUI, 'neuron_callback',
                             lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
             assert movie_gui.entry_fields['title'].textvariable.trace_add_calls[0][0] == 'write'
@@ -362,30 +362,30 @@ class TestMovieInit:
     
     def test_field_callback(self, class_patches):
         with self.movie_context() as movie_gui:
-            neuron = movie_gui.title_year_neuron
-            movie_gui.field_callback('year', neuron)()
+            neuron = movie_gui.commit_neuron
+            movie_gui.neuron_callback('year', neuron)()
             assert neuron.events == dict(title=False, year=True)
-    
+
     def test_button_state_callback(self, class_patches):
         with self.movie_context() as movie_gui:
             commit = movie_gui.parent.children[0].children[1].children[0]
             movie_gui.button_state_callback(commit)(True)
             assert commit.state_calls == [['disabled'], ['!disabled']]
-    
-    def test_commit_method(self, class_patches):
-        with self.movie_context() as movie_gui:
-            movie_gui.destroy()
-            assert movie_gui.outer_frame.destroy_calls[0]
-    
-    def test_destroy_method(self, class_patches, monkeypatch):
+
+    def test_commit_method(self, class_patches, monkeypatch):
         calls = []
         with self.movie_context() as movie_gui:
             monkeypatch.setattr(movie_gui, 'callback', lambda *args: calls.append(args))
             movie_gui.commit()
-            assert calls[0][0] == dict(title='42', year='42', director='42',
-                                       length='42', notes='42')
+            assert calls[0][0] == dict(title='4242', year='4242', director='4242',
+                                       minutes='4242', notes='4242')
             assert movie_gui.outer_frame.destroy_calls[0]
-    
+
+    def test_destroy_method(self, class_patches):
+        with self.movie_context() as movie_gui:
+            movie_gui.destroy()
+            assert movie_gui.outer_frame.destroy_calls[0]
+
     # noinspection PyMissingOrEmptyDocstring
     @pytest.fixture()
     def class_patches(self, monkeypatch):
@@ -433,13 +433,17 @@ class DummyTk:
 @dataclass
 class TkStringVar:
     trace_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     
     def trace_add(self, *args):
         self.trace_add_calls.append(args)
     
+    def set(self, *args):
+        self.set_calls.append(args)
+    
     @staticmethod
     def get():
-        return '42'
+        return '4242'
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -506,14 +510,22 @@ class TtkEntry:
     parent: TtkFrame
     textvariable: TkStringVar = None
     width: int = None
-
+    
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-
+    config_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    register_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    
     def __post_init__(self):
         self.parent.children.append(self)
-
+    
     def grid(self, **kwargs):
         self.grid_calls.append(kwargs)
+    
+    def config(self, **kwargs):
+        self.config_calls.append(kwargs)
+    
+    def register(self, *args, **kwargs):
+        self.register_calls.append((args, kwargs))
 
 
 # noinspection PyMissingOrEmptyDocstring

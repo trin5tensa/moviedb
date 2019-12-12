@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/18/19, 8:43 AM by stephen.
+#  Last modified 12/12/19, 12:34 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -47,6 +47,28 @@ class TestAboutDialog:
 
     def dummy_showinfo(self, **kwargs):
         self.showinfo_calls.append(kwargs)
+
+
+class TestAddMovie:
+    
+    def test(self, class_patches):
+        with self.add_movie_context():
+            pass
+        assert True
+    
+    @pytest.fixture()
+    def class_patches(self, monkeypatch):
+        monkeypatch.setattr(handlers.guiwidgets, 'MovieGUI', lambda *args: None)
+    
+    @contextmanager
+    def add_movie_context(self):
+        hold_app = handlers.config.app
+        handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
+        handlers.config.app.tk_root = DummyParent()
+        try:
+            yield handlers.add_movie()
+        finally:
+            handlers.config.app = hold_app
 
 
 # noinspection PyMissingOrEmptyDocstring

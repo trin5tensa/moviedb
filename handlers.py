@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/5/19, 9:55 AM by stephen.
+#  Last modified 12/12/19, 12:34 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,10 +16,12 @@ This module is the glue between the user's selection of a menu item and the gui.
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+# TODO Move all tkinter calls to guiwidgets module
 from tkinter import Button, Tk, filedialog, messagebox
 from typing import Sequence
 
 import config
+import database
 import guiwidgets
 import impexp
 
@@ -31,11 +33,26 @@ def about_dialog():
 
 
 def add_movie():
-    # moviedb-#94
-    #   Stub
-    tags = ['Western', 'Movie night seen', 'Seen', 'Movie night candidate', 'Bollywood', 'Noir',
-            'Musical']
+    # moviedb-#94 Test this function
+    tags = database.all_tags()
     guiwidgets.MovieGUI(config.app.tk_root, tags, add_movie_callback)
+
+
+def add_movie_callback(movie: config.MovieDict, tags: Sequence[str]):
+    # moviedb-#94 Error handling:
+    #   Here for SQL
+    #       Non-unique title and year combination
+    #       Invalid year (>1877 and <10000)
+    #   Give warning to user if errors and pass boolean fail back to caller
+    # moviedb-#94 Test this function
+    
+    database.add_movie(movie)
+    
+    # TODO Remove note when fixed
+    #   Pycharm reported bug:  https://youtrack.jetbrains.com/issue/PY-39404
+    movies = (config.MovieKeyDict(title=movie['title'], year=movie['year']),)
+    for tag in tags:
+        database.add_tag_and_links(tag, movies)
 
 
 def import_movies():
@@ -50,13 +67,7 @@ def import_movies():
                             detail=exc.args[0], icon='warning')
 
 
-def add_movie_callback(fields: guiwidgets.MovieDict, tags: Sequence[str]):
-    # moviedb-#94
-    #   Stub
-    print(f'\nFunction add_movie_callback called with {fields=}, {tags=}')
-
-
-def main():
+def test_about_dialog():
     """Integration tests."""
     # Set up test environment.
     root = Tk()
@@ -73,4 +84,4 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(test_about_dialog())

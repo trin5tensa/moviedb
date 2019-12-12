@@ -1,7 +1,7 @@
 """Functional pytests for database module. """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/19/19, 12:35 PM by stephen.
+#  Last modified 12/9/19, 7:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -74,10 +74,10 @@ def loaded_database(hamlet, solaris, dreams, revanche):
     # noinspection PyProtectedMember
     with database._session_scope() as session:
         session.add_all(movies)
-    database.add_tag_and_links('blue', [database.TitleYearDict(title='Hamlet', year=1996)])
-    database.add_tag_and_links('yellow', [database.TitleYearDict(title='Revanche', year=2008)])
-    database.add_tag_and_links('green', [database.TitleYearDict(title='Revanche', year=2008)])
-    database.add_tag_and_links('green', [database.TitleYearDict(title='Solaris', year=1972)])
+    database.add_tag_and_links('blue', [database.MovieKeyDict(title='Hamlet', year=1996)])
+    database.add_tag_and_links('yellow', [database.MovieKeyDict(title='Revanche', year=2008)])
+    database.add_tag_and_links('green', [database.MovieKeyDict(title='Revanche', year=2008)])
+    database.add_tag_and_links('green', [database.MovieKeyDict(title='Solaris', year=1972)])
 
 
 def test_init_database_access_with_new_database(connection):
@@ -228,7 +228,7 @@ class TestFindMovie:
 class TestEditMovie:
     def test_edit_movie(self):
         new_note = 'Science Fiction'
-        database.edit_movie(database.TitleYearDict(title='Solaris', year=1972), dict(notes=new_note))
+        database.edit_movie(database.MovieKeyDict(title='Solaris', year=1972), dict(notes=new_note))
         notes = {movie['notes'] for movie in database.find_movies(dict(title='Solaris'))}
         assert notes == {new_note, }
 
@@ -237,7 +237,7 @@ class TestEditMovie:
 class TestDeleteMovie:
     def test_delete_movie(self):
         expected = set()
-        database.del_movie(database.TitleYearDict(title='Solaris', year=1972))
+        database.del_movie(database.MovieKeyDict(title='Solaris', year=1972))
         titles = {movie['title'] for movie in database.find_movies(dict(title='Solaris'))}
         assert titles == expected
 
@@ -266,8 +266,8 @@ class TestTagOperations:
     def test_add_links_to_movies(self, session):
         expected = {'Solaris', "Akira Kurosawa's Dreams"}
         test_tag = 'Foreign'
-        movies = [database.TitleYearDict(title='Solaris', year=1972),
-                  database.TitleYearDict(title="Akira Kurosawa's Dreams", year=1972)]
+        movies = [database.MovieKeyDict(title='Solaris', year=1972),
+                  database.MovieKeyDict(title="Akira Kurosawa's Dreams", year=1972)]
         database.add_tag_and_links(test_tag, movies)
     
         movies = (session.query(database.Movie.title)
@@ -277,7 +277,7 @@ class TestTagOperations:
 
     def test_edit_tag(self, session):
         old_tag = 'old test tag'
-        movies = [database.TitleYearDict(title='Solaris', year=1972)]
+        movies = [database.MovieKeyDict(title='Solaris', year=1972)]
         database.add_tag_and_links(old_tag, movies)
         old_tag_id, tag = (session.query(database.Tag.id, database.Tag.tag)
                            .filter(database.Tag.tag == 'old test tag')
@@ -294,8 +294,8 @@ class TestTagOperations:
     def test_del_tag(self, session):
         # Add a tag and links
         test_tag = 'Going soon'
-        movies = [database.TitleYearDict(title='Solaris', year=1972),
-                  database.TitleYearDict(title='Hamlet', year=1996)]
+        movies = [database.MovieKeyDict(title='Solaris', year=1972),
+                  database.MovieKeyDict(title='Hamlet', year=1996)]
         database.add_tag_and_links(test_tag, movies)
     
         # Delete the tag
