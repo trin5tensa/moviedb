@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/19/19, 12:35 PM by stephen.
+#  Last modified 12/17/19, 9:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +30,11 @@ from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import query, relationship
 from sqlalchemy.orm.session import sessionmaker
 
+import exception
+from config import MovieDict, MovieKeyDict, MovieUpdateDict
 
+
+MUYBRIDGE = 1878
 Base = sqlalchemy.ext.declarative.declarative_base()
 database_fn = 'movies.sqlite3'
 
@@ -42,19 +46,6 @@ movie_review = Table('movie_review', Base.metadata,
                      Column('reviews_id', ForeignKey('reviews.id'), primary_key=True))
 engine: Optional[sqlalchemy.engine.base.Engine] = None
 Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
-
-
-class TitleYearDict(TypedDict):
-    """Mandatory fields for a movie."""
-    title: str
-    year: int
-
-
-class MovieDict(TitleYearDict, total=False):
-    """Optional fields for a movie."""
-    director: str
-    minutes: int
-    notes: str
 
 
 class FindMovieDict(TypedDict, total=False):
@@ -75,16 +66,6 @@ class FindMovieDict(TypedDict, total=False):
     minutes: List[int]
     notes: str
     tag: List[str]
-
-
-class MovieUpdateDict(TypedDict, total=False):
-    """A dictionary of fields for updating."""
-    title: str
-    director: str
-    year: int
-    minutes: int
-    notes: str
-    tag: str
 
 
 def connect_to_database(filename: str = database_fn):
@@ -163,7 +144,7 @@ def find_movies(criteria: FindMovieDict) -> Generator[dict, None, None]:
                        year=movie.year, notes=movie.notes, tag=tag)
 
 
-def edit_movie(title_year: TitleYearDict, updates: MovieUpdateDict):
+def edit_movie(title_year: MovieKeyDict, updates: MovieUpdateDict):
     """Search for one movie and change one or more fields of that movie.
 
     Args:
@@ -175,7 +156,7 @@ def edit_movie(title_year: TitleYearDict, updates: MovieUpdateDict):
         movie.edit(updates)
 
 
-def del_movie(title_year: TitleYearDict):
+def del_movie(title_year: MovieKeyDict):
     """Change fields in records.
 
     Args:
@@ -186,7 +167,17 @@ def del_movie(title_year: TitleYearDict):
         session.delete(movie)
 
 
-def add_tag_and_links(new_tag: str, movies: Optional[Iterable[TitleYearDict]] = None):
+def all_tags() -> List:
+    """ List all tags in the database.
+    
+    Returns: A list of tags
+    """
+    with _session_scope() as session:
+        tags = session.query(Tag.tag)
+    return [tag[0] for tag in tags]
+
+
+def add_tag_and_links(new_tag: str, movies: Optional[Iterable[MovieKeyDict]] = None):
     """Add links between a tag and one or more movies. Create the tag if it does not exist..
 
     Args:
@@ -250,21 +241,22 @@ class MoviesMetaData(Base):
 class Movie(Base):
     """Movies table schema."""
     __tablename__ = 'movies'
-
+    
     id = Column(Integer, Sequence('movie_id_sequence'), primary_key=True)
     title = Column(String(80), nullable=False)
     director = Column(String(24))
     minutes = Column(Integer)
-    year = Column(Integer, CheckConstraint('year>1877'), CheckConstraint('year<10000'), nullable=False)
+    year = Column(Integer, CheckConstraint(f'year>={MUYBRIDGE}'), CheckConstraint('year<10000'),
+                  nullable=False)
     notes = Column(Text)
     UniqueConstraint(title, year)
-
+    
     tags = relationship('Tag', secondary='movie_tag', back_populates='movies', cascade='all')
     reviews = relationship('Review', secondary='movie_review', back_populates='movies', cascade='all')
-
+    
     def __init__(self, title: str, year: int, director: str = None,
                  minutes: int = None, notes: str = None):
-    
+        
         # Carry out validation which is not done by SQLAlchemy or sqlite3
         null_strings = set(itertools.filterfalse(lambda arg: arg != '', [title, year]))
         if null_strings == {''}:
@@ -293,8 +285,16 @@ class Movie(Base):
 
     def add(self):
         """Add self to database. """
-        with _session_scope() as session:
-            session.add(self)
+        try:
+            with _session_scope() as session:
+                session.add(self)
+        except sqlalchemy.exc.IntegrityError as exc:
+            if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
+                msg = exc.orig.args[0]
+                logging.error(msg)
+                raise exception.MovieDBConstraintFailure(msg)
+            else:
+                raise
 
     def edit(self, updates: MovieUpdateDict):
         """Edit any column of the table.

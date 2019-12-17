@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/18/19, 8:43 AM by stephen.
+#  Last modified 12/17/19, 9:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,6 +15,7 @@
 from collections import deque
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from typing import Callable, Sequence
 
 import pytest
 
@@ -47,6 +48,62 @@ class TestAboutDialog:
 
     def dummy_showinfo(self, **kwargs):
         self.showinfo_calls.append(kwargs)
+
+
+class TestAddMovie:
+    
+    def test(self, monkeypatch):
+        monkeypatch.setattr(handlers.guiwidgets, 'MovieGUI', DummyMovieGUI)
+        with self.add_movie_context():
+            assert dummy_movie_gui_args == [(DummyParent(), ['Movie night candidate'],
+                                             handlers.add_movie_callback,)]
+    
+    # noinspection PyMissingOrEmptyDocstring
+    @contextmanager
+    def add_movie_context(self):
+        hold_app = handlers.config.app
+        handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
+        handlers.config.app.tk_root = DummyParent()
+        try:
+            handlers.add_movie()
+            yield
+        finally:
+            handlers.config.app = hold_app
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestAddMovieCallback:
+    
+    def test_add_movie_called(self, class_patches):
+        self.dummy_add_movie_calls = []
+        with self.callback_context():
+            assert self.dummy_add_movie_calls == [(dict(title='Test Title', year='2020'),)]
+    
+    def test_add_tag_and_links_called(self, class_patches):
+        self.dummy_tag_and_links_calls = []
+        with self.callback_context():
+            assert self.dummy_tag_and_links_calls == [('test 1',
+                                                       (dict(title='Test Title', year='2020'),),)]
+    
+    @pytest.fixture
+    def class_patches(self, monkeypatch):
+        monkeypatch.setattr(handlers.database, 'add_movie', self.dummy_add_movie)
+        monkeypatch.setattr(handlers.database, 'add_tag_and_links', self.dummy_tag_and_links)
+    
+    @contextmanager
+    def callback_context(self):
+        movie = {'title': 'Test Title', 'year': '2020'}
+        tags = ['test 1']
+        yield handlers.add_movie_callback(movie, tags)
+    
+    dummy_add_movie_calls = []
+    dummy_tag_and_links_calls = []
+    
+    def dummy_add_movie(self, *args):
+        self.dummy_add_movie_calls.append(args)
+    
+    def dummy_tag_and_links(self, *args):
+        self.dummy_tag_and_links_calls.append(args)
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -113,16 +170,15 @@ class DummyParent:
     children: deque = field(default_factory=deque, init=False, repr=False, compare=False)
 
 
+dummy_movie_gui_args = []
+
+
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
-class ModalDialog:
-    """Dummy for a tkinter modal dialog."""
-    text: str
-    parent: DummyParent
-    buttons: dict
-    sub_text: str
+class DummyMovieGUI:
+    parent: 'handlers.config.tk.Tk'
+    tags: Sequence[str]
+    callback: Callable
     
     def __post_init__(self):
-        self.parent.children.append(self)
-    
-    def __call__(self, *args, **kwargs):
-        pass
+        dummy_movie_gui_args.append((self.parent, self.tags, self.callback))

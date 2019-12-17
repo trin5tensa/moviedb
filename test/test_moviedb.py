@@ -1,7 +1,7 @@
 """Tests for moviedatabase."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/13/19, 7:29 AM by stephen.
+#  Last modified 11/28/19, 5:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -84,7 +84,7 @@ class TestStartUp:
         assert moviedb.config.app.version == '1.0.0.dev'
         assert moviedb.config.app.geometry is None
         assert moviedb.config.app.tk_root is None
-        assert moviedb.config.app.root_pane is None
+        assert moviedb.config.app.gui_environment is None
     
     def test_start_database_called(self, monkeypatch_startup):
         _, connect_calls = monkeypatch_startup

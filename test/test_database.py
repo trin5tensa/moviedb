@@ -1,7 +1,7 @@
 """Functional pytests for database module. """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/19/19, 12:35 PM by stephen.
+#  Last modified 12/17/19, 9:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,7 +12,6 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 from dataclasses import dataclass
 from typing import Dict
 
@@ -20,6 +19,7 @@ import pytest
 import sqlalchemy.orm.exc
 
 import database
+import exception
 
 
 class DatabaseTestException(Exception):
@@ -74,10 +74,10 @@ def loaded_database(hamlet, solaris, dreams, revanche):
     # noinspection PyProtectedMember
     with database._session_scope() as session:
         session.add_all(movies)
-    database.add_tag_and_links('blue', [database.TitleYearDict(title='Hamlet', year=1996)])
-    database.add_tag_and_links('yellow', [database.TitleYearDict(title='Revanche', year=2008)])
-    database.add_tag_and_links('green', [database.TitleYearDict(title='Revanche', year=2008)])
-    database.add_tag_and_links('green', [database.TitleYearDict(title='Solaris', year=1972)])
+    database.add_tag_and_links('blue', [database.MovieKeyDict(title='Hamlet', year=1996)])
+    database.add_tag_and_links('yellow', [database.MovieKeyDict(title='Revanche', year=2008)])
+    database.add_tag_and_links('green', [database.MovieKeyDict(title='Revanche', year=2008)])
+    database.add_tag_and_links('green', [database.MovieKeyDict(title='Solaris', year=1972)])
 
 
 def test_init_database_access_with_new_database(connection):
@@ -124,9 +124,9 @@ def test_add_movie_with_empty_title_string(connection, session, monkeypatch):
     monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
 
     bad_row = dict(title='Hamlet', director='Branagh', minutes=242, year='')
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ValueError) as exc:
         database.add_movie(bad_row)
-    assert str(exception.value) == expected
+    assert str(exc.value) == expected
     assert calls[0] == expected
 
 
@@ -139,12 +139,22 @@ def test_add_movie_with_non_numeric_values(connection, session, monkeypatch):
     monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
 
     bad_row = dict(title='Hamlet', director='Branagh', minutes=bad_int, year='1942')
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ValueError) as exc:
         database.add_movie(bad_row)
-    assert str(exception.value) == expected
+    assert str(exc.value) == expected
     assert calls[0] == logging_msg
 
- 
+
+def test_add_movie_with_integrity_error(connection, session, hamlet, monkeypatch):
+    calls = []
+    monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
+    
+    with pytest.raises(exception.MovieDBConstraintFailure):
+        database.add_movie(hamlet)
+        database.add_movie(hamlet)
+    assert calls == ['UNIQUE constraint failed: movies.title, movies.year']
+
+
 def test_add_movie_with_notes(connection, session, revanche):
     expected = tuple(revanche.values())
     database.add_movie(revanche)
@@ -215,12 +225,12 @@ class TestFindMovie:
         expected = f"Invalid attribute '{invalid_keys}'."
         calls = []
         monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
-        
-        with pytest.raises(ValueError) as exception:
+    
+        with pytest.raises(ValueError) as exc:
             for _ in database.find_movies(dict(months=[169])):
                 pass
-        assert exception.type is ValueError
-        assert exception.value.args == (expected, )
+        assert exc.type is ValueError
+        assert exc.value.args == (expected,)
         assert calls[0] == expected
 
 
@@ -228,26 +238,37 @@ class TestFindMovie:
 class TestEditMovie:
     def test_edit_movie(self):
         new_note = 'Science Fiction'
-        database.edit_movie(database.TitleYearDict(title='Solaris', year=1972), dict(notes=new_note))
+        database.edit_movie(database.MovieKeyDict(title='Solaris', year=1972), dict(notes=new_note))
         notes = {movie['notes'] for movie in database.find_movies(dict(title='Solaris'))}
         assert notes == {new_note, }
 
 
 @pytest.mark.usefixtures('loaded_database')
 class TestDeleteMovie:
+    
     def test_delete_movie(self):
         expected = set()
-        database.del_movie(database.TitleYearDict(title='Solaris', year=1972))
+        database.del_movie(database.MovieKeyDict(title='Solaris', year=1972))
         titles = {movie['title'] for movie in database.find_movies(dict(title='Solaris'))}
         assert titles == expected
 
 
 @pytest.mark.usefixtures('loaded_database')
+class TestAllTags:
+    
+    def test_all_tags(self):
+        expected = {'blue', 'yellow', 'green'}
+        tags = database.all_tags()
+        assert set(tags) == expected
+
+
+@pytest.mark.usefixtures('loaded_database')
 class TestTagOperations:
+    
     def test_add_new_tag(self, session):
         tag = 'Movie night candidate'
         database.add_tag_and_links(tag)
-
+        
         count = (session.query(database.Tag)
                  .filter(database.Tag.tag == 'Movie night candidate')
                  .count())
@@ -266,8 +287,8 @@ class TestTagOperations:
     def test_add_links_to_movies(self, session):
         expected = {'Solaris', "Akira Kurosawa's Dreams"}
         test_tag = 'Foreign'
-        movies = [database.TitleYearDict(title='Solaris', year=1972),
-                  database.TitleYearDict(title="Akira Kurosawa's Dreams", year=1972)]
+        movies = [database.MovieKeyDict(title='Solaris', year=1972),
+                  database.MovieKeyDict(title="Akira Kurosawa's Dreams", year=1972)]
         database.add_tag_and_links(test_tag, movies)
     
         movies = (session.query(database.Movie.title)
@@ -277,7 +298,7 @@ class TestTagOperations:
 
     def test_edit_tag(self, session):
         old_tag = 'old test tag'
-        movies = [database.TitleYearDict(title='Solaris', year=1972)]
+        movies = [database.MovieKeyDict(title='Solaris', year=1972)]
         database.add_tag_and_links(old_tag, movies)
         old_tag_id, tag = (session.query(database.Tag.id, database.Tag.tag)
                            .filter(database.Tag.tag == 'old test tag')
@@ -294,8 +315,8 @@ class TestTagOperations:
     def test_del_tag(self, session):
         # Add a tag and links
         test_tag = 'Going soon'
-        movies = [database.TitleYearDict(title='Solaris', year=1972),
-                  database.TitleYearDict(title='Hamlet', year=1996)]
+        movies = [database.MovieKeyDict(title='Solaris', year=1972),
+                  database.MovieKeyDict(title='Hamlet', year=1996)]
         database.add_tag_and_links(test_tag, movies)
     
         # Delete the tag

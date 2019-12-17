@@ -1,10 +1,8 @@
-"""GUI Controller
+"""Exceptions for the modules of moviesdb. """
 
-This module controls all gui activity
-"""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/28/19, 5:57 AM by stephen.
+#  Last modified 12/12/19, 12:34 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,14 +14,10 @@ This module controls all gui activity
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import tkinter as tk
 
-import config
-import mainwindow
+class DatabaseError(Exception):
+    """Base class for database exceptions."""
 
 
-def run():
-    """Run the GUI."""
-    config.app.tk_root = tk.Tk()
-    config.app.gui_environment = mainwindow.MainWindow(config.app.tk_root)
-    config.app.tk_root.mainloop()
+class MovieDBConstraintFailure(DatabaseError):
+    """Exception raised for title and year constraint violation."""
