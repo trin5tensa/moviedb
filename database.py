@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/12/19, 12:34 PM by stephen.
+#  Last modified 12/17/19, 9:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -34,6 +34,7 @@ import exception
 from config import MovieDict, MovieKeyDict, MovieUpdateDict
 
 
+MUYBRIDGE = 1878
 Base = sqlalchemy.ext.declarative.declarative_base()
 database_fn = 'movies.sqlite3'
 
@@ -167,11 +168,10 @@ def del_movie(title_year: MovieKeyDict):
 
 
 def all_tags() -> List:
-    """List all tags in the database.
+    """ List all tags in the database.
     
     Returns: A list of tags
     """
-    # moviedb-#94 Test this function
     with _session_scope() as session:
         tags = session.query(Tag.tag)
     return [tag[0] for tag in tags]
@@ -241,21 +241,22 @@ class MoviesMetaData(Base):
 class Movie(Base):
     """Movies table schema."""
     __tablename__ = 'movies'
-
+    
     id = Column(Integer, Sequence('movie_id_sequence'), primary_key=True)
     title = Column(String(80), nullable=False)
     director = Column(String(24))
     minutes = Column(Integer)
-    year = Column(Integer, CheckConstraint('year>1877'), CheckConstraint('year<10000'), nullable=False)
+    year = Column(Integer, CheckConstraint(f'year>={MUYBRIDGE}'), CheckConstraint('year<10000'),
+                  nullable=False)
     notes = Column(Text)
     UniqueConstraint(title, year)
-
+    
     tags = relationship('Tag', secondary='movie_tag', back_populates='movies', cascade='all')
     reviews = relationship('Review', secondary='movie_review', back_populates='movies', cascade='all')
-
+    
     def __init__(self, title: str, year: int, director: str = None,
                  minutes: int = None, notes: str = None):
-    
+        
         # Carry out validation which is not done by SQLAlchemy or sqlite3
         null_strings = set(itertools.filterfalse(lambda arg: arg != '', [title, year]))
         if null_strings == {''}:
@@ -284,7 +285,6 @@ class Movie(Base):
 
     def add(self):
         """Add self to database. """
-        # moviedb-#94 Test new lines
         try:
             with _session_scope() as session:
                 session.add(self)
@@ -398,6 +398,7 @@ def _session_scope():
         raise
     finally:
         session.close()
+
 
 def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy.orm.query.Query:
     """Build a query.

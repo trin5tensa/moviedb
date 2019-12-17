@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/12/19, 12:34 PM by stephen.
+#  Last modified 12/17/19, 9:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,7 +23,6 @@ from dataclasses import dataclass, field
 from tkinter import messagebox
 from typing import Callable, Dict, List, Sequence
 
-import config
 import exception
 import observerpattern
 from config import MovieDict
@@ -40,24 +39,24 @@ SELECT_TAGS_TEXT = 'Select tags'
 class MovieGUI:
     """ Create a form for entering or editing a movie."""
     parent: tk.Tk
-    # List of all tags in the database.
+    # A list of all tags in the database.
     tags: Sequence[str]
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[MovieDict], None]
-    
+    # Fields of the movie supplied by the caller.
     caller_fields: MovieDict = field(default_factory=dict)
+    # Tags of the movie record supplied by the caller.
+    selected_tags: List[str] = field(default_factory=list)
+    
+    # All widgets of this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
-    entry_fields: Dict[str, 'MovieField'] = field(default_factory=dict, init=False, repr=False)
+    # A more convenient data structure for entry fields.
+    entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
+    # Neuron controlling enabled state of Commit button
     commit_neuron: observerpattern.Neuron = field(default_factory=observerpattern.Neuron,
                                                   init=False, repr=False)
-    selected_tags: List[str] = field(default_factory=list, init=False, repr=False)
     
     def __post_init__(self):
-        self.entry_fields = {internal_name: MovieField(field_text,
-                                                       self.caller_fields.get(internal_name, ''))
-                             for internal_name, field_text
-                             in zip(INTERNAL_NAMES, FIELD_TEXTS)}
-        
         self.parent.columnconfigure(0, weight=1)
         self.parent.rowconfigure(0, weight=1)
         
@@ -72,6 +71,12 @@ class MovieGUI:
     
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form with a column for labels and another for user input fields."""
+        # Initialize internal dictionary for field management.
+        self.entry_fields = {internal_name: EntryField(field_text,
+                                                       self.caller_fields.get(internal_name, ''))
+                             for internal_name, field_text
+                             in zip(INTERNAL_NAMES, FIELD_TEXTS)}
+    
         body_frame = ttk.Frame(outerframe, padding=(10, 25, 10, 0))
         body_frame.grid(column=0, row=0, sticky='n')
         body_frame.columnconfigure(0, weight=1, minsize=30)
@@ -84,37 +89,26 @@ class MovieGUI:
             entry = ttk.Entry(body_frame, textvariable=self.entry_fields[internal_name].textvariable,
                               width=36)
             entry.grid(column=1, row=row_ix)
-            # moviedb-#94 Test following line
             self.entry_fields[internal_name].widget = entry
     
-        # Set default field values
-        # moviedb-#94 Restructure field customization by field instead of type of customization?
-        # moviedb-#94 Test following suite
-        # moviedb-#94 If user enters a title then the commit button ought to be enabled in case user
-        #   wants the default year; i.e. there will be no events for the 'year' field which will
-        #   trigger a state alteration of the observing neuron. As written the user is forced to click
-        #   in the 'year; field to enable the 'commit' button.
-        self.entry_fields['year'].textvariable.set('2020')
-        self.entry_fields['minutes'].textvariable.set('0')
-    
-        # Customize validation of entry fields.
-        # moviedb-#94 Prototype code
-        # moviedb-#94 Test following suite
-    
-        minutes = self.entry_fields['minutes'].widget
-        registered_callback = minutes.register(self.validate_int)
-        minutes.config(validate='key', validatecommand=(registered_callback, '%S'))
-    
-        year = self.entry_fields['year'].widget
-        registered_callback = year.register(self.validate_int)
-        year.config(validate='key', validatecommand=(registered_callback, '%S'))
-    
-        # Customize  neuron links to entry fields.
+        # Customize title field.
         self.neuron_linker('title', self.commit_neuron, self.neuron_callback)
-        self.neuron_linker('year', self.commit_neuron, self.neuron_callback)
+    
+        # Customize minutes field.
+        minutes = self.entry_fields['minutes']
+        minutes.textvariable.set('0')
+        registered_callback = minutes.widget.register(self.validate_int)
+        minutes.widget.config(validate='key', validatecommand=(registered_callback, '%S'))
+    
+        # Customize year field.
+        year = self.entry_fields['year']
+        year.textvariable.set('2020')
+        self.neuron_linker('year', self.commit_neuron, self.neuron_callback, True)
+        registered_callback = year.widget.register(self.validate_int)
+        year.widget.config(validate='key', validatecommand=(registered_callback, '%S'))
     
         # Create treeview for tag selection.
-        # moviedb-#95 The tags of an existing record should be shown as selected.
+        # moviedb-#95 The tags of an existing record should be shown in the selected mode.
         label = ttk.Label(body_frame, text=SELECT_TAGS_TEXT)
         label.grid(column=0, row=6, sticky='e', padx=5)
         tags_frame = ttk.Frame(body_frame, padding=5)
@@ -149,11 +143,11 @@ class MovieGUI:
         cancel.focus_set()
     
     def neuron_linker(self, internal_name: str, neuron: observerpattern.Neuron,
-                      neuron_callback: Callable):
+                      neuron_callback: Callable, initial_state: bool = False):
         """Link a field to a neuron."""
         self.entry_fields[internal_name].textvariable.trace_add('write',
                                                                 neuron_callback(internal_name, neuron))
-        neuron.register_event(internal_name)
+        neuron.register_event(internal_name, initial_state)
     
     def neuron_callback(self, internal_name: str, neuron: observerpattern.Neuron) -> Callable:
         """Create the callback for an observed field.
@@ -209,17 +203,15 @@ class MovieGUI:
 
         return update_tag_selection
     
-    @staticmethod
-    def validate_int(user_input: str) -> bool:
+    def validate_int(self, user_input: str) -> bool:
         """Validate integer input by user.
         
         Use Case: Supports field validation by Tk
         """
-        # moviedb-#94 Test this method
         try:
             int(user_input)
         except ValueError:
-            config.app.tk_root.bell()
+            self.parent.bell()
         else:
             return True
         return False
@@ -230,20 +222,18 @@ class MovieGUI:
 
         Use Case: Supports field validation by Tk
         """
-        # moviedb-#94 Delete this method if validation can be carried out by database integrity checks.
-        # moviedb-#94 Test this method
+        # moviedb-#103 Delete this method if validation can be carried out by database integrity checks.
         lowest = user_input > lowest if lowest else True
         highest = user_input < highest if highest else True
         return lowest and highest
     
     def commit(self):
         """The user clicked the commit button."""
-        # moviedb-#94 Test new lines
         return_fields = {internal_name: movie_field.textvariable.get()
                          for internal_name, movie_field in self.entry_fields.items()}
-        
+
         # Validate the year range
-        # TODO Get the range limits from the SQL schema
+        # moviedb-#103 Replace the literal range limits with the range limits from the SQL schema
         if not self.validate_int_range(int(return_fields['year']), 1877, 10000):
             msg = 'Invalid year.'
             detail = 'The year must be between 1877 and 10000.'
@@ -266,7 +256,7 @@ class MovieGUI:
 
 
 @dataclass
-class MovieField:
+class EntryField:
     """A support class for attributes of a gui entry field."""
     label_text: str
     original_value: str

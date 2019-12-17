@@ -1,7 +1,7 @@
 """The Observer pattern and usabilty functionality."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/3/19, 12:39 PM by stephen.
+#  Last modified 12/17/19, 6:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -70,10 +70,10 @@ class Neuron(Observer):
     Usage:
     1) Instantiate Neuron.
     2) Call the method register_event to register one or more events.
-    3) Call the method register to register one or more callables.
+    3) Call the parent method register to register one or more callables.
     4) Call <neuron object>(<event id>, state). This will notify the registered notifees with 'True'
     if all the events are 'True' otherwise with 'False'.
-    5) Call the method deregister to remove a observer and stop it from being called.
+    5) Call the parent method deregister to remove a observer and stop it from being observed.
     """
     
     events: Dict[Any, bool] = field(default_factory=dict, init=False, repr=False)

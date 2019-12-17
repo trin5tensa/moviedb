@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/12/19, 12:35 PM by stephen.
+#  Last modified 12/17/19, 9:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,9 +19,11 @@ from typing import Callable, Sequence, Tuple, Union
 
 import pytest
 
+import exception
 import guiwidgets
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestMovieInit:
     
     # Test Basic Initialization
@@ -37,7 +39,7 @@ class TestMovieInit:
     def test_fields_initialized(self, class_patches):
         with self.movie_context() as movie_gui:
             for internal_name in guiwidgets.INTERNAL_NAMES:
-                assert isinstance(movie_gui.entry_fields[internal_name], guiwidgets.MovieField)
+                assert isinstance(movie_gui.entry_fields[internal_name], guiwidgets.EntryField)
     
     def test_fields_label_text(self, class_patches):
         with self.movie_context() as movie_gui:
@@ -137,7 +139,7 @@ class TestMovieInit:
             labels = bodyframe.children[:4:2]
             for row_ix, label in enumerate(labels):
                 assert label.grid_calls[0] == dict(column=0, row=row_ix, sticky='e', padx=5)
-    
+
     def test_entries_created(self, class_patches):
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
@@ -146,7 +148,29 @@ class TestMovieInit:
             for entry in entries:
                 assert entry == TtkEntry(TtkFrame(TtkFrame(DummyTk()), padding=(10, 25, 10, 0)),
                                          textvariable=TkStringVar(), width=36)
-    
+
+    def test_neuron_created(self, class_patches):
+        with self.movie_context() as movie_gui:
+            assert movie_gui.commit_neuron.events == dict(title=False, year=True)
+
+    def test_minutes_initialized_to_0(self, class_patches):
+        with self.movie_context() as movie_gui:
+            assert movie_gui.entry_fields['minutes'].textvariable.set_calls[0][0] == '0'
+
+    def test_minutes_callbacks_configured(self, class_patches):
+        with self.movie_context() as movie_gui:
+            config_calls = movie_gui.entry_fields['minutes'].widget.config_calls[0]
+            assert config_calls == dict(validate='key', validatecommand=(None, '%S'))
+
+    def test_year_initialized_to_2020(self, class_patches):
+        with self.movie_context() as movie_gui:
+            assert movie_gui.entry_fields['year'].textvariable.set_calls[0][0] == '2020'
+
+    def test_year_callbacks_configured(self, class_patches):
+        with self.movie_context() as movie_gui:
+            config_calls = movie_gui.entry_fields['year'].widget.config_calls[0]
+            assert config_calls == dict(validate='key', validatecommand=(None, '%S'))
+
     # noinspection DuplicatedCode
     def test_entries_gridded(self, class_patches):
         with self.movie_context() as movie_gui:
@@ -155,7 +179,7 @@ class TestMovieInit:
             entries = bodyframe.children[1:4:2]
             for row_ix, entry in enumerate(entries):
                 assert entry.grid_calls[0] == dict(column=1, row=row_ix)
-    
+
     def test_tags_label_called(self, class_patches):
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
@@ -261,7 +285,7 @@ class TestMovieInit:
         with self.movie_context() as movie_gui:
             assert calls == [
                     (movie_gui, 'title', movie_gui.commit_neuron, movie_gui.neuron_callback),
-                    (movie_gui, 'year', movie_gui.commit_neuron, movie_gui.neuron_callback)]
+                    (movie_gui, 'year', movie_gui.commit_neuron, movie_gui.neuron_callback, True)]
     
     # Test Buttonbox Initialization
     
@@ -372,7 +396,51 @@ class TestMovieInit:
             movie_gui.button_state_callback(commit)(True)
             assert commit.state_calls == [['disabled'], ['!disabled']]
 
-    def test_commit_method(self, class_patches, monkeypatch):
+    def test_validate_true_int(self, class_patches):
+        with self.movie_context() as movie_gui:
+            assert movie_gui.validate_int('42')
+
+    def test_validate_false_int(self, class_patches):
+        with self.movie_context() as movie_gui:
+            valid_int = movie_gui.validate_int('forty two')
+            assert movie_gui.parent.bell_calls == [True]
+            assert not valid_int
+
+    def test_validate_int_within_range(self, class_patches):
+        with self.movie_context() as movie_gui:
+            assert movie_gui.validate_int_range(42, 40, 50)
+            assert not movie_gui.validate_int_range(42, 42, 50)
+            assert not movie_gui.validate_int_range(42, 40, 42)
+
+    def test_commit_calls_validate_int_range(self, class_patches, monkeypatch):
+        calls = []
+    
+        def dummy_validate_int_range(result: bool) -> Callable:
+            # noinspection PyShadowingNames
+            def validate_int_range(*args):
+                calls.append(args)
+                return result
+        
+            return validate_int_range
+    
+        with self.movie_context() as movie_gui:
+            validate_int_range = dummy_validate_int_range(True)
+            monkeypatch.setattr(movie_gui, 'callback', lambda *args: None)
+            monkeypatch.setattr(movie_gui, 'validate_int_range', validate_int_range)
+            movie_gui.commit()
+            assert calls == [(4242, 1877, 10000)]
+
+    def test_commit_calls_validate_int_range_with_invalid_year(self, class_patches, monkeypatch):
+        with self.movie_context() as movie_gui:
+            monkeypatch.setattr(movie_gui, 'callback', lambda *args: None)
+            monkeypatch.setattr(movie_gui, 'validate_int_range', lambda *args: False)
+            messagebox = TkMessagebox()
+            monkeypatch.setattr(guiwidgets, 'messagebox', messagebox)
+            movie_gui.commit()
+            assert messagebox.showinfo_calls == [dict(parent=DummyTk(), message='Invalid year.',
+                                                      detail='The year must be between 1877 and 10000.')]
+
+    def test_commit_callback_method(self, class_patches, monkeypatch):
         calls = []
         with self.movie_context() as movie_gui:
             monkeypatch.setattr(movie_gui, 'callback', lambda *args: calls.append(args))
@@ -380,6 +448,31 @@ class TestMovieInit:
             assert calls[0][0] == dict(title='4242', year='4242', director='4242',
                                        minutes='4242', notes='4242')
             assert movie_gui.outer_frame.destroy_calls[0]
+
+    def test_commit_callback_exception(self, class_patches, monkeypatch):
+        def dummy_callback():
+            # noinspection PyUnusedLocal
+            def callback(*args, **kwargs):
+                raise exception.MovieDBConstraintFailure
+        
+            return callback
+    
+        with self.movie_context() as movie_gui:
+            monkeypatch.setattr(movie_gui, 'callback', dummy_callback())
+            messagebox = TkMessagebox()
+            monkeypatch.setattr(guiwidgets, 'messagebox', messagebox)
+            movie_gui.commit()
+            assert messagebox.showinfo_calls == [dict(
+                    parent=DummyTk(), message='Database constraint failure.',
+                    detail='This title and year are already present in the database.')]
+
+    def test_commit_calls_destroy(self, class_patches, monkeypatch):
+        calls = []
+        with self.movie_context() as movie_gui:
+            monkeypatch.setattr(movie_gui, 'callback', lambda *args: None)
+            monkeypatch.setattr(movie_gui, 'destroy', lambda *args: calls.append(True))
+            movie_gui.commit()
+            assert calls == [True]
 
     def test_destroy_method(self, class_patches):
         with self.movie_context() as movie_gui:
@@ -418,15 +511,19 @@ class DummyTk:
     columnconfigure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     rowconfigure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     bind_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    
+    bell_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+
     def columnconfigure(self, *args, **kwargs):
         self.columnconfigure_calls.append((args, kwargs))
-    
+
     def rowconfigure(self, *args, **kwargs):
         self.rowconfigure_calls.append((args, kwargs))
-    
+
     def bind(self, *args, **kwargs):
         self.bind_calls.append((args, kwargs))
+
+    def bell(self):
+        self.bell_calls.append(True)
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -560,6 +657,7 @@ class TtkButton:
         self.invoke_calls.append(True)
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class TtkTreeview:
     parent: TtkFrame
@@ -587,20 +685,22 @@ class TtkTreeview:
     
     def insert(self, *args, **kwargs):
         self.insert_calls.append((args, kwargs))
-    
+
     def tag_bind(self, *args, **kwargs):
         self.tag_bind_calls.append((args, kwargs))
-    
+
     def yview(self, *args, **kwargs):
         self.yview_calls.append((args, kwargs))
-    
+
     def configure(self, **kwargs):
         self.configure_calls.append(kwargs)
-    
-    def selection(self):
+
+    @staticmethod
+    def selection():
         return ['test tag 1', 'test tag 2']
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class TtkScrollbar:
     parent: TtkFrame
@@ -609,15 +709,24 @@ class TtkScrollbar:
     
     set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    
+
     def __post_init__(self):
         self.parent.children.append(self)
-    
+
     def set(self, *args, **kwargs):
         self.set_calls.append((args, kwargs))
-    
+
     def grid(self, **kwargs):
         self.grid_calls.append(kwargs)
+
+
+# noinspection PyMissingOrEmptyDocstring
+@dataclass
+class TkMessagebox:
+    showinfo_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    
+    def showinfo(self, **kwargs):
+        self.showinfo_calls.append(kwargs)
 
 
 # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring

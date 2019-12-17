@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/12/19, 12:34 PM by stephen.
+#  Last modified 12/17/19, 7:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,7 +16,7 @@ This module is the glue between the user's selection of a menu item and the gui.
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-# TODO Move all tkinter calls to guiwidgets module
+# moviedb-#104 Move all tkinter calls to guiwidgets module
 from tkinter import Button, Tk, filedialog, messagebox
 from typing import Sequence
 
@@ -33,23 +33,22 @@ def about_dialog():
 
 
 def add_movie():
-    # moviedb-#94 Test this function
+    """ Get new movie data from the user and add it to the database. """
     tags = database.all_tags()
     guiwidgets.MovieGUI(config.app.tk_root, tags, add_movie_callback)
 
 
 def add_movie_callback(movie: config.MovieDict, tags: Sequence[str]):
-    # moviedb-#94 Error handling:
-    #   Here for SQL
-    #       Non-unique title and year combination
-    #       Invalid year (>1877 and <10000)
-    #   Give warning to user if errors and pass boolean fail back to caller
-    # moviedb-#94 Test this function
+    """ Add user supplied data to the database.
     
+    Args:
+        movie:
+        tags:
+    """
     database.add_movie(movie)
-    
     # TODO Remove note when fixed
     #   Pycharm reported bug:  https://youtrack.jetbrains.com/issue/PY-39404
+    # noinspection PyTypedDict
     movies = (config.MovieKeyDict(title=movie['title'], year=movie['year']),)
     for tag in tags:
         database.add_tag_and_links(tag, movies)

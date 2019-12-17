@@ -1,7 +1,7 @@
 """Functional pytests for database module. """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/9/19, 7:16 AM by stephen.
+#  Last modified 12/17/19, 9:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,7 +12,6 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 from dataclasses import dataclass
 from typing import Dict
 
@@ -20,6 +19,7 @@ import pytest
 import sqlalchemy.orm.exc
 
 import database
+import exception
 
 
 class DatabaseTestException(Exception):
@@ -124,9 +124,9 @@ def test_add_movie_with_empty_title_string(connection, session, monkeypatch):
     monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
 
     bad_row = dict(title='Hamlet', director='Branagh', minutes=242, year='')
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ValueError) as exc:
         database.add_movie(bad_row)
-    assert str(exception.value) == expected
+    assert str(exc.value) == expected
     assert calls[0] == expected
 
 
@@ -139,12 +139,22 @@ def test_add_movie_with_non_numeric_values(connection, session, monkeypatch):
     monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
 
     bad_row = dict(title='Hamlet', director='Branagh', minutes=bad_int, year='1942')
-    with pytest.raises(ValueError) as exception:
+    with pytest.raises(ValueError) as exc:
         database.add_movie(bad_row)
-    assert str(exception.value) == expected
+    assert str(exc.value) == expected
     assert calls[0] == logging_msg
 
- 
+
+def test_add_movie_with_integrity_error(connection, session, hamlet, monkeypatch):
+    calls = []
+    monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
+    
+    with pytest.raises(exception.MovieDBConstraintFailure):
+        database.add_movie(hamlet)
+        database.add_movie(hamlet)
+    assert calls == ['UNIQUE constraint failed: movies.title, movies.year']
+
+
 def test_add_movie_with_notes(connection, session, revanche):
     expected = tuple(revanche.values())
     database.add_movie(revanche)
@@ -215,12 +225,12 @@ class TestFindMovie:
         expected = f"Invalid attribute '{invalid_keys}'."
         calls = []
         monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
-        
-        with pytest.raises(ValueError) as exception:
+    
+        with pytest.raises(ValueError) as exc:
             for _ in database.find_movies(dict(months=[169])):
                 pass
-        assert exception.type is ValueError
-        assert exception.value.args == (expected, )
+        assert exc.type is ValueError
+        assert exc.value.args == (expected,)
         assert calls[0] == expected
 
 
@@ -235,6 +245,7 @@ class TestEditMovie:
 
 @pytest.mark.usefixtures('loaded_database')
 class TestDeleteMovie:
+    
     def test_delete_movie(self):
         expected = set()
         database.del_movie(database.MovieKeyDict(title='Solaris', year=1972))
@@ -243,11 +254,21 @@ class TestDeleteMovie:
 
 
 @pytest.mark.usefixtures('loaded_database')
+class TestAllTags:
+    
+    def test_all_tags(self):
+        expected = {'blue', 'yellow', 'green'}
+        tags = database.all_tags()
+        assert set(tags) == expected
+
+
+@pytest.mark.usefixtures('loaded_database')
 class TestTagOperations:
+    
     def test_add_new_tag(self, session):
         tag = 'Movie night candidate'
         database.add_tag_and_links(tag)
-
+        
         count = (session.query(database.Tag)
                  .filter(database.Tag.tag == 'Movie night candidate')
                  .count())
