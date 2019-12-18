@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/17/19, 9:11 AM by stephen.
+#  Last modified 12/18/19, 7:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,7 @@ import itertools
 import logging
 import sys
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Iterable, List, Optional, TypedDict
+from typing import Any, Dict, Generator, Iterable, List, Optional
 
 import sqlalchemy
 import sqlalchemy.exc
@@ -31,7 +31,7 @@ from sqlalchemy.orm import query, relationship
 from sqlalchemy.orm.session import sessionmaker
 
 import exception
-from config import MovieDict, MovieKeyDict, MovieUpdateDict
+from config import FindMovieDict, MovieDict, MovieKeyDict, MovieUpdateDict
 
 
 MUYBRIDGE = 1878
@@ -46,26 +46,6 @@ movie_review = Table('movie_review', Base.metadata,
                      Column('reviews_id', ForeignKey('reviews.id'), primary_key=True))
 engine: Optional[sqlalchemy.engine.base.Engine] = None
 Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
-
-
-class FindMovieDict(TypedDict, total=False):
-    """A dictionary containing none or more of the following keys:
-            title: str. A matching column will be a superstring of this value..
-            director: str.A matching column will be a superstring of this value.
-            minutes: list. A matching column will be between the minimum and maximum values in this
-            iterable. A single value is permissible.
-            year: list. A matching column will be between the minimum and maximum values in this
-            iterable. A single value is permissible.
-            notes: str. A matching column will be a superstring of this value.
-            tag: list. Movies matching any tag in this list will be selected.
-    """
-    id: int
-    title: str
-    director: str
-    year: List[int]
-    minutes: List[int]
-    notes: str
-    tag: List[str]
 
 
 def connect_to_database(filename: str = database_fn):
