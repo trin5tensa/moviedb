@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/9/19, 7:16 AM by stephen.
+#  Last modified 12/18/19, 7:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,7 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from dataclasses import dataclass
-from typing import Optional, TypedDict
+from typing import List, Optional, TypedDict
 
 
 tk: 'tk'
@@ -45,6 +45,26 @@ class MovieUpdateDict(TypedDict, total=False):
     minutes: int
     notes: str
     tag: str
+
+
+class FindMovieDict(TypedDict, total=False):
+    """A dictionary containing none or more of the following keys:
+            title: str. A matching column will be a superstring of this value..
+            director: str.A matching column will be a superstring of this value.
+            minutes: list. A matching column will be between the minimum and maximum values in this
+            iterable. A single value is permissible.
+            year: list. A matching column will be between the minimum and maximum values in this
+            iterable. A single value is permissible.
+            notes: str. A matching column will be a superstring of this value.
+            tag: list. Movies matching any tag in this list will be selected.
+    """
+    id: int
+    title: str
+    director: str
+    year: List[int]
+    minutes: List[int]
+    notes: str
+    tag: List[str]
 
 
 @dataclass
