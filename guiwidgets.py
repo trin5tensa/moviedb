@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/18/19, 8:32 AM by stephen.
+#  Last modified 12/19/19, 1:43 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,8 +20,8 @@ callers.
 import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
-from tkinter import messagebox
-from typing import Callable, Dict, List, Sequence
+from tkinter import filedialog, messagebox
+from typing import Callable, Dict, List, Sequence, TypeVar
 
 import exception
 import observerpattern
@@ -33,6 +33,8 @@ FIELD_TEXTS = ('Title *', 'Year *', 'Director', 'Length (minutes)', 'Notes')
 COMMIT_TEXT = 'Commit'
 CANCEL_TEXT = 'Cancel'
 SELECT_TAGS_TEXT = 'Select tags'
+
+ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
 
 
 @dataclass
@@ -73,12 +75,12 @@ class MovieGUI:
                                                        self.caller_fields.get(internal_name, ''))
                              for internal_name, field_text
                              in zip(INTERNAL_NAMES, FIELD_TEXTS)}
-    
+
         body_frame = ttk.Frame(outerframe, padding=(10, 25, 10, 0))
         body_frame.grid(column=0, row=0, sticky='n')
         body_frame.columnconfigure(0, weight=1, minsize=30)
         body_frame.columnconfigure(1, weight=1)
-    
+
         # Create entry fields and their labels.
         for row_ix, internal_name in enumerate(INTERNAL_NAMES):
             label = ttk.Label(body_frame, text=self.entry_fields[internal_name].label_text)
@@ -87,23 +89,23 @@ class MovieGUI:
                               width=36)
             entry.grid(column=1, row=row_ix)
             self.entry_fields[internal_name].widget = entry
-    
+
         # Customize title field.
         self.neuron_linker('title', self.commit_neuron, self.neuron_callback)
-    
+
         # Customize minutes field.
         minutes = self.entry_fields['minutes']
         minutes.textvariable.set('0')
         registered_callback = minutes.widget.register(self.validate_int)
         minutes.widget.config(validate='key', validatecommand=(registered_callback, '%S'))
-    
+
         # Customize year field.
         year = self.entry_fields['year']
         year.textvariable.set('2020')
         self.neuron_linker('year', self.commit_neuron, self.neuron_callback, True)
         registered_callback = year.widget.register(self.validate_int)
         year.widget.config(validate='key', validatecommand=(registered_callback, '%S'))
-    
+
         # Create treeview for tag selection.
         # moviedb-#95 The tags of an existing record should be shown in the selected mode.
         label = ttk.Label(body_frame, text=SELECT_TAGS_TEXT)
@@ -162,7 +164,7 @@ class MovieGUI:
             state = (self.entry_fields[internal_name].textvariable.get()
                      != self.entry_fields[internal_name].original_value)
             neuron(internal_name, state)
-    
+
         return change_neuron_state
     
     @staticmethod
@@ -250,6 +252,16 @@ class MovieGUI:
     def destroy(self):
         """Destroy all widgets of this class."""
         self.outer_frame.destroy()
+
+
+def gui_messagebox(parent: ParentType, message: str, detail: str = '', icon: str = 'info'):
+    """Present a Tk messagebox."""
+    messagebox.showinfo(parent, message, detail=detail, icon=icon)
+
+
+def gui_askopenfilename(parent: ParentType, filetypes: Sequence[Sequence[str]]):
+    """Present a Tk askopenfilename."""
+    return filedialog.askopenfilename(parent=parent, filetypes=filetypes)
 
 
 @dataclass
