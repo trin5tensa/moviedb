@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/28/19, 5:57 AM by stephen.
+#  Last modified 12/19/19, 8:26 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,7 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import pytest
 
@@ -23,30 +23,40 @@ import gui
 
 class TestRun:
     
-    def test_root_window_initialized(self, main_window_patch):
-        with self.test_context():
-            assert isinstance(gui.config.app.tk_root, DummyTk)
-
-    def test_root_pane_initialized(self, main_window_patch):
-        with self.test_context():
-            assert isinstance(gui.config.app.gui_environment, DummyMainWindow)
-
-    def test_mainloop_called(self, main_window_patch):
-        with self.test_context():
-            assert gui.config.app.tk_root.mainloop_called
-
+    def test_root_window_initialized(self, class_patches):
+        with self.run_gui_context() as app:
+            assert isinstance(app.tk_root, DummyTk)
+    
+    def test_parent_column_configured(self, class_patches):
+        with self.run_gui_context() as app:
+            assert app.tk_root.columnconfigure_calls == [((0,), dict(weight=1)), ]
+    
+    def test_parent_row_configured(self, class_patches):
+        with self.run_gui_context() as app:
+            assert app.tk_root.rowconfigure_calls == [((0,), dict(weight=1)), ]
+    
+    def test_root_pane_initialized(self, class_patches):
+        with self.run_gui_context() as app:
+            assert isinstance(app.gui_environment, DummyMainWindow)
+    
+    def test_mainloop_called(self, class_patches):
+        with self.run_gui_context() as app:
+            assert app.tk_root.mainloop_called == [True]
+    
     # noinspection PyMissingOrEmptyDocstring
     @pytest.fixture()
-    def main_window_patch(self, monkeypatch):
+    def class_patches(self, monkeypatch):
         monkeypatch.setattr(gui.mainwindow, 'MainWindow', DummyMainWindow)
         monkeypatch.setattr(gui.tk, 'Tk', DummyTk)
-
+    
+    # noinspection PyMissingOrEmptyDocstring
     @contextmanager
-    def test_context(self):
+    def run_gui_context(self):
         app_hold = gui.config.app
-        gui.config.app = gui.config.Config('test moviedb', 'test version')
         try:
-            yield gui.run()
+            gui.config.app = gui.config.Config('test moviedb', 'test version')
+            gui.run()
+            yield gui.config.app
         finally:
             gui.config.app = app_hold
 
@@ -55,16 +65,22 @@ class TestRun:
 class DummyMainWindow:
     """Test dummy for application's main window."""
     parent: 'DummyTk'
-    
-    def __post_init__(self):
-        self.parent = DummyTk()
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class DummyTk:
     """Test dummy for tkinter module."""
-    mainloop_called = False
+    columnconfigure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    rowconfigure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    mainloop_called: list = field(default_factory=list, init=False, repr=False, compare=False)
     
     def mainloop(self):
-        """Mock tkinter's main gui loop."""
-        self.mainloop_called = True
+        self.mainloop_called.append(True)
+    
+    def columnconfigure(self, *args, **kwargs):
+        print(f"{self.columnconfigure_calls=}")
+        self.columnconfigure_calls.append((args, kwargs))
+    
+    def rowconfigure(self, *args, **kwargs):
+        self.rowconfigure_calls.append((args, kwargs))

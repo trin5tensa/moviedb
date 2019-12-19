@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/17/19, 9:11 AM by stephen.
+#  Last modified 12/18/19, 8:26 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -62,14 +62,6 @@ class TestMovieInit:
             for internal_name, label_text in zip(guiwidgets.INTERNAL_NAMES, guiwidgets.FIELD_TEXTS):
                 assert isinstance(movie_gui.entry_fields[internal_name].observer,
                                   guiwidgets.observerpattern.Observer)
-    
-    def test_parent_column_configured(self, class_patches):
-        with self.movie_context() as movie_gui:
-            assert movie_gui.parent.columnconfigure_calls[0] == ((0,), dict(weight=1))
-    
-    def test_parent_row_configured(self, class_patches):
-        with self.movie_context() as movie_gui:
-            assert movie_gui.parent.rowconfigure_calls[0] == ((0,), dict(weight=1))
     
     def test_outer_frame_created(self, class_patches):
         with self.movie_context() as movie_gui:

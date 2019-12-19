@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/17/19, 9:11 AM by stephen.
+#  Last modified 12/18/19, 8:32 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -57,9 +57,6 @@ class MovieGUI:
                                                   init=False, repr=False)
     
     def __post_init__(self):
-        self.parent.columnconfigure(0, weight=1)
-        self.parent.rowconfigure(0, weight=1)
-        
         self.outer_frame = ttk.Frame(self.parent)
         self.outer_frame.grid(column=0, row=0, sticky='nsew')
         self.outer_frame.columnconfigure(0, weight=1)
