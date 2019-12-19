@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/17/19, 9:11 AM by stephen.
+#  Last modified 12/19/19, 1:43 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,15 +25,13 @@ import handlers
 # noinspection PyMissingOrEmptyDocstring
 class TestAboutDialog:
     
-    showinfo_calls = deque()
+    messagebox_calls = []
 
     def test_about_dialog_called(self, monkeypatch):
-        monkeypatch.setattr(handlers.messagebox, 'showinfo', self.dummy_showinfo)
+        monkeypatch.setattr(handlers.guiwidgets, 'gui_messagebox', self.gui_messagebox)
         with self.about_context():
-            expected = dict(parent=handlers.config.app.tk_root,
-                            message='Test program name',
-                            detail='Test program version')
-            assert self.showinfo_calls.popleft() == expected
+            assert self.messagebox_calls == [(DummyParent(), 'Test program name',
+                                              'Test program version'), ]
 
     @contextmanager
     def about_context(self):
@@ -46,8 +44,8 @@ class TestAboutDialog:
         finally:
             handlers.config.app = hold_app
 
-    def dummy_showinfo(self, **kwargs):
-        self.showinfo_calls.append(kwargs)
+    def gui_messagebox(self, *args):
+        self.messagebox_calls.append(args)
 
 
 class TestAddMovie:
@@ -109,15 +107,14 @@ class TestAddMovieCallback:
 # noinspection PyMissingOrEmptyDocstring
 class TestImportMovies:
     CSV_TEST_FN = 'csv_test_fn'
-    askopenfilename_calls = deque()
+    askopenfilename_calls = []
     import_movies_calls = deque()
-    show_info_calls = deque()
+    messagebox_calls = []
     
     def test_get_filename_dialog_called(self, class_patches):
         with self.import_movies_context():
-            expected = dict(parent=handlers.config.app.tk_root,
-                            filetypes=(('Movie import files', '*.csv'),))
-            assert self.askopenfilename_calls.popleft() == expected
+            assert self.askopenfilename_calls == [dict(parent=handlers.config.app.tk_root,
+                                                       filetypes=(('Movie import files', '*.csv'),))]
     
     def test_import_movies_called(self, class_patches):
         with self.import_movies_context():
@@ -126,15 +123,14 @@ class TestImportMovies:
     def test_import_movies_raises_invalid_data_exception(self, class_patches, monkeypatch):
         monkeypatch.setattr(handlers.impexp, 'import_movies', self.dummy_import_movies_with_exception)
         with self.import_movies_context():
-            expected = dict(parent=handlers.config.app.tk_root,
-                            message='Errors were found in the input file.',
-                            detail='Test exception message', icon='warning')
-            assert self.show_info_calls.popleft() == expected
+            assert self.messagebox_calls == [((handlers.config.app.tk_root,),
+                                              dict(message='Errors were found in the input file.',
+                                                   detail='Test exception message', icon='warning'))]
     
     @pytest.fixture
     def class_patches(self, monkeypatch):
-        monkeypatch.setattr(handlers.filedialog, 'askopenfilename', self.dummy_askopenfilename)
-        monkeypatch.setattr(handlers.messagebox, 'showinfo', self.dummy_show_info)
+        monkeypatch.setattr(handlers.guiwidgets, 'gui_askopenfilename', self.dummy_askopenfilename)
+        monkeypatch.setattr(handlers.guiwidgets, 'gui_messagebox', self.gui_messagebox)
         monkeypatch.setattr(handlers.impexp, 'import_movies', self.dummy_import_movies)
     
     @contextmanager
@@ -158,8 +154,8 @@ class TestImportMovies:
     def dummy_import_movies_with_exception(self, csv_fn):
         raise handlers.impexp.MoviedbInvalidImportData('Test exception message')
     
-    def dummy_show_info(self, **kwargs):
-        self.show_info_calls.append(kwargs)
+    def gui_messagebox(self, *args, **kwargs):
+        self.messagebox_calls.append((args, kwargs))
 
 
 @dataclass

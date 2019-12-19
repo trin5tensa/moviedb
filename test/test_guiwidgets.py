@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/18/19, 8:26 AM by stephen.
+#  Last modified 12/19/19, 1:43 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -482,13 +482,36 @@ class TestMovieInit:
         monkeypatch.setattr(guiwidgets.ttk, 'Button', TtkButton)
         monkeypatch.setattr(guiwidgets.ttk, 'Treeview', TtkTreeview)
         monkeypatch.setattr(guiwidgets.ttk, 'Scrollbar', TtkScrollbar)
-    
+
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def movie_context(self):
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
         yield guiwidgets.MovieGUI(DummyTk(), tags, movie_gui_callback)
+
+
+def test_gui_messagebox(monkeypatch):
+    calls = []
+    monkeypatch.setattr(guiwidgets.messagebox, 'showinfo',
+                        lambda *args, **kwargs: calls.append((args, kwargs)))
+    parent = DummyTk()
+    message = 'test message'
+    detail = 'test detail'
+    # noinspection PyTypeChecker
+    guiwidgets.gui_messagebox(parent, message, detail)
+    assert calls == [((parent, message),
+                      dict(detail=detail, icon='info'))]
+
+
+def test_gui_askopenfilename(monkeypatch):
+    calls = []
+    monkeypatch.setattr(guiwidgets.filedialog, 'askopenfilename', lambda **kwargs: calls.append(kwargs))
+    parent = DummyTk()
+    filetypes = (('test filetypes',),)
+    # noinspection PyTypeChecker
+    guiwidgets.gui_askopenfilename(parent, filetypes)
+    assert calls == [(dict(parent=parent, filetypes=filetypes))]
 
 
 # noinspection PyMissingOrEmptyDocstring
