@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/19/19, 1:43 PM by stephen.
+#  Last modified 12/20/19, 6:34 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -51,7 +51,7 @@ class TestAboutDialog:
 class TestAddMovie:
     
     def test(self, monkeypatch):
-        monkeypatch.setattr(handlers.guiwidgets, 'MovieGUI', DummyMovieGUI)
+        monkeypatch.setattr(handlers.guiwidgets, 'MovieInputGUI', DummyMovieGUI)
         with self.add_movie_context():
             assert dummy_movie_gui_args == [(DummyParent(), ['Movie night candidate'],
                                              handlers.add_movie_callback,)]
