@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/19/19, 8:26 AM by stephen.
+#  Last modified 12/20/19, 8:25 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -79,7 +79,6 @@ class DummyTk:
         self.mainloop_called.append(True)
     
     def columnconfigure(self, *args, **kwargs):
-        print(f"{self.columnconfigure_calls=}")
         self.columnconfigure_calls.append((args, kwargs))
     
     def rowconfigure(self, *args, **kwargs):

@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/19/19, 1:43 PM by stephen.
+#  Last modified 12/20/19, 8:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -272,7 +272,7 @@ class TestMovieInit:
     
     def test_neuron_linker_called(self, class_patches, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.MovieGUI, 'neuron_linker',
+        monkeypatch.setattr(guiwidgets.MovieInputGUI, 'neuron_linker',
                             lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
             assert calls == [
@@ -320,7 +320,7 @@ class TestMovieInit:
     # noinspection PyShadowingNames
     def test_neuron_register_called(self, class_patches, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.MovieGUI, 'button_state_callback',
+        monkeypatch.setattr(guiwidgets.MovieInputGUI, 'button_state_callback',
                             lambda movie_gui, button: calls.append(button, ))
         with self.movie_context() as movie_gui:
             button = movie_gui.parent.children[0].children[1].children[0]
@@ -354,7 +354,7 @@ class TestMovieInit:
     
     def test_trace_add_called(self, class_patches, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.MovieGUI, 'neuron_callback',
+        monkeypatch.setattr(guiwidgets.MovieInputGUI, 'neuron_callback',
                             lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
             assert movie_gui.entry_fields['title'].textvariable.trace_add_calls[0][0] == 'write'
@@ -488,7 +488,8 @@ class TestMovieInit:
     def movie_context(self):
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
-        yield guiwidgets.MovieGUI(DummyTk(), tags, movie_gui_callback)
+        yield guiwidgets.MovieInputGUI(**(dict(parent=DummyTk(), tags=tags,
+                                               callback=movie_gui_callback)))
 
 
 def test_gui_messagebox(monkeypatch):
