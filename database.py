@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/18/19, 7:18 AM by stephen.
+#  Last modified 12/21/19, 7:35 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -147,7 +147,7 @@ def del_movie(title_year: MovieKeyDict):
         session.delete(movie)
 
 
-def all_tags() -> List:
+def all_tags() -> List[str]:
     """ List all tags in the database.
     
     Returns: A list of tags

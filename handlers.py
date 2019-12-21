@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/20/19, 9:17 AM by stephen.
+#  Last modified 12/21/19, 7:56 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -31,8 +31,7 @@ def about_dialog():
 def add_movie():
     """ Get new movie data from the user and add it to the database. """
     tags = database.all_tags()
-    guiwidgets.MovieInputGUI(**(dict(parent=config.app.tk_root, tags=tags,
-                                     callback=add_movie_callback)))
+    guiwidgets.MovieInputGUI(config.app.tk_root, add_movie_callback, tags)
 
 
 def add_movie_callback(movie: config.MovieDict, tags: Sequence[str]):
