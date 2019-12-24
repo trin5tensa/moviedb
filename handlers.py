@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/23/19, 7:34 AM by stephen.
+#  Last modified 12/24/19, 3:38 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -48,6 +48,17 @@ def add_movie_callback(movie: config.MovieDict, tags: Sequence[str]):
     movies = (config.MovieKeyDict(title=movie['title'], year=movie['year']),)
     for tag in tags:
         database.add_tag_and_links(tag, movies)
+
+
+def edit_movie():
+    # moviedb-#109 Steb function
+    tags = database.all_tags()
+    guiwidgets.SearchGUI(config.app.tk_root, tags, edit_movie_callback)
+
+
+def edit_movie_callback(*args, **kwargs):
+    # moviedb-#109 Steb function
+    pass
 
 
 def import_movies():

@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/3/19, 12:39 PM by stephen.
+#  Last modified 12/24/19, 8:31 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -60,7 +60,7 @@ class TestNeuron:
     
     def test_neuron_object_created(self):
         with self.neuron_context() as neuron:
-            assert neuron == observerpattern.Neuron()
+            assert neuron == observerpattern.AndNeuron()
     
     def test_event_registered(self):
         with self.neuron_context() as neuron:
@@ -79,4 +79,4 @@ class TestNeuron:
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def neuron_context(self):
-        yield observerpattern.Neuron()
+        yield observerpattern.AndNeuron()

@@ -1,7 +1,7 @@
 """The Observer pattern and usabilty functionality."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/17/19, 6:50 AM by stephen.
+#  Last modified 12/24/19, 2:56 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -59,7 +59,28 @@ class Observer:
 
 
 @dataclass
-class Neuron(Observer):
+class BaseNeuron(Observer):
+    """An observer that can observe multiple events. """
+    
+    events: Dict[Any, bool] = field(default_factory=dict, init=False, repr=False)
+    
+    def __call__(self, event_id: Any, state: bool):
+        """Update one event and update all notifees."""
+        # moviedb-#109 Test this method
+        raise NotImplementedError
+    
+    def register_event(self, event_id: Any, state: bool = False):
+        """Register an event
+        
+        Args:
+            event_id:
+            state:
+        """
+        self.events[event_id] = state
+
+
+@dataclass
+class AndNeuron(BaseNeuron):
     """An observer that can observe multiple events.
     
     Use Case:
@@ -76,18 +97,32 @@ class Neuron(Observer):
     5) Call the parent method deregister to remove a observer and stop it from being observed.
     """
     
-    events: Dict[Any, bool] = field(default_factory=dict, init=False, repr=False)
-    
     def __call__(self, event_id: Any, state: bool):
         """Update one event and update all notifees."""
         self.events[event_id] = state
         super().notify(all(self.events.values()))
+
+
+@dataclass
+class OrNeuron(BaseNeuron):
+    """An observer that can observe multiple events.
     
-    def register_event(self, event_id: Any, state: bool = False):
-        """Register an event
-        
-        Args:
-            event_id:
-            state:
-        """
+    Use Case:
+    Input forms often have multiple fields which must be completed before the form can be accepted.
+    For example, an 'OK' button should only be active if all relevant fields are completed.
+    This requires an observer that responds to multiple stimuli.
+    
+    Usage:
+    1) Instantiate Neuron.
+    2) Call the method register_event to register one or more events.
+    3) Call the parent method register to register one or more callables.
+    4) Call <neuron object>(<event id>, state). This will notify the registered notifees with 'True'
+    if all the events are 'True' otherwise with 'False'.
+    5) Call the parent method deregister to remove a observer and stop it from being observed.
+    """
+    
+    def __call__(self, event_id: Any, state: bool):
+        """Update one event and update all notifees."""
+        # moviedb-#109 Test this method
         self.events[event_id] = state
+        super().notify(any(self.events.values()))

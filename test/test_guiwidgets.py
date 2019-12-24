@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/23/19, 7:34 AM by stephen.
+#  Last modified 12/24/19, 2:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -178,14 +178,14 @@ class TestMovieInit:
             bodyframe = outerframe.children[0]
             label = bodyframe.children[-2::2]
             assert label[0] == TtkLabel(TtkFrame(TtkFrame(DummyTk()), padding=(10, 25, 10, 0)),
-                                        text=guiwidgets.SELECT_TAGS_TEXT)
+                                        text=guiwidgets.SELECT_TAGS_TEXT, padding=(0, 2))
     
     def test_tags_label_gridded(self, class_patches):
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
             bodyframe = outerframe.children[0]
             label = bodyframe.children[-2::2]
-            assert label[0].grid_calls[0] == dict(column=0, row=6, sticky='e', padx=5)
+            assert label[0].grid_calls[0] == dict(column=0, row=6, sticky='ne', padx=5)
     
     def test_tags_frame_created(self, class_patches):
         with self.movie_context() as movie_gui:
@@ -360,13 +360,13 @@ class TestMovieInit:
             assert movie_gui.entry_fields['title'].textvariable.trace_add_calls[0][0] == 'write'
             assert calls[0][0] == movie_gui
             assert calls[0][1] == 'title'
-            assert isinstance(calls[0][2], guiwidgets.observerpattern.Neuron)
+            assert isinstance(calls[0][2], guiwidgets.observerpattern.AndNeuron)
             # Are  'title' and 'year' fields linked to the same neuron?
             assert calls[0][2] == calls[1][2]
     
     def test_neuron_register_event_called(self, class_patches, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.observerpattern.Neuron, 'register_event',
+        monkeypatch.setattr(guiwidgets.observerpattern.AndNeuron, 'register_event',
                             lambda *args: calls.append(args))
         with self.movie_context():
             assert calls[0][1] == 'title'
@@ -601,6 +601,7 @@ class TtkLabel:
     """
     parent: TtkFrame
     text: str
+    padding: Tuple[int, ...] = field(default='')
     
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     
