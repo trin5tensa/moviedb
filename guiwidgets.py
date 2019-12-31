@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/25/19, 8:46 AM by stephen.
+#  Last modified 12/31/19, 7:22 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -71,28 +71,61 @@ class MovieGUIBase:
         
         This has two configured columns one for labels and another for user input fields
         """
-        # moviedb-#109 Test this method
-        
         body_frame = ttk.Frame(outerframe, padding=(10, 25, 10, 0))
         body_frame.grid(column=0, row=0, sticky='n')
         body_frame.columnconfigure(0, weight=1, minsize=30)
         body_frame.columnconfigure(1, weight=1)
         return body_frame
-    
+
     def create_buttonbox(self, outerframe: ttk.Frame) -> ttk.Frame:
         """Create the buttonbox."""
-        # moviedb-#109 Test this method
         buttonbox = ttk.Frame(outerframe, padding=(5, 5, 10, 10))
         buttonbox.grid(column=0, row=1, sticky='e')
         return buttonbox
+
+    def create_cancel_button(self, buttonbox: ttk.Frame, column: int):
+        """Create a cancel button
+        
+        Args:
+            buttonbox:
+            column:
+        """
+        cancel = ttk.Button(buttonbox, text=CANCEL_TEXT, command=self.destroy)
+        cancel.grid(column=column, row=0)
+        cancel.bind('<Return>', lambda event, b=cancel: b.invoke())
+        cancel.focus_set()
+
+    def create_tag_treeview(self, body_frame: ttk.Frame, row: int):
+        """Create a ttk treeview widget for tags.
+        
+        Args:
+            body_frame: The frame enclosing the treeview.
+            row: The tk grid row of the item within the frame's grid
+        """
     
+        # moviedb-#95 The tags of an existing record should be shown in the selected mode.
+        label = ttk.Label(body_frame, text=SELECT_TAGS_TEXT, padding=(0, 2))
+        label.grid(column=0, row=row, sticky='ne', padx=5)
+        tags_frame = ttk.Frame(body_frame, padding=5)
+        tags_frame.grid(column=1, row=row, sticky='w')
+        tree = ttk.Treeview(tags_frame, columns=('tags',), height=5, selectmode='extended',
+                            show='tree', padding=5)
+        tree.grid(column=0, row=0, sticky='w')
+        tree.column('tags', width=100)
+        for tag in self.tags:
+            tree.insert('', 'end', tag, text=tag, tags='tags')
+        tree.tag_bind('tags', '<<TreeviewSelect>>', callback=self.treeview_callback(tree))
+        scrollbar = ttk.Scrollbar(tags_frame, orient=tk.VERTICAL, command=tree.yview)
+        scrollbar.grid(column=1, row=0)
+        tree.configure(yscrollcommand=scrollbar.set)
+
     def neuron_linker(self, internal_name: str, neuron: observerpattern.AndNeuron,
                       neuron_callback: Callable, initial_state: bool = False):
         """Link a field to a neuron."""
         self.entry_fields[internal_name].textvariable.trace_add('write',
                                                                 neuron_callback(internal_name, neuron))
         neuron.register_event(internal_name, initial_state)
-    
+
     def neuron_callback(self, internal_name: str, neuron: observerpattern.AndNeuron) -> Callable:
         """Create the callback for an observed field.
 
@@ -193,15 +226,16 @@ class MovieGUI(MovieGUIBase):
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form with a column for labels and another for user input fields."""
         body_frame = super().create_body(outerframe)
-        
+
         # Initialize an internal dictionary to simplify field data management.
+        # noinspection PyTypedDict
         self.entry_fields = {internal_name: EntryField(field_text,
                                                        self.caller_fields.get(internal_name, ''))
                              for internal_name, field_text
                              in zip(INTERNAL_NAMES, FIELD_TEXTS)}
-        
+
         # Create entry fields and their labels.
-        # TODO Make 'notes' field into a tk.Text field (no ttk.Text field:( )
+        # TODO Make 'notes' field into a tk.Text field (NB: no ttk.Text field:( )
         for row_ix, internal_name in enumerate(INTERNAL_NAMES):
             label = ttk.Label(body_frame, text=self.entry_fields[internal_name].label_text)
             label.grid(column=0, row=row_ix, sticky='e', padx=5)
@@ -227,22 +261,9 @@ class MovieGUI(MovieGUIBase):
         year.widget.config(validate='key', validatecommand=(registered_callback, '%S'))
 
         # Create treeview for tag selection.
-        # moviedb-#95 The tags of an existing record should be shown in the selected mode.
-        label = ttk.Label(body_frame, text=SELECT_TAGS_TEXT, padding=(0, 2))
-        label.grid(column=0, row=6, sticky='ne', padx=5)
-        tags_frame = ttk.Frame(body_frame, padding=5)
-        tags_frame.grid(column=1, row=6, sticky='w')
-        tree = ttk.Treeview(tags_frame, columns=('tags',), height=5, selectmode='extended',
-                            show='tree', padding=5)
-        tree.grid(column=0, row=0, sticky='w')
-        tree.column('tags', width=100)
-        for tag in self.tags:
-            tree.insert('', 'end', tag, text=tag, tags='tags')
-        tree.tag_bind('tags', '<<TreeviewSelect>>', callback=self.treeview_callback(tree))
-        scrollbar = ttk.Scrollbar(tags_frame, orient=tk.VERTICAL, command=tree.yview)
-        scrollbar.grid(column=1, row=0)
-        tree.configure(yscrollcommand=scrollbar.set)
-    
+        self.create_tag_treeview(body_frame, 6)
+
+    # noinspection DuplicatedCode
     def create_buttonbox(self, outerframe: ttk.Frame):
         """Create the buttons."""
         buttonbox = super().create_buttonbox(outerframe)
@@ -255,10 +276,7 @@ class MovieGUI(MovieGUIBase):
         self.commit_neuron.register(self.button_state_callback(commit))
     
         # Cancel button
-        cancel = ttk.Button(buttonbox, text=CANCEL_TEXT, command=self.destroy)
-        cancel.grid(column=1, row=0)
-        cancel.bind('<Return>', lambda event, b=cancel: b.invoke())
-        cancel.focus_set()
+        self.create_cancel_button(buttonbox, column=1)
     
     def commit(self):
         """The user clicked the commit button."""
@@ -286,108 +304,80 @@ class MovieGUI(MovieGUIBase):
 
 @dataclass
 class SearchGUI(MovieGUIBase):
-    # moviedb-#109 Test this class.
-    """ A form for searching for a movie."""
+    """A form for searching for a movie."""
     # Neuron controlling enabled state of Search button
-    search_neuron: observerpattern.AndNeuron = field(default_factory=observerpattern.OrNeuron,
-                                                     init=False, repr=False)
+    search_neuron: observerpattern.OrNeuron = field(default_factory=observerpattern.OrNeuron,
+                                                    init=False, repr=False)
     
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form."""
         body_frame = super().create_body(outerframe)
         row = itertools.count()
         
-        # Movie title
-        label = ttk.Label(body_frame, text='Title')
-        label.grid(column=0, row=(row_num := next(row)), sticky='e', padx=5)
-        title = self.entry_fields['title'] = EntryField('', '')
-        entry = ttk.Entry(body_frame, textvariable=title.textvariable, width=36)
-        entry.grid(column=1, row=row_num)
-        title.widget = entry
-        self.neuron_linker('title', self.search_neuron, self.neuron_callback)
-        
-        # Year
-        label = ttk.Label(body_frame, text='Year (min, max)')
-        label.grid(column=0, row=(row_num := next(row)), sticky='e', padx=5)
-        year_frame = ttk.Frame(body_frame, padding=(2, 0))
-        year_frame.grid(column=1, row=row_num, sticky='w')
-        
-        # Year minimum entry field
-        year_min = self.entry_fields['year_min'] = EntryField('', '')
-        entry = ttk.Entry(year_frame, textvariable=year_min.textvariable, width=5)
-        entry.grid(column=0, row=0)
-        year_min.widget = entry
-        self.neuron_linker('year_min', self.search_neuron, self.neuron_callback)
-        registered_callback = year_min.widget.register(self.validate_int)
-        year_min.widget.config(validate='key', validatecommand=(registered_callback, '%S'))
-        
-        # Year maximum entry field
-        year_max = self.entry_fields['year_max'] = EntryField('', '')
-        entry = ttk.Entry(year_frame, textvariable=year_max.textvariable, width=5)
-        entry.grid(column=1, row=0)
-        year_max.widget = entry
-        self.neuron_linker('year_max', self.search_neuron, self.neuron_callback)
-        registered_callback = year_max.widget.register(self.validate_int)
-        year_max.widget.config(validate='key', validatecommand=(registered_callback, '%S'))
-        
-        # Director
-        label = ttk.Label(body_frame, text='Director')
-        label.grid(column=0, row=(row_num := next(row)), sticky='e', padx=5)
-        director = self.entry_fields['director'] = EntryField('', '')
-        entry = ttk.Entry(body_frame, textvariable=director.textvariable, width=36)
-        entry.grid(column=1, row=row_num)
-        director.widget = entry
-        self.neuron_linker('director', self.search_neuron, self.neuron_callback)
-        
-        # Length
-        label = ttk.Label(body_frame, text='Length (min, max)')
-        label.grid(column=0, row=(row_num := next(row)), sticky='e', padx=5)
-        length_frame = ttk.Frame(body_frame, padding=(2, 0))
-        length_frame.grid(column=1, row=row_num, sticky='w')
-        
-        # Length minimum entry field
-        length_min = self.entry_fields['length_min'] = EntryField('', '')
-        entry = ttk.Entry(length_frame, textvariable=length_min.textvariable, width=5)
-        entry.grid(column=0, row=0)
-        length_min.widget = entry
-        self.neuron_linker('length_min', self.search_neuron, self.neuron_callback)
-        registered_callback = length_min.widget.register(self.validate_int)
-        length_min.widget.config(validate='key', validatecommand=(registered_callback, '%S'))
-        
-        # Length maximum entry field
-        length_max = self.entry_fields['length_max'] = EntryField('', '')
-        entry = ttk.Entry(length_frame, textvariable=length_max.textvariable, width=5)
-        entry.grid(column=1, row=0)
-        length_max.widget = entry
-        self.neuron_linker('length_max', self.search_neuron, self.neuron_callback)
-        registered_callback = length_max.widget.register(self.validate_int)
-        length_max.widget.config(validate='key', validatecommand=(registered_callback, '%S'))
-        
-        # Notes
-        label = ttk.Label(body_frame, text='Notes')
-        label.grid(column=0, row=(row_num := next(row)), sticky='e', padx=5)
-        notes = self.entry_fields['notes'] = EntryField('', '')
-        entry = ttk.Entry(body_frame, textvariable=notes.textvariable, width=36)
-        entry.grid(column=1, row=row_num)
-        notes.widget = entry
-        self.neuron_linker('notes', self.search_neuron, self.neuron_callback)
-        
-        # Create treeview for tag selection.
-        label = ttk.Label(body_frame, text=SELECT_TAGS_TEXT, padding=(0, 2))
-        label.grid(column=0, row=(row_num := next(row)), sticky='ne', padx=5)
-        tags_frame = ttk.Frame(body_frame, padding=5)
-        tags_frame.grid(column=1, row=row_num, sticky='w')
-        tree = ttk.Treeview(tags_frame, columns=('tags',), height=5, selectmode='extended',
-                            show='tree', padding=5)
-        tree.grid(column=0, row=0, sticky='w')
-        tree.column('tags', width=100)
-        for tag in self.tags:
-            tree.insert('', 'end', tag, text=tag, tags='tags')
-        tree.tag_bind('tags', '<<TreeviewSelect>>', callback=self.treeview_callback(tree))
-        scrollbar = ttk.Scrollbar(tags_frame, orient=tk.VERTICAL, command=tree.yview)
-        scrollbar.grid(column=1, row=0)
-        tree.configure(yscrollcommand=scrollbar.set)
+        self.create_body_item(body_frame, 'title', 'Title', next(row))
+        self.create_min_max_body_item(body_frame, 'year', 'Year', next(row))
+        self.create_body_item(body_frame, 'director', 'Director', next(row))
+        self.create_min_max_body_item(body_frame, 'length', 'Length', next(row))
+        self.create_body_item(body_frame, 'notes', 'Notes', next(row))
+        self.create_tag_treeview(body_frame, next(row))
     
+    def create_body_item(self, body_frame: ttk.Frame, internal_name: str, text: str, row: int):
+        """Create a ttk label and ttk entry.
+        
+        Args:
+            body_frame: The frame enclosing the label and entry.
+            internal_name: of the entry.
+            text: The text of the label that is seen by the user.
+            row: The tk grid row of the item within the frame's grid.
+        """
+        label = ttk.Label(body_frame, text=text)
+        label.grid(column=0, row=row, sticky='e', padx=5)
+        self.create_entry(body_frame, internal_name, 1, row, 36)
+    
+    def create_min_max_body_item(self, body_frame: ttk.Frame, internal_name: str, text: str, row: int):
+        """Create a ttk label and ttk entry.
+
+        Args:
+            body_frame: The frame enclosing the label and entry.
+            internal_name: of the entry.
+            text: The text of the label that is seen by the user.
+            row: The tk grid row of the item within the frame's grid.
+        """
+        # Create label
+        label = ttk.Label(body_frame, text=f'{text} (min, max)')
+        label.grid(column=0, row=row, sticky='e', padx=5)
+        
+        # Create entry frame with a max entry and a min entry
+        entry_frame = ttk.Frame(body_frame, padding=(2, 0))
+        entry_frame.grid(column=1, row=row, sticky='w')
+        self.create_entry(entry_frame, (min_field_name := f'{internal_name}_min'), 0, 0, 6)
+        self.create_entry(entry_frame, (max_field_name := f'{internal_name}_max'), 1, 0, 6)
+        
+        # Place integer field validation on both fields
+        for field_name in (min_field_name, max_field_name):
+            entry_field = self.entry_fields[field_name]
+            registered_callback = entry_field.widget.register(self.validate_int)
+            entry_field.widget.config(validate='key',
+                                      validatecommand=(registered_callback, '%S'))
+    
+    def create_entry(self, body_frame: ttk.Frame, internal_name: str,
+                     column: int, row: int, width: int):
+        """Create a ttk entry
+        
+        Args:
+            body_frame: The frame enclosing the entry.
+            internal_name: of the entry
+            column: The tk grid column of the item within the frame's grid.
+            row: The tk grid row of the item within the frame's grid.
+            width: The tk character width of the entry widget.
+        """
+        entry_field = self.entry_fields[internal_name] = EntryField('', '')
+        entry = ttk.Entry(body_frame, textvariable=entry_field.textvariable, width=width)
+        entry.grid(column=column, row=row)
+        entry_field.widget = entry
+        self.neuron_linker(internal_name, self.search_neuron, self.neuron_callback)
+    
+    # noinspection DuplicatedCode
     def create_buttonbox(self, outerframe: ttk.Frame):
         """Create the buttons."""
         buttonbox = super().create_buttonbox(outerframe)
@@ -400,20 +390,16 @@ class SearchGUI(MovieGUIBase):
         self.search_neuron.register(self.button_state_callback(search))
         
         # Cancel button
-        cancel = ttk.Button(buttonbox, text=CANCEL_TEXT, command=self.destroy)
-        cancel.grid(column=1, row=0)
-        cancel.bind('<Return>', lambda event, b=cancel: b.invoke())
-        cancel.focus_set()
+        self.create_cancel_button(buttonbox, column=1)
     
     def search(self):
         """The user clicked the commit button."""
-        # moviedb-#109 Combine min/max fields into lists within return_fields
         return_fields = {internal_name: movie_field.textvariable.get()
                          for internal_name, movie_field in self.entry_fields.items()}
         return_fields['year'] = [return_fields['year_min'], return_fields['year_max']]
-        return_fields['length'] = [return_fields['length_min'], return_fields['length_max']]
         del return_fields['year_min']
         del return_fields['year_max']
+        return_fields['length'] = [return_fields['length_min'], return_fields['length_max']]
         del return_fields['length_min']
         del return_fields['length_max']
         
