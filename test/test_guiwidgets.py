@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/31/19, 7:22 AM by stephen.
+#  Last modified 12/31/19, 7:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -61,7 +61,7 @@ class TestMovieGUI:
         with self.movie_context() as movie_gui:
             for internal_name, label_text in zip(guiwidgets.INTERNAL_NAMES, guiwidgets.FIELD_TEXTS):
                 assert isinstance(movie_gui.entry_fields[internal_name].observer,
-                                  guiwidgets.observerpattern.Observer)
+                                  guiwidgets.neurons.Observer)
     
     def test_outer_frame_created(self, patch_tk):
         with self.movie_context() as movie_gui:
@@ -363,13 +363,13 @@ class TestMovieGUI:
             assert movie_gui.entry_fields['title'].textvariable.trace_add_calls[0][0] == 'write'
             assert calls[0][0] == movie_gui
             assert calls[0][1] == 'title'
-            assert isinstance(calls[0][2], guiwidgets.observerpattern.AndNeuron)
+            assert isinstance(calls[0][2], guiwidgets.neurons.AndNeuron)
             # Are  'title' and 'year' fields linked to the same neuron?
             assert calls[0][2] == calls[1][2]
     
     def test_neuron_register_event_called(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.observerpattern.AndNeuron, 'register_event',
+        monkeypatch.setattr(guiwidgets.neurons.AndNeuron, 'register_event',
                             lambda *args: calls.append(args))
         with self.movie_context():
             assert calls[0][1] == 'title'

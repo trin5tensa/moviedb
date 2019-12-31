@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/24/19, 8:31 AM by stephen.
+#  Last modified 12/31/19, 8:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,7 @@
 
 from contextlib import contextmanager
 
-import observerpattern
+import neurons
 
 
 class TestObserver:
@@ -23,7 +23,7 @@ class TestObserver:
     
     def test_observer_object_created(self):
         with self.observer_context() as observer:
-            assert observer == observerpattern.Observer()
+            assert observer == neurons.Observer()
     
     def test_notifee_registered(self):
         with self.observer_context() as observer:
@@ -48,7 +48,7 @@ class TestObserver:
     @contextmanager
     def observer_context(self):
         # noinspection PyTypeChecker
-        yield observerpattern.Observer()
+        yield neurons.Observer()
 
     def test_notifee(self, *args, **kwargs):
         if not self.test_notifee_calls:
@@ -56,27 +56,33 @@ class TestObserver:
         self.test_notifee_calls.append((args, kwargs), )
 
 
-class TestNeuron:
-    
-    def test_neuron_object_created(self):
-        with self.neuron_context() as neuron:
-            assert neuron == observerpattern.AndNeuron()
+class TestBaseNeuron:
     
     def test_event_registered(self):
-        with self.neuron_context() as neuron:
-            neuron.register_event('event')
-            assert neuron.events == dict(event=False)
+        neuron = neurons.BaseNeuron()
+        neuron.register_event('event')
+        assert neuron.events == dict(event=False)
+
+
+class TestAndNeuron:
     
     def test_neuron_invocation(self):
         calls = []
-        with self.neuron_context() as neuron:
-            neuron.register_event('event1', True)
-            neuron.register_event('event2', False)
-            neuron.register(lambda state: calls.append(state))
-            neuron('event2', True)
-            assert calls[0] is True
+        neuron = neurons.AndNeuron()
+        neuron.register_event('event1', True)
+        neuron.register_event('event2', False)
+        neuron.register(lambda state: calls.append(state))
+        neuron('event2', True)
+        assert calls[0] is True
+
+
+class TestORNeuron:
     
-    # noinspection PyMissingOrEmptyDocstring
-    @contextmanager
-    def neuron_context(self):
-        yield observerpattern.AndNeuron()
+    def test_neuron_invocation(self):
+        calls = []
+        neuron = neurons.OrNeuron()
+        neuron.register_event('event1', False)
+        neuron.register_event('event2', False)
+        neuron.register(lambda state: calls.append(state))
+        neuron('event2', True)
+        assert calls[0] is True

@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/31/19, 7:22 AM by stephen.
+#  Last modified 12/31/19, 8:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,7 @@ from tkinter import filedialog, messagebox
 from typing import Callable, Dict, List, Sequence, TypeVar
 
 import exception
-import observerpattern
+import neurons
 from config import MovieDict
 
 
@@ -119,19 +119,19 @@ class MovieGUIBase:
         scrollbar.grid(column=1, row=0)
         tree.configure(yscrollcommand=scrollbar.set)
 
-    def neuron_linker(self, internal_name: str, neuron: observerpattern.AndNeuron,
+    def neuron_linker(self, internal_name: str, neuron: neurons.AndNeuron,
                       neuron_callback: Callable, initial_state: bool = False):
         """Link a field to a neuron."""
         self.entry_fields[internal_name].textvariable.trace_add('write',
                                                                 neuron_callback(internal_name, neuron))
         neuron.register_event(internal_name, initial_state)
 
-    def neuron_callback(self, internal_name: str, neuron: observerpattern.AndNeuron) -> Callable:
+    def neuron_callback(self, internal_name: str, neuron: neurons.AndNeuron) -> Callable:
         """Create the callback for an observed field.
 
         This will be registered as the 'trace_add' callback for an entry field.
         """
-        
+    
         # noinspection PyUnusedLocal
         def change_neuron_state(*args):
             """Call the neuron when the field changes.
@@ -220,13 +220,13 @@ class MovieGUI(MovieGUIBase):
     # selected_tags: List[str] = field(default_factory=list)
     
     # Neuron controlling enabled state of Commit button
-    commit_neuron: observerpattern.AndNeuron = field(default_factory=observerpattern.AndNeuron,
-                                                     init=False, repr=False)
+    commit_neuron: neurons.AndNeuron = field(default_factory=neurons.AndNeuron,
+                                             init=False, repr=False)
     
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form with a column for labels and another for user input fields."""
         body_frame = super().create_body(outerframe)
-
+        
         # Initialize an internal dictionary to simplify field data management.
         # noinspection PyTypedDict
         self.entry_fields = {internal_name: EntryField(field_text,
@@ -306,8 +306,8 @@ class MovieGUI(MovieGUIBase):
 class SearchGUI(MovieGUIBase):
     """A form for searching for a movie."""
     # Neuron controlling enabled state of Search button
-    search_neuron: observerpattern.OrNeuron = field(default_factory=observerpattern.OrNeuron,
-                                                    init=False, repr=False)
+    search_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron,
+                                            init=False, repr=False)
     
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form."""
@@ -425,8 +425,8 @@ class EntryField:
     original_value: str
     widget: ttk.Entry = None
     textvariable: tk.StringVar = None
-    observer: observerpattern.Observer = None
+    observer: neurons.Observer = None
     
     def __post_init__(self):
         self.textvariable = tk.StringVar()
-        self.observer = observerpattern.Observer()
+        self.observer = neurons.Observer()
