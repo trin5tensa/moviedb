@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/31/19, 8:15 AM by stephen.
+#  Last modified 12/31/19, 12:53 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,7 +19,7 @@ import neurons
 
 
 class TestObserver:
-    test_notifee_calls = None
+    notify_calls = []
     
     def test_observer_object_created(self):
         with self.observer_context() as observer:
@@ -27,33 +27,31 @@ class TestObserver:
     
     def test_notifee_registered(self):
         with self.observer_context() as observer:
-            observer.register(self.test_notifee)
-            assert observer.notifees[0] == self.test_notifee
+            observer.register(self.notify)
+            assert observer.notifees[0] == self.notify
     
     def test_notifee_deregistered(self):
         with self.observer_context() as observer:
-            observer.notifees = [self.test_notifee]
-            observer.deregister(self.test_notifee)
+            observer.notifees = [self.notify]
+            observer.deregister(self.notify)
             assert observer.notifees == []
     
     def test_notifee_notified(self):
         with self.observer_context() as observer:
-            observer.register(self.test_notifee)
+            observer.register(self.notify)
             args = ('test arg',)
             kwargs = dict(test_kwarg='test kwarg')
             observer.notify(*args, **kwargs)
-            assert self.test_notifee_calls[0] == (args, kwargs)
-    
+            assert self.notify_calls[0] == (args, kwargs)
+
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def observer_context(self):
         # noinspection PyTypeChecker
         yield neurons.Observer()
 
-    def test_notifee(self, *args, **kwargs):
-        if not self.test_notifee_calls:
-            self.test_notifee_calls = []
-        self.test_notifee_calls.append((args, kwargs), )
+    def notify(self, *args, **kwargs):
+        self.notify_calls.append((args, kwargs), )
 
 
 class TestBaseNeuron:

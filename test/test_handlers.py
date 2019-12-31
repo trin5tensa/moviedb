@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/23/19, 7:34 AM by stephen.
+#  Last modified 12/31/19, 12:53 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,8 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import deque
 from contextlib import contextmanager
-from dataclasses import dataclass, field
-from typing import Callable, Sequence
+from dataclasses import dataclass
 
 import pytest
 
@@ -49,12 +48,14 @@ class TestAboutDialog:
 
 
 class TestAddMovie:
+    movie_gui_args = []
     
-    def test(self, monkeypatch):
-        monkeypatch.setattr(handlers.guiwidgets, 'MovieGUI', DummyMovieGUI)
+    def test_movie_gui_called(self, monkeypatch):
+        monkeypatch.setattr(handlers.guiwidgets, 'MovieGUI', lambda parent, tags, callback:
+        self.movie_gui_args.append((parent, tags, callback)))
         with self.add_movie_context():
-            assert dummy_movie_gui_args == [(DummyParent(), ['Movie night candidate'],
-                                             handlers.add_movie_callback,)]
+            assert self.movie_gui_args == [(DummyParent(), ['Movie night candidate'],
+                                            handlers.add_movie_callback,)]
     
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
@@ -63,8 +64,7 @@ class TestAddMovie:
         handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
         handlers.config.app.tk_root = DummyParent()
         try:
-            handlers.add_movie()
-            yield
+            yield handlers.add_movie()
         finally:
             handlers.config.app = hold_app
 
@@ -93,15 +93,37 @@ class TestAddMovieCallback:
         movie = {'title': 'Test Title', 'year': '2020'}
         tags = ['test 1']
         yield handlers.add_movie_callback(movie, tags)
-    
+
     dummy_add_movie_calls = []
     dummy_tag_and_links_calls = []
-    
+
     def dummy_add_movie(self, *args):
         self.dummy_add_movie_calls.append(args)
-    
+
     def dummy_tag_and_links(self, *args):
         self.dummy_tag_and_links_calls.append(args)
+
+
+class TestEditMovie:
+    search_gui_args = []
+    
+    def test_edit_gui_called(self, monkeypatch):
+        monkeypatch.setattr(handlers.guiwidgets, 'SearchGUI', lambda parent, tags, callback:
+        self.search_gui_args.append((parent, tags, callback)))
+        with self.edit_movie_context():
+            assert self.search_gui_args == [(DummyParent(), ['Movie night candidate'],
+                                             handlers.edit_movie_callback,)]
+    
+    # noinspection PyMissingOrEmptyDocstring
+    @contextmanager
+    def edit_movie_context(self):
+        hold_app = handlers.config.app
+        handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
+        handlers.config.app.tk_root = DummyParent()
+        try:
+            yield handlers.edit_movie()
+        finally:
+            handlers.config.app = hold_app
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -160,21 +182,5 @@ class TestImportMovies:
 
 @dataclass
 class DummyParent:
-    """Provide a dummy for Tk root.
-    
-    The children are used to locate tkinter objects in the absence of python identifiers."""
-    children: deque = field(default_factory=deque, init=False, repr=False, compare=False)
-
-
-dummy_movie_gui_args = []
-
-
-# noinspection PyMissingOrEmptyDocstring
-@dataclass
-class DummyMovieGUI:
-    parent: 'handlers.config.tk.Tk'
-    tags: Sequence[str]
-    callback: Callable
-    
-    def __post_init__(self):
-        dummy_movie_gui_args.append((self.parent, self.tags, self.callback))
+    """Provide a dummy for Tk root."""
+    pass
