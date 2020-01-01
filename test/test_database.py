@@ -1,7 +1,7 @@
 """Functional pytests for database module. """
 
-#  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/17/19, 9:11 AM by stephen.
+#  Copyright© 2020. Stephen Rigden.
+#  Last modified 1/1/20, 8:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -171,53 +171,73 @@ def test_add_movie_with_notes(connection, session, revanche):
 class TestFindMovie:
     def test_search_movie_year(self):
         test_year = 1996
-        for movie in database.find_movies(dict(year=test_year)):
+        movies = database.find_movies(dict(year=test_year))
+        next(movies)
+        for movie in movies:
             assert movie['year'] == test_year
 
     def test_search_movie_id(self):
         test_title = 'Hamlet'
         test_id = 1
-        for movie in database.find_movies(database.FindMovieDict(id=test_id)):
+        movies = database.find_movies(dict(id=test_id))
+        next(movies)
+        for movie in movies:
             assert movie['title'] == test_title
 
     def test_search_movie_title(self):
         expected = 'Hamlet'
-        for movie in database.find_movies(dict(title='Ham')):
+        movies = database.find_movies(dict(title='Ham'))
+        next(movies)
+        for movie in movies:
             assert movie['title'] == expected
 
     def test_search_movie_director(self):
         expected = 'Tarkovsky'
-        for movie in database.find_movies(dict(director='Tark')):
+        movies = database.find_movies(dict(director='Tark'))
+        next(movies)
+        for movie in movies:
             assert movie['director'] == expected
 
     def test_search_movie_notes(self):
         expected = 'Revanche'
-        for movie in database.find_movies(dict(notes='Oscar')):
+        movies = database.find_movies(dict(notes='Oscar'))
+        next(movies)
+        for movie in movies:
             assert movie['title'] == expected
 
     def test_search_movie_with_range_of_minutes(self):
         expected = {122}
-        minutes = {movie['minutes'] for movie in database.find_movies(dict(minutes=[130, 120]))}
+        movies = database.find_movies(dict(minutes=[130, 120]))
+        next(movies)
+        minutes = {movie['minutes'] for movie in movies}
         assert minutes == expected
 
     def test_search_movie_with_range_of_minutes_2(self):
         expected = {119, 122, 169}
-        minutes = {movie['minutes'] for movie in database.find_movies(dict(minutes=[170, 100]))}
+        movies = database.find_movies(dict(minutes=[170, 100]))
+        next(movies)
+        minutes = {movie['minutes'] for movie in movies}
         assert minutes == expected
 
     def test_search_movie_with_minute(self):
         expected = {169}
-        minutes = {movie['minutes'] for movie in database.find_movies(dict(minutes=169))}
+        movies = database.find_movies(dict(minutes=169))
+        next(movies)
+        minutes = {movie['minutes'] for movie in movies}
         assert minutes == expected
 
     def test_search_movie_tag(self):
         expected = {'Revanche', 'Solaris'}
-        titles = {movie['title'] for movie in database.find_movies(dict(tags='green'))}
+        movies = database.find_movies(dict(tags='green'))
+        next(movies)
+        titles = {movie['title'] for movie in movies}
         assert titles == expected
 
     def test_search_movie_all_tags(self):
         expected = {'Hamlet', 'Revanche'}
-        titles = {movie['title'] for movie in database.find_movies(dict(tags=['blue', 'yellow']))}
+        movies = database.find_movies(dict(tags=['blue', 'yellow']))
+        next(movies)
+        titles = {movie['title'] for movie in movies}
         assert titles == expected
 
     def test_value_error_is_raised(self, monkeypatch):
@@ -239,7 +259,9 @@ class TestEditMovie:
     def test_edit_movie(self):
         new_note = 'Science Fiction'
         database.edit_movie(database.MovieKeyDict(title='Solaris', year=1972), dict(notes=new_note))
-        notes = {movie['notes'] for movie in database.find_movies(dict(title='Solaris'))}
+        movies = database.find_movies(dict(title='Solaris'))
+        next(movies)
+        notes = {movie['notes'] for movie in movies}
         assert notes == {new_note, }
 
 
@@ -249,7 +271,9 @@ class TestDeleteMovie:
     def test_delete_movie(self):
         expected = set()
         database.del_movie(database.MovieKeyDict(title='Solaris', year=1972))
-        titles = {movie['title'] for movie in database.find_movies(dict(title='Solaris'))}
+        movies = database.find_movies(dict(title='Solaris'))
+        next(movies)
+        titles = {movie['title'] for movie in movies}
         assert titles == expected
 
 

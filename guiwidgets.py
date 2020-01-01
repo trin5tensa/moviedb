@@ -4,8 +4,8 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 
-#  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/31/19, 8:15 AM by stephen.
+#  Copyright© 2020. Stephen Rigden.
+#  Last modified 1/1/20, 8:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -317,7 +317,7 @@ class SearchGUI(MovieGUIBase):
         self.create_body_item(body_frame, 'title', 'Title', next(row))
         self.create_min_max_body_item(body_frame, 'year', 'Year', next(row))
         self.create_body_item(body_frame, 'director', 'Director', next(row))
-        self.create_min_max_body_item(body_frame, 'length', 'Length', next(row))
+        self.create_min_max_body_item(body_frame, 'minutes', 'Length (minutes)', next(row))
         self.create_body_item(body_frame, 'notes', 'Notes', next(row))
         self.create_tag_treeview(body_frame, next(row))
     
@@ -399,12 +399,21 @@ class SearchGUI(MovieGUIBase):
         return_fields['year'] = [return_fields['year_min'], return_fields['year_max']]
         del return_fields['year_min']
         del return_fields['year_max']
-        return_fields['length'] = [return_fields['length_min'], return_fields['length_max']]
-        del return_fields['length_min']
-        del return_fields['length_max']
-        
+        return_fields['minutes'] = [return_fields['minutes_min'], return_fields['minutes_max']]
+        del return_fields['minutes_min']
+        del return_fields['minutes_max']
+    
         # Commit and exit
-        self.callback(return_fields, self.selected_tags)
+        try:
+            self.callback(return_fields, self.selected_tags)
+        except exception.MovieSearchFoundNothing:
+            # Warn user and give user the opportunity to reenter the search criteria.
+            # moviedb-#109 Test this suite
+            parent = self.parent
+            message = 'No matches'
+            detail = 'There are no matching movies in the database.'
+            gui_messagebox(parent, message, detail)
+            return
         self.destroy()
 
 

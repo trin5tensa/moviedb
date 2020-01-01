@@ -2,8 +2,8 @@
 
 This module is the glue between the user's selection of a menu item and the gui."""
 
-#  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/31/19, 12:53 PM by stephen.
+#  Copyright© 2020. Stephen Rigden.
+#  Last modified 1/1/20, 8:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,6 +19,7 @@ from typing import Sequence
 
 import config
 import database
+import exception
 import guiwidgets
 import impexp
 
@@ -42,7 +43,7 @@ def add_movie_callback(movie: config.MovieDict, tags: Sequence[str]):
         tags:
     """
     database.add_movie(movie)
-    # TODO Remove note when fixed
+    # TODO Remove note and 'noinspection' when fixed
     #   Pycharm reported bug:  https://youtrack.jetbrains.com/issue/PY-39404
     # noinspection PyTypedDict
     movies = (config.MovieKeyDict(title=movie['title'], year=movie['year']),)
@@ -57,9 +58,24 @@ def edit_movie():
 
 
 def edit_movie_callback(movie: config.MovieDict, tags: Sequence[str]):
-    # moviedb-#109 Stub function
+    # moviedb-#109 Prototype function
+    # moviedb-#109 Test this function
     print()
-    print(f'Called edit_movie_callback\n\t{movie=}\n\t{tags}')
+    gui_dict: config.FindMovieDict = {**movie}
+    gui_dict['tags'] = tags
+    
+    # Remove empty items otherwise SQL will treat them as meaningful.
+    criteria = {k: v for k, v in gui_dict.items() if v != '' and v != [] and v != ['', '']}
+    print(f"{criteria=}")
+    
+    find_gen = database.find_movies(criteria)
+    
+    if not next(find_gen):
+        raise exception.MovieSearchFoundNothing
+    
+    # moviedb-#109 Call new gui select and edit screen with argument 'movie'.
+    for movie in find_gen:
+        print(f"{movie}")
 
 
 def import_movies():

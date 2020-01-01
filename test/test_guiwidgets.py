@@ -1,7 +1,7 @@
 """Test module."""
 
-#  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/31/19, 7:37 AM by stephen.
+#  Copyright© 2020. Stephen Rigden.
+#  Last modified 12/31/19, 1:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -515,7 +515,8 @@ class TestSearchGUI:
             assert calls == [(movie_gui, TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
                                                   padding=(10, 25, 10, 0)), 'year', 'Year', 1),
                              (movie_gui, TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
-                                                  padding=(10, 25, 10, 0)), 'length', 'Length', 3), ]
+                                                  padding=(10, 25, 10, 0)), 'minutes',
+                              'Length (minutes)', 3), ]
     
     def test_create_tag_treeview_called(self, patch_tk, monkeypatch):
         calls = []
@@ -699,7 +700,7 @@ class TestSearchGUI:
         with self.movie_context() as movie_gui:
             movie_gui.selected_tags = ['tag 1', 'tag 2']
             movie_gui.search()
-            assert callback_calls == [(dict(director='4242', length=['4242', '4242'], notes='4242',
+            assert callback_calls == [(dict(director='4242', minutes=['4242', '4242'], notes='4242',
                                             title='4242', year=['4242', '4242'], ), ['tag 1', 'tag 2'])]
     
     def test_destroy_called(self, patch_tk, monkeypatch):

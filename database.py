@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
-#  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/21/19, 7:35 AM by stephen.
+#  Copyright© 2020. Stephen Rigden.
+#  Last modified 1/1/20, 7:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -117,7 +117,9 @@ def find_movies(criteria: FindMovieDict) -> Generator[dict, None, None]:
     # Execute searches
     with _session_scope() as session:
         movies = _build_movie_query(session, criteria)
+        # TODO This line isn't working
         movies.order_by(Movie.title)
+        yield movies.count()
         for movie, tag in movies:
             tag = tag.tag if tag else None
             yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
