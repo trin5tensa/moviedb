@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 12/31/19, 1:44 PM by stephen.
+#  Last modified 1/1/20, 8:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -693,23 +693,36 @@ class TestSearchGUI:
             outerframe = movie_gui.parent.children[0]
             buttonbox = outerframe.children[1]
             assert calls == [((movie_gui, buttonbox), dict(column=1))]
-    
+
     # Test search
-    
+
     def test_callback_called(self, patch_tk):
         with self.movie_context() as movie_gui:
             movie_gui.selected_tags = ['tag 1', 'tag 2']
             movie_gui.search()
             assert callback_calls == [(dict(director='4242', minutes=['4242', '4242'], notes='4242',
                                             title='4242', year=['4242', '4242'], ), ['tag 1', 'tag 2'])]
+
+    def test_callback_raises_movie_search_found_nothing(self, patch_tk, monkeypatch):
+        def callback(*args):
+            raise exception.MovieSearchFoundNothing
     
+        messagebox_calls = []
+        monkeypatch.setattr(guiwidgets, 'gui_messagebox', lambda *args:
+        messagebox_calls.append(args))
+        tags = []
+        movie_gui = guiwidgets.SearchGUI(DummyTk(), tags, callback)
+        movie_gui.search()
+        assert messagebox_calls == [(DummyTk(), 'No matches',
+                                     'There are no matching movies in the database.')]
+
     def test_destroy_called(self, patch_tk, monkeypatch):
         called = []
         monkeypatch.setattr(guiwidgets.MovieGUIBase, 'destroy', lambda *args: called.append(True))
         with self.movie_context() as movie_gui:
             movie_gui.search()
             assert called.pop()
-    
+
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def movie_context(self):
