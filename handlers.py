@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/1/20, 8:24 AM by stephen.
+#  Last modified 1/3/20, 8:59 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -32,7 +32,7 @@ def about_dialog():
 def add_movie():
     """ Get new movie data from the user and add it to the database. """
     tags = database.all_tags()
-    guiwidgets.MovieGUI(config.app.tk_root, tags, add_movie_callback)
+    guiwidgets.EditMovieGUI(config.app.tk_root, add_movie_callback, tags)
 
 
 def add_movie_callback(movie: config.MovieDict, tags: Sequence[str]):
@@ -54,28 +54,50 @@ def add_movie_callback(movie: config.MovieDict, tags: Sequence[str]):
 def edit_movie():
     """ Get search movie data from the user and search for compliant records"""
     tags = database.all_tags()
-    guiwidgets.SearchGUI(config.app.tk_root, tags, edit_movie_callback)
+    guiwidgets.SearchMovieGUI(config.app.tk_root, edit_movie_callback, tags)
 
 
 def edit_movie_callback(movie: config.MovieDict, tags: Sequence[str]):
-    # moviedb-#109 Prototype function
-    # moviedb-#109 Test this function
-    print()
+    # moviedb-#109 Test and write final version of this function
+    
+    # TODO There ought to be a more elegant way of doing this
     gui_dict: config.FindMovieDict = {**movie}
     gui_dict['tags'] = tags
     
     # Remove empty items otherwise SQL will treat them as meaningful.
     criteria = {k: v for k, v in gui_dict.items() if v != '' and v != [] and v != ['', '']}
-    print(f"{criteria=}")
     
-    find_gen = database.find_movies(criteria)
+    movies = database.find_movies(criteria)
     
-    if not next(find_gen):
+    record_count = next(movies)
+    if record_count == 0:
         raise exception.MovieSearchFoundNothing
+    elif record_count == 1:
+        # moviedb-#109 Call EditMovieGUI
+        pass
+    elif record_count > 1:
+        # moviedb-#109 Call new gui select and edit screen with argument 'movie'.
+        guiwidgets.SelectMovieGUI(config.app.tk_root, select_movie_callback, movies)
+    else:
+        # moviedb-#109 Raise an error = ValueError?
+        pass
+
+
+def select_movie_callback(title, year):
+    # moviedb-#109
+    #  Test this function
+    print()
+    print(f"select_movie_callback called with {title=}, {year=}")
     
-    # moviedb-#109 Call new gui select and edit screen with argument 'movie'.
-    for movie in find_gen:
-        print(f"{movie}")
+    # Get record from database
+    # moviedb-#109
+    #  Development stub
+    pass
+    
+    # Present record for editing
+    # moviedb-#109
+    #  Development stub
+    pass
 
 
 def import_movies():

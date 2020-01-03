@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/1/20, 8:57 AM by stephen.
+#  Last modified 1/3/20, 8:56 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,7 @@ import guiwidgets
 
 
 # noinspection PyMissingOrEmptyDocstring
-class TestMovieGUI:
+class TestEditMovieGUI:
     
     # Test Basic Initialization
     
@@ -274,7 +274,7 @@ class TestMovieGUI:
     
     def test_neuron_linker_called(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.MovieGUI, 'neuron_linker',
+        monkeypatch.setattr(guiwidgets.EditMovieGUI, 'neuron_linker',
                             lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
             assert calls == [
@@ -323,7 +323,7 @@ class TestMovieGUI:
     # noinspection PyShadowingNames
     def test_neuron_register_called(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.MovieGUI, 'button_state_callback',
+        monkeypatch.setattr(guiwidgets.EditMovieGUI, 'button_state_callback',
                             lambda movie_gui, button: calls.append(button, ))
         with self.movie_context() as movie_gui:
             button = movie_gui.parent.children[0].children[1].children[0]
@@ -357,7 +357,7 @@ class TestMovieGUI:
     
     def test_trace_add_called(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.MovieGUI, 'neuron_callback',
+        monkeypatch.setattr(guiwidgets.EditMovieGUI, 'neuron_callback',
                             lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
             assert movie_gui.entry_fields['title'].textvariable.trace_add_calls[0][0] == 'write'
@@ -479,7 +479,7 @@ class TestMovieGUI:
     def movie_context(self):
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
-        yield guiwidgets.MovieGUI(DummyTk(), tags, movie_gui_callback)
+        yield guiwidgets.EditMovieGUI(DummyTk(), movie_gui_callback, tags)
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -497,7 +497,7 @@ class TestSearchGUI:
     
     def test_create_simple_body_item_called(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.SearchGUI, 'create_body_item',
+        monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'create_body_item',
                             lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
             assert calls == [(movie_gui, TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
@@ -509,7 +509,7 @@ class TestSearchGUI:
     
     def test_create_min_max_body_item_called(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.SearchGUI, 'create_min_max_body_item',
+        monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'create_min_max_body_item',
                             lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
             assert calls == [(movie_gui, TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
@@ -520,7 +520,7 @@ class TestSearchGUI:
     
     def test_create_tag_treeview_called(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.SearchGUI, 'create_tag_treeview',
+        monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'create_tag_treeview',
                             lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
             assert calls == [(movie_gui, TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
@@ -546,9 +546,9 @@ class TestSearchGUI:
     
     def test_body_item_create_entry_called(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.SearchGUI, 'create_entry',
+        monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'create_entry',
                             lambda *args: calls.append(args))
-        monkeypatch.setattr(guiwidgets.SearchGUI, 'create_min_max_body_item', lambda *args: None)
+        monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'create_min_max_body_item', lambda *args: None)
         with self.movie_context() as movie_gui:
             assert calls == [(movie_gui, TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
                                                   padding=(10, 25, 10, 0)), 'title', 1, 0, 36),
@@ -632,7 +632,7 @@ class TestSearchGUI:
     
     def test_create_entry_links_neuron(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.SearchGUI, 'neuron_linker', lambda *args: calls.append(args))
+        monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'neuron_linker', lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
             assert calls[0] == (movie_gui, 'title', movie_gui.search_neuron, movie_gui.neuron_callback)
     
@@ -678,7 +678,7 @@ class TestSearchGUI:
     # noinspection PyShadowingNames
     def test_neuron_register_called(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.SearchGUI, 'button_state_callback',
+        monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'button_state_callback',
                             lambda movie_gui, button: calls.append(button, ))
         with self.movie_context() as movie_gui:
             button = movie_gui.parent.children[0].children[1].children[0]
@@ -686,7 +686,7 @@ class TestSearchGUI:
     
     def test_cancel_button_created(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.SearchGUI, 'create_cancel_button',
+        monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'create_cancel_button',
                             (lambda *args, **kwargs:
                              calls.append((args, kwargs))))
         with self.movie_context() as movie_gui:
@@ -704,14 +704,15 @@ class TestSearchGUI:
                                             title='4242', year=['4242', '4242'], ), ['tag 1', 'tag 2'])]
 
     def test_callback_raises_movie_search_found_nothing(self, patch_tk, monkeypatch):
+        # noinspection PyUnusedLocal
         def callback(*args):
             raise exception.MovieSearchFoundNothing
     
         messagebox_calls = []
-        monkeypatch.setattr(guiwidgets, 'gui_messagebox', lambda *args:
-        messagebox_calls.append(args))
+        monkeypatch.setattr(guiwidgets, 'gui_messagebox', lambda *args: messagebox_calls.append(args))
         tags = []
-        movie_gui = guiwidgets.SearchGUI(DummyTk(), tags, callback)
+        # noinspection PyTypeChecker
+        movie_gui = guiwidgets.SearchMovieGUI(DummyTk(), callback, tags)
         movie_gui.search()
         assert messagebox_calls == [(DummyTk(), 'No matches',
                                      'There are no matching movies in the database.')]
@@ -728,7 +729,7 @@ class TestSearchGUI:
     def movie_context(self):
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
-        yield guiwidgets.SearchGUI(DummyTk(), tags, movie_gui_callback)
+        yield guiwidgets.SearchMovieGUI(DummyTk(), movie_gui_callback, tags)
 
 
 def test_gui_messagebox(monkeypatch):

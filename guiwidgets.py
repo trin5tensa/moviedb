@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/1/20, 8:52 AM by stephen.
+#  Last modified 1/3/20, 8:59 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,7 +21,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
-from typing import Callable, Dict, List, Sequence, TypeVar
+from typing import Callable, Dict, Generator, List, Sequence, TypeVar
 
 import exception
 import neurons
@@ -29,7 +29,7 @@ from config import MovieDict
 
 
 INTERNAL_NAMES = ('title', 'year', 'director', 'minutes', 'notes')
-FIELD_TEXTS = ('Title *', 'Year *', 'Director', 'Length (minutes)', 'Notes')
+FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes')
 COMMIT_TEXT = 'Commit'
 SEARCH_TEXT = 'Search'
 CANCEL_TEXT = 'Cancel'
@@ -42,14 +42,12 @@ ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
 class MovieGUIBase:
     """ A base class for movie input forms."""
     parent: tk.Tk
-    # A list of all tags in the database.
-    tags: Sequence[str]
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[MovieDict], None]
     
     # All widgets of this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
-    # Tags of the movie record:
+    # Selected tags of the movie record:
     #   The caller may supply the tags of a record that is going to be edited by the user.
     #   It will hold the current selection shown in the GUO during data entry.
     selected_tags: List[str] = field(default_factory=list, init=False, repr=False)
@@ -102,7 +100,7 @@ class MovieGUIBase:
             body_frame: The frame enclosing the treeview.
             row: The tk grid row of the item within the frame's grid
         """
-    
+
         # moviedb-#95 The tags of an existing record should be shown in the selected mode.
         label = ttk.Label(body_frame, text=SELECT_TAGS_TEXT, padding=(0, 2))
         label.grid(column=0, row=row, sticky='ne', padx=5)
@@ -131,7 +129,7 @@ class MovieGUIBase:
 
         This will be registered as the 'trace_add' callback for an entry field.
         """
-    
+
         # noinspection PyUnusedLocal
         def change_neuron_state(*args):
             """Call the neuron when the field changes.
@@ -212,8 +210,10 @@ class MovieGUIBase:
 
 
 @dataclass
-class MovieGUI(MovieGUIBase):
+class EditMovieGUI(MovieGUIBase):
     """ A form for entering or editing a movie."""
+    # A list of all tags in the database.
+    tags: Sequence[str]
     # Fields of the movie supplied by the caller.
     caller_fields: MovieDict = field(default_factory=dict)
     # # Tags of the movie record supplied by the caller.
@@ -262,21 +262,22 @@ class MovieGUI(MovieGUIBase):
 
         # Create treeview for tag selection.
         self.create_tag_treeview(body_frame, 6)
-
+    
     # noinspection DuplicatedCode
     def create_buttonbox(self, outerframe: ttk.Frame):
         """Create the buttons."""
         buttonbox = super().create_buttonbox(outerframe)
+        column_num = itertools.count()
     
         # Commit button
         commit = ttk.Button(buttonbox, text=COMMIT_TEXT, command=self.commit)
-        commit.grid(column=0, row=0)
+        commit.grid(column=next(column_num), row=0)
         commit.bind('<Return>', lambda event, b=commit: b.invoke())
         commit.state(['disabled'])
         self.commit_neuron.register(self.button_state_callback(commit))
     
         # Cancel button
-        self.create_cancel_button(buttonbox, column=1)
+        self.create_cancel_button(buttonbox, column=next(column_num))
     
     def commit(self):
         """The user clicked the commit button."""
@@ -303,8 +304,10 @@ class MovieGUI(MovieGUIBase):
 
 
 @dataclass
-class SearchGUI(MovieGUIBase):
+class SearchMovieGUI(MovieGUIBase):
     """A form for searching for a movie."""
+    # A list of all tags in the database.
+    tags: Sequence[str]
     # Neuron controlling enabled state of Search button
     search_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron,
                                             init=False, repr=False)
@@ -381,16 +384,17 @@ class SearchGUI(MovieGUIBase):
     def create_buttonbox(self, outerframe: ttk.Frame):
         """Create the buttons."""
         buttonbox = super().create_buttonbox(outerframe)
+        column_num = itertools.count()
         
         # Search button
         search = ttk.Button(buttonbox, text=SEARCH_TEXT, command=self.search)
-        search.grid(column=0, row=0)
+        search.grid(column=next(column_num), row=0)
         search.bind('<Return>', lambda event, b=search: b.invoke())
         search.state(['disabled'])
         self.search_neuron.register(self.button_state_callback(search))
         
         # Cancel button
-        self.create_cancel_button(buttonbox, column=1)
+        self.create_cancel_button(buttonbox, column=next(column_num))
     
     def search(self):
         """The user clicked the commit button."""
@@ -402,7 +406,7 @@ class SearchGUI(MovieGUIBase):
         return_fields['minutes'] = [return_fields['minutes_min'], return_fields['minutes_max']]
         del return_fields['minutes_min']
         del return_fields['minutes_max']
-    
+
         # Commit and exit
         try:
             self.callback(return_fields, self.selected_tags)
@@ -414,6 +418,72 @@ class SearchGUI(MovieGUIBase):
             gui_messagebox(parent, message, detail)
             return
         self.destroy()
+
+
+@dataclass
+class SelectMovieGUI(MovieGUIBase):
+    """A form for selecting a movie."""
+    # A generator of compliant movie records.
+    movies: Generator[dict, None, None]
+    
+    def create_body(self, outerframe: ttk.Frame):
+        """Create the body of the form."""
+        # moviedb-#109 Test this method
+        body_frame = super().create_body(outerframe)
+        
+        # Create and grid treeview
+        tree = ttk.Treeview(body_frame,
+                            columns=INTERNAL_NAMES[1:],
+                            height=25, selectmode='browse')
+        tree.grid(column=0, row=0, sticky='w')
+        
+        # Set up column widths and titles
+        column_widths = (350, 50, 100, 50, 350)
+        for column_ix, internal_name in enumerate(INTERNAL_NAMES):
+            if column_ix == 0:
+                internal_name = '#0'
+            tree.column(internal_name, width=column_widths[column_ix])
+            tree.heading(internal_name, text=FIELD_TEXTS[column_ix])
+        
+        # Populate rows with movies
+        for movie in self.movies:
+            tree.insert('', 'end', iid=f"{(title := movie['title'], year := movie['year'])}",
+                        text=title,
+                        values=(year, movie['director'], movie['minutes'], movie['notes']),
+                        tags='title')
+        tree.tag_bind('title', '<<TreeviewSelect>>', callback=self.treeview_callback(tree))
+    
+    def treeview_callback(self, tree: ttk.Treeview):
+        """Create a callback which will be called whenever the user selection is changed.
+
+        Args:
+            tree:
+
+        Returns: The callback.
+        """
+        
+        # moviedb-#109 Test this method
+        # noinspection PyUnusedLocal
+        def selection_callback(*args):
+            """Save the newly changed user selection.
+
+            Args:
+                *args: Not used. Needed for compatibility with Tk:Tcl caller.
+            """
+            title, year = tree.selection()[0][1:-1].split(',')
+            self.callback(title.strip("'"), int(year))
+            self.destroy()
+        
+        return selection_callback
+    
+    def create_buttonbox(self, outerframe: ttk.Frame):
+        """Create the buttons."""
+        # moviedb-#109 Test
+        buttonbox = super().create_buttonbox(outerframe)
+        column_num = itertools.count()
+        
+        # Cancel button
+        self.create_cancel_button(buttonbox, column=next(column_num))
 
 
 def gui_messagebox(parent: ParentType, message: str, detail: str = '', icon: str = 'info'):
