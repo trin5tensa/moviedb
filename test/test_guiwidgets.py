@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/3/20, 8:56 AM by stephen.
+#  Last modified 1/5/20, 2:14 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -483,7 +483,7 @@ class TestEditMovieGUI:
 
 
 # noinspection PyMissingOrEmptyDocstring
-class TestSearchGUI:
+class TestSearchMovieGUI:
     
     # Test Basic Initialization
     
@@ -693,21 +693,21 @@ class TestSearchGUI:
             outerframe = movie_gui.parent.children[0]
             buttonbox = outerframe.children[1]
             assert calls == [((movie_gui, buttonbox), dict(column=1))]
-
+    
     # Test search
-
+    
     def test_callback_called(self, patch_tk):
         with self.movie_context() as movie_gui:
             movie_gui.selected_tags = ['tag 1', 'tag 2']
             movie_gui.search()
             assert callback_calls == [(dict(director='4242', minutes=['4242', '4242'], notes='4242',
                                             title='4242', year=['4242', '4242'], ), ['tag 1', 'tag 2'])]
-
+    
     def test_callback_raises_movie_search_found_nothing(self, patch_tk, monkeypatch):
         # noinspection PyUnusedLocal
         def callback(*args):
             raise exception.MovieSearchFoundNothing
-    
+
         messagebox_calls = []
         monkeypatch.setattr(guiwidgets, 'gui_messagebox', lambda *args: messagebox_calls.append(args))
         tags = []
@@ -716,20 +716,121 @@ class TestSearchGUI:
         movie_gui.search()
         assert messagebox_calls == [(DummyTk(), 'No matches',
                                      'There are no matching movies in the database.')]
-
+    
     def test_destroy_called(self, patch_tk, monkeypatch):
         called = []
         monkeypatch.setattr(guiwidgets.MovieGUIBase, 'destroy', lambda *args: called.append(True))
         with self.movie_context() as movie_gui:
             movie_gui.search()
             assert called.pop()
-
+    
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def movie_context(self):
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
         yield guiwidgets.SearchMovieGUI(DummyTk(), movie_gui_callback, tags)
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestSelectMovieGUI:
+    
+    # Test Basic Initialization
+    
+    def test_parent_initialized(self, patch_tk):
+        with self.select_movie_context() as movie_gui:
+            assert movie_gui.parent == DummyTk()
+            assert isinstance(movie_gui.callback, Callable)
+    
+    # Test Create Body
+    
+    def test_treeview_called(self, patch_tk):
+        with self.select_movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            treeview = bodyframe.children[0]
+            assert treeview == TtkTreeview(parent=TtkFrame(parent=TtkFrame(
+                    parent=DummyTk(), padding=''), padding=(10, 25, 10, 0)),
+                    columns=('year', 'director', 'minutes', 'notes'), height=25, selectmode='browse')
+    
+    def test_treeview_gridded(self, patch_tk):
+        with self.select_movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            treeview = bodyframe.children[0]
+            assert treeview.grid_calls == [dict(column=0, row=0, sticky='w')]
+    
+    def test_treeview_column_widths_set(self, patch_tk):
+        with self.select_movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            treeview = bodyframe.children[0]
+            assert treeview.column_calls == [(('#0',), dict(width=350)), (('year',), dict(width=50)),
+                                             (('director',), dict(width=100)),
+                                             (('minutes',), dict(width=50)),
+                                             (('notes',), dict(width=350)), ]
+    
+    def test_treeview_column_headings_set(self, patch_tk):
+        with self.select_movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            treeview = bodyframe.children[0]
+            assert treeview.heading_calls == [(('#0',), dict(text='Title')),
+                                              (('year',), dict(text='Year')),
+                                              (('director',), dict(text='Director')),
+                                              (('minutes',), dict(text='Length (minutes)')),
+                                              (('notes',), dict(text='Notes')), ]
+    
+    def test_treeview_movies_inserted(self, patch_tk):
+        with self.select_movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            treeview = bodyframe.children[0]
+            assert treeview.insert_calls == [(('', 'end'),
+                                              dict(iid="('Test Title', 2020)", tags='title',
+                                                   text='Test Title',
+                                                   values=(2020, 'Director', 200, 'NB')))]
+    
+    def test_treeview_binds_callback(self, patch_tk, monkeypatch):
+        # noinspection PyUnusedLocal
+        def selection(*args):
+            return ["'Hello Mum, 1954'"]
+        
+        monkeypatch.setattr(TtkTreeview, 'selection', selection)
+        with self.select_movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            treeview = bodyframe.children[0]
+            assert treeview.tag_bind_calls[0][0] == ('title', '<<TreeviewSelect>>')
+            
+            treeview.tag_bind_calls[0][1]['callback']()
+            assert callback_calls[2] == ('Hello Mum', 1954)
+    
+    # Test create buttonbox
+    
+    def test_buttonbox_created(self, patch_tk):
+        with self.select_movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            buttonbox = outerframe.children[1]
+            assert buttonbox == TtkFrame(parent=outerframe, padding=(5, 5, 10, 10))
+    
+    def test_buttonbox_gridded(self, patch_tk):
+        with self.select_movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            buttonbox = outerframe.children[1]
+            assert buttonbox.grid_calls[0] == dict(column=0, row=1, sticky='e')
+    
+    # Class Support Methods
+    
+    @staticmethod
+    def fake_movie_generator():
+        yield dict(title='Test Title', year=2020, director='Director', minutes=200, notes='NB')
+    
+    # noinspection PyMissingOrEmptyDocstring
+    @contextmanager
+    def select_movie_context(self):
+        # noinspection PyTypeChecker
+        yield guiwidgets.SelectMovieGUI(DummyTk(), movie_gui_callback, self.fake_movie_generator())
 
 
 def test_gui_messagebox(monkeypatch):
@@ -922,11 +1023,13 @@ class TtkTreeview:
     columns: Sequence[str]
     height: int
     selectmode: str
-    show: str
-    padding: int
+    
+    show: str = field(default='tree headings')
+    padding: int = field(default=0)
     
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     column_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    heading_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     insert_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     tag_bind_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     yview_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -941,18 +1044,21 @@ class TtkTreeview:
     def column(self, *args, **kwargs):
         self.column_calls.append((args, kwargs))
     
+    def heading(self, *args, **kwargs):
+        self.heading_calls.append((args, kwargs))
+    
     def insert(self, *args, **kwargs):
         self.insert_calls.append((args, kwargs))
-
+    
     def tag_bind(self, *args, **kwargs):
         self.tag_bind_calls.append((args, kwargs))
-
+    
     def yview(self, *args, **kwargs):
         self.yview_calls.append((args, kwargs))
-
+    
     def configure(self, **kwargs):
         self.configure_calls.append(kwargs)
-
+    
     @staticmethod
     def selection():
         return ['test tag 1', 'test tag 2']

@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/3/20, 8:59 AM by stephen.
+#  Last modified 1/5/20, 2:14 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,7 +21,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
-from typing import Callable, Dict, Generator, List, Sequence, TypeVar
+from typing import Callable, Dict, Generator, List, Optional, Sequence, TypeVar
 
 import exception
 import neurons
@@ -45,6 +45,9 @@ class MovieGUIBase:
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[MovieDict], None]
     
+    # A list of all tags in the database. This optional field of the base class is a mandatory field
+    # in subclasses which require it and is absent from those which do not use it.
+    tags: Optional[list] = field(default=None, init=False, repr=False)
     # All widgets of this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
     # Selected tags of the movie record:
@@ -198,7 +201,7 @@ class MovieGUIBase:
 
         Use Case: Supports field validation by Tk
         """
-        
+
         # moviedb-#103 Delete this method if validation can be carried out by database integrity checks.
         lowest = user_input > lowest if lowest else True
         highest = user_input < highest if highest else True
@@ -207,6 +210,14 @@ class MovieGUIBase:
     def destroy(self):
         """Destroy all widgets of this class."""
         self.outer_frame.destroy()
+
+
+# moviedb-#109 Tag Base Class
+#   Create a MovieTagBase class
+#   parent MovieGUIBase
+#   subclasses  EditMovieGUI, SelectMovieGUI
+#   required attribute 'tags'
+#   methods create_tag_treeview, treeview_callback
 
 
 @dataclass
@@ -428,7 +439,6 @@ class SelectMovieGUI(MovieGUIBase):
     
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form."""
-        # moviedb-#109 Test this method
         body_frame = super().create_body(outerframe)
         
         # Create and grid treeview
@@ -462,7 +472,6 @@ class SelectMovieGUI(MovieGUIBase):
         Returns: The callback.
         """
         
-        # moviedb-#109 Test this method
         # noinspection PyUnusedLocal
         def selection_callback(*args):
             """Save the newly changed user selection.
@@ -478,7 +487,6 @@ class SelectMovieGUI(MovieGUIBase):
     
     def create_buttonbox(self, outerframe: ttk.Frame):
         """Create the buttons."""
-        # moviedb-#109 Test
         buttonbox = super().create_buttonbox(outerframe)
         column_num = itertools.count()
         
