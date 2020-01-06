@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/6/20, 8:05 AM by stephen.
+#  Last modified 1/6/20, 8:35 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -316,7 +316,7 @@ class EditMovieGUI(MovieGUITagBase):
 class SearchMovieGUI(MovieGUITagBase):
     """A form for searching for a movie."""
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[config.MovieDict], None]
+    callback: Callable[[config.FindMovieDict], None]
     
     # Neuron controlling enabled state of Search button
     search_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron,
