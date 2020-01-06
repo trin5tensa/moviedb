@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/5/20, 2:14 PM by stephen.
+#  Last modified 1/6/20, 6:26 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -45,15 +45,8 @@ class MovieGUIBase:
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[MovieDict], None]
     
-    # A list of all tags in the database. This optional field of the base class is a mandatory field
-    # in subclasses which require it and is absent from those which do not use it.
-    tags: Optional[list] = field(default=None, init=False, repr=False)
     # All widgets of this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
-    # Selected tags of the movie record:
-    #   The caller may supply the tags of a record that is going to be edited by the user.
-    #   It will hold the current selection shown in the GUO during data entry.
-    selected_tags: List[str] = field(default_factory=list, init=False, repr=False)
     # A more convenient data structure for entry fields.
     entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
     
@@ -95,30 +88,6 @@ class MovieGUIBase:
         cancel.grid(column=column, row=0)
         cancel.bind('<Return>', lambda event, b=cancel: b.invoke())
         cancel.focus_set()
-
-    def create_tag_treeview(self, body_frame: ttk.Frame, row: int):
-        """Create a ttk treeview widget for tags.
-        
-        Args:
-            body_frame: The frame enclosing the treeview.
-            row: The tk grid row of the item within the frame's grid
-        """
-
-        # moviedb-#95 The tags of an existing record should be shown in the selected mode.
-        label = ttk.Label(body_frame, text=SELECT_TAGS_TEXT, padding=(0, 2))
-        label.grid(column=0, row=row, sticky='ne', padx=5)
-        tags_frame = ttk.Frame(body_frame, padding=5)
-        tags_frame.grid(column=1, row=row, sticky='w')
-        tree = ttk.Treeview(tags_frame, columns=('tags',), height=5, selectmode='extended',
-                            show='tree', padding=5)
-        tree.grid(column=0, row=0, sticky='w')
-        tree.column('tags', width=100)
-        for tag in self.tags:
-            tree.insert('', 'end', tag, text=tag, tags='tags')
-        tree.tag_bind('tags', '<<TreeviewSelect>>', callback=self.treeview_callback(tree))
-        scrollbar = ttk.Scrollbar(tags_frame, orient=tk.VERTICAL, command=tree.yview)
-        scrollbar.grid(column=1, row=0)
-        tree.configure(yscrollcommand=scrollbar.set)
 
     def neuron_linker(self, internal_name: str, neuron: neurons.AndNeuron,
                       neuron_callback: Callable, initial_state: bool = False):
@@ -162,26 +131,6 @@ class MovieGUIBase:
         
         return change_button_state
     
-    def treeview_callback(self, tree: ttk.Treeview):
-        """Create a callback which will be called whenever the user selection is changed.
-
-        Args:
-            tree:
-
-        Returns: The callback.
-        """
-        
-        # noinspection PyUnusedLocal
-        def update_tag_selection(*args):
-            """Save the newly changed user selection.
-
-            Args:
-                *args: Not used. Needed for compatibility with Tk:Tcl caller.
-            """
-            self.selected_tags = tree.selection()
-        
-        return update_tag_selection
-    
     def validate_int(self, user_input: str) -> bool:
         """Validate integer input by user.
 
@@ -212,16 +161,66 @@ class MovieGUIBase:
         self.outer_frame.destroy()
 
 
-# moviedb-#109 Tag Base Class
-#   Create a MovieTagBase class
-#   parent MovieGUIBase
-#   subclasses  EditMovieGUI, SelectMovieGUI
-#   required attribute 'tags'
-#   methods create_tag_treeview, treeview_callback
+@dataclass
+class MovieGUITagBase(MovieGUIBase):
+    """A ttk treeview of all tags in the database which tracks the tags of the
+    current record.
+    """
+    # A list of all tags in the database.
+    tags: Optional[list] = field(default=None, init=False, repr=False)
+    
+    # Selected tags of the movie record:
+    #   The caller may supply the tags of a record that is going to be edited by the user.
+    #   It will hold the current selection shown in the GUO during data entry.
+    selected_tags: List[str] = field(default_factory=list, init=False, repr=False)
+    
+    def create_tag_treeview(self, body_frame: ttk.Frame, row: int):
+        """Create a ttk treeview widget for tags.
+
+        Args:
+            body_frame: The frame enclosing the treeview.
+            row: The tk grid row of the item within the frame's grid
+        """
+        
+        # moviedb-#95 The tags of an existing record should be shown as selected.
+        label = ttk.Label(body_frame, text=SELECT_TAGS_TEXT, padding=(0, 2))
+        label.grid(column=0, row=row, sticky='ne', padx=5)
+        tags_frame = ttk.Frame(body_frame, padding=5)
+        tags_frame.grid(column=1, row=row, sticky='w')
+        tree = ttk.Treeview(tags_frame, columns=('tags',), height=5, selectmode='extended',
+                            show='tree', padding=5)
+        tree.grid(column=0, row=0, sticky='w')
+        tree.column('tags', width=100)
+        for tag in self.tags:
+            tree.insert('', 'end', tag, text=tag, tags='tags')
+        tree.tag_bind('tags', '<<TreeviewSelect>>', callback=self.treeview_callback(tree))
+        scrollbar = ttk.Scrollbar(tags_frame, orient=tk.VERTICAL, command=tree.yview)
+        scrollbar.grid(column=1, row=0)
+        tree.configure(yscrollcommand=scrollbar.set)
+    
+    def treeview_callback(self, tree: ttk.Treeview):
+        """Create a callback which will be called whenever the user selection is changed.
+    
+        Args:
+            tree:
+    
+        Returns: The callback.
+        """
+        
+        # noinspection PyUnusedLocal
+        def update_tag_selection(*args):
+            """Save the newly changed user selection.
+    
+            Args:
+                *args: Not used. Needed for compatibility with Tk:Tcl caller.
+            """
+            self.selected_tags = tree.selection()
+        
+        return update_tag_selection
 
 
 @dataclass
-class EditMovieGUI(MovieGUIBase):
+class EditMovieGUI(MovieGUITagBase):
     """ A form for entering or editing a movie."""
     # A list of all tags in the database.
     tags: Sequence[str]
@@ -315,7 +314,7 @@ class EditMovieGUI(MovieGUIBase):
 
 
 @dataclass
-class SearchMovieGUI(MovieGUIBase):
+class SearchMovieGUI(MovieGUITagBase):
     """A form for searching for a movie."""
     # A list of all tags in the database.
     tags: Sequence[str]
