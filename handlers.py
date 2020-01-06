@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/3/20, 8:59 AM by stephen.
+#  Last modified 1/6/20, 6:40 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -57,15 +57,15 @@ def edit_movie():
     guiwidgets.SearchMovieGUI(config.app.tk_root, edit_movie_callback, tags)
 
 
-def edit_movie_callback(movie: config.MovieDict, tags: Sequence[str]):
+def edit_movie_callback(movie: config.FindMovieDict, tags: Sequence[str]):
     # moviedb-#109 Test and write final version of this function
     
     # TODO There ought to be a more elegant way of doing this
-    gui_dict: config.FindMovieDict = {**movie}
-    gui_dict['tags'] = tags
+    # gui_dict: config.FindMovieDict = {**movie}
+    movie['tags'] = tags
     
     # Remove empty items otherwise SQL will treat them as meaningful.
-    criteria = {k: v for k, v in gui_dict.items() if v != '' and v != [] and v != ['', '']}
+    criteria = {k: v for k, v in movie.items() if v != '' and v != [] and v != ['', '']}
     
     movies = database.find_movies(criteria)
     

@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/3/20, 8:53 AM by stephen.
+#  Last modified 1/6/20, 6:39 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -47,7 +47,7 @@ class MovieUpdateDict(TypedDict, total=False):
     tag: str
 
 
-class FindMovieDict(MovieDict, total=False):
+class FindMovieDict(TypedDict, total=False):
     """A dictionary containing none or more of the following keys:
             title: str. A matching column will be a superstring of this value.
             director: str.A matching column will be a superstring of this value.
@@ -59,6 +59,11 @@ class FindMovieDict(MovieDict, total=False):
             tag: list. Movies matching any tag in this list will be selected.
     """
     id: int
+    title: str
+    year: int
+    director: str
+    minutes: int
+    notes: str
     tags: Sequence[str]
 
 

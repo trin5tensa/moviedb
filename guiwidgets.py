@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/6/20, 6:26 AM by stephen.
+#  Last modified 1/6/20, 8:05 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,11 +21,11 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
-from typing import Callable, Dict, Generator, List, Optional, Sequence, TypeVar
+from typing import Callable, Dict, Generator, List, Sequence, TypeVar
 
+import config
 import exception
 import neurons
-from config import MovieDict
 
 
 INTERNAL_NAMES = ('title', 'year', 'director', 'minutes', 'notes')
@@ -42,8 +42,9 @@ ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
 class MovieGUIBase:
     """ A base class for movie input forms."""
     parent: tk.Tk
-    # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[MovieDict], None]
+    # TODO Remove commented out lines
+    # # On exit this callback will be called with a dictionary of fields and user entered values.
+    # callback: Callable[..., None]
     
     # All widgets of this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
@@ -167,7 +168,7 @@ class MovieGUITagBase(MovieGUIBase):
     current record.
     """
     # A list of all tags in the database.
-    tags: Optional[list] = field(default=None, init=False, repr=False)
+    tags: Sequence[str]
     
     # Selected tags of the movie record:
     #   The caller may supply the tags of a record that is going to be edited by the user.
@@ -221,14 +222,12 @@ class MovieGUITagBase(MovieGUIBase):
 
 @dataclass
 class EditMovieGUI(MovieGUITagBase):
-    """ A form for entering or editing a movie."""
-    # A list of all tags in the database.
-    tags: Sequence[str]
-    # Fields of the movie supplied by the caller.
-    caller_fields: MovieDict = field(default_factory=dict)
-    # # Tags of the movie record supplied by the caller.
-    # selected_tags: List[str] = field(default_factory=list)
+    """ A form for adding or editing a movie."""
+    # On exit this callback will be called with a dictionary of fields and user entered values.
+    callback: Callable[[config.MovieDict], None]
     
+    # Fields of the movie supplied by the caller.
+    caller_fields: config.MovieDict = field(default_factory=dict)
     # Neuron controlling enabled state of Commit button
     commit_neuron: neurons.AndNeuron = field(default_factory=neurons.AndNeuron,
                                              init=False, repr=False)
@@ -316,8 +315,9 @@ class EditMovieGUI(MovieGUITagBase):
 @dataclass
 class SearchMovieGUI(MovieGUITagBase):
     """A form for searching for a movie."""
-    # A list of all tags in the database.
-    tags: Sequence[str]
+    # On exit this callback will be called with a dictionary of fields and user entered values.
+    callback: Callable[[config.MovieDict], None]
+    
     # Neuron controlling enabled state of Search button
     search_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron,
                                             init=False, repr=False)
@@ -435,6 +435,8 @@ class SelectMovieGUI(MovieGUIBase):
     """A form for selecting a movie."""
     # A generator of compliant movie records.
     movies: Generator[dict, None, None]
+    # On exit this callback will be called with a dictionary of fields and user entered values.
+    callback: Callable[[config.FindMovieDict], None]
     
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form."""

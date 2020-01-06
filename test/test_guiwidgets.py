@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/5/20, 2:14 PM by stephen.
+#  Last modified 1/6/20, 7:58 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -479,7 +479,7 @@ class TestEditMovieGUI:
     def movie_context(self):
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
-        yield guiwidgets.EditMovieGUI(DummyTk(), movie_gui_callback, tags)
+        yield guiwidgets.EditMovieGUI(DummyTk(), tags, movie_gui_callback)
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -712,7 +712,7 @@ class TestSearchMovieGUI:
         monkeypatch.setattr(guiwidgets, 'gui_messagebox', lambda *args: messagebox_calls.append(args))
         tags = []
         # noinspection PyTypeChecker
-        movie_gui = guiwidgets.SearchMovieGUI(DummyTk(), callback, tags)
+        movie_gui = guiwidgets.SearchMovieGUI(DummyTk(), tags, callback)
         movie_gui.search()
         assert messagebox_calls == [(DummyTk(), 'No matches',
                                      'There are no matching movies in the database.')]
@@ -729,7 +729,7 @@ class TestSearchMovieGUI:
     def movie_context(self):
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
-        yield guiwidgets.SearchMovieGUI(DummyTk(), movie_gui_callback, tags)
+        yield guiwidgets.SearchMovieGUI(DummyTk(), tags, movie_gui_callback)
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -830,7 +830,7 @@ class TestSelectMovieGUI:
     @contextmanager
     def select_movie_context(self):
         # noinspection PyTypeChecker
-        yield guiwidgets.SelectMovieGUI(DummyTk(), movie_gui_callback, self.fake_movie_generator())
+        yield guiwidgets.SelectMovieGUI(DummyTk(), self.fake_movie_generator(), movie_gui_callback)
 
 
 def test_gui_messagebox(monkeypatch):
@@ -1108,7 +1108,6 @@ def patch_tk(monkeypatch):
 
 callback_calls = []
 
-
 # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring
-def movie_gui_callback(movie_dict: guiwidgets.MovieDict, tags: Sequence[str]):
+def movie_gui_callback(movie_dict: guiwidgets.config.MovieDict, tags: Sequence[str]):
     callback_calls.append((movie_dict, tags))
