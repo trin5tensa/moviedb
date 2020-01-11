@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/6/20, 7:58 AM by stephen.
+#  Last modified 1/8/20, 8:25 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -145,9 +145,9 @@ class TestEditMovieGUI:
         with self.movie_context() as movie_gui:
             assert movie_gui.commit_neuron.events == dict(title=False, year=True)
     
-    def test_minutes_initialized_to_0(self, patch_tk):
+    def test_minutes_initialized_to_100(self, patch_tk):
         with self.movie_context() as movie_gui:
-            assert movie_gui.entry_fields['minutes'].textvariable.set_calls[0][0] == '0'
+            assert movie_gui.entry_fields['minutes'].textvariable.set_calls[0][0] == '100'
     
     def test_minutes_callbacks_configured(self, patch_tk):
         with self.movie_context() as movie_gui:
@@ -274,7 +274,7 @@ class TestEditMovieGUI:
     
     def test_neuron_linker_called(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.EditMovieGUI, 'neuron_linker',
+        monkeypatch.setattr(guiwidgets.AddMovieGUI, 'neuron_linker',
                             lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
             assert calls == [
@@ -323,7 +323,7 @@ class TestEditMovieGUI:
     # noinspection PyShadowingNames
     def test_neuron_register_called(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.EditMovieGUI, 'button_state_callback',
+        monkeypatch.setattr(guiwidgets.AddMovieGUI, 'button_state_callback',
                             lambda movie_gui, button: calls.append(button, ))
         with self.movie_context() as movie_gui:
             button = movie_gui.parent.children[0].children[1].children[0]
@@ -357,7 +357,7 @@ class TestEditMovieGUI:
     
     def test_trace_add_called(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets.EditMovieGUI, 'neuron_callback',
+        monkeypatch.setattr(guiwidgets.AddMovieGUI, 'neuron_callback',
                             lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
             assert movie_gui.entry_fields['title'].textvariable.trace_add_calls[0][0] == 'write'
@@ -449,7 +449,6 @@ class TestEditMovieGUI:
             # noinspection PyUnusedLocal
             def callback(*args, **kwargs):
                 raise exception.MovieDBConstraintFailure
-            
             return callback
         
         with self.movie_context() as movie_gui:
@@ -459,7 +458,7 @@ class TestEditMovieGUI:
             movie_gui.commit()
             assert messagebox.showinfo_calls == [dict(
                     parent=DummyTk(), message='Database constraint failure.',
-                    detail='This title and year are already present in the database.')]
+                    detail='A movie with this title and year is already present in the database.')]
     
     def test_commit_calls_destroy(self, patch_tk, monkeypatch):
         calls = []
@@ -479,7 +478,7 @@ class TestEditMovieGUI:
     def movie_context(self):
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
-        yield guiwidgets.EditMovieGUI(DummyTk(), tags, movie_gui_callback)
+        yield guiwidgets.AddMovieGUI(DummyTk(), tags, movie_gui_callback)
 
 
 # noinspection PyMissingOrEmptyDocstring

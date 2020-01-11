@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/6/20, 8:35 AM by stephen.
+#  Last modified 1/11/20, 2:08 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -110,9 +110,8 @@ class MovieGUIBase:
             Args:
                 *args: Not used. Required to match unused arguments from caller..
             """
-            
             state = (self.entry_fields[internal_name].textvariable.get()
-                     != self.entry_fields[internal_name].original_value)
+                     != str(self.entry_fields[internal_name].original_value))
             neuron(internal_name, state)
         
         return change_neuron_state
@@ -221,13 +220,10 @@ class MovieGUITagBase(MovieGUIBase):
 
 
 @dataclass
-class EditMovieGUI(MovieGUITagBase):
+class AddMovieGUI(MovieGUITagBase):
     """ A form for adding or editing a movie."""
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.MovieDict], None]
-    
-    # Fields of the movie supplied by the caller.
-    caller_fields: config.MovieDict = field(default_factory=dict)
     # Neuron controlling enabled state of Commit button
     commit_neuron: neurons.AndNeuron = field(default_factory=neurons.AndNeuron,
                                              init=False, repr=False)
@@ -237,9 +233,7 @@ class EditMovieGUI(MovieGUITagBase):
         body_frame = super().create_body(outerframe)
         
         # Initialize an internal dictionary to simplify field data management.
-        # noinspection PyTypedDict
-        self.entry_fields = {internal_name: EntryField(field_text,
-                                                       self.caller_fields.get(internal_name, ''))
+        self.entry_fields = {internal_name: EntryField(field_text, '')
                              for internal_name, field_text
                              in zip(INTERNAL_NAMES, FIELD_TEXTS)}
 
@@ -258,7 +252,7 @@ class EditMovieGUI(MovieGUITagBase):
         
         # Customize minutes field.
         minutes = self.entry_fields['minutes']
-        minutes.textvariable.set('0')
+        minutes.textvariable.set('100')
         registered_callback = minutes.widget.register(self.validate_int)
         minutes.widget.config(validate='key', validatecommand=(registered_callback, '%S'))
 
@@ -292,9 +286,9 @@ class EditMovieGUI(MovieGUITagBase):
         """The user clicked the commit button."""
         return_fields = {internal_name: movie_field.textvariable.get()
                          for internal_name, movie_field in self.entry_fields.items()}
-        
+
         # Validate the year range
-        # moviedb-#103 Replace the literal range limits with the range limits from the SQL schema
+        # TODO SSOT: Replace the literal range limits with the range limits from the SQL schema.
         if not self.validate_int_range(int(return_fields['year']), 1877, 10000):
             msg = 'Invalid year.'
             detail = 'The year must be between 1877 and 10000.'
@@ -303,20 +297,50 @@ class EditMovieGUI(MovieGUITagBase):
         
         # Commit and exit
         try:
-            self.callback(return_fields, self.selected_tags)
+            self.callback(return_fields)
         except exception.MovieDBConstraintFailure:
             msg = 'Database constraint failure.'
-            detail = 'This title and year are already present in the database.'
+            detail = 'A movie with this title and year is already present in the database.'
             messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
         else:
             self.destroy()
 
 
 @dataclass
+class EditMovieGUI(AddMovieGUI):
+    # moviedb-#109 Test this class
+    # On exit this callback will be called with a dictionary of fields and user entered values.
+    callback: Callable[[config.MovieUpdateDict, Sequence[str]], None]
+    # Fields of the movie to be edited.
+    edit_movie: config.MovieDict
+    # Neuron controlling enabled state of Commit button
+    commit_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron,
+                                            init=False, repr=False)
+    
+    def create_body(self, outerframe: ttk.Frame):
+        super().create_body(outerframe)
+        
+        # moviedb-#109
+        #   Change the callback so the record updates the database instead of trying to add the same
+        #   record back.
+        #   Fix tags handling:
+        #       Show the record's tags as selected
+        #       A change in the selection should trigger the commit_neuron
+        for internal_name in INTERNAL_NAMES:
+            entry_field = self.entry_fields[internal_name]
+            # TODO Remove note and 'noinspection' when fixed
+            #   Pycharm reported bug:  https://youtrack.jetbrains.com/issue/PY-39404
+            # noinspection PyTypedDict
+            entry_field.original_value = self.edit_movie[internal_name]
+            entry_field.textvariable.set(entry_field.original_value)
+            self.neuron_linker(internal_name, self.commit_neuron, self.neuron_callback)
+
+
+@dataclass
 class SearchMovieGUI(MovieGUITagBase):
     """A form for searching for a movie."""
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[config.FindMovieDict], None]
+    callback: Callable[[config.FindMovieDict, Sequence[str]], None]
     
     # Neuron controlling enabled state of Search button
     search_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron,
@@ -436,7 +460,7 @@ class SelectMovieGUI(MovieGUIBase):
     # A generator of compliant movie records.
     movies: Generator[dict, None, None]
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[config.FindMovieDict], None]
+    callback: Callable[[str, int], None]
     
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form."""
@@ -458,6 +482,8 @@ class SelectMovieGUI(MovieGUIBase):
         
         # Populate rows with movies
         for movie in self.movies:
+            # moviedb-#109 Can iid be improved so unmangling in selection callback is simplified
+            #   e.g. tree.selection()[0][1:-1].split(',')
             tree.insert('', 'end', iid=f"{(title := movie['title'], year := movie['year'])}",
                         text=title,
                         values=(year, movie['director'], movie['minutes'], movie['notes']),

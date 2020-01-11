@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/6/20, 8:34 AM by stephen.
+#  Last modified 1/8/20, 8:03 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -51,7 +51,7 @@ class TestAddMovie:
     movie_gui_args = []
     
     def test_movie_gui_called(self, monkeypatch):
-        monkeypatch.setattr(handlers.guiwidgets, 'EditMovieGUI',
+        monkeypatch.setattr(handlers.guiwidgets, 'AddMovieGUI',
                             lambda parent, tags, callback:
                             self.movie_gui_args.append((parent, tags, callback)))
         with self.add_movie_context():
@@ -114,7 +114,7 @@ class TestEditMovie:
                             self.search_gui_args.append((parent, tags, callback)))
         with self.edit_movie_context():
             assert self.search_gui_args == [(DummyParent(), ['Movie night candidate'],
-                                             handlers.edit_movie_callback,)]
+                                             handlers.search_movie_callback,)]
     
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager

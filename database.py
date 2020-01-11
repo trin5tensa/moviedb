@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/4/20, 7:38 AM by stephen.
+#  Last modified 1/11/20, 2:08 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,7 @@ import itertools
 import logging
 import sys
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Iterable, List, Optional
+from typing import Generator, Iterable, List, Optional
 
 import sqlalchemy
 import sqlalchemy.exc
@@ -86,12 +86,8 @@ def add_movie(movie: MovieDict):
     Movie(**movie).add()
 
 
-def find_movies(criteria: FindMovieDict) -> Generator[dict, None, None]:
-    """Search for a movie using any supplied_keys.
-
-    Yield record fields which persist after the session has ended.
-    This will produce one record for each movie, tag, and review combination. Therefore one movie may
-    produce more than one yielded record.
+def find_movies(criteria: FindMovieDict, yield_count: bool = False) -> Generator[dict, None, None]:
+    """Search for movies using any supplied_keys.
 
     Args:
         criteria: FindMovieDict. A dictionary containing none or more of the following keys:
@@ -103,51 +99,57 @@ def find_movies(criteria: FindMovieDict) -> Generator[dict, None, None]:
             iterable. A single value is permissible.
             notes: str. A matching column will be a superstring of this value.
             tag: list. Movies matching any tag in this list will be selected.
+        yield_count: If set True then the first yielded value will be a count of the movies found
+            in the search.
 
     Raises:
         ValueError: If a supplied_keys key is not a column name
 
     Generates:
-        Yields:  Each compliant movie as a dictionary of title, director, minutes, year, notes, and tag.
+        Yields:
+            First:
+            A count of movies found if yield_count was set True,
+            Subsequently:
+            Each compliant movie as a dictionary of title, director, minutes, year, notes, and tags.
         Sends: Not used.
         Returns: Not used.
     """
-    # TODO Only return a single line for each movie.
     Movie.validate_columns(criteria.keys())
     
-    # Execute searches
     with _session_scope() as session:
         movies = _build_movie_query(session, criteria)
-        # TODO Document this line
-        yield movies.count()
+        if yield_count:
+            # moviedb-#109 Test this function
+            yield movies.count()
         # TODO This line isn't working
         movies.order_by(Movie.title)
-        for movie, tag in movies:
-            tag = tag.tag if tag else None
+        for movie in movies:
             yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
-                       year=movie.year, notes=movie.notes, tag=tag)
+                       year=movie.year, notes=movie.notes, tag=movie.tags)
 
 
-def edit_movie(title_year: MovieKeyDict, updates: MovieUpdateDict):
+def edit_movie(title_year: FindMovieDict, updates: MovieUpdateDict):
     """Search for one movie and change one or more fields of that movie.
 
     Args:
         title_year: Specifies the movie to be selected.
         updates: Contains the fields which will be updated in the selected movie.
     """
+    # moviedb-#109 Test this function
     with _session_scope() as session:
-        movie, tag = _build_movie_query(session, title_year).one()
+        movie = _build_movie_query(session, title_year).one()
         movie.edit(updates)
 
 
-def del_movie(title_year: MovieKeyDict):
+def del_movie(title_year: FindMovieDict):
     """Change fields in records.
 
     Args:
         title_year: Specifies teh movie to be deleted.
     """
+    # moviedb-#109 Test this function
     with _session_scope() as session:
-        movie, tag = _build_movie_query(session, title_year).one()
+        movie = _build_movie_query(session, title_year).one()
         session.delete(movie)
 
 
@@ -162,7 +164,7 @@ def all_tags() -> List[str]:
 
 
 def add_tag_and_links(new_tag: str, movies: Optional[Iterable[MovieKeyDict]] = None):
-    """Add links between a tag and one or more movies. Create the tag if it does not exist..
+    """Add links between a tag and one or more movies. Create the tag if it does not exist.
 
     Args:
         new_tag: Text of new tag.
@@ -384,7 +386,7 @@ def _session_scope():
         session.close()
 
 
-def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy.orm.query.Query:
+def _build_movie_query(session: Session, criteria: FindMovieDict) -> sqlalchemy.orm.query.Query:
     """Build a query.
 
     Args:
@@ -395,7 +397,7 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
     Returns:
         An SQL Query object
     """
-    movies = (session.query(Movie, Tag).outerjoin(Movie.tags))
+    movies = session.query(Movie).outerjoin(Movie.tags)
     if 'id' in criteria:
         movies = movies.filter(Movie.id == criteria['id'])
     if 'title' in criteria:
@@ -423,5 +425,4 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
         if isinstance(tags, str):
             tags = [tags, ]
         movies = (movies.filter(Tag.tag.in_(tags)))
-
     return movies

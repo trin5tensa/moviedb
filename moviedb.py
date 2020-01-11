@@ -1,7 +1,7 @@
 """Main moviedatabase program"""
 
-#  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/12/19, 7:22 AM by stephen.
+#  Copyright© 2020. Stephen Rigden.
+#  Last modified 1/10/20, 7:02 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +31,9 @@ VERSION = '1.0.0.dev'
 def main():
     """Initialize the program, run it, and execute close down activities."""
     start_up()
+    # TODO Change to 'The program started successfully.'
     logging.info('The program is running.')
+    # TODO Trap unhandled errors, log, and display a helpful message.
     gui.run()
     close_down()
     logging.info('The program has ended.')

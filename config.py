@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/6/20, 6:39 AM by stephen.
+#  Last modified 1/11/20, 11:54 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,7 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from dataclasses import dataclass
-from typing import Optional, Sequence, TypedDict
+from typing import Optional, Sequence, TypedDict, Union
 
 
 tk: 'tk'
@@ -37,8 +37,7 @@ class MovieDict(MovieKeyDict, total=False):
 class MovieUpdateDict(TypedDict, total=False):
     """A dictionary of fields for updating.
     
-    WARNING: Only use this definition for updating existing records. Use 'UpdateDict' for
-    new records to avoid triggering a SQL title/year key exception."""
+    WARNING: Only use this definition for updating existing records."""
     title: str
     director: str
     year: int
@@ -49,20 +48,20 @@ class MovieUpdateDict(TypedDict, total=False):
 
 class FindMovieDict(TypedDict, total=False):
     """A dictionary containing none or more of the following keys:
-            title: str. A matching column will be a superstring of this value.
-            director: str.A matching column will be a superstring of this value.
-            minutes: list. A matching column will be between the minimum and maximum values in this
+            title: A matching column will be a superstring of this value.
+            director: A matching column will be a superstring of this value.
+            minutes: A matching column will be between the minimum and maximum values in this
             iterable. A single value is permissible.
-            year: list. A matching column will be between the minimum and maximum values in this
+            year: A matching column will be between the minimum and maximum values in this
             iterable. A single value is permissible.
-            notes: str. A matching column will be a superstring of this value.
-            tag: list. Movies matching any tag in this list will be selected.
+            notes: A matching column will be a superstring of this value.
+            tag: Movies matching any tag in this list will be selected.
     """
     id: int
     title: str
-    year: int
+    year: Union[int, Sequence[int]]
     director: str
-    minutes: int
+    minutes: Union[int, Sequence[int]]
     notes: str
     tags: Sequence[str]
 
@@ -81,6 +80,7 @@ class Config:
 
     # Save the root window for easy access for testing.
     tk_root: 'tk.Tk' = None
+    # TODO Is 'gui_environment' being used for anything?
     gui_environment: 'mainwindow.MainWindow' = None
 
 

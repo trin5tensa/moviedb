@@ -2,7 +2,7 @@
 
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/1/20, 8:24 AM by stephen.
+#  Last modified 1/11/20, 12:37 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,3 +25,7 @@ class MovieDBConstraintFailure(DatabaseException):
 
 class MovieSearchFoundNothing(DatabaseException):
     """Exception raised when a search found no records."""
+
+
+class MovieSearchInvalidCount(DatabaseException):
+    """Exception raised when count is not a positive integer."""
