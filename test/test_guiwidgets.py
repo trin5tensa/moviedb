@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/8/20, 8:25 AM by stephen.
+#  Last modified 1/24/20, 7:34 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -209,7 +209,7 @@ class TestEditMovieGUI:
             tags_frame = bodyframe.children[-1]
             assert tags_frame.children[0] == TtkTreeview(parent=TtkFrame(parent=TtkFrame(
                     parent=TtkFrame(parent=DummyTk()), padding=(10, 25, 10, 0)), padding=5),
-                    columns=('tags',), height=5, selectmode='extended', show='tree', padding=5)
+                    columns=('tags',), height=12, selectmode='extended', show='tree', padding=5)
     
     def test_tree_gridded(self, patch_tk):
         with self.movie_context() as movie_gui:
@@ -234,7 +234,7 @@ class TestEditMovieGUI:
             tags_frame = bodyframe.children[-1]
             tree = tags_frame.children[0]
             assert tree.insert_calls == [(('', 'end', tag), dict(text=tag, tags='tags'))
-                                         for tag in movie_gui.tags]
+                                         for tag in movie_gui.all_tag_names]
     
     def test_tree_tag_bind(self, patch_tk):
         with self.movie_context() as movie_gui:
@@ -242,9 +242,9 @@ class TestEditMovieGUI:
             bodyframe = outerframe.children[0]
             tags_frame = bodyframe.children[-1]
             tree = tags_frame.children[0]
-            assert tree.tag_bind_calls[0][0] == ('tags', '<<TreeviewSelect>>')
-            
-            tree.tag_bind_calls[0][1]['callback']()
+            assert tree.bind_calls[0][0] == ('<<TreeviewSelect>>',)
+    
+            tree.bind_calls[0][1]['func']()
             assert movie_gui.selected_tags == ['test tag 1', 'test tag 2']
     
     def test_scrollbar_created(self, patch_tk):
@@ -489,7 +489,7 @@ class TestSearchMovieGUI:
     def test_parent_initialized(self, patch_tk):
         with self.movie_context() as movie_gui:
             assert movie_gui.parent == DummyTk()
-            assert movie_gui.tags == ('test tag 1', 'test tag 2')
+            assert movie_gui.all_tag_names == ('test tag 1', 'test tag 2')
             assert isinstance(movie_gui.callback, Callable)
     
     # Test create body
@@ -800,9 +800,9 @@ class TestSelectMovieGUI:
             outerframe = movie_gui.parent.children[0]
             bodyframe = outerframe.children[0]
             treeview = bodyframe.children[0]
-            assert treeview.tag_bind_calls[0][0] == ('title', '<<TreeviewSelect>>')
-            
-            treeview.tag_bind_calls[0][1]['callback']()
+            assert treeview.bind_calls[0][0] == ('<<TreeviewSelect>>',)
+    
+            treeview.bind_calls[0][1]['func']()
             assert callback_calls[2] == ('Hello Mum', 1954)
     
     # Test create buttonbox
@@ -1030,34 +1030,38 @@ class TtkTreeview:
     column_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     heading_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     insert_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    tag_bind_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    bind_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     yview_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     configure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    selection_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     
     def __post_init__(self):
         self.parent.children.append(self)
     
     def grid(self, **kwargs):
         self.grid_calls.append(kwargs, )
-    
+
     def column(self, *args, **kwargs):
         self.column_calls.append((args, kwargs))
-    
+
     def heading(self, *args, **kwargs):
         self.heading_calls.append((args, kwargs))
-    
+
     def insert(self, *args, **kwargs):
         self.insert_calls.append((args, kwargs))
-    
-    def tag_bind(self, *args, **kwargs):
-        self.tag_bind_calls.append((args, kwargs))
-    
+
+    def bind(self, *args, **kwargs):
+        self.bind_calls.append((args, kwargs))
+
     def yview(self, *args, **kwargs):
         self.yview_calls.append((args, kwargs))
-    
+
+    def selection_add(self, *args, **kwargs):
+        self.selection_add_calls.append((args, kwargs))
+
     def configure(self, **kwargs):
         self.configure_calls.append(kwargs)
-    
+
     @staticmethod
     def selection():
         return ['test tag 1', 'test tag 2']

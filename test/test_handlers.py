@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/8/20, 8:03 AM by stephen.
+#  Last modified 1/24/20, 7:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -77,18 +77,19 @@ class TestAddMovieCallback:
         self.dummy_add_movie_calls = []
         with self.callback_context():
             assert self.dummy_add_movie_calls == [(dict(title='Test Title', year='2020'),)]
-    
-    def test_add_tag_and_links_called(self, class_patches):
-        self.dummy_tag_and_links_calls = []
+
+    def test_add_movie_tag_link_called(self, class_patches):
+        self.dummy_add_movie_tag_link_calls = []
         with self.callback_context():
-            assert self.dummy_tag_and_links_calls == [('test 1',
-                                                       (dict(title='Test Title', year='2020'),),)]
-    
+            assert self.dummy_add_movie_tag_link_calls == [('test 1',
+                                                            dict(title='Test Title', year='2020'),), ]
+
     @pytest.fixture
     def class_patches(self, monkeypatch):
         monkeypatch.setattr(handlers.database, 'add_movie', self.dummy_add_movie)
-        monkeypatch.setattr(handlers.database, 'add_tag_and_links', self.dummy_tag_and_links)
-    
+        monkeypatch.setattr(handlers.database, 'add_tag', self.dummy_add_tag)
+        monkeypatch.setattr(handlers.database, 'add_movie_tag_link', self.dummy_add_movie_tag_link)
+
     @contextmanager
     def callback_context(self):
         movie = {'title': 'Test Title', 'year': '2020'}
@@ -96,13 +97,17 @@ class TestAddMovieCallback:
         yield handlers.add_movie_callback(movie, tags)
 
     dummy_add_movie_calls = []
-    dummy_tag_and_links_calls = []
+    dummy_add_tag_calls = []
+    dummy_add_movie_tag_link_calls = []
 
     def dummy_add_movie(self, *args):
         self.dummy_add_movie_calls.append(args)
 
-    def dummy_tag_and_links(self, *args):
-        self.dummy_tag_and_links_calls.append(args)
+    def dummy_add_tag(self, *args):
+        self.dummy_add_tag_calls.append(args)
+
+    def dummy_add_movie_tag_link(self, *args):
+        self.dummy_add_movie_tag_link_calls.append(args)
 
 
 class TestEditMovie:

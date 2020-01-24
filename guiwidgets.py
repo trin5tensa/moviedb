@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/11/20, 2:08 PM by stephen.
+#  Last modified 1/24/20, 7:39 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,7 +21,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
-from typing import Callable, Dict, Generator, List, Sequence, TypeVar
+from typing import Callable, Dict, List, Sequence, TypeVar
 
 import config
 import exception
@@ -167,12 +167,12 @@ class MovieGUITagBase(MovieGUIBase):
     current record.
     """
     # A list of all tags in the database.
-    tags: Sequence[str]
+    all_tag_names: Sequence[str]
     
     # Selected tags of the movie record:
     #   The caller may supply the tags of a record that is going to be edited by the user.
-    #   It will hold the current selection shown in the GUO during data entry.
-    selected_tags: List[str] = field(default_factory=list, init=False, repr=False)
+    #   It will hold the current selection shown in the GUI during data entry.
+    selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
     
     def create_tag_treeview(self, body_frame: ttk.Frame, row: int):
         """Create a ttk treeview widget for tags.
@@ -182,18 +182,23 @@ class MovieGUITagBase(MovieGUIBase):
             row: The tk grid row of the item within the frame's grid
         """
         
-        # moviedb-#95 The tags of an existing record should be shown as selected.
+        # moviedb-#109 Selecting or deselecting a tag should enable the 'Commit' button
         label = ttk.Label(body_frame, text=SELECT_TAGS_TEXT, padding=(0, 2))
         label.grid(column=0, row=row, sticky='ne', padx=5)
         tags_frame = ttk.Frame(body_frame, padding=5)
         tags_frame.grid(column=1, row=row, sticky='w')
-        tree = ttk.Treeview(tags_frame, columns=('tags',), height=5, selectmode='extended',
+        tree = ttk.Treeview(tags_frame, columns=('tags',), height=12, selectmode='extended',
                             show='tree', padding=5)
         tree.grid(column=0, row=0, sticky='w')
         tree.column('tags', width=100)
-        for tag in self.tags:
+        # moviedb-#109 Test next line
+        tree.bind('<<TreeviewSelect>>', func=self.treeview_callback(tree))
+        
+        for tag in self.all_tag_names:
             tree.insert('', 'end', tag, text=tag, tags='tags')
-        tree.tag_bind('tags', '<<TreeviewSelect>>', callback=self.treeview_callback(tree))
+        # moviedb-#109 Test next line
+        tree.selection_add(self.selected_tags)
+        
         scrollbar = ttk.Scrollbar(tags_frame, orient=tk.VERTICAL, command=tree.yview)
         scrollbar.grid(column=1, row=0)
         tree.configure(yscrollcommand=scrollbar.set)
@@ -297,7 +302,7 @@ class AddMovieGUI(MovieGUITagBase):
         
         # Commit and exit
         try:
-            self.callback(return_fields)
+            self.callback(return_fields, self.selected_tags)
         except exception.MovieDBConstraintFailure:
             msg = 'Database constraint failure.'
             detail = 'A movie with this title and year is already present in the database.'
@@ -312,26 +317,21 @@ class EditMovieGUI(AddMovieGUI):
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.MovieUpdateDict, Sequence[str]], None]
     # Fields of the movie to be edited.
-    edit_movie: config.MovieDict
+    movie: config.FindMovieDict
     # Neuron controlling enabled state of Commit button
     commit_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron,
                                             init=False, repr=False)
     
     def create_body(self, outerframe: ttk.Frame):
+        self.selected_tags = self.movie['tags']
         super().create_body(outerframe)
         
-        # moviedb-#109
-        #   Change the callback so the record updates the database instead of trying to add the same
-        #   record back.
-        #   Fix tags handling:
-        #       Show the record's tags as selected
-        #       A change in the selection should trigger the commit_neuron
         for internal_name in INTERNAL_NAMES:
             entry_field = self.entry_fields[internal_name]
             # TODO Remove note and 'noinspection' when fixed
             #   Pycharm reported bug:  https://youtrack.jetbrains.com/issue/PY-39404
             # noinspection PyTypedDict
-            entry_field.original_value = self.edit_movie[internal_name]
+            entry_field.original_value = self.movie[internal_name]
             entry_field.textvariable.set(entry_field.original_value)
             self.neuron_linker(internal_name, self.commit_neuron, self.neuron_callback)
 
@@ -345,7 +345,8 @@ class SearchMovieGUI(MovieGUITagBase):
     # Neuron controlling enabled state of Search button
     search_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron,
                                             init=False, repr=False)
-    
+
+    # moviedb-#109 Tag selection needs to enable the 'Search' button.
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form."""
         body_frame = super().create_body(outerframe)
@@ -458,7 +459,7 @@ class SearchMovieGUI(MovieGUITagBase):
 class SelectMovieGUI(MovieGUIBase):
     """A form for selecting a movie."""
     # A generator of compliant movie records.
-    movies: Generator[dict, None, None]
+    movies: List[config.FindMovieDict]
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[str, int], None]
     
@@ -488,7 +489,7 @@ class SelectMovieGUI(MovieGUIBase):
                         text=title,
                         values=(year, movie['director'], movie['minutes'], movie['notes']),
                         tags='title')
-        tree.tag_bind('title', '<<TreeviewSelect>>', callback=self.treeview_callback(tree))
+        tree.bind('<<TreeviewSelect>>', func=self.treeview_callback(tree))
     
     def treeview_callback(self, tree: ttk.Treeview):
         """Create a callback which will be called whenever the user selection is changed.

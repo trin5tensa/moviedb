@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/11/20, 2:08 PM by stephen.
+#  Last modified 1/24/20, 7:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,7 @@ import itertools
 import logging
 import sys
 from contextlib import contextmanager
-from typing import Generator, Iterable, List, Optional
+from typing import Iterable, List, Optional
 
 import sqlalchemy
 import sqlalchemy.exc
@@ -86,8 +86,14 @@ def add_movie(movie: MovieDict):
     Movie(**movie).add()
 
 
-def find_movies(criteria: FindMovieDict, yield_count: bool = False) -> Generator[dict, None, None]:
+def find_movies(criteria: FindMovieDict) -> List[FindMovieDict]:
     """Search for movies using any supplied_keys.
+    
+    Note:
+        The benefits of lazy evaluation of the SQL search cannot be passed on to the caller as the
+        query.count function returns the undeduplicated count which does not match the number of
+        deduplicated records returned by the query.
+        See https://docs.sqlalchemy.org/en/13/faq/sessions.html#faq-query-deduplicating
 
     Args:
         criteria: FindMovieDict. A dictionary containing none or more of the following keys:
@@ -99,33 +105,22 @@ def find_movies(criteria: FindMovieDict, yield_count: bool = False) -> Generator
             iterable. A single value is permissible.
             notes: str. A matching column will be a superstring of this value.
             tag: list. Movies matching any tag in this list will be selected.
-        yield_count: If set True then the first yielded value will be a count of the movies found
-            in the search.
 
     Raises:
         ValueError: If a supplied_keys key is not a column name
 
-    Generates:
-        Yields:
-            First:
-            A count of movies found if yield_count was set True,
-            Subsequently:
-            Each compliant movie as a dictionary of title, director, minutes, year, notes, and tags.
-        Sends: Not used.
-        Returns: Not used.
+    Returns:
+        A list of movies compliant with the search criteria sorted by title and year.
     """
     Movie.validate_columns(criteria.keys())
     
     with _session_scope() as session:
         movies = _build_movie_query(session, criteria)
-        if yield_count:
-            # moviedb-#109 Test this function
-            yield movies.count()
-        # TODO This line isn't working
-        movies.order_by(Movie.title)
-        for movie in movies:
-            yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
-                       year=movie.year, notes=movie.notes, tag=movie.tags)
+    movies = [FindMovieDict(title=movie.title, director=movie.director, minutes=movie.minutes,
+                            year=movie.year, notes=movie.notes, tags=movie.tags)
+              for movie in movies]
+    movies.sort(key=lambda movie: movie['title'] + str(movie['year']))
+    return movies
 
 
 def edit_movie(title_year: FindMovieDict, updates: MovieUpdateDict):
@@ -163,12 +158,24 @@ def all_tags() -> List[str]:
     return [tag[0] for tag in tags]
 
 
-def add_tag_and_links(new_tag: str, movies: Optional[Iterable[MovieKeyDict]] = None):
-    """Add links between a tag and one or more movies. Create the tag if it does not exist.
+def movies_tags(title_year: FindMovieDict) -> List['Tag']:
+    """ List the tags of a movie.
+    
+    Returns: A list of tags
+    """
+    # TODO Test this fumction
+    with _session_scope() as session:
+        tags = session.query(Tag).join(Tag.movies).filter(Movie.title == title_year['title'])
+        low, high = min(years := title_year['year']), max(years)
+        tags = tags.filter(Movie.year.between(low, high))
+    return [tag for tag in tags]
+
+
+def add_tag(new_tag: str):
+    """Add links between a tag and none or more movies. Create the tag if it does not exist.
 
     Args:
         new_tag: Text of new tag.
-        movies: Iterable of movies which will be tagged with the new tag.
     """
     
     # Add the tag unless it is already in the database.
@@ -176,17 +183,21 @@ def add_tag_and_links(new_tag: str, movies: Optional[Iterable[MovieKeyDict]] = N
         Tag(new_tag).add()
     except sqlalchemy.exc.IntegrityError:
         pass
-    
-    # Add links between movies and this tag.
-    if movies:
-        with _session_scope() as session:
-            tag = session.query(Tag).filter(Tag.tag == new_tag).one()
 
-            for title_year in movies:
-                movie = (session.query(Movie)
-                         .filter(Movie.title == title_year['title'], Movie.year == title_year['year'])
-                         .one())
-                movie.tags.append(tag)
+
+def add_movie_tag_link(tag: str, movie: MovieKeyDict):
+    """Add link between a tag and a movie.
+
+    Args:
+        tag: Name of tag.
+        movie: Movie which will be linked to the new tag.
+    """
+    with _session_scope() as session:
+        tag = session.query(Tag).filter(Tag.tag == tag).one()
+        movie = (session.query(Movie)
+                 .filter(Movie.title == movie['title'], Movie.year == movie['year'])
+                 .one())
+        movie.tags.append(tag)
 
 
 def edit_tag(old_tag: str, new_tag: str):
@@ -234,6 +245,7 @@ class Movie(Base):
     minutes = Column(Integer)
     year = Column(Integer, CheckConstraint(f'year>={MUYBRIDGE}'), CheckConstraint('year<10000'),
                   nullable=False)
+    # TODO Add a synopsis field
     notes = Column(Text)
     UniqueConstraint(title, year)
     
@@ -317,6 +329,7 @@ class Tag(Base):
     __tablename__ = 'tags'
 
     id = Column(sqlalchemy.Integer, Sequence('tag_id_sequence'), primary_key=True)
+    # TODO Change 'tag' to 'name'.
     tag = Column(String(24), nullable=False, unique=True)
 
     movies = relationship('Movie', secondary='movie_tag', back_populates='tags', cascade='all')
@@ -397,6 +410,7 @@ def _build_movie_query(session: Session, criteria: FindMovieDict) -> sqlalchemy.
     Returns:
         An SQL Query object
     """
+
     movies = session.query(Movie).outerjoin(Movie.tags)
     if 'id' in criteria:
         movies = movies.filter(Movie.id == criteria['id'])
