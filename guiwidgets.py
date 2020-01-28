@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/24/20, 7:39 AM by stephen.
+#  Last modified 1/28/20, 7:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -168,10 +168,7 @@ class MovieGUITagBase(MovieGUIBase):
     """
     # A list of all tags in the database.
     all_tag_names: Sequence[str]
-    
-    # Selected tags of the movie record:
-    #   The caller may supply the tags of a record that is going to be edited by the user.
-    #   It will hold the current selection shown in the GUI during data entry.
+    # Selected tags will hold the current selection shown in the GUI during data entry.
     selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
     
     def create_tag_treeview(self, body_frame: ttk.Frame, row: int):
@@ -181,7 +178,6 @@ class MovieGUITagBase(MovieGUIBase):
             body_frame: The frame enclosing the treeview.
             row: The tk grid row of the item within the frame's grid
         """
-        
         # moviedb-#109 Selecting or deselecting a tag should enable the 'Commit' button
         label = ttk.Label(body_frame, text=SELECT_TAGS_TEXT, padding=(0, 2))
         label.grid(column=0, row=row, sticky='ne', padx=5)
@@ -198,7 +194,6 @@ class MovieGUITagBase(MovieGUIBase):
             tree.insert('', 'end', tag, text=tag, tags='tags')
         # moviedb-#109 Test next line
         tree.selection_add(self.selected_tags)
-        
         scrollbar = ttk.Scrollbar(tags_frame, orient=tk.VERTICAL, command=tree.yview)
         scrollbar.grid(column=1, row=0)
         tree.configure(yscrollcommand=scrollbar.set)
@@ -317,7 +312,7 @@ class EditMovieGUI(AddMovieGUI):
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.MovieUpdateDict, Sequence[str]], None]
     # Fields of the movie to be edited.
-    movie: config.FindMovieDict
+    movie: config.MovieUpdateDict
     # Neuron controlling enabled state of Commit button
     commit_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron,
                                             init=False, repr=False)
@@ -432,7 +427,7 @@ class SearchMovieGUI(MovieGUITagBase):
         self.create_cancel_button(buttonbox, column=next(column_num))
     
     def search(self):
-        """The user clicked the commit button."""
+        """The user clicked the search button."""
         return_fields = {internal_name: movie_field.textvariable.get()
                          for internal_name, movie_field in self.entry_fields.items()}
         return_fields['year'] = [return_fields['year_min'], return_fields['year_max']]
@@ -459,7 +454,7 @@ class SearchMovieGUI(MovieGUITagBase):
 class SelectMovieGUI(MovieGUIBase):
     """A form for selecting a movie."""
     # A generator of compliant movie records.
-    movies: List[config.FindMovieDict]
+    movies: List[config.MovieUpdateDict]
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[str, int], None]
     

@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/24/20, 7:14 AM by stephen.
+#  Last modified 1/28/20, 7:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +17,7 @@ This module is the glue between the user's selection of a menu item and the gui.
 
 
 import logging
-from typing import List, Sequence
+from typing import Sequence
 
 import config
 import database
@@ -73,7 +73,7 @@ def search_movie_callback(criteria: config.FindMovieDict, tags: Sequence[str]):
     if (movies_found := len(movies)) == 0:
         raise exception.MovieSearchFoundNothing
     elif movies_found == 1:
-        _instantiate_edit_movie_gui(movies)
+        _instantiate_edit_movie_gui(movies[0])
     elif movies_found > 1:
         guiwidgets.SelectMovieGUI(config.app.tk_root, movies, select_movie_callback)
     else:
@@ -82,45 +82,38 @@ def search_movie_callback(criteria: config.FindMovieDict, tags: Sequence[str]):
         guiwidgets.gui_messagebox(config.app.tk_root, 'Database Error', msg, icon='error')
 
 
-def edit_movie_callback(movie: config.MovieUpdateDict, selected_tags: Sequence[str]):
+def edit_movie_callback(movie_to_edit: config.MovieUpdateDict, selected_tags: Sequence[str]):
     """ Add user supplied data to the database.
 
     Args:
-        movie:
+        movie_to_edit:
     """
     # moviedb-#109 Test this function
+    # TODO Fix the ugliness of two different ways of searching for the same movie
+    # TODO Fix the ugliness of two searches for the same movie
     
     # Edit the movie
     # TODO Remove this note and 'noinspection' when fixed
     #   Pycharm reported bug:  https://youtrack.jetbrains.com/issue/PY-39404
     # noinspection PyTypedDict
-    title_year = config.FindMovieDict(title=movie['title'], year=[movie['year']])
+    movie_to_find = config.FindMovieDict(title=movie_to_edit['title'], year=[movie_to_edit['year']])
     # moviedb-#109
     #   The movie might have been deleted from the database
     #   So trap any 'not found' errors.
     #   Display helpful message.
-    database.edit_movie(title_year, movie)
+    database.edit_movie(movie_to_find, movie_to_edit)
     
     # Edit links
-    old_tags = {tag.tag for tag in database.movies_tags(title_year)}
-    new_tags = set(selected_tags)
-    delete_tag_links = old_tags - new_tags
-    add_tag_links = new_tags - old_tags
-    
-    print(f"{delete_tag_links=}")
-    print(f"{add_tag_links=}")
-    # moviedb-#109
-    #   Remove tags deleted from the treeview selection by the user.
-    #   Adding: Use add_tag_and_links
-    
-    raise exception.DatabaseException
+    movie_to_find = config.MovieKeyDict(title=movie_to_edit['title'], year=movie_to_edit['year'])
+    old_tags = database.movie_tags(movie_to_find)
+    database.edit_movies_tag(movie_to_find, old_tags, selected_tags)
 
 
 def select_movie_callback(title: str, year: int):
     # moviedb-#109 Test this function
     # Get record from database
-    movies = database.find_movies(dict(title=title, year=year))
-    _instantiate_edit_movie_gui(movies)
+    movie = database.find_movies(dict(title=title, year=year))[0]
+    _instantiate_edit_movie_gui(movie)
 
 
 def import_movies():
@@ -134,8 +127,7 @@ def import_movies():
                                   detail=exc.args[0], icon='warning')
 
 
-def _instantiate_edit_movie_gui(movies: List[config.FindMovieDict]):
+def _instantiate_edit_movie_gui(movie: config.MovieUpdateDict):
     # moviedb-#109 Test this function
     all_tags = database.all_tags()
-    for movie in movies:
-        guiwidgets.EditMovieGUI(config.app.tk_root, all_tags, edit_movie_callback, movie)
+    guiwidgets.EditMovieGUI(config.app.tk_root, all_tags, edit_movie_callback, movie)

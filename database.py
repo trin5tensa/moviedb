@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/24/20, 7:37 AM by stephen.
+#  Last modified 1/28/20, 7:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,7 @@ import sqlalchemy
 import sqlalchemy.exc
 import sqlalchemy.ext.declarative
 import sqlalchemy.ext.hybrid
-from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, Sequence, String, Table, Text,
+from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, String, Table, Text,
                         UniqueConstraint, )
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import query, relationship
@@ -33,6 +33,10 @@ from sqlalchemy.orm.session import sessionmaker
 import exception
 from config import FindMovieDict, MovieDict, MovieKeyDict, MovieUpdateDict
 
+
+# TODO Review:
+#   Every use of config TypedDicts making sure that dictionary type is appropriate for usage.
+#   Consider utility fumctions to comvert data between specified dictionary types.
 
 MUYBRIDGE = 1878
 Base = sqlalchemy.ext.declarative.declarative_base()
@@ -86,7 +90,7 @@ def add_movie(movie: MovieDict):
     Movie(**movie).add()
 
 
-def find_movies(criteria: FindMovieDict) -> List[FindMovieDict]:
+def find_movies(criteria: FindMovieDict) -> List[MovieUpdateDict]:
     """Search for movies using any supplied_keys.
     
     Note:
@@ -116,8 +120,8 @@ def find_movies(criteria: FindMovieDict) -> List[FindMovieDict]:
     
     with _session_scope() as session:
         movies = _build_movie_query(session, criteria)
-    movies = [FindMovieDict(title=movie.title, director=movie.director, minutes=movie.minutes,
-                            year=movie.year, notes=movie.notes, tags=movie.tags)
+    movies = [MovieUpdateDict(title=movie.title, director=movie.director, minutes=movie.minutes,
+                              year=movie.year, notes=movie.notes, tags=[tag.tag for tag in movie.tags])
               for movie in movies]
     movies.sort(key=lambda movie: movie['title'] + str(movie['year']))
     return movies
@@ -158,17 +162,17 @@ def all_tags() -> List[str]:
     return [tag[0] for tag in tags]
 
 
-def movies_tags(title_year: FindMovieDict) -> List['Tag']:
+def movie_tags(title_year: MovieKeyDict) -> List[str]:
     """ List the tags of a movie.
     
     Returns: A list of tags
     """
+    # TODO This should be returning a list of strings and *not* a database entity
     # TODO Test this fumction
     with _session_scope() as session:
-        tags = session.query(Tag).join(Tag.movies).filter(Movie.title == title_year['title'])
-        low, high = min(years := title_year['year']), max(years)
-        tags = tags.filter(Movie.year.between(low, high))
-    return [tag for tag in tags]
+        tag_names = session.query(Tag.tag).join(Tag.movies).filter(Movie.title == title_year['title'])
+        tag_names = tag_names.filter(Movie.year == title_year['year'])
+    return [tag_name[0] for tag_name in tag_names]
 
 
 def add_tag(new_tag: str):
@@ -212,6 +216,21 @@ def edit_tag(old_tag: str, new_tag: str):
         tag.tag = new_tag
 
 
+def edit_movies_tag(movie: MovieKeyDict, old_tags: Iterable[str], new_tags: Iterable[str]):
+    # moviedb-#109
+    #   Test this function
+    with _session_scope() as session:
+        movie = (session.query(Movie)
+                 .filter(Movie.title == movie['title'], Movie.year == movie['year'])
+                 .one())
+        for name in (set(old_tags) - set(new_tags)):
+            tag = session.query(Tag).filter(Tag.tag == name).one()
+            movie.tags.remove(tag)
+        for name in (set(new_tags) - set(old_tags)):
+            tag = session.query(Tag).filter(Tag.tag == name).one()
+            movie.tags.append(tag)
+
+
 def del_tag(tag: str):
     """Delete a tag.
 
@@ -238,8 +257,8 @@ class MoviesMetaData(Base):
 class Movie(Base):
     """Movies table schema."""
     __tablename__ = 'movies'
-    
-    id = Column(Integer, Sequence('movie_id_sequence'), primary_key=True)
+
+    id = Column(Integer, sqlalchemy.Sequence('movie_id_sequence'), primary_key=True)
     title = Column(String(80), nullable=False)
     director = Column(String(24))
     minutes = Column(Integer)
@@ -328,7 +347,7 @@ class Tag(Base):
     """Table schema for tags."""
     __tablename__ = 'tags'
 
-    id = Column(sqlalchemy.Integer, Sequence('tag_id_sequence'), primary_key=True)
+    id = Column(sqlalchemy.Integer, sqlalchemy.Sequence('tag_id_sequence'), primary_key=True)
     # TODO Change 'tag' to 'name'.
     tag = Column(String(24), nullable=False, unique=True)
 
@@ -358,7 +377,7 @@ class Review(Base):
     """
     __tablename__ = 'reviews'
 
-    id = Column(sqlalchemy.Integer, Sequence('review_id_sequence'), primary_key=True)
+    id = Column(sqlalchemy.Integer, sqlalchemy.Sequence('review_id_sequence'), primary_key=True)
     reviewer = Column(String(24), nullable=False)
     rating = Column(Integer, nullable=False)
     max_rating = Column(Integer, nullable=False)

@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/11/20, 11:54 AM by stephen.
+#  Last modified 1/28/20, 7:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,7 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from dataclasses import dataclass
-from typing import Optional, Sequence, TypedDict, Union
+from typing import Optional, Sequence, TypedDict
 
 
 tk: 'tk'
@@ -43,7 +43,7 @@ class MovieUpdateDict(TypedDict, total=False):
     year: int
     minutes: int
     notes: str
-    tag: str
+    tags: Sequence[str]
 
 
 class FindMovieDict(TypedDict, total=False):
@@ -59,9 +59,9 @@ class FindMovieDict(TypedDict, total=False):
     """
     id: int
     title: str
-    year: Union[int, Sequence[int]]
+    year: Sequence[int]
     director: str
-    minutes: Union[int, Sequence[int]]
+    minutes: Sequence[int]
     notes: str
     tags: Sequence[str]
 
