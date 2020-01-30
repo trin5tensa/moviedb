@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/24/20, 7:34 AM by stephen.
+#  Last modified 1/28/20, 7:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -1110,6 +1110,7 @@ def patch_tk(monkeypatch):
 
 
 callback_calls = []
+
 
 # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring
 def movie_gui_callback(movie_dict: guiwidgets.config.MovieDict, tags: Sequence[str]):

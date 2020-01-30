@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/28/20, 7:18 AM by stephen.
+#  Last modified 1/30/20, 8:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,7 @@ import itertools
 import logging
 import sys
 from contextlib import contextmanager
-from typing import Iterable, List, Optional
+from typing import Generator, Iterable, List, Optional
 
 import sqlalchemy
 import sqlalchemy.exc
@@ -35,8 +35,7 @@ from config import FindMovieDict, MovieDict, MovieKeyDict, MovieUpdateDict
 
 
 # TODO Review:
-#   Every use of config TypedDicts making sure that dictionary type is appropriate for usage.
-#   Consider utility fumctions to comvert data between specified dictionary types.
+#   Consider utility functions to convert data between specified dictionary types.
 
 MUYBRIDGE = 1878
 Base = sqlalchemy.ext.declarative.declarative_base()
@@ -120,6 +119,7 @@ def find_movies(criteria: FindMovieDict) -> List[MovieUpdateDict]:
     
     with _session_scope() as session:
         movies = _build_movie_query(session, criteria)
+    # TODO Integration test: Does tag selection work?
     movies = [MovieUpdateDict(title=movie.title, director=movie.director, minutes=movie.minutes,
                               year=movie.year, notes=movie.notes, tags=[tag.tag for tag in movie.tags])
               for movie in movies]
@@ -134,7 +134,6 @@ def edit_movie(title_year: FindMovieDict, updates: MovieUpdateDict):
         title_year: Specifies the movie to be selected.
         updates: Contains the fields which will be updated in the selected movie.
     """
-    # moviedb-#109 Test this function
     with _session_scope() as session:
         movie = _build_movie_query(session, title_year).one()
         movie.edit(updates)
@@ -146,7 +145,6 @@ def del_movie(title_year: FindMovieDict):
     Args:
         title_year: Specifies teh movie to be deleted.
     """
-    # moviedb-#109 Test this function
     with _session_scope() as session:
         movie = _build_movie_query(session, title_year).one()
         session.delete(movie)
@@ -167,8 +165,6 @@ def movie_tags(title_year: MovieKeyDict) -> List[str]:
     
     Returns: A list of tags
     """
-    # TODO This should be returning a list of strings and *not* a database entity
-    # TODO Test this fumction
     with _session_scope() as session:
         tag_names = session.query(Tag.tag).join(Tag.movies).filter(Movie.title == title_year['title'])
         tag_names = tag_names.filter(Movie.year == title_year['year'])
@@ -217,8 +213,16 @@ def edit_tag(old_tag: str, new_tag: str):
 
 
 def edit_movies_tag(movie: MovieKeyDict, old_tags: Iterable[str], new_tags: Iterable[str]):
-    # moviedb-#109
-    #   Test this function
+    """Replace the links to tags associated with a specified movie with links to a new set of tags.
+    
+    Args:
+        movie:
+        old_tags: The old set of tags which will be removed from the movie.
+        new_tags: The new set of tags which will be linked to the movie.
+        
+    Any tags which appear in both sets will be ignored.
+    This function edits links between movies and tags. Neither the movies nor the tags are edited.
+    """
     with _session_scope() as session:
         movie = (session.query(Movie)
                  .filter(Movie.title == movie['title'], Movie.year == movie['year'])
@@ -273,7 +277,7 @@ class Movie(Base):
     
     def __init__(self, title: str, year: int, director: str = None,
                  minutes: int = None, notes: str = None):
-        
+
         # Carry out validation which is not done by SQLAlchemy or sqlite3
         null_strings = set(itertools.filterfalse(lambda arg: arg != '', [title, year]))
         if null_strings == {''}:
@@ -288,7 +292,7 @@ class Movie(Base):
                    f"or the minute column.")
             logging.error(msg)
             raise
-    
+
         self.title = title
         self.director = director
         self.minutes = minutes
@@ -371,7 +375,7 @@ class Review(Base):
 
     This table has been designed to provide a single row for a reviewer and rating value.
     So a 3.5/4 star rating from Ebert will be linked to none or more movies.
-    The reviewer can ba an individual like 'Ebert' for an aggregator like 'Rotten Tomatoes.
+    The reviewer can ba an individual like 'Ebert' or an aggregator like 'Rotten Tomatoes.
     max_rating is part of the secondary key. This allows for a particular reviewer changing
     his/her/its rating system.
     """
@@ -402,7 +406,7 @@ class Review(Base):
 
 
 @contextmanager
-def _session_scope():
+def _session_scope() -> Generator[Session, None, None]:
     """Provide a session scope around a series of operations."""
     session = Session()
     try:
@@ -430,6 +434,7 @@ def _build_movie_query(session: Session, criteria: FindMovieDict) -> sqlalchemy.
         An SQL Query object
     """
 
+    # noinspection PyUnresolvedReferences
     movies = session.query(Movie).outerjoin(Movie.tags)
     if 'id' in criteria:
         movies = movies.filter(Movie.id == criteria['id'])

@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/28/20, 7:18 AM by stephen.
+#  Last modified 1/29/20, 8:38 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,6 +20,7 @@ from typing import Optional, Sequence, TypedDict
 tk: 'tk'
 mainwindow: 'mainwindow'
 
+# TODO Change 'Dict' to 'Def in TypedDict names
 
 class MovieKeyDict(TypedDict):
     """Mandatory fields for a movie."""
