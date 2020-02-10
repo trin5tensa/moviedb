@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/30/20, 8:53 AM by stephen.
+#  Last modified 2/3/20, 6:55 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -313,6 +313,7 @@ class Movie(Base):
             if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
                 msg = exc.orig.args[0]
                 logging.error(msg)
+                # TODO Change to raisw ... from
                 raise exception.MovieDBConstraintFailure(msg)
             else:
                 raise

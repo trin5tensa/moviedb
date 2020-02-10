@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/28/20, 7:18 AM by stephen.
+#  Last modified 1/31/20, 7:58 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -233,6 +233,7 @@ class AddMovieGUI(MovieGUITagBase):
         body_frame = super().create_body(outerframe)
         
         # Initialize an internal dictionary to simplify field data management.
+        # TODO This statement should be in MovieGUIBase
         self.entry_fields = {internal_name: EntryField(field_text, '')
                              for internal_name, field_text
                              in zip(INTERNAL_NAMES, FIELD_TEXTS)}
@@ -324,7 +325,7 @@ class EditMovieGUI(AddMovieGUI):
         for internal_name in INTERNAL_NAMES:
             entry_field = self.entry_fields[internal_name]
             # TODO Remove note and 'noinspection' when fixed
-            #   Pycharm reported bug:  https://youtrack.jetbrains.com/issue/PY-39404
+            #   Pycharm reported bug:  https://youtrack.jetbrains.com/issue/PY-40397
             # noinspection PyTypedDict
             entry_field.original_value = self.movie[internal_name]
             entry_field.textvariable.set(entry_field.original_value)

@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/28/20, 7:18 AM by stephen.
+#  Last modified 2/10/20, 8:04 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,7 +16,6 @@ This module is the glue between the user's selection of a menu item and the gui.
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import logging
 from typing import Sequence
 
 import config
@@ -37,83 +36,10 @@ def add_movie():
     guiwidgets.AddMovieGUI(config.app.tk_root, all_tags, add_movie_callback)
 
 
-def add_movie_callback(movie: config.MovieDict, selected_tags: Sequence[str]):
-    """ Add user supplied data to the database.
-    
-    Args:
-        movie:
-        selected_tags:
-    """
-    database.add_movie(movie)
-    # TODO Remove note and 'noinspection' when fixed
-    #   Pycharm reported bug:  https://youtrack.jetbrains.com/issue/PY-39404
-    # noinspection PyTypedDict
-    movie = config.MovieKeyDict(title=movie['title'], year=movie['year'])
-    for tag in selected_tags:
-        database.add_movie_tag_link(tag, movie)
-
-
 def edit_movie():
     """ Get search movie data from the user and search for compliant records"""
     all_tags = database.all_tags()
     guiwidgets.SearchMovieGUI(config.app.tk_root, all_tags, search_movie_callback)
-
-
-def search_movie_callback(criteria: config.FindMovieDict, tags: Sequence[str]):
-    # moviedb-#109 Test this function
-    
-    # Find compliant movies.
-    criteria['tags'] = tags
-    # Remove empty items because SQL treats them as meaningful.
-    criteria = {k: v
-                for k, v in criteria.items()
-                if v != '' and v != [] and v != () and v != ['', '']}
-    movies = database.find_movies(criteria)
-    
-    if (movies_found := len(movies)) == 0:
-        raise exception.MovieSearchFoundNothing
-    elif movies_found == 1:
-        _instantiate_edit_movie_gui(movies[0])
-    elif movies_found > 1:
-        guiwidgets.SelectMovieGUI(config.app.tk_root, movies, select_movie_callback)
-    else:
-        msg = f"The database search returned an unexpected value: {movies_found=}"
-        logging.error(msg)
-        guiwidgets.gui_messagebox(config.app.tk_root, 'Database Error', msg, icon='error')
-
-
-def edit_movie_callback(movie_to_edit: config.MovieUpdateDict, selected_tags: Sequence[str]):
-    """ Add user supplied data to the database.
-
-    Args:
-        movie_to_edit:
-    """
-    # moviedb-#109 Test this function
-    # TODO Fix the ugliness of two different ways of searching for the same movie
-    # TODO Fix the ugliness of two searches for the same movie
-    
-    # Edit the movie
-    # TODO Remove this note and 'noinspection' when fixed
-    #   Pycharm reported bug:  https://youtrack.jetbrains.com/issue/PY-39404
-    # noinspection PyTypedDict
-    movie_to_find = config.FindMovieDict(title=movie_to_edit['title'], year=[movie_to_edit['year']])
-    # moviedb-#109
-    #   The movie might have been deleted from the database
-    #   So trap any 'not found' errors.
-    #   Display helpful message.
-    database.edit_movie(movie_to_find, movie_to_edit)
-    
-    # Edit links
-    movie_to_find = config.MovieKeyDict(title=movie_to_edit['title'], year=movie_to_edit['year'])
-    old_tags = database.movie_tags(movie_to_find)
-    database.edit_movies_tag(movie_to_find, old_tags, selected_tags)
-
-
-def select_movie_callback(title: str, year: int):
-    # moviedb-#109 Test this function
-    # Get record from database
-    movie = database.find_movies(dict(title=title, year=year))[0]
-    _instantiate_edit_movie_gui(movie)
 
 
 def import_movies():
@@ -127,7 +53,65 @@ def import_movies():
                                   detail=exc.args[0], icon='warning')
 
 
+def add_movie_callback(movie: config.MovieDict, selected_tags: Sequence[str]):
+    """ Add user supplied data to the database.
+
+    Args:
+        movie:
+        selected_tags:
+    """
+    database.add_movie(movie)
+    movie = config.MovieKeyDict(title=movie['title'], year=movie['year'])
+    for tag in selected_tags:
+        database.add_movie_tag_link(tag, movie)
+
+
+def search_movie_callback(criteria: config.FindMovieDict, tags: Sequence[str]):
+    # Find compliant movies.
+    criteria['tags'] = tags
+    # Remove empty items because SQL treats them as meaningful.
+    criteria = {k: v
+                for k, v in criteria.items()
+                if v != '' and v != [] and v != () and v != ['', '']}
+    movies = database.find_movies(criteria)
+
+    if (movies_found := len(movies)) <= 0:
+        raise exception.MovieSearchFoundNothing
+    elif movies_found == 1:
+        _instantiate_edit_movie_gui(movies[0])
+    else:
+        guiwidgets.SelectMovieGUI(config.app.tk_root, movies, select_movie_callback)
+
+
+def edit_movie_callback(updates: config.MovieUpdateDict, selected_tags: Sequence[str]):
+    """ Add user supplied data to the database.
+
+    Args:
+        updates: Fields modified by the user or not.
+        selected_tags: Tags selected by the user or previously selected for this record. Tags
+            deselected by the user are not included.
+    """
+    # Edit the movie
+    movie = config.FindMovieDict(title=updates['title'], year=[updates['year']])
+    
+    # moviedb-#109
+    #   The movie might have been deleted from the database
+    #   So trap any 'not found' errors.
+    #   Display helpful message.
+    database.edit_movie(movie, updates)
+    
+    # Edit links
+    movie = config.MovieKeyDict(title=updates['title'], year=updates['year'])
+    old_tags = database.movie_tags(movie)
+    database.edit_movies_tag(movie, old_tags, selected_tags)
+
+
+def select_movie_callback(title: str, year: int):
+    # Get record from database
+    movie = database.find_movies(dict(title=title, year=year))[0]
+    _instantiate_edit_movie_gui(movie)
+
+
 def _instantiate_edit_movie_gui(movie: config.MovieUpdateDict):
-    # moviedb-#109 Test this function
     all_tags = database.all_tags()
     guiwidgets.EditMovieGUI(config.app.tk_root, all_tags, edit_movie_callback, movie)
