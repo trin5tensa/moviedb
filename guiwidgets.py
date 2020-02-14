@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/31/20, 7:58 AM by stephen.
+#  Last modified 2/14/20, 8:42 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -187,12 +187,10 @@ class MovieGUITagBase(MovieGUIBase):
                             show='tree', padding=5)
         tree.grid(column=0, row=0, sticky='w')
         tree.column('tags', width=100)
-        # moviedb-#109 Test next line
         tree.bind('<<TreeviewSelect>>', func=self.treeview_callback(tree))
         
         for tag in self.all_tag_names:
             tree.insert('', 'end', tag, text=tag, tags='tags')
-        # moviedb-#109 Test next line
         tree.selection_add(self.selected_tags)
         scrollbar = ttk.Scrollbar(tags_frame, orient=tk.VERTICAL, command=tree.yview)
         scrollbar.grid(column=1, row=0)
@@ -309,7 +307,6 @@ class AddMovieGUI(MovieGUITagBase):
 
 @dataclass
 class EditMovieGUI(AddMovieGUI):
-    # moviedb-#109 Test this class
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.MovieUpdateDict, Sequence[str]], None]
     # Fields of the movie to be edited.
@@ -329,6 +326,8 @@ class EditMovieGUI(AddMovieGUI):
             # noinspection PyTypedDict
             entry_field.original_value = self.movie[internal_name]
             entry_field.textvariable.set(entry_field.original_value)
+            # TODO Should the default argument of 'initial_state' be set to 'True' for non-space
+            #  values of entry_field.original_value?
             self.neuron_linker(internal_name, self.commit_neuron, self.neuron_callback)
 
 

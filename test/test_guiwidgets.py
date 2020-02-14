@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/28/20, 7:37 AM by stephen.
+#  Last modified 2/14/20, 9:03 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,7 @@ import guiwidgets
 
 
 # noinspection PyMissingOrEmptyDocstring
-class TestEditMovieGUI:
+class TestAddMovieGUI:
     
     # Test Basic Initialization
     
@@ -227,6 +227,17 @@ class TestEditMovieGUI:
             tree = tags_frame.children[0]
             assert tree.column_calls[0] == (('tags',), dict(width=100))
     
+    def test_tree_tag_bind(self, patch_tk):
+        with self.movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            tags_frame = bodyframe.children[-1]
+            tree = tags_frame.children[0]
+            assert tree.bind_calls[0][0] == ('<<TreeviewSelect>>',)
+            
+            tree.bind_calls[0][1]['func']()
+            assert movie_gui.selected_tags == ['test tag 1', 'test tag 2']
+    
     def test_tree_insert(self, patch_tk):
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
@@ -235,17 +246,6 @@ class TestEditMovieGUI:
             tree = tags_frame.children[0]
             assert tree.insert_calls == [(('', 'end', tag), dict(text=tag, tags='tags'))
                                          for tag in movie_gui.all_tag_names]
-    
-    def test_tree_tag_bind(self, patch_tk):
-        with self.movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            bodyframe = outerframe.children[0]
-            tags_frame = bodyframe.children[-1]
-            tree = tags_frame.children[0]
-            assert tree.bind_calls[0][0] == ('<<TreeviewSelect>>',)
-    
-            tree.bind_calls[0][1]['func']()
-            assert movie_gui.selected_tags == ['test tag 1', 'test tag 2']
     
     def test_scrollbar_created(self, patch_tk):
         with self.movie_context() as movie_gui:
@@ -478,7 +478,88 @@ class TestEditMovieGUI:
     def movie_context(self):
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
-        yield guiwidgets.AddMovieGUI(DummyTk(), tags, movie_gui_callback)
+        yield guiwidgets.AddMovieGUI(DummyTk(), all_tag_names=tags,
+                                     # selected_tags=selected_tags,
+                                     callback=movie_gui_callback)
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestEditMovieGUI:
+    
+    def test_tree_selection_add(self, patch_tk, class_fixtures):
+        with self.movie_context() as movie_gui:
+            outerframe = movie_gui.parent.children[0]
+            bodyframe = outerframe.children[0]
+            tags_frame = bodyframe.children[-1]
+            tree = tags_frame.children[0]
+            assert tree.selection_add_calls == [(('test selected tag',),)]
+    
+    def test_entry_field_original_value_set(self, patch_tk, class_fixtures):
+        with self.movie_context() as movie_gui:
+            expected = dict(title='Test Movie', year=2050, director='Test Director', minutes=142,
+                            notes='Test note')
+            original_values = {field_name: movie_gui.entry_fields[field_name].original_value
+                               for field_name in movie_gui.entry_fields}
+            assert original_values == expected
+    
+    def test_text_variable_set_called(self, patch_tk, class_fixtures):
+        with self.movie_context() as movie_gui:
+            expected = dict(title='Test Movie', year=2050, director='Test Director', minutes=142,
+                            notes='Test note')
+            # The code initializes some textvariable values to a non space value (in [0]). This test
+            # requires the latest and final entry (in [-1])
+            original_values = {
+                    field_name: movie_gui.entry_fields[field_name].textvariable.set_calls[-1][0]
+                    for field_name in movie_gui.entry_fields}
+            assert original_values == expected
+    
+    def test_neuron_linker_called(self, patch_tk, class_fixtures):
+        with self.movie_context() as movie_gui:
+            internal_names = []
+            neurons = []
+            callbacks = []
+            initial_values = []
+            for link in self.neuron_linker_args:
+                try:
+                    internal_name, neuron, callback = link
+                except ValueError:
+                    internal_name, neuron, callback, initial_value = link
+                    initial_values.append(initial_value)
+                internal_names.append(internal_name)
+                callbacks.append(callback)
+                neurons.append(neuron)
+            
+            assert internal_names == ['title', 'year', 'title', 'year', 'director', 'minutes', 'notes']
+            for neuron in neurons:
+                assert isinstance(neuron, guiwidgets.neurons.OrNeuron)
+            # neuron_linker is called twice for 'year' so count is six fields + 1 = 7
+            assert len(neurons) == 7
+            for callback in callbacks:
+                assert callback == movie_gui.neuron_callback
+            assert len(callbacks) == 7
+            assert initial_values == [True]
+    
+    # noinspection PyMissingOrEmptyDocstring
+    @contextmanager
+    def movie_context(self):
+        self.neuron_linker_args = []
+        all_tag_names = ('test tag 1', 'test tag 2')
+        movie = guiwidgets.config.MovieUpdateDict(title='Test Movie', year=2050,
+                                                  director='Test Director', minutes=142,
+                                                  notes='Test note', tags=('test selected tag',))
+        # noinspection PyTypeChecker
+        yield guiwidgets.EditMovieGUI(DummyTk(), all_tag_names, movie_gui_callback, movie)
+    
+    neuron_linker_args = []
+    
+    def temp(self, *args):
+        self.neuron_linker_args.append(args)
+    
+    @pytest.fixture
+    def class_fixtures(self, monkeypatch):
+        monkeypatch.setattr(guiwidgets.MovieGUIBase, 'neuron_linker', self.temp)
+        # monkeypatch.setattr(guiwidgets.MovieGUIBase, 'neuron_linker',
+        #                     lambda *args: self.neuron_linker_args.append(args))
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -1056,8 +1137,8 @@ class TtkTreeview:
     def yview(self, *args, **kwargs):
         self.yview_calls.append((args, kwargs))
 
-    def selection_add(self, *args, **kwargs):
-        self.selection_add_calls.append((args, kwargs))
+    def selection_add(self, *args):
+        self.selection_add_calls.append(args)
 
     def configure(self, **kwargs):
         self.configure_calls.append(kwargs)
