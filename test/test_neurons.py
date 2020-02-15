@@ -1,7 +1,7 @@
 """Test module."""
 
-#  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/31/19, 12:53 PM by stephen.
+#  Copyright© 2020. Stephen Rigden.
+#  Last modified 2/15/20, 7:29 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,6 +18,7 @@ from contextlib import contextmanager
 import neurons
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestObserver:
     notify_calls = []
     
@@ -44,7 +45,6 @@ class TestObserver:
             observer.notify(*args, **kwargs)
             assert self.notify_calls[0] == (args, kwargs)
 
-    # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def observer_context(self):
         # noinspection PyTypeChecker

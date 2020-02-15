@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/3/20, 6:55 AM by stephen.
+#  Last modified 2/15/20, 8:47 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -33,9 +33,6 @@ from sqlalchemy.orm.session import sessionmaker
 import exception
 from config import FindMovieDict, MovieDict, MovieKeyDict, MovieUpdateDict
 
-
-# TODO Review:
-#   Consider utility functions to convert data between specified dictionary types.
 
 MUYBRIDGE = 1878
 Base = sqlalchemy.ext.declarative.declarative_base()
@@ -119,7 +116,7 @@ def find_movies(criteria: FindMovieDict) -> List[MovieUpdateDict]:
     
     with _session_scope() as session:
         movies = _build_movie_query(session, criteria)
-    # TODO Integration test: Does tag selection work?
+    # moviedb-#126 Integration test: Does tag selection work?
     movies = [MovieUpdateDict(title=movie.title, director=movie.director, minutes=movie.minutes,
                               year=movie.year, notes=movie.notes, tags=[tag.tag for tag in movie.tags])
               for movie in movies]
@@ -268,7 +265,7 @@ class Movie(Base):
     minutes = Column(Integer)
     year = Column(Integer, CheckConstraint(f'year>={MUYBRIDGE}'), CheckConstraint('year<10000'),
                   nullable=False)
-    # TODO Add a synopsis field
+    # moviedb-#127 Add a synopsis field
     notes = Column(Text)
     UniqueConstraint(title, year)
     
@@ -313,7 +310,7 @@ class Movie(Base):
             if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
                 msg = exc.orig.args[0]
                 logging.error(msg)
-                # TODO Change to raisw ... from
+                # moviedb-#128 Change to raise ... from
                 raise exception.MovieDBConstraintFailure(msg)
             else:
                 raise
@@ -353,7 +350,7 @@ class Tag(Base):
     __tablename__ = 'tags'
 
     id = Column(sqlalchemy.Integer, sqlalchemy.Sequence('tag_id_sequence'), primary_key=True)
-    # TODO Change 'tag' to 'name'.
+    # moviedb-#129 Change 'tag' to 'name'.
     tag = Column(String(24), nullable=False, unique=True)
 
     movies = relationship('Movie', secondary='movie_tag', back_populates='tags', cascade='all')

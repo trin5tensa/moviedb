@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/29/20, 8:38 AM by stephen.
+#  Last modified 2/15/20, 2:21 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +20,9 @@ from typing import Optional, Sequence, TypedDict
 tk: 'tk'
 mainwindow: 'mainwindow'
 
-# TODO Change 'Dict' to 'Def in TypedDict names
+
+# moviedb-#123 Change 'Dict' to 'Def in TypedDict names
+
 
 class MovieKeyDict(TypedDict):
     """Mandatory fields for a movie."""
@@ -81,7 +83,7 @@ class Config:
 
     # Save the root window for easy access for testing.
     tk_root: 'tk.Tk' = None
-    # TODO Is 'gui_environment' being used for anything?
+    # moviedb-#124 Is 'gui_environment' being used for anything?
     gui_environment: 'mainwindow.MainWindow' = None
 
 

@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/14/20, 8:42 AM by stephen.
+#  Last modified 2/15/20, 2:21 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,6 +16,7 @@ callers.
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import itertools
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -42,9 +43,6 @@ ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
 class MovieGUIBase:
     """ A base class for movie input forms."""
     parent: tk.Tk
-    # TODO Remove commented out lines
-    # # On exit this callback will be called with a dictionary of fields and user entered values.
-    # callback: Callable[..., None]
     
     # All widgets of this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
@@ -178,7 +176,7 @@ class MovieGUITagBase(MovieGUIBase):
             body_frame: The frame enclosing the treeview.
             row: The tk grid row of the item within the frame's grid
         """
-        # moviedb-#109 Selecting or deselecting a tag should enable the 'Commit' button
+        # moviedb-#130 Selecting or deselecting a tag should enable the 'Commit' button
         label = ttk.Label(body_frame, text=SELECT_TAGS_TEXT, padding=(0, 2))
         label.grid(column=0, row=row, sticky='ne', padx=5)
         tags_frame = ttk.Frame(body_frame, padding=5)
@@ -219,7 +217,8 @@ class MovieGUITagBase(MovieGUIBase):
 
 @dataclass
 class AddMovieGUI(MovieGUITagBase):
-    """ A form for adding or editing a movie."""
+    """ A form for adding a movie."""
+    
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.MovieDict], None]
     # Neuron controlling enabled state of Commit button
@@ -231,13 +230,13 @@ class AddMovieGUI(MovieGUITagBase):
         body_frame = super().create_body(outerframe)
         
         # Initialize an internal dictionary to simplify field data management.
-        # TODO This statement should be in MovieGUIBase
+        # moviedb-#131 This statement should be in MovieGUIBase
         self.entry_fields = {internal_name: EntryField(field_text, '')
                              for internal_name, field_text
                              in zip(INTERNAL_NAMES, FIELD_TEXTS)}
-
+        
         # Create entry fields and their labels.
-        # TODO Make 'notes' field into a tk.Text field (NB: no ttk.Text field:( )
+        # moviedb-#132 Make 'notes' field into a tk.Text field (NB: no ttk.Text field:( )
         for row_ix, internal_name in enumerate(INTERNAL_NAMES):
             label = ttk.Label(body_frame, text=self.entry_fields[internal_name].label_text)
             label.grid(column=0, row=row_ix, sticky='e', padx=5)
@@ -287,7 +286,7 @@ class AddMovieGUI(MovieGUITagBase):
                          for internal_name, movie_field in self.entry_fields.items()}
 
         # Validate the year range
-        # TODO SSOT: Replace the literal range limits with the range limits from the SQL schema.
+        # moviedb-#133 SSOT: Replace the literal range limits with the range limits from the SQL schema.
         if not self.validate_int_range(int(return_fields['year']), 1877, 10000):
             msg = 'Invalid year.'
             detail = 'The year must be between 1877 and 10000.'
@@ -307,6 +306,8 @@ class AddMovieGUI(MovieGUITagBase):
 
 @dataclass
 class EditMovieGUI(AddMovieGUI):
+    """ A form for editing a movie."""
+    
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.MovieUpdateDict, Sequence[str]], None]
     # Fields of the movie to be edited.
@@ -316,6 +317,15 @@ class EditMovieGUI(AddMovieGUI):
                                             init=False, repr=False)
     
     def create_body(self, outerframe: ttk.Frame):
+        """Create a standard entry form body but with fields initialized with values from the record
+        which is being edited.
+        
+        Args:
+            outerframe:
+
+        Returns:
+
+        """
         self.selected_tags = self.movie['tags']
         super().create_body(outerframe)
         
@@ -326,8 +336,6 @@ class EditMovieGUI(AddMovieGUI):
             # noinspection PyTypedDict
             entry_field.original_value = self.movie[internal_name]
             entry_field.textvariable.set(entry_field.original_value)
-            # TODO Should the default argument of 'initial_state' be set to 'True' for non-space
-            #  values of entry_field.original_value?
             self.neuron_linker(internal_name, self.commit_neuron, self.neuron_callback)
 
 
@@ -341,7 +349,7 @@ class SearchMovieGUI(MovieGUITagBase):
     search_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron,
                                             init=False, repr=False)
 
-    # moviedb-#109 Tag selection needs to enable the 'Search' button.
+    # moviedb-#130 Tag selection needs to enable the 'Search' button.
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form."""
         body_frame = super().create_body(outerframe)
@@ -478,7 +486,7 @@ class SelectMovieGUI(MovieGUIBase):
         
         # Populate rows with movies
         for movie in self.movies:
-            # moviedb-#109 Can iid be improved so unmangling in selection callback is simplified
+            # moviedb-#134 Can iid be improved so unmangling in selection callback is simplified
             #   e.g. tree.selection()[0][1:-1].split(',')
             tree.insert('', 'end', iid=f"{(title := movie['title'], year := movie['year'])}",
                         text=title,

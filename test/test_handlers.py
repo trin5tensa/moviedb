@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/10/20, 8:04 AM by stephen.
+#  Last modified 2/15/20, 2:21 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,6 +12,7 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 from collections import deque
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -193,6 +194,7 @@ class TestAddMovieCallback:
         self.dummy_add_movie_tag_link_calls.append(args)
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestSearchMovieCallback:
     
     def test_criteria_correctly_cleaned_up(self, class_setup, monkeypatch):
@@ -267,6 +269,7 @@ class TestSearchMovieCallback:
             handlers.config.app = hold_app
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestEditMovieCallback:
     OLD_TAGS = ['old test tag']
     
@@ -308,6 +311,7 @@ class TestEditMovieCallback:
         yield updates, self.OLD_TAGS, selected_tags
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestSelectMovieCallback:
     TITLE = 'Test Title'
     YEAR = 2042
@@ -350,6 +354,7 @@ class DummyParent:
 dummy_edit_movie_gui_instance = []
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class DummyEditMovieGUI:
     parent: DummyParent
@@ -365,6 +370,7 @@ class DummyEditMovieGUI:
 dummy_select_movie_gui_instance = []
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class DummySelectMovieGUI:
     parent: DummyParent
@@ -378,5 +384,6 @@ class DummySelectMovieGUI:
 dummy_gui_messagebox_calls = []
 
 
+# noinspection PyMissingOrEmptyDocstring
 def dummy_gui_messagebox(*args, **kwargs):
     dummy_gui_messagebox_calls.append((args, kwargs))

@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/12/20, 2:13 PM by stephen.
+#  Last modified 2/15/20, 2:21 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,7 +14,6 @@ This module is the glue between the user's selection of a menu item and the gui.
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 
 from typing import Sequence
 
@@ -60,6 +59,7 @@ def add_movie_callback(movie: config.MovieDict, selected_tags: Sequence[str]):
         movie:
         selected_tags:
     """
+
     database.add_movie(movie)
     movie = config.MovieKeyDict(title=movie['title'], year=movie['year'])
     for tag in selected_tags:
@@ -67,6 +67,15 @@ def add_movie_callback(movie: config.MovieDict, selected_tags: Sequence[str]):
 
 
 def search_movie_callback(criteria: config.FindMovieDict, tags: Sequence[str]):
+    """Find movies which match the user entered criteria.
+    Continue to the next appropriate stage of processing depending on whether no movies, one movie,
+    or more than one movie is found.
+    
+    Args:
+        criteria:
+        tags:
+    """
+    
     # Find compliant movies.
     criteria['tags'] = tags
     # Remove empty items because SQL treats them as meaningful.
@@ -74,7 +83,7 @@ def search_movie_callback(criteria: config.FindMovieDict, tags: Sequence[str]):
                 for k, v in criteria.items()
                 if v != '' and v != [] and v != () and v != ['', '']}
     movies = database.find_movies(criteria)
-
+    
     if (movies_found := len(movies)) <= 0:
         raise exception.MovieSearchFoundNothing
     elif movies_found == 1:
@@ -84,7 +93,7 @@ def search_movie_callback(criteria: config.FindMovieDict, tags: Sequence[str]):
 
 
 def edit_movie_callback(updates: config.MovieUpdateDict, selected_tags: Sequence[str]):
-    """ Add user supplied data to the database.
+    """ Change movie and links in database in accordance with new user supplied data,
 
     Args:
         updates: Fields modified by the user or not.
@@ -94,7 +103,7 @@ def edit_movie_callback(updates: config.MovieUpdateDict, selected_tags: Sequence
     # Edit the movie
     movie = config.FindMovieDict(title=updates['title'], year=[updates['year']])
     
-    # moviedb-#109
+    # moviedb-#125
     #   The movie might have been deleted from the database
     #   So trap any 'not found' errors.
     #   Display helpful message.
@@ -107,6 +116,12 @@ def edit_movie_callback(updates: config.MovieUpdateDict, selected_tags: Sequence
 
 
 def select_movie_callback(title: str, year: int):
+    """Edit a movie selected by the user from a list of movies.
+    
+    Args:
+        title:
+        year:
+    """
     # Get record from database
     movie = database.find_movies(dict(title=title, year=year))[0]
     _instantiate_edit_movie_gui(movie)
