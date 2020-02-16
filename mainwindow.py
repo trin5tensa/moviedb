@@ -1,7 +1,7 @@
 """Main Window."""
 
-#  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/3/19, 12:43 PM by stephen.
+#  Copyright© 2020. Stephen Rigden.
+#  Last modified 2/15/20, 7:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -149,7 +149,7 @@ class MainWindow:
         """Carry out actions needed when main window is closed.
         
         Args:
-            *args: Not used. Required for compatability with caller
+            *args: Not used. Required for compatibility with caller
         """
         # Save geometry in config.app for future permanent storage.
         config.app.geometry = self.parent.winfo_geometry()
@@ -211,6 +211,7 @@ class MenuData:
                         MenuItem('Paste'), ]),
                 Menu('Movie', [
                         MenuItem('Add Movie…', handlers.add_movie),
+                        MenuItem('Edit Movie…', handlers.edit_movie),
                         '-',
                         MenuItem('Import…', handlers.import_movies), ]),
                 ]

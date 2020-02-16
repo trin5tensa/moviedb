@@ -1,7 +1,7 @@
 """Functional pytests for database module. """
 
-#  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/17/19, 9:11 AM by stephen.
+#  Copyright© 2020. Stephen Rigden.
+#  Last modified 1/30/20, 8:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,6 +12,8 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 from dataclasses import dataclass
 from typing import Dict
 
@@ -74,10 +76,13 @@ def loaded_database(hamlet, solaris, dreams, revanche):
     # noinspection PyProtectedMember
     with database._session_scope() as session:
         session.add_all(movies)
-    database.add_tag_and_links('blue', [database.MovieKeyDict(title='Hamlet', year=1996)])
-    database.add_tag_and_links('yellow', [database.MovieKeyDict(title='Revanche', year=2008)])
-    database.add_tag_and_links('green', [database.MovieKeyDict(title='Revanche', year=2008)])
-    database.add_tag_and_links('green', [database.MovieKeyDict(title='Solaris', year=1972)])
+    database.add_tag('blue')
+    database.add_movie_tag_link('blue', database.MovieKeyDict(title='Hamlet', year=1996))
+    database.add_tag('yellow')
+    database.add_movie_tag_link('yellow', database.MovieKeyDict(title='Revanche', year=2008))
+    database.add_tag('green')
+    database.add_movie_tag_link('green', database.MovieKeyDict(title='Revanche', year=2008))
+    database.add_movie_tag_link('green', database.MovieKeyDict(title='Solaris', year=1972))
 
 
 def test_init_database_access_with_new_database(connection):
@@ -149,8 +154,8 @@ def test_add_movie_with_integrity_error(connection, session, hamlet, monkeypatch
     calls = []
     monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
     
+    database.add_movie(hamlet)
     with pytest.raises(exception.MovieDBConstraintFailure):
-        database.add_movie(hamlet)
         database.add_movie(hamlet)
     assert calls == ['UNIQUE constraint failed: movies.title, movies.year']
 
@@ -169,63 +174,69 @@ def test_add_movie_with_notes(connection, session, revanche):
 
 @pytest.mark.usefixtures('loaded_database', 'monkeypatch')
 class TestFindMovie:
+    
     def test_search_movie_year(self):
         test_year = 1996
-        for movie in database.find_movies(dict(year=test_year)):
-            assert movie['year'] == test_year
-
+        movies = database.find_movies(dict(year=test_year))
+        assert movies[0]['year'] == test_year
+    
     def test_search_movie_id(self):
         test_title = 'Hamlet'
         test_id = 1
-        for movie in database.find_movies(database.FindMovieDict(id=test_id)):
-            assert movie['title'] == test_title
-
+        movies = database.find_movies(dict(id=test_id))
+        assert movies[0]['title'] == test_title
+    
     def test_search_movie_title(self):
         expected = 'Hamlet'
-        for movie in database.find_movies(dict(title='Ham')):
-            assert movie['title'] == expected
-
+        movies = database.find_movies(dict(title='Ham'))
+        assert movies[0]['title'] == expected
+    
     def test_search_movie_director(self):
         expected = 'Tarkovsky'
-        for movie in database.find_movies(dict(director='Tark')):
-            assert movie['director'] == expected
-
+        movies = database.find_movies(dict(director='Tark'))
+        assert movies[0]['director'] == expected
+    
     def test_search_movie_notes(self):
         expected = 'Revanche'
-        for movie in database.find_movies(dict(notes='Oscar')):
-            assert movie['title'] == expected
-
+        movies = database.find_movies(dict(notes='Oscar'))
+        assert movies[0]['title'] == expected
+    
     def test_search_movie_with_range_of_minutes(self):
         expected = {122}
-        minutes = {movie['minutes'] for movie in database.find_movies(dict(minutes=[130, 120]))}
+        movies = database.find_movies(dict(minutes=[130, 120]))
+        minutes = {movie['minutes'] for movie in movies}
         assert minutes == expected
-
+    
     def test_search_movie_with_range_of_minutes_2(self):
         expected = {119, 122, 169}
-        minutes = {movie['minutes'] for movie in database.find_movies(dict(minutes=[170, 100]))}
+        movies = database.find_movies(dict(minutes=[170, 100]))
+        minutes = {movie['minutes'] for movie in movies}
         assert minutes == expected
-
+    
     def test_search_movie_with_minute(self):
         expected = {169}
-        minutes = {movie['minutes'] for movie in database.find_movies(dict(minutes=169))}
+        movies = database.find_movies(dict(minutes=169))
+        minutes = {movie['minutes'] for movie in movies}
         assert minutes == expected
-
+    
     def test_search_movie_tag(self):
         expected = {'Revanche', 'Solaris'}
-        titles = {movie['title'] for movie in database.find_movies(dict(tags='green'))}
+        movies = database.find_movies(dict(tags='green'))
+        titles = {movie['title'] for movie in movies}
         assert titles == expected
-
+    
     def test_search_movie_all_tags(self):
         expected = {'Hamlet', 'Revanche'}
-        titles = {movie['title'] for movie in database.find_movies(dict(tags=['blue', 'yellow']))}
+        movies = database.find_movies(dict(tags=['blue', 'yellow']))
+        titles = {movie['title'] for movie in movies}
         assert titles == expected
-
+    
     def test_value_error_is_raised(self, monkeypatch):
         invalid_keys = {'months', }
         expected = f"Invalid attribute '{invalid_keys}'."
         calls = []
         monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
-    
+
         with pytest.raises(ValueError) as exc:
             for _ in database.find_movies(dict(months=[169])):
                 pass
@@ -234,32 +245,28 @@ class TestFindMovie:
         assert calls[0] == expected
 
 
-@pytest.mark.usefixtures('loaded_database')
-class TestEditMovie:
-    def test_edit_movie(self):
-        new_note = 'Science Fiction'
-        database.edit_movie(database.MovieKeyDict(title='Solaris', year=1972), dict(notes=new_note))
-        notes = {movie['notes'] for movie in database.find_movies(dict(title='Solaris'))}
-        assert notes == {new_note, }
+def test_edit_movie(loaded_database):
+    database.edit_movie(database.FindMovieDict(title='Solaris', year=[1972]),
+                        dict(notes=(new_note := 'Science Fiction')))
+    movies = database.find_movies(dict(title='Solaris'))
+    assert movies[0]['notes'] == new_note
 
 
-@pytest.mark.usefixtures('loaded_database')
-class TestDeleteMovie:
-    
-    def test_delete_movie(self):
-        expected = set()
-        database.del_movie(database.MovieKeyDict(title='Solaris', year=1972))
-        titles = {movie['title'] for movie in database.find_movies(dict(title='Solaris'))}
-        assert titles == expected
+def test_delete_movie(loaded_database):
+    database.del_movie(database.FindMovieDict(title='Solaris', year=[1972]))
+    movies = database.find_movies(dict(title='Solaris'))
+    assert movies == []
 
 
-@pytest.mark.usefixtures('loaded_database')
-class TestAllTags:
-    
-    def test_all_tags(self):
-        expected = {'blue', 'yellow', 'green'}
-        tags = database.all_tags()
-        assert set(tags) == expected
+def test_all_tags(loaded_database):
+    tags = database.all_tags()
+    assert set(tags) == {'blue', 'yellow', 'green'}
+
+
+def test_movie_tags(loaded_database, revanche):
+    title_year = database.MovieKeyDict(title=revanche['title'], year=revanche['year'])
+    tags = database.movie_tags(title_year)
+    assert set(tags) == {'yellow', 'green'}
 
 
 @pytest.mark.usefixtures('loaded_database')
@@ -267,39 +274,42 @@ class TestTagOperations:
     
     def test_add_new_tag(self, session):
         tag = 'Movie night candidate'
-        database.add_tag_and_links(tag)
+        database.add_tag(tag)
         
         count = (session.query(database.Tag)
                  .filter(database.Tag.tag == 'Movie night candidate')
                  .count())
         assert count == 1
-
+    
     def test_add_existing_tag_ignored(self, session):
         tag = 'Movie night candidate'
-        database.add_tag_and_links(tag)
-        database.add_tag_and_links(tag)
+        database.add_tag(tag)
+        database.add_tag(tag)
 
         count = (session.query(database.Tag)
                  .filter(database.Tag.tag == 'Movie night candidate')
                  .count())
         assert count == 1
-
+    
     def test_add_links_to_movies(self, session):
         expected = {'Solaris', "Akira Kurosawa's Dreams"}
         test_tag = 'Foreign'
-        movies = [database.MovieKeyDict(title='Solaris', year=1972),
-                  database.MovieKeyDict(title="Akira Kurosawa's Dreams", year=1972)]
-        database.add_tag_and_links(test_tag, movies)
-    
+        database.add_tag(test_tag)
+        movie = database.MovieKeyDict(title='Solaris', year=1972)
+        database.add_movie_tag_link(test_tag, movie)
+        movie = database.MovieKeyDict(title="Akira Kurosawa's Dreams", year=1972)
+        database.add_movie_tag_link(test_tag, movie)
+
         movies = (session.query(database.Movie.title)
                   .filter(database.Movie.tags.any(tag=test_tag)))
         result = {movie.title for movie in movies}
         assert result == expected
-
+    
     def test_edit_tag(self, session):
         old_tag = 'old test tag'
-        movies = [database.MovieKeyDict(title='Solaris', year=1972)]
-        database.add_tag_and_links(old_tag, movies)
+        database.add_tag(old_tag)
+        movie = database.MovieKeyDict(title='Solaris', year=1972)
+        database.add_movie_tag_link(old_tag, movie)
         old_tag_id, tag = (session.query(database.Tag.id, database.Tag.tag)
                            .filter(database.Tag.tag == 'old test tag')
                            .one())
@@ -311,21 +321,32 @@ class TestTagOperations:
                            .one())
 
         assert old_tag_id == new_tag_id
-
+    
+    def test_edit_movies_tag(self, session):
+        title_year = database.MovieKeyDict(title='Revanche', year=2008)
+        old_tags = ('green', 'yellow')
+        new_tags = ('blue', 'yellow')
+        database.edit_movies_tag(title_year, old_tags, new_tags)
+        movies = database.find_movies(database.FindMovieDict(title=title_year['title'],
+                                                             year=[title_year['year']]))
+        assert set(movies[0]['tags']) == {'blue', 'yellow'}
+    
     def test_del_tag(self, session):
         # Add a tag and links
         test_tag = 'Going soon'
-        movies = [database.MovieKeyDict(title='Solaris', year=1972),
-                  database.MovieKeyDict(title='Hamlet', year=1996)]
-        database.add_tag_and_links(test_tag, movies)
-    
+        database.add_tag(test_tag)
+        movie = database.MovieKeyDict(title='Solaris', year=1972)
+        database.add_movie_tag_link(test_tag, movie)
+        movie = database.MovieKeyDict(title='Hamlet', year=1996)
+        database.add_movie_tag_link(test_tag, movie)
+        
         # Delete the tag
         database.del_tag(test_tag)
-    
+        
         # Is the tag still there?
         with pytest.raises(sqlalchemy.orm.exc.NoResultFound):
             session.query(database.Tag).filter(database.Tag.tag == test_tag).one()
-    
+        
         # Do any movies still have the tag?
         assert (session.query(database.Movie)
                 .filter(database.Movie.tags.any(tag=test_tag))
@@ -363,6 +384,7 @@ class InstrumentedSession:
 @dataclass
 class InstrumentedLogging:
     """A Logging dummy with test instrumentation."""
+
     def __init__(self) -> None:
         self.info_calls = []
     

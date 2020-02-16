@@ -1,7 +1,6 @@
-"""The Observer pattern and usabilty functionality."""
-
+"""Observer pattern and neurons."""
 #  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/17/19, 6:50 AM by stephen.
+#  Last modified 12/31/19, 8:13 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -59,29 +58,14 @@ class Observer:
 
 
 @dataclass
-class Neuron(Observer):
-    """An observer that can observe multiple events.
-    
-    Use Case:
-    Input forms often have multiple fields which must be completed before the form can be accepted.
-    For example, an 'OK' button should only be active if all relevant fields are completed.
-    This requires an observer that responds to multiple stimuli.
-    
-    Usage:
-    1) Instantiate Neuron.
-    2) Call the method register_event to register one or more events.
-    3) Call the parent method register to register one or more callables.
-    4) Call <neuron object>(<event id>, state). This will notify the registered notifees with 'True'
-    if all the events are 'True' otherwise with 'False'.
-    5) Call the parent method deregister to remove a observer and stop it from being observed.
-    """
+class BaseNeuron(Observer):
+    """An observer that can observe multiple events. """
     
     events: Dict[Any, bool] = field(default_factory=dict, init=False, repr=False)
     
     def __call__(self, event_id: Any, state: bool):
         """Update one event and update all notifees."""
-        self.events[event_id] = state
-        super().notify(all(self.events.values()))
+        raise NotImplementedError
     
     def register_event(self, event_id: Any, state: bool = False):
         """Register an event
@@ -91,3 +75,57 @@ class Neuron(Observer):
             state:
         """
         self.events[event_id] = state
+
+
+@dataclass
+class AndNeuron(BaseNeuron):
+    """An observer that can observe multiple events.
+    
+    Use Case:
+    Input forms often have multiple fields which must be completed before the form can be accepted.
+    For example, a 'Commit' button should only be active if all required fields are completed.
+    This requires an observer that responds to multiple stimuli. It only reacts when each observed field
+    sends True.
+    
+    Usage:
+    1) Instantiate Neuron.
+    2) Call the method register_event to register the events which will be observed.
+    3) Call the parent method register to register one or more closures. Each closure will execute the
+    action required in a target object (e.g. Activate a button). Note that the target object can be
+    another neuron.
+    4) Call <neuron object>(<event id>, state). This will notify the registered notifees with 'True'
+    if all the events are 'True' otherwise with 'False'.
+    5) Call the parent method deregister to remove a notifee.
+    """
+    
+    def __call__(self, event_id: Any, state: bool):
+        """Update one event and update all notifees."""
+        self.events[event_id] = state
+        super().notify(all(self.events.values()))
+
+
+@dataclass
+class OrNeuron(BaseNeuron):
+    """An observer that can observe multiple events.
+    
+    Use Case:
+    Input forms often have multiple fields which must be completed before the form can be accepted.
+    For example, a 'Search' button should only be active if any field that can be used for the search
+    is completed.    This requires an observer that responds to multiple stimuli. It will react when
+    any observed field sends True.
+ 
+    Usage:
+    1) Instantiate Neuron.
+    2) Call the method register_event to register the events which will be observed.
+    3) Call the parent method register to register one or more closures. Each closure will execute the
+    action required in a target object (e.g. Activate a button). Note that the target object can be
+    another neuron.
+    4) Call <neuron object>(<event id>, state). This will notify the registered notifees with 'True'
+    if any of the events are 'True' otherwise with 'False'.
+    5) Call the parent method deregister to remove a notifee.
+    """
+    
+    def __call__(self, event_id: Any, state: bool):
+        """Update one event and update all notifees."""
+        self.events[event_id] = state
+        super().notify(any(self.events.values()))

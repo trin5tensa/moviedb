@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
-#  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/18/19, 7:18 AM by stephen.
+#  Copyright© 2020. Stephen Rigden.
+#  Last modified 2/15/20, 8:47 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,13 +18,13 @@ import itertools
 import logging
 import sys
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Iterable, List, Optional
+from typing import Generator, Iterable, List, Optional
 
 import sqlalchemy
 import sqlalchemy.exc
 import sqlalchemy.ext.declarative
 import sqlalchemy.ext.hybrid
-from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, Sequence, String, Table, Text,
+from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, String, Table, Text,
                         UniqueConstraint, )
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import query, relationship
@@ -86,12 +86,14 @@ def add_movie(movie: MovieDict):
     Movie(**movie).add()
 
 
-def find_movies(criteria: FindMovieDict) -> Generator[dict, None, None]:
-    """Search for a movie using any supplied_keys.
-
-    Yield record fields which persist after the session has ended.
-    This will produce one record for each movie, tag, and review combination. Therefore one movie may
-    produce more than one yielded record.
+def find_movies(criteria: FindMovieDict) -> List[MovieUpdateDict]:
+    """Search for movies using any supplied_keys.
+    
+    Note:
+        The benefits of lazy evaluation of the SQL search cannot be passed on to the caller as the
+        query.count function returns the undeduplicated count which does not match the number of
+        deduplicated records returned by the query.
+        See https://docs.sqlalchemy.org/en/13/faq/sessions.html#faq-query-deduplicating
 
     Args:
         criteria: FindMovieDict. A dictionary containing none or more of the following keys:
@@ -107,24 +109,22 @@ def find_movies(criteria: FindMovieDict) -> Generator[dict, None, None]:
     Raises:
         ValueError: If a supplied_keys key is not a column name
 
-    Generates:
-        Yields:  Each compliant movie as a dictionary of title, director, minutes, year, notes, and tag.
-        Sends: Not used.
-        Returns: Not used.
+    Returns:
+        A list of movies compliant with the search criteria sorted by title and year.
     """
     Movie.validate_columns(criteria.keys())
     
-    # Execute searches
     with _session_scope() as session:
         movies = _build_movie_query(session, criteria)
-        movies.order_by(Movie.title)
-        for movie, tag in movies:
-            tag = tag.tag if tag else None
-            yield dict(title=movie.title, director=movie.director, minutes=movie.minutes,
-                       year=movie.year, notes=movie.notes, tag=tag)
+    # moviedb-#126 Integration test: Does tag selection work?
+    movies = [MovieUpdateDict(title=movie.title, director=movie.director, minutes=movie.minutes,
+                              year=movie.year, notes=movie.notes, tags=[tag.tag for tag in movie.tags])
+              for movie in movies]
+    movies.sort(key=lambda movie: movie['title'] + str(movie['year']))
+    return movies
 
 
-def edit_movie(title_year: MovieKeyDict, updates: MovieUpdateDict):
+def edit_movie(title_year: FindMovieDict, updates: MovieUpdateDict):
     """Search for one movie and change one or more fields of that movie.
 
     Args:
@@ -132,22 +132,22 @@ def edit_movie(title_year: MovieKeyDict, updates: MovieUpdateDict):
         updates: Contains the fields which will be updated in the selected movie.
     """
     with _session_scope() as session:
-        movie, tag = _build_movie_query(session, title_year).one()
+        movie = _build_movie_query(session, title_year).one()
         movie.edit(updates)
 
 
-def del_movie(title_year: MovieKeyDict):
+def del_movie(title_year: FindMovieDict):
     """Change fields in records.
 
     Args:
         title_year: Specifies teh movie to be deleted.
     """
     with _session_scope() as session:
-        movie, tag = _build_movie_query(session, title_year).one()
+        movie = _build_movie_query(session, title_year).one()
         session.delete(movie)
 
 
-def all_tags() -> List:
+def all_tags() -> List[str]:
     """ List all tags in the database.
     
     Returns: A list of tags
@@ -157,12 +157,22 @@ def all_tags() -> List:
     return [tag[0] for tag in tags]
 
 
-def add_tag_and_links(new_tag: str, movies: Optional[Iterable[MovieKeyDict]] = None):
-    """Add links between a tag and one or more movies. Create the tag if it does not exist..
+def movie_tags(title_year: MovieKeyDict) -> List[str]:
+    """ List the tags of a movie.
+    
+    Returns: A list of tags
+    """
+    with _session_scope() as session:
+        tag_names = session.query(Tag.tag).join(Tag.movies).filter(Movie.title == title_year['title'])
+        tag_names = tag_names.filter(Movie.year == title_year['year'])
+    return [tag_name[0] for tag_name in tag_names]
+
+
+def add_tag(new_tag: str):
+    """Add links between a tag and none or more movies. Create the tag if it does not exist.
 
     Args:
         new_tag: Text of new tag.
-        movies: Iterable of movies which will be tagged with the new tag.
     """
     
     # Add the tag unless it is already in the database.
@@ -170,17 +180,21 @@ def add_tag_and_links(new_tag: str, movies: Optional[Iterable[MovieKeyDict]] = N
         Tag(new_tag).add()
     except sqlalchemy.exc.IntegrityError:
         pass
-    
-    # Add links between movies and this tag.
-    if movies:
-        with _session_scope() as session:
-            tag = session.query(Tag).filter(Tag.tag == new_tag).one()
 
-            for title_year in movies:
-                movie = (session.query(Movie)
-                         .filter(Movie.title == title_year['title'], Movie.year == title_year['year'])
-                         .one())
-                movie.tags.append(tag)
+
+def add_movie_tag_link(tag: str, movie: MovieKeyDict):
+    """Add link between a tag and a movie.
+
+    Args:
+        tag: Name of tag.
+        movie: Movie which will be linked to the new tag.
+    """
+    with _session_scope() as session:
+        tag = session.query(Tag).filter(Tag.tag == tag).one()
+        movie = (session.query(Movie)
+                 .filter(Movie.title == movie['title'], Movie.year == movie['year'])
+                 .one())
+        movie.tags.append(tag)
 
 
 def edit_tag(old_tag: str, new_tag: str):
@@ -193,6 +207,29 @@ def edit_tag(old_tag: str, new_tag: str):
     with _session_scope() as session:
         tag = session.query(Tag).filter(Tag.tag == old_tag).one()
         tag.tag = new_tag
+
+
+def edit_movies_tag(movie: MovieKeyDict, old_tags: Iterable[str], new_tags: Iterable[str]):
+    """Replace the links to tags associated with a specified movie with links to a new set of tags.
+    
+    Args:
+        movie:
+        old_tags: The old set of tags which will be removed from the movie.
+        new_tags: The new set of tags which will be linked to the movie.
+        
+    Any tags which appear in both sets will be ignored.
+    This function edits links between movies and tags. Neither the movies nor the tags are edited.
+    """
+    with _session_scope() as session:
+        movie = (session.query(Movie)
+                 .filter(Movie.title == movie['title'], Movie.year == movie['year'])
+                 .one())
+        for name in (set(old_tags) - set(new_tags)):
+            tag = session.query(Tag).filter(Tag.tag == name).one()
+            movie.tags.remove(tag)
+        for name in (set(new_tags) - set(old_tags)):
+            tag = session.query(Tag).filter(Tag.tag == name).one()
+            movie.tags.append(tag)
 
 
 def del_tag(tag: str):
@@ -221,13 +258,14 @@ class MoviesMetaData(Base):
 class Movie(Base):
     """Movies table schema."""
     __tablename__ = 'movies'
-    
-    id = Column(Integer, Sequence('movie_id_sequence'), primary_key=True)
+
+    id = Column(Integer, sqlalchemy.Sequence('movie_id_sequence'), primary_key=True)
     title = Column(String(80), nullable=False)
     director = Column(String(24))
     minutes = Column(Integer)
     year = Column(Integer, CheckConstraint(f'year>={MUYBRIDGE}'), CheckConstraint('year<10000'),
                   nullable=False)
+    # moviedb-#127 Add a synopsis field
     notes = Column(Text)
     UniqueConstraint(title, year)
     
@@ -236,7 +274,7 @@ class Movie(Base):
     
     def __init__(self, title: str, year: int, director: str = None,
                  minutes: int = None, notes: str = None):
-        
+
         # Carry out validation which is not done by SQLAlchemy or sqlite3
         null_strings = set(itertools.filterfalse(lambda arg: arg != '', [title, year]))
         if null_strings == {''}:
@@ -251,7 +289,7 @@ class Movie(Base):
                    f"or the minute column.")
             logging.error(msg)
             raise
-    
+
         self.title = title
         self.director = director
         self.minutes = minutes
@@ -272,6 +310,7 @@ class Movie(Base):
             if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
                 msg = exc.orig.args[0]
                 logging.error(msg)
+                # moviedb-#128 Change to raise ... from
                 raise exception.MovieDBConstraintFailure(msg)
             else:
                 raise
@@ -310,7 +349,8 @@ class Tag(Base):
     """Table schema for tags."""
     __tablename__ = 'tags'
 
-    id = Column(sqlalchemy.Integer, Sequence('tag_id_sequence'), primary_key=True)
+    id = Column(sqlalchemy.Integer, sqlalchemy.Sequence('tag_id_sequence'), primary_key=True)
+    # moviedb-#129 Change 'tag' to 'name'.
     tag = Column(String(24), nullable=False, unique=True)
 
     movies = relationship('Movie', secondary='movie_tag', back_populates='tags', cascade='all')
@@ -333,13 +373,13 @@ class Review(Base):
 
     This table has been designed to provide a single row for a reviewer and rating value.
     So a 3.5/4 star rating from Ebert will be linked to none or more movies.
-    The reviewer can ba an individual like 'Ebert' for an aggregator like 'Rotten Tomatoes.
+    The reviewer can ba an individual like 'Ebert' or an aggregator like 'Rotten Tomatoes.
     max_rating is part of the secondary key. This allows for a particular reviewer changing
     his/her/its rating system.
     """
     __tablename__ = 'reviews'
 
-    id = Column(sqlalchemy.Integer, Sequence('review_id_sequence'), primary_key=True)
+    id = Column(sqlalchemy.Integer, sqlalchemy.Sequence('review_id_sequence'), primary_key=True)
     reviewer = Column(String(24), nullable=False)
     rating = Column(Integer, nullable=False)
     max_rating = Column(Integer, nullable=False)
@@ -364,7 +404,7 @@ class Review(Base):
 
 
 @contextmanager
-def _session_scope():
+def _session_scope() -> Generator[Session, None, None]:
     """Provide a session scope around a series of operations."""
     session = Session()
     try:
@@ -380,7 +420,7 @@ def _session_scope():
         session.close()
 
 
-def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy.orm.query.Query:
+def _build_movie_query(session: Session, criteria: FindMovieDict) -> sqlalchemy.orm.query.Query:
     """Build a query.
 
     Args:
@@ -391,7 +431,9 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
     Returns:
         An SQL Query object
     """
-    movies = (session.query(Movie, Tag).outerjoin(Movie.tags))
+
+    # noinspection PyUnresolvedReferences
+    movies = session.query(Movie).outerjoin(Movie.tags)
     if 'id' in criteria:
         movies = movies.filter(Movie.id == criteria['id'])
     if 'title' in criteria:
@@ -419,5 +461,4 @@ def _build_movie_query(session: Session, criteria: Dict[str, Any]) -> sqlalchemy
         if isinstance(tags, str):
             tags = [tags, ]
         movies = (movies.filter(Tag.tag.in_(tags)))
-
     return movies
