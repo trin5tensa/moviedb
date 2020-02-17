@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/15/20, 2:21 PM by stephen.
+#  Last modified 2/17/20, 6:19 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,23 +21,20 @@ tk: 'tk'
 mainwindow: 'mainwindow'
 
 
-# moviedb-#123 Change 'Dict' to 'Def in TypedDict names
-
-
-class MovieKeyDict(TypedDict):
+class MovieKeyDef(TypedDict):
     """Mandatory fields for a movie."""
     title: str
     year: int
 
 
-class MovieDict(MovieKeyDict, total=False):
+class MovieDef(MovieKeyDef, total=False):
     """Optional fields for a movie."""
     director: str
     minutes: int
     notes: str
 
 
-class MovieUpdateDict(TypedDict, total=False):
+class MovieUpdateDef(TypedDict, total=False):
     """A dictionary of fields for updating.
     
     WARNING: Only use this definition for updating existing records."""
@@ -49,7 +46,7 @@ class MovieUpdateDict(TypedDict, total=False):
     tags: Sequence[str]
 
 
-class FindMovieDict(TypedDict, total=False):
+class FindMovieDef(TypedDict, total=False):
     """A dictionary containing none or more of the following keys:
             title: A matching column will be a superstring of this value.
             director: A matching column will be a superstring of this value.

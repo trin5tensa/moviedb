@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/15/20, 2:21 PM by stephen.
+#  Last modified 2/17/20, 6:09 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -220,7 +220,7 @@ class AddMovieGUI(MovieGUITagBase):
     """ A form for adding a movie."""
     
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[config.MovieDict], None]
+    callback: Callable[[config.MovieDef], None]
     # Neuron controlling enabled state of Commit button
     commit_neuron: neurons.AndNeuron = field(default_factory=neurons.AndNeuron,
                                              init=False, repr=False)
@@ -309,9 +309,9 @@ class EditMovieGUI(AddMovieGUI):
     """ A form for editing a movie."""
     
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[config.MovieUpdateDict, Sequence[str]], None]
+    callback: Callable[[config.MovieUpdateDef, Sequence[str]], None]
     # Fields of the movie to be edited.
-    movie: config.MovieUpdateDict
+    movie: config.MovieUpdateDef
     # Neuron controlling enabled state of Commit button
     commit_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron,
                                             init=False, repr=False)
@@ -343,7 +343,7 @@ class EditMovieGUI(AddMovieGUI):
 class SearchMovieGUI(MovieGUITagBase):
     """A form for searching for a movie."""
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[config.FindMovieDict, Sequence[str]], None]
+    callback: Callable[[config.FindMovieDef, Sequence[str]], None]
     
     # Neuron controlling enabled state of Search button
     search_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron,
@@ -462,7 +462,7 @@ class SearchMovieGUI(MovieGUITagBase):
 class SelectMovieGUI(MovieGUIBase):
     """A form for selecting a movie."""
     # A generator of compliant movie records.
-    movies: List[config.MovieUpdateDict]
+    movies: List[config.MovieUpdateDef]
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[str, int], None]
     

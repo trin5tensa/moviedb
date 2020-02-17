@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/15/20, 2:21 PM by stephen.
+#  Last modified 2/17/20, 6:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -211,7 +211,7 @@ class TestSearchMovieCallback:
         assert isinstance(exc.value, exception.MovieSearchFoundNothing)
     
     def test_single_movie_found_calls_instantiate_edit_movie_gui(self, class_setup, monkeypatch):
-        movie = handlers.config.MovieUpdateDict(title='Test Movie')
+        movie = handlers.config.MovieUpdateDef(title='Test Movie')
         monkeypatch.setattr(handlers.database, 'find_movies', self.configure_dummy_find_movies([movie]))
         all_tags = ['test tag']
         monkeypatch.setattr(handlers.database, 'all_tags', lambda: all_tags)
@@ -220,10 +220,10 @@ class TestSearchMovieCallback:
             handlers.search_movie_callback(self.criteria, self.tags)
             expected = handlers.config.app.tk_root, all_tags, handlers.edit_movie_callback, movie
         assert dummy_edit_movie_gui_instance[0] == expected
-    
+
     def test_multiple_movies_found_calls_select_movie_gui(self, class_setup, monkeypatch):
-        movie1 = handlers.config.MovieUpdateDict(title='Test Movie 1')
-        movie2 = handlers.config.MovieUpdateDict(title='Test Movie 2')
+        movie1 = handlers.config.MovieUpdateDef(title='Test Movie 1')
+        movie2 = handlers.config.MovieUpdateDef(title='Test Movie 2')
         monkeypatch.setattr(handlers.database, 'find_movies',
                             self.configure_dummy_find_movies([movie1, movie2]))
         monkeypatch.setattr(handlers.guiwidgets,
@@ -305,7 +305,7 @@ class TestEditMovieCallback:
     
     @contextmanager
     def class_context(self):
-        updates = handlers.config.MovieUpdateDict(title='Test Title', year=4242, notes='Test note')
+        updates = handlers.config.MovieUpdateDef(title='Test Title', year=4242, notes='Test note')
         selected_tags = ['test tag']
         handlers.edit_movie_callback(updates, selected_tags)
         yield updates, self.OLD_TAGS, selected_tags
@@ -359,8 +359,8 @@ dummy_edit_movie_gui_instance = []
 class DummyEditMovieGUI:
     parent: DummyParent
     all_tag_names: Sequence[str]
-    callback: Callable[[handlers.config.MovieUpdateDict, Sequence[str]], None]
-    movie: handlers.config.MovieUpdateDict
+    callback: Callable[[handlers.config.MovieUpdateDef, Sequence[str]], None]
+    movie: handlers.config.MovieUpdateDef
     
     def __post_init__(self):
         dummy_edit_movie_gui_instance.append((self.parent, self.all_tag_names,
@@ -374,8 +374,8 @@ dummy_select_movie_gui_instance = []
 @dataclass
 class DummySelectMovieGUI:
     parent: DummyParent
-    movies: List[handlers.config.MovieUpdateDict]
-    callback: Callable[[handlers.config.MovieUpdateDict, Sequence[str]], None]
+    movies: List[handlers.config.MovieUpdateDef]
+    callback: Callable[[handlers.config.MovieUpdateDef, Sequence[str]], None]
     
     def __post_init__(self):
         dummy_select_movie_gui_instance.append((self.parent, self.movies, self.callback))

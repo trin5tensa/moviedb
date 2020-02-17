@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/14/20, 9:03 AM by stephen.
+#  Last modified 2/17/20, 6:08 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -544,9 +544,9 @@ class TestEditMovieGUI:
     def movie_context(self):
         self.neuron_linker_args = []
         all_tag_names = ('test tag 1', 'test tag 2')
-        movie = guiwidgets.config.MovieUpdateDict(title='Test Movie', year=2050,
-                                                  director='Test Director', minutes=142,
-                                                  notes='Test note', tags=('test selected tag',))
+        movie = guiwidgets.config.MovieUpdateDef(title='Test Movie', year=2050,
+                                                 director='Test Director', minutes=142,
+                                                 notes='Test note', tags=('test selected tag',))
         # noinspection PyTypeChecker
         yield guiwidgets.EditMovieGUI(DummyTk(), all_tag_names, movie_gui_callback, movie)
     
@@ -1194,5 +1194,5 @@ callback_calls = []
 
 
 # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring
-def movie_gui_callback(movie_dict: guiwidgets.config.MovieDict, tags: Sequence[str]):
+def movie_gui_callback(movie_dict: guiwidgets.config.MovieDef, tags: Sequence[str]):
     callback_calls.append((movie_dict, tags))
