@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/15/20, 2:21 PM by stephen.
+#  Last modified 2/17/20, 6:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -52,21 +52,21 @@ def import_movies():
                                   detail=exc.args[0], icon='warning')
 
 
-def add_movie_callback(movie: config.MovieDict, selected_tags: Sequence[str]):
+def add_movie_callback(movie: config.MovieDef, selected_tags: Sequence[str]):
     """ Add user supplied data to the database.
 
     Args:
         movie:
         selected_tags:
     """
-
+    
     database.add_movie(movie)
-    movie = config.MovieKeyDict(title=movie['title'], year=movie['year'])
+    movie = config.MovieKeyDef(title=movie['title'], year=movie['year'])
     for tag in selected_tags:
         database.add_movie_tag_link(tag, movie)
 
 
-def search_movie_callback(criteria: config.FindMovieDict, tags: Sequence[str]):
+def search_movie_callback(criteria: config.FindMovieDef, tags: Sequence[str]):
     """Find movies which match the user entered criteria.
     Continue to the next appropriate stage of processing depending on whether no movies, one movie,
     or more than one movie is found.
@@ -92,7 +92,7 @@ def search_movie_callback(criteria: config.FindMovieDict, tags: Sequence[str]):
         guiwidgets.SelectMovieGUI(config.app.tk_root, movies, select_movie_callback)
 
 
-def edit_movie_callback(updates: config.MovieUpdateDict, selected_tags: Sequence[str]):
+def edit_movie_callback(updates: config.MovieUpdateDef, selected_tags: Sequence[str]):
     """ Change movie and links in database in accordance with new user supplied data,
 
     Args:
@@ -101,7 +101,7 @@ def edit_movie_callback(updates: config.MovieUpdateDict, selected_tags: Sequence
             deselected by the user are not included.
     """
     # Edit the movie
-    movie = config.FindMovieDict(title=updates['title'], year=[updates['year']])
+    movie = config.FindMovieDef(title=updates['title'], year=[updates['year']])
     
     # moviedb-#125
     #   The movie might have been deleted from the database
@@ -110,7 +110,7 @@ def edit_movie_callback(updates: config.MovieUpdateDict, selected_tags: Sequence
     database.edit_movie(movie, updates)
     
     # Edit links
-    movie = config.MovieKeyDict(title=updates['title'], year=updates['year'])
+    movie = config.MovieKeyDef(title=updates['title'], year=updates['year'])
     old_tags = database.movie_tags(movie)
     database.edit_movies_tag(movie, old_tags, selected_tags)
 
@@ -127,6 +127,6 @@ def select_movie_callback(title: str, year: int):
     _instantiate_edit_movie_gui(movie)
 
 
-def _instantiate_edit_movie_gui(movie: config.MovieUpdateDict):
+def _instantiate_edit_movie_gui(movie: config.MovieUpdateDef):
     all_tag_names = database.all_tags()
     guiwidgets.EditMovieGUI(config.app.tk_root, all_tag_names, edit_movie_callback, movie)

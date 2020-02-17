@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/15/20, 8:47 AM by stephen.
+#  Last modified 2/17/20, 6:09 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +31,7 @@ from sqlalchemy.orm import query, relationship
 from sqlalchemy.orm.session import sessionmaker
 
 import exception
-from config import FindMovieDict, MovieDict, MovieKeyDict, MovieUpdateDict
+from config import FindMovieDef, MovieDef, MovieKeyDef, MovieUpdateDef
 
 
 MUYBRIDGE = 1878
@@ -77,7 +77,7 @@ def connect_to_database(filename: str = database_fn):
             date_last_accessed.value = timestamp
 
 
-def add_movie(movie: MovieDict):
+def add_movie(movie: MovieDef):
     """Add a movie to the database
 
     Args:
@@ -86,7 +86,7 @@ def add_movie(movie: MovieDict):
     Movie(**movie).add()
 
 
-def find_movies(criteria: FindMovieDict) -> List[MovieUpdateDict]:
+def find_movies(criteria: FindMovieDef) -> List[MovieUpdateDef]:
     """Search for movies using any supplied_keys.
     
     Note:
@@ -117,14 +117,14 @@ def find_movies(criteria: FindMovieDict) -> List[MovieUpdateDict]:
     with _session_scope() as session:
         movies = _build_movie_query(session, criteria)
     # moviedb-#126 Integration test: Does tag selection work?
-    movies = [MovieUpdateDict(title=movie.title, director=movie.director, minutes=movie.minutes,
-                              year=movie.year, notes=movie.notes, tags=[tag.tag for tag in movie.tags])
+    movies = [MovieUpdateDef(title=movie.title, director=movie.director, minutes=movie.minutes,
+                             year=movie.year, notes=movie.notes, tags=[tag.tag for tag in movie.tags])
               for movie in movies]
     movies.sort(key=lambda movie: movie['title'] + str(movie['year']))
     return movies
 
 
-def edit_movie(title_year: FindMovieDict, updates: MovieUpdateDict):
+def edit_movie(title_year: FindMovieDef, updates: MovieUpdateDef):
     """Search for one movie and change one or more fields of that movie.
 
     Args:
@@ -136,7 +136,7 @@ def edit_movie(title_year: FindMovieDict, updates: MovieUpdateDict):
         movie.edit(updates)
 
 
-def del_movie(title_year: FindMovieDict):
+def del_movie(title_year: FindMovieDef):
     """Change fields in records.
 
     Args:
@@ -157,7 +157,7 @@ def all_tags() -> List[str]:
     return [tag[0] for tag in tags]
 
 
-def movie_tags(title_year: MovieKeyDict) -> List[str]:
+def movie_tags(title_year: MovieKeyDef) -> List[str]:
     """ List the tags of a movie.
     
     Returns: A list of tags
@@ -182,7 +182,7 @@ def add_tag(new_tag: str):
         pass
 
 
-def add_movie_tag_link(tag: str, movie: MovieKeyDict):
+def add_movie_tag_link(tag: str, movie: MovieKeyDef):
     """Add link between a tag and a movie.
 
     Args:
@@ -209,7 +209,7 @@ def edit_tag(old_tag: str, new_tag: str):
         tag.tag = new_tag
 
 
-def edit_movies_tag(movie: MovieKeyDict, old_tags: Iterable[str], new_tags: Iterable[str]):
+def edit_movies_tag(movie: MovieKeyDef, old_tags: Iterable[str], new_tags: Iterable[str]):
     """Replace the links to tags associated with a specified movie with links to a new set of tags.
     
     Args:
@@ -315,7 +315,7 @@ class Movie(Base):
             else:
                 raise
 
-    def edit(self, updates: MovieUpdateDict):
+    def edit(self, updates: MovieUpdateDef):
         """Edit any column of the table.
 
         Args:
@@ -420,7 +420,7 @@ def _session_scope() -> Generator[Session, None, None]:
         session.close()
 
 
-def _build_movie_query(session: Session, criteria: FindMovieDict) -> sqlalchemy.orm.query.Query:
+def _build_movie_query(session: Session, criteria: FindMovieDef) -> sqlalchemy.orm.query.Query:
     """Build a query.
 
     Args:
