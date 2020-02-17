@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/17/20, 7:24 AM by stephen.
+#  Last modified 2/17/20, 7:29 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -66,7 +66,6 @@ class MovieGUIBase:
         """
     
         # Initialize an internal dictionary to simplify field data management.
-        # Was in AddMovieGUI
         self.entry_fields = {internal_name: EntryField(field_text, '')
                              for internal_name, field_text
                              in zip(INTERNAL_NAMES, FIELD_TEXTS)}
