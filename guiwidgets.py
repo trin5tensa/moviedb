@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/17/20, 6:09 AM by stephen.
+#  Last modified 2/17/20, 7:29 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -64,6 +64,12 @@ class MovieGUIBase:
         
         This has two configured columns one for labels and another for user input fields
         """
+    
+        # Initialize an internal dictionary to simplify field data management.
+        self.entry_fields = {internal_name: EntryField(field_text, '')
+                             for internal_name, field_text
+                             in zip(INTERNAL_NAMES, FIELD_TEXTS)}
+    
         body_frame = ttk.Frame(outerframe, padding=(10, 25, 10, 0))
         body_frame.grid(column=0, row=0, sticky='n')
         body_frame.columnconfigure(0, weight=1, minsize=30)
@@ -227,13 +233,8 @@ class AddMovieGUI(MovieGUITagBase):
     
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form with a column for labels and another for user input fields."""
+
         body_frame = super().create_body(outerframe)
-        
-        # Initialize an internal dictionary to simplify field data management.
-        # moviedb-#131 This statement should be in MovieGUIBase
-        self.entry_fields = {internal_name: EntryField(field_text, '')
-                             for internal_name, field_text
-                             in zip(INTERNAL_NAMES, FIELD_TEXTS)}
         
         # Create entry fields and their labels.
         # moviedb-#132 Make 'notes' field into a tk.Text field (NB: no ttk.Text field:( )
@@ -331,8 +332,9 @@ class EditMovieGUI(AddMovieGUI):
         
         for internal_name in INTERNAL_NAMES:
             entry_field = self.entry_fields[internal_name]
-            # TODO Remove note and 'noinspection' when fixed
-            #   Pycharm reported bug:  https://youtrack.jetbrains.com/issue/PY-40397
+            # PyCharm Bug:
+            #  Remove note and 'noinspection' when fixed
+            #  Reported - https://youtrack.jetbrains.com/issue/PY-40397
             # noinspection PyTypedDict
             entry_field.original_value = self.movie[internal_name]
             entry_field.textvariable.set(entry_field.original_value)
