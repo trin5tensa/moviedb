@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/18/20, 8:52 AM by stephen.
+#  Last modified 2/21/20, 8:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -102,27 +102,23 @@ def edit_movie_callback(updates: config.MovieUpdateDef, selected_tags: Sequence[
     """
     # Edit the movie
     movie = config.FindMovieDef(title=updates['title'], year=[updates['year']])
-
-    # moviedb-#125
-    #   Test new code
-
+    missing_movie_args = (config.app.tk_root, 'Missing movie',
+                          f'The movie {movie} is not available. It may have been '
+                          f'deleted by another process.')
+    
     try:
         database.edit_movie(movie, updates)
     except exception.MovieSearchFoundNothing:
-        guiwidgets.gui_messagebox(config.app.tk_root, 'Missing movie',
-                                  f"The movie {movie} is not available. This is probably "
-                                  f"because it has been deleted by another process. (1)")
+        guiwidgets.gui_messagebox(*missing_movie_args)
         return
-
+    
     # Edit links
     movie = config.MovieKeyDef(title=updates['title'], year=updates['year'])
     old_tags = database.movie_tags(movie)
     try:
         database.edit_movies_tag(movie, old_tags, selected_tags)
     except exception.MovieSearchFoundNothing:
-        guiwidgets.gui_messagebox(config.app.tk_root, 'Missing movie',
-                                  f"The movie {movie} is not available. This is probably "
-                                  f"because it has been deleted by another process. (2)")
+        guiwidgets.gui_messagebox(*missing_movie_args)
 
 
 def select_movie_callback(title: str, year: int):
