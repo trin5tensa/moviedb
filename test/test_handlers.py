@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/21/20, 8:11 AM by stephen.
+#  Last modified 2/22/20, 7:43 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -281,7 +281,7 @@ class TestEditMovieCallback:
     def raise_movie_not_found(self, *args):
         raise handlers.exception.MovieSearchFoundNothing
     
-    def test_edit_movie_raises_not_found_exception(self, class_patches, monkeypatch):
+    def test_edit_movie_shows_movie_not_found_gui_alert(self, class_patches, monkeypatch):
         monkeypatch.setattr(handlers.database, 'edit_movie', self.raise_movie_not_found)
         msg_args = []
         monkeypatch.setattr(handlers.guiwidgets, 'gui_messagebox',
@@ -290,8 +290,8 @@ class TestEditMovieCallback:
             assert msg_args == [(DummyParent(), 'Missing movie',
                                  "The movie {'title': 'Test Title', 'year': [4242]} is not available. "
                                  "It may have been deleted by another process.")]
-    
-    def test_edit_movie_tags_raises_not_found_exception(self, class_patches, monkeypatch):
+
+    def test_edit_movie_tags_shows_movie_not_found_gui_alert(self, class_patches, monkeypatch):
         monkeypatch.setattr(handlers.database, 'edit_movies_tag', self.raise_movie_not_found)
         msg_args = []
         monkeypatch.setattr(handlers.guiwidgets, 'gui_messagebox',

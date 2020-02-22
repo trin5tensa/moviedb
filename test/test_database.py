@@ -1,7 +1,7 @@
 """Functional pytests for database module. """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/17/20, 6:09 AM by stephen.
+#  Last modified 2/22/20, 7:43 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -252,6 +252,14 @@ def test_edit_movie(loaded_database):
     assert movies[0]['notes'] == new_note
 
 
+def test_edit_movie_raises__movie_not_found_exception(loaded_database):
+    with pytest.raises(exception.MovieSearchFoundNothing) as cm:
+        database.edit_movie(database.FindMovieDef(title='Non Existent Movie', year=[1972]),
+                            dict(notes=''))
+    assert cm.typename == 'MovieSearchFoundNothing'
+    assert cm.match("The movie Non Existent Movie, 1972 is not in the database.")
+
+
 def test_delete_movie(loaded_database):
     database.del_movie(database.FindMovieDef(title='Solaris', year=[1972]))
     movies = database.find_movies(dict(title='Solaris'))
@@ -321,7 +329,7 @@ class TestTagOperations:
                            .one())
 
         assert old_tag_id == new_tag_id
-    
+
     def test_edit_movies_tag(self, session):
         title_year = database.MovieKeyDef(title='Revanche', year=2008)
         old_tags = ('green', 'yellow')
@@ -330,7 +338,16 @@ class TestTagOperations:
         movies = database.find_movies(database.FindMovieDef(title=title_year['title'],
                                                             year=[title_year['year']]))
         assert set(movies[0]['tags']) == {'blue', 'yellow'}
-    
+
+    def test_edit_movies_tag_raises__movie_not_found_exception(self, session):
+        title_year = database.MovieKeyDef(title='Non Existent Movie', year=1972)
+        new_tags = ('green', 'yellow')
+        old_tags = ('blue', 'yellow')
+        with pytest.raises(exception.MovieSearchFoundNothing) as cm:
+            database.edit_movies_tag(title_year, old_tags, new_tags)
+        assert cm.typename == 'MovieSearchFoundNothing'
+        assert cm.match("The movie Non Existent Movie, 1972 is not in the database.")
+
     def test_del_tag(self, session):
         # Add a tag and links
         test_tag = 'Going soon'

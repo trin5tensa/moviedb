@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/18/20, 8:52 AM by stephen.
+#  Last modified 2/22/20, 7:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -132,15 +132,14 @@ def edit_movie(title_year: FindMovieDef, updates: MovieUpdateDef):
         updates: Contains the fields which will be updated in the selected movie.
     """
     
-    # moviedb-#125 Test new code
     try:
         with _session_scope() as session:
             movie = _build_movie_query(session, title_year).one()
             movie.edit(updates)
     
-    # The specified movie is not available possible because it was deleted by another process.
+    # The specified movie is not available possibly because it was deleted by another process.
     except sqlalchemy.orm.exc.NoResultFound as exc:
-        msg = f"The movie {title_year} is not in the database."
+        msg = f"The movie {title_year['title']}, {title_year['year'][0]} is not in the database."
         raise exception.MovieSearchFoundNothing(msg) from exc
 
 
@@ -229,7 +228,6 @@ def edit_movies_tag(movie: MovieKeyDef, old_tags: Iterable[str], new_tags: Itera
     This function edits links between movies and tags. Neither the movies nor the tags are edited.
     """
     
-    # moviedb-#125 Test new code
     try:
         with _session_scope() as session:
             movie = (session.query(Movie)
