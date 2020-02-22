@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/17/20, 8:45 AM by stephen.
+#  Last modified 2/22/20, 7:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -131,9 +131,16 @@ def edit_movie(title_year: FindMovieDef, updates: MovieUpdateDef):
         title_year: Specifies the movie to be selected.
         updates: Contains the fields which will be updated in the selected movie.
     """
-    with _session_scope() as session:
-        movie = _build_movie_query(session, title_year).one()
-        movie.edit(updates)
+    
+    try:
+        with _session_scope() as session:
+            movie = _build_movie_query(session, title_year).one()
+            movie.edit(updates)
+    
+    # The specified movie is not available possibly because it was deleted by another process.
+    except sqlalchemy.orm.exc.NoResultFound as exc:
+        msg = f"The movie {title_year['title']}, {title_year['year'][0]} is not in the database."
+        raise exception.MovieSearchFoundNothing(msg) from exc
 
 
 def del_movie(title_year: FindMovieDef):
@@ -220,16 +227,21 @@ def edit_movies_tag(movie: MovieKeyDef, old_tags: Iterable[str], new_tags: Itera
     Any tags which appear in both sets will be ignored.
     This function edits links between movies and tags. Neither the movies nor the tags are edited.
     """
-    with _session_scope() as session:
-        movie = (session.query(Movie)
-                 .filter(Movie.title == movie['title'], Movie.year == movie['year'])
-                 .one())
-        for name in (set(old_tags) - set(new_tags)):
-            tag = session.query(Tag).filter(Tag.tag == name).one()
-            movie.tags.remove(tag)
-        for name in (set(new_tags) - set(old_tags)):
-            tag = session.query(Tag).filter(Tag.tag == name).one()
-            movie.tags.append(tag)
+    
+    try:
+        with _session_scope() as session:
+            movie = (session.query(Movie)
+                     .filter(Movie.title == movie['title'], Movie.year == movie['year'])
+                     .one())
+            for name in (set(old_tags) - set(new_tags)):
+                tag = session.query(Tag).filter(Tag.tag == name).one()
+                movie.tags.remove(tag)
+            for name in (set(new_tags) - set(old_tags)):
+                tag = session.query(Tag).filter(Tag.tag == name).one()
+                movie.tags.append(tag)
+    except sqlalchemy.orm.exc.NoResultFound as exc:
+        msg = f"The movie {movie['title']}, {movie['year']} is not in the database."
+        raise exception.MovieSearchFoundNothing(msg) from exc
 
 
 def del_tag(tag: str):
@@ -349,7 +361,6 @@ class Tag(Base):
     __tablename__ = 'tags'
 
     id = Column(sqlalchemy.Integer, sqlalchemy.Sequence('tag_id_sequence'), primary_key=True)
-    # moviedb-#129 Change 'tag' to 'name'.
     tag = Column(String(24), nullable=False, unique=True)
 
     movies = relationship('Movie', secondary='movie_tag', back_populates='tags', cascade='all')
