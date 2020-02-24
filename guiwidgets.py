@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/17/20, 7:29 AM by stephen.
+#  Last modified 2/24/20, 7:22 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -182,7 +182,6 @@ class MovieGUITagBase(MovieGUIBase):
             body_frame: The frame enclosing the treeview.
             row: The tk grid row of the item within the frame's grid
         """
-        # moviedb-#130 Selecting or deselecting a tag should enable the 'Commit' button
         label = ttk.Label(body_frame, text=SELECT_TAGS_TEXT, padding=(0, 2))
         label.grid(column=0, row=row, sticky='ne', padx=5)
         tags_frame = ttk.Frame(body_frame, padding=5)
@@ -208,7 +207,7 @@ class MovieGUITagBase(MovieGUIBase):
     
         Returns: The callback.
         """
-        
+
         # noinspection PyUnusedLocal
         def update_tag_selection(*args):
             """Save the newly changed user selection.
@@ -217,7 +216,21 @@ class MovieGUITagBase(MovieGUIBase):
                 *args: Not used. Needed for compatibility with Tk:Tcl caller.
             """
             self.selected_tags = tree.selection()
-        
+    
+            # moviedb-#130
+            #   Notify the 'Commit' button's neuron
+            #   if the user has changed the selection
+            #   and it differs from the original.
+    
+            # moviedb-#130
+            #   What and where is the original selection?
+    
+            # moviedb-#130
+            #   What and where is the new selection?
+    
+            # moviedb-#130
+            #   What and where is the neuron?
+
         return update_tag_selection
 
 
@@ -351,7 +364,6 @@ class SearchMovieGUI(MovieGUITagBase):
     search_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron,
                                             init=False, repr=False)
 
-    # moviedb-#130 Tag selection needs to enable the 'Search' button.
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form."""
         body_frame = super().create_body(outerframe)
