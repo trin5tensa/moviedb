@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/17/20, 6:08 AM by stephen.
+#  Last modified 3/4/20, 9:23 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -245,7 +245,7 @@ class TestAddMovieGUI:
             tags_frame = bodyframe.children[-1]
             tree = tags_frame.children[0]
             assert tree.insert_calls == [(('', 'end', tag), dict(text=tag, tags='tags'))
-                                         for tag in movie_gui.all_tag_names]
+                                         for tag in movie_gui.all_tags]
     
     def test_scrollbar_created(self, patch_tk):
         with self.movie_context() as movie_gui:
@@ -478,7 +478,7 @@ class TestAddMovieGUI:
     def movie_context(self):
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
-        yield guiwidgets.AddMovieGUI(DummyTk(), all_tag_names=tags,
+        yield guiwidgets.AddMovieGUI(DummyTk(), all_tags=tags,
                                      # selected_tags=selected_tags,
                                      callback=movie_gui_callback)
 
@@ -570,7 +570,7 @@ class TestSearchMovieGUI:
     def test_parent_initialized(self, patch_tk):
         with self.movie_context() as movie_gui:
             assert movie_gui.parent == DummyTk()
-            assert movie_gui.all_tag_names == ('test tag 1', 'test tag 2')
+            assert movie_gui.all_tags == ('test tag 1', 'test tag 2')
             assert isinstance(movie_gui.callback, Callable)
     
     # Test create body
@@ -597,17 +597,19 @@ class TestSearchMovieGUI:
                              (movie_gui, TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
                                                   padding=(10, 25, 10, 0)), 'minutes',
                               'Length (minutes)', 3), ]
-    
-    def test_create_tag_treeview_called(self, patch_tk, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'create_tag_treeview',
-                            lambda *args: calls.append(args))
-        with self.movie_context() as movie_gui:
-            assert calls == [(movie_gui, TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
-                                                  padding=(10, 25, 10, 0)), 5), ]
-    
+
+    def test_create_tag_treeview_called(self, patch_tk, patch_movie_treeview, monkeypatch):
+        with self.movie_context():
+            assert treeview_call[0][1] == TtkFrame(parent=TtkFrame(parent=DummyTk(),
+                                                                   padding=''), padding=(10, 25, 10, 0))
+            assert treeview_call[0][2] == 5
+            assert treeview_call[0][3] == 0
+            assert treeview_call[0][4] == 'Select tags'
+            assert treeview_call[0][5] == ('test tag 1', 'test tag 2')
+            assert treeview_call[0][6]('test signal') == 'test signal'
+
     # Test create body item
-    
+
     def test_body_item_ttk_label_called(self, patch_tk):
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
@@ -807,6 +809,8 @@ class TestSearchMovieGUI:
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def movie_context(self):
+        global treeview_call
+        treeview_call = []
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
         yield guiwidgets.SearchMovieGUI(DummyTk(), tags, movie_gui_callback)
@@ -1188,6 +1192,36 @@ def patch_tk(monkeypatch):
     monkeypatch.setattr(guiwidgets.ttk, 'Button', TtkButton)
     monkeypatch.setattr(guiwidgets.ttk, 'Treeview', TtkTreeview)
     monkeypatch.setattr(guiwidgets.ttk, 'Scrollbar', TtkScrollbar)
+
+
+treeview_call = []
+
+
+@dataclass
+class DummyTreeview:
+    body_frame: TtkFrame
+    row: int
+    column: int
+    label_text: str
+    items: Sequence[str]
+    user_callback: Callable
+    
+    def __call__(self):
+        self.user_callback = self.treeview_callback()
+        treeview_call.append((self, self.body_frame, self.row, self.column, self.label_text, self.items,
+                              self.user_callback))
+    
+    def treeview_callback(self):
+        def update_tag_selection(test_token):
+            return test_token
+        
+        return update_tag_selection
+
+
+# noinspection PyMissingOrEmptyDocstring
+@pytest.fixture()
+def patch_movie_treeview(monkeypatch):
+    monkeypatch.setattr(guiwidgets, 'MovieTreeview', DummyTreeview)
 
 
 callback_calls = []

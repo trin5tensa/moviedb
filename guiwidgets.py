@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 3/3/20, 1:42 PM by stephen.
+#  Last modified 3/4/20, 9:19 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -170,8 +170,6 @@ class AddMovieGUI(MovieGUIBase):
     """ A form for adding a movie."""
     
     # DayBreak
-    #   Mend broken AddMovieGUI tests
-    #   Mend broken EditMovieGUI tests
     #   Write new tests
     
     # Tags list
