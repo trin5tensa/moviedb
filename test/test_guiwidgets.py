@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 3/4/20, 9:23 AM by stephen.
+#  Last modified 3/5/20, 9:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -271,7 +271,7 @@ class TestAddMovieGUI:
             tags_frame = bodyframe.children[-1]
             tree, scrollbar = tags_frame.children
             assert tree.configure_calls[0] == dict(yscrollcommand=scrollbar.set)
-    
+
     def test_neuron_linker_called(self, patch_tk, monkeypatch):
         calls = []
         monkeypatch.setattr(guiwidgets.AddMovieGUI, 'neuron_linker',
@@ -280,15 +280,26 @@ class TestAddMovieGUI:
             assert calls == [
                     (movie_gui, 'title', movie_gui.commit_neuron, movie_gui.neuron_callback),
                     (movie_gui, 'year', movie_gui.commit_neuron, movie_gui.neuron_callback, True)]
-    
+
+    def test_movie_treeview_call(self, patch_tk, patch_movie_treeview):
+        sentinel = object()
+        with self.movie_context():
+            assert treeview_call[0][1] == TtkFrame(parent=TtkFrame(parent=DummyTk(),
+                                                                   padding=''), padding=(10, 25, 10, 0))
+            assert treeview_call[0][2] == 6
+            assert treeview_call[0][3] == 0
+            assert treeview_call[0][4] == 'Select tags'
+            assert treeview_call[0][5] == ('test tag 1', 'test tag 2')
+            assert treeview_call[0][6](sentinel) == sentinel
+
     # Test Buttonbox Initialization
-    
+
     def test_buttonbox_created(self, patch_tk):
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
             buttonbox = outerframe.children[1]
             assert buttonbox == TtkFrame(parent=outerframe, padding=(5, 5, 10, 10))
-    
+
     def test_buttonbox_gridded(self, patch_tk):
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
@@ -449,6 +460,7 @@ class TestAddMovieGUI:
             # noinspection PyUnusedLocal
             def callback(*args, **kwargs):
                 raise exception.MovieDBConstraintFailure
+
             return callback
         
         with self.movie_context() as movie_gui:
@@ -459,7 +471,7 @@ class TestAddMovieGUI:
             assert messagebox.showinfo_calls == [dict(
                     parent=DummyTk(), message='Database constraint failure.',
                     detail='A movie with this title and year is already present in the database.')]
-    
+
     def test_commit_calls_destroy(self, patch_tk, monkeypatch):
         calls = []
         with self.movie_context() as movie_gui:
@@ -467,15 +479,23 @@ class TestAddMovieGUI:
             monkeypatch.setattr(movie_gui, 'destroy', lambda *args: calls.append(True))
             movie_gui.commit()
             assert calls == [True]
-    
+
+    def test_treeview_callback(self, patch_tk):
+        sentinel = object()
+        with self.movie_context() as movie_gui:
+            movie_gui.treeview_callback([sentinel])
+            assert movie_gui.selected_tags == [sentinel]
+
     def test_destroy_method(self, patch_tk):
         with self.movie_context() as movie_gui:
             movie_gui.destroy()
             assert movie_gui.outer_frame.destroy_calls[0]
-    
+
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def movie_context(self):
+        global treeview_call
+        treeview_call = []
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
         yield guiwidgets.AddMovieGUI(DummyTk(), all_tags=tags,
@@ -886,7 +906,7 @@ class TestSelectMovieGUI:
             bodyframe = outerframe.children[0]
             treeview = bodyframe.children[0]
             assert treeview.bind_calls[0][0] == ('<<TreeviewSelect>>',)
-    
+
             treeview.bind_calls[0][1]['func']()
             assert callback_calls[2] == ('Hello Mum', 1954)
     
@@ -1197,6 +1217,7 @@ def patch_tk(monkeypatch):
 treeview_call = []
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class DummyTreeview:
     body_frame: TtkFrame
@@ -1206,12 +1227,15 @@ class DummyTreeview:
     items: Sequence[str]
     user_callback: Callable
     
+    initial_selection: Sequence[str] = field(default_factory=tuple)
+    
     def __call__(self):
         self.user_callback = self.treeview_callback()
         treeview_call.append((self, self.body_frame, self.row, self.column, self.label_text, self.items,
                               self.user_callback))
     
-    def treeview_callback(self):
+    @staticmethod
+    def treeview_callback():
         def update_tag_selection(test_token):
             return test_token
         

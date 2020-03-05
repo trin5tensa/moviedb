@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 3/4/20, 9:19 AM by stephen.
+#  Last modified 3/5/20, 9:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -44,6 +44,7 @@ class MovieGUIBase:
     """ A base class for movie input forms."""
     parent: tk.Tk
 
+    selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
     # All widgets of this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
     # A more convenient data structure for entry fields.
@@ -154,11 +155,15 @@ class MovieGUIBase:
 
         Use Case: Supports field validation by Tk
         """
-
+    
         # moviedb-#103 Delete this method if validation can be carried out by database integrity checks.
         lowest = user_input > lowest if lowest else True
         highest = user_input < highest if highest else True
         return lowest and highest
+
+    def treeview_callback(self, reselection: Sequence[str]):
+        """Update selected tags with user's changes."""
+        self.selected_tags = reselection
 
     def destroy(self):
         """Destroy all widgets of this class."""
@@ -169,15 +174,11 @@ class MovieGUIBase:
 class AddMovieGUI(MovieGUIBase):
     """ A form for adding a movie."""
     
-    # DayBreak
-    #   Write new tests
-    
     # Tags list
     all_tags: Sequence[str]
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.MovieDef], None]
     
-    selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
     # Neuron controlling enabled state of Commit button
     commit_neuron: neurons.AndNeuron = field(default_factory=neurons.AndNeuron,
                                              init=False, repr=False)
@@ -186,9 +187,9 @@ class AddMovieGUI(MovieGUIBase):
         """Create the body of the form with a column for labels and another for user input fields."""
         
         body_frame = super().create_body(outerframe)
-        
+
         # Create entry fields and their labels.
-        # moviedb-#132 Make 'notes' field into a tk.Text field (NB: no ttk.Text field:( )
+        # moviedb-#132 Make 'notes' field into a tk.Text field (NB: no ttk.Text field)
         for row_ix, internal_name in enumerate(INTERNAL_NAMES):
             label = ttk.Label(body_frame, text=self.entry_fields[internal_name].label_text)
             label.grid(column=0, row=row_ix, sticky='e', padx=5)
@@ -214,7 +215,6 @@ class AddMovieGUI(MovieGUIBase):
         year.widget.config(validate='key', validatecommand=(registered_callback, '%S'))
         
         # Create treeview for tag selection.
-        # TODO Test this call
         MovieTreeview(body_frame, row=6, column=0, label_text=SELECT_TAGS_TEXT, items=self.all_tags,
                       user_callback=self.treeview_callback, initial_selection=self.selected_tags)()
     
@@ -233,10 +233,6 @@ class AddMovieGUI(MovieGUIBase):
 
         # Cancel button
         self.create_cancel_button(buttonbox, column=next(column_num))
-    
-    def treeview_callback(self, reselection: Sequence[str]):
-        # TODO Write and test
-        self.selected_tags = reselection
     
     def commit(self):
         """The user clicked the commit button."""
@@ -320,7 +316,6 @@ class SearchMovieGUI(MovieGUIBase):
         self.create_body_item(body_frame, 'notes', 'Notes', next(row))
         
         # Create treeview for tag selection.
-        # TODO Test this call
         MovieTreeview(body_frame, row=next(row), column=0, label_text=SELECT_TAGS_TEXT,
                       items=self.all_tags, user_callback=self.treeview_callback)()
     
@@ -396,10 +391,6 @@ class SearchMovieGUI(MovieGUIBase):
         # Cancel button
         self.create_cancel_button(buttonbox, column=next(column_num))
     
-    def treeview_callback(self, reselection: Sequence[str]):
-        # TODO Write and test
-        self.selected_tags = reselection
-    
     def search(self):
         """The user clicked the search button."""
         return_fields = {internal_name: movie_field.textvariable.get()
@@ -420,8 +411,8 @@ class SearchMovieGUI(MovieGUIBase):
             message = 'No matches'
             detail = 'There are no matching movies in the database.'
             gui_messagebox(parent, message, detail)
-            return
-        self.destroy()
+        else:
+            self.destroy()
 
 
 @dataclass
@@ -494,8 +485,7 @@ class SelectMovieGUI(MovieGUIBase):
 @dataclass
 class MovieTreeview:
     """Create and manage a treeview and a descriptive label."""
-    
-    # moviedb-#130 Test this class
+
     # The frame which contains the treeview.
     body_frame: ttk.Frame
     # The tk grid row of the label and treeview within the frame's grid.
@@ -527,30 +517,31 @@ class MovieTreeview:
         tree.grid(column=0, row=0, sticky='w')
         tree.column('tags', width=100)
         tree.bind('<<TreeviewSelect>>', func=self.treeview_callback(tree, self.user_callback))
-        
+
         # Create the scrollbar
         scrollbar = ttk.Scrollbar(treeview_frame, orient=tk.VERTICAL, command=tree.yview)
         scrollbar.grid(column=1, row=0)
         tree.configure(yscrollcommand=scrollbar.set)
-        
+
         # Populate the treeview
         for item in self.items:
             tree.insert('', 'end', item, text=item, tags='tags')
         tree.selection_add(self.initial_selection)
-    
-    def treeview_callback(self, tree: ttk.Treeview, callback: Callable[[Sequence[str]], None]):
+
+    @staticmethod
+    def treeview_callback(tree: ttk.Treeview, callback: Callable[[Sequence[str]], None]):
         """Create a callback which will be called whenever the user selection is changed.
 
         Args:
             tree:
+            callback:
 
         Returns: The callback.
         """
-        
+    
         # noinspection PyUnusedLocal
         def update_tag_selection(*args):
-            """Update the attribute holding the user's current selection and notify the class
-            object caller.
+            """Notify MovieTreeview's caller.
 
             Args:
                 *args: Not used. Needed for compatibility with Tk:Tcl caller.
@@ -577,9 +568,7 @@ class EntryField:
     original_value: str
     widget: ttk.Entry = None
     textvariable: tk.StringVar = None
-    observer: neurons.Observer = None
+    observer: neurons.Observer = field(default_factory=neurons.Observer, init=False, repr=False)
     
     def __post_init__(self):
-        # TODO Change these attributes to dataclass fields with a default_factory
         self.textvariable = tk.StringVar()
-        self.observer = neurons.Observer()

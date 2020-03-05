@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/22/20, 7:43 AM by stephen.
+#  Last modified 3/5/20, 9:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -345,29 +345,44 @@ class TestSelectMovieCallback:
     TITLE = 'Test Title'
     YEAR = 2042
     MOVIE = ['Test Movie']
-    
+
     dummy_find_movies_calls = []
-    dummy_instantiate_edit_movie_gui = []
-    
+    dummy_edit_movie_callback = []
+
     def test_find_movies_called(self, class_patches):
         with self.class_context():
             assert self.dummy_find_movies_calls[0][0] == dict(title=self.TITLE, year=self.YEAR)
-    
-    def test_instantiate_edit_movie_gui_called(self, class_patches):
+
+    def test_edit_movie_gui_created(self, class_patches):
+        sentinel_1 = object()
+        sentinel_2 = object()
         with self.class_context():
-            assert self.dummy_instantiate_edit_movie_gui[0][0] == self.MOVIE[0]
-    
+            assert dummy_edit_movie_gui_instance[0][0] == DummyParent()
+            assert dummy_edit_movie_gui_instance[0][1] == ['Movie night candidate']
+            assert dummy_edit_movie_gui_instance[0][3] == 'Test Movie'
+            dummy_edit_movie_gui_instance[0][2](sentinel_1, sentinel_2)
+            assert self.dummy_edit_movie_callback == [(sentinel_1, sentinel_2)]
+
     @pytest.fixture
     def class_patches(self, monkeypatch):
         self.dummy_find_movies_calls = []
-        self.dummy_instantiate_edit_movie_gui = []
         monkeypatch.setattr(handlers.database, 'find_movies', self.dummy_find_movies)
-        monkeypatch.setattr(handlers, '_instantiate_edit_movie_gui',
-                            lambda *args: self.dummy_instantiate_edit_movie_gui.append(args))
-    
+        monkeypatch.setattr(handlers.guiwidgets, 'EditMovieGUI', DummyEditMovieGUI)
+        monkeypatch.setattr(handlers, 'edit_movie_callback',
+                            (lambda updates, selected_tags:
+                             self.dummy_edit_movie_callback.append((updates, selected_tags))))
+
     @contextmanager
     def class_context(self):
-        yield handlers.select_movie_callback(self.TITLE, self.YEAR)
+        global dummy_edit_movie_gui_instance
+        dummy_edit_movie_gui_instance = []
+        hold_app = handlers.config.app
+        handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
+        handlers.config.app.tk_root = DummyParent()
+        try:
+            yield handlers.select_movie_callback(self.TITLE, self.YEAR)
+        finally:
+            handlers.config.app = hold_app
     
     def dummy_find_movies(self, *args):
         self.dummy_find_movies_calls.append(args)
