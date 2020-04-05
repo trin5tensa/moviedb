@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/15/20, 7:29 AM by stephen.
+#  Last modified 4/5/20, 7:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -57,7 +57,7 @@ class TestObserver:
 class TestBaseNeuron:
     
     def test_event_registered(self):
-        neuron = neurons.BaseNeuron()
+        neuron = neurons.Neuron()
         neuron.register_event('event')
         assert neuron.events == dict(event=False)
 

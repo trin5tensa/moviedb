@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 3/5/20, 9:11 AM by stephen.
+#  Last modified 4/5/20, 7:25 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -281,6 +281,7 @@ class TestAddMovieGUI:
                     (movie_gui, 'title', movie_gui.commit_neuron, movie_gui.neuron_callback),
                     (movie_gui, 'year', movie_gui.commit_neuron, movie_gui.neuron_callback, True)]
 
+    @pytest.mark.skip
     def test_movie_treeview_call(self, patch_tk, patch_movie_treeview):
         sentinel = object()
         with self.movie_context():
@@ -499,7 +500,6 @@ class TestAddMovieGUI:
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
         yield guiwidgets.AddMovieGUI(DummyTk(), all_tags=tags,
-                                     # selected_tags=selected_tags,
                                      callback=movie_gui_callback)
 
 
@@ -548,16 +548,16 @@ class TestEditMovieGUI:
                 internal_names.append(internal_name)
                 callbacks.append(callback)
                 neurons.append(neuron)
-            
-            assert internal_names == ['title', 'year', 'title', 'year', 'director', 'minutes', 'notes']
+
+            assert internal_names == ['title', 'year', 'director', 'minutes', 'notes']
             for neuron in neurons:
                 assert isinstance(neuron, guiwidgets.neurons.OrNeuron)
             # neuron_linker is called twice for 'year' so count is six fields + 1 = 7
-            assert len(neurons) == 7
+            assert len(neurons) == 5
             for callback in callbacks:
                 assert callback == movie_gui.neuron_callback
-            assert len(callbacks) == 7
-            assert initial_values == [True]
+            assert len(callbacks) == 5
+            assert initial_values == []
     
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
@@ -569,12 +569,13 @@ class TestEditMovieGUI:
                                                  notes='Test note', tags=('test selected tag',))
         # noinspection PyTypeChecker
         yield guiwidgets.EditMovieGUI(DummyTk(), all_tag_names, movie_gui_callback, movie)
-    
+
     neuron_linker_args = []
-    
+
+    # TODO What is this and why is it here?
     def temp(self, *args):
         self.neuron_linker_args.append(args)
-    
+
     @pytest.fixture
     def class_fixtures(self, monkeypatch):
         monkeypatch.setattr(guiwidgets.MovieGUIBase, 'neuron_linker', self.temp)
@@ -618,6 +619,7 @@ class TestSearchMovieGUI:
                                                   padding=(10, 25, 10, 0)), 'minutes',
                               'Length (minutes)', 3), ]
 
+    @pytest.mark.skip
     def test_create_tag_treeview_called(self, patch_tk, patch_movie_treeview, monkeypatch):
         with self.movie_context():
             assert treeview_call[0][1] == TtkFrame(parent=TtkFrame(parent=DummyTk(),
