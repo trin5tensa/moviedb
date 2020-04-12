@@ -2,7 +2,7 @@
 
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 1/11/20, 12:37 PM by stephen.
+#  Last modified 4/6/20, 7:40 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,11 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-class DatabaseException(Exception):
+class MovieDBException(Exception):
+    """Base class for moviedb exceptions."""
+
+
+class DatabaseException(MovieDBException):
     """Base class for database exceptions."""
 
 

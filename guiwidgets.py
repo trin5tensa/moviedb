@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/5/20, 7:24 AM by stephen.
+#  Last modified 4/12/20, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -280,7 +280,7 @@ class AddMovieGUI(CommonButtonbox):
         # Create treeview for tag selection.
         # Availability of the add movie commit button is not dependent on the state of the treeview so
         # the returned neuron is not used in AddMOvieGUI but is available for subclasses.
-        MovieTreeview(TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=6, column=0,
+        MovieTreeview(TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=5, column=0,
                       label_text=SELECT_TAGS_TEXT, items=self.all_tags,
                       user_callback=self.treeview_callback, initial_selection=self.selected_tags)()
 
@@ -330,7 +330,7 @@ class EditMovieGUI(CommonButtonbox):
         
         # Create treeview for tag selection.
         self.tag_treeview_observer = MovieTreeview(
-                TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=6, column=0, label_text=SELECT_TAGS_TEXT,
+                TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=5, column=0, label_text=SELECT_TAGS_TEXT,
                 items=self.all_tags, user_callback=self.treeview_callback,
                 initial_selection=self.selected_tags)()
         
@@ -492,7 +492,7 @@ class SelectMovieGUI(MovieGUIBase):
         # Populate rows with movies
         for movie in self.movies:
             # moviedb-#134 Can iid be improved so unmangling in selection callback is simplified
-            #   e.g. tree.selection()[0][1:-1].split(',')
+            #   currently tree.selection()[0][1:-1].split(',')
             tree.insert('', 'end', iid=f"{(title := movie['title'], year := movie['year'])}",
                         text=title,
                         values=(year, movie['director'], movie['minutes'], movie['notes']),
@@ -524,10 +524,9 @@ class SelectMovieGUI(MovieGUIBase):
     def create_buttonbox(self, outerframe: ttk.Frame):
         """Create the buttons."""
         buttonbox = super().create_buttonbox(outerframe)
-        column_num = itertools.count()
-    
+
         # Cancel button
-        self.create_cancel_button(buttonbox, column=next(column_num))
+        self.create_cancel_button(buttonbox, column=0)
 
 
 @dataclass
@@ -601,8 +600,6 @@ class MovieTreeview:
             """
             current_selection = tree.selection()
             callback(current_selection)
-            #   MovieTreeview.update_tag_selection
-            #       Test callback notify line
             self.observer.notify(self.internal_name,
                                  set(current_selection) != set(self.initial_selection))
         
