@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/21/20, 8:11 AM by stephen.
+#  Last modified 3/5/20, 8:36 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -87,7 +87,8 @@ def search_movie_callback(criteria: config.FindMovieDef, tags: Sequence[str]):
     if (movies_found := len(movies)) <= 0:
         raise exception.MovieSearchFoundNothing
     elif movies_found == 1:
-        _instantiate_edit_movie_gui(movies[0])
+        movie = movies[0]
+        guiwidgets.EditMovieGUI(config.app.tk_root, database.all_tags(), edit_movie_callback, movie)
     else:
         guiwidgets.SelectMovieGUI(config.app.tk_root, movies, select_movie_callback)
 
@@ -130,9 +131,4 @@ def select_movie_callback(title: str, year: int):
     """
     # Get record from database
     movie = database.find_movies(dict(title=title, year=year))[0]
-    _instantiate_edit_movie_gui(movie)
-
-
-def _instantiate_edit_movie_gui(movie: config.MovieUpdateDef):
-    all_tag_names = database.all_tags()
-    guiwidgets.EditMovieGUI(config.app.tk_root, all_tag_names, edit_movie_callback, movie)
+    guiwidgets.EditMovieGUI(config.app.tk_root, database.all_tags(), edit_movie_callback, movie)

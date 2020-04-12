@@ -1,6 +1,6 @@
 """Observer pattern and neurons."""
-#  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/31/19, 8:13 AM by stephen.
+#  Copyright© 2020. Stephen Rigden.
+#  Last modified 4/5/20, 7:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -58,7 +58,7 @@ class Observer:
 
 
 @dataclass
-class BaseNeuron(Observer):
+class Neuron(Observer):
     """An observer that can observe multiple events. """
     
     events: Dict[Any, bool] = field(default_factory=dict, init=False, repr=False)
@@ -78,7 +78,7 @@ class BaseNeuron(Observer):
 
 
 @dataclass
-class AndNeuron(BaseNeuron):
+class AndNeuron(Neuron):
     """An observer that can observe multiple events.
     
     Use Case:
@@ -89,10 +89,11 @@ class AndNeuron(BaseNeuron):
     
     Usage:
     1) Instantiate Neuron.
-    2) Call the method register_event to register the events which will be observed.
-    3) Call the parent method register to register one or more closures. Each closure will execute the
-    action required in a target object (e.g. Activate a button). Note that the target object can be
-    another neuron.
+    2) Call the method 'register_event' to register the events which will be observed. It is mandatory
+    to register events which could notify an AddNeuron.
+    3) Call the parent method 'register' to register one or more closures. Each closure will execute the
+    action required in a target object (e.g. Activate a button). The target object could be another
+    neuron.
     4) Call <neuron object>(<event id>, state). This will notify the registered notifees with 'True'
     if all the events are 'True' otherwise with 'False'.
     5) Call the parent method deregister to remove a notifee.
@@ -105,7 +106,7 @@ class AndNeuron(BaseNeuron):
 
 
 @dataclass
-class OrNeuron(BaseNeuron):
+class OrNeuron(Neuron):
     """An observer that can observe multiple events.
     
     Use Case:
@@ -116,10 +117,11 @@ class OrNeuron(BaseNeuron):
  
     Usage:
     1) Instantiate Neuron.
-    2) Call the method register_event to register the events which will be observed.
-    3) Call the parent method register to register one or more closures. Each closure will execute the
-    action required in a target object (e.g. Activate a button). Note that the target object can be
-    another neuron.
+    2) Optionally call the method 'register_event' to register the events which will be observed. It is
+    optional to register events which could notify an  OrNeuron.
+    3) Call the parent method 'register' to register one or more closures. Each closure will execute the
+    action required in a target object (e.g. Activate a button). The target object could be another
+    neuron.
     4) Call <neuron object>(<event id>, state). This will notify the registered notifees with 'True'
     if any of the events are 'True' otherwise with 'False'.
     5) Call the parent method deregister to remove a notifee.
