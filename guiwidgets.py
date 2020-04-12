@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/12/20, 8:50 AM by stephen.
+#  Last modified 4/12/20, 9:06 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -51,7 +51,6 @@ class MovieGUIBase:
     # A more convenient data structure for entry fields.
     entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
     # Observer of treeview selection state
-    # TODO Does this need to be an attribute? Haven't all users set up callbacks to closures?
     tag_treeview_observer: neurons.Observer = field(default=neurons.Observer, init=False)
     
     def __post_init__(self):
@@ -194,9 +193,8 @@ class CommonButtonbox(MovieGUIBase):
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.MovieDef, Sequence[str]], None]
     
-    # Neuron controlling enabled state of Commit button
-    # TODO Does this need to be an attribute. Could it be a local during set up?
-    commit_neuron: neurons.AndNeuron = field(default_factory=neurons.AndNeuron, init=False)
+    # AND Neuron controlling enabled state of Commit button
+    commit_button_neuron: neurons.AndNeuron = field(default_factory=neurons.AndNeuron, init=False)
     
     # noinspection DuplicatedCode
     def create_buttonbox(self, outerframe: ttk.Frame):
@@ -209,7 +207,7 @@ class CommonButtonbox(MovieGUIBase):
         commit.grid(column=next(column_num), row=0)
         commit.bind('<Return>', lambda event, b=commit: b.invoke())
         commit.state(['disabled'])
-        self.commit_neuron.register(self.button_state_callback(commit))
+        self.commit_button_neuron.register(self.button_state_callback(commit))
 
         # Cancel button
         self.create_cancel_button(buttonbox, column=next(column_num))
@@ -262,7 +260,7 @@ class AddMovieGUI(CommonButtonbox):
             self.entry_fields[internal_name].widget = entry
         
         # Customize title field.
-        self.neuron_linker('title', self.commit_neuron, self.neuron_callback)
+        self.neuron_linker('title', self.commit_button_neuron, self.neuron_callback)
         
         # Customize minutes field.
         minutes = self.entry_fields['minutes']
@@ -273,7 +271,7 @@ class AddMovieGUI(CommonButtonbox):
         # Customize year field.
         year = self.entry_fields['year']
         year.textvariable.set('2020')
-        self.neuron_linker('year', self.commit_neuron, self.neuron_callback, True)
+        self.neuron_linker('year', self.commit_button_neuron, self.neuron_callback, True)
         registered_callback = year.widget.register(self.validate_int)
         year.widget.config(validate='key', validatecommand=(registered_callback, '%S'))
         
@@ -296,9 +294,8 @@ class EditMovieGUI(CommonButtonbox):
     # Fields of the movie to be edited.
     movie: config.MovieUpdateDef
     
-    # Neuron controlling enabled state of Commit button
-    # TODO Does this need to be an attribute. Could it be a local during set up?
-    commit_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron, init=False)
+    # OR Neuron controlling enabled state of Commit button
+    commit_button_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron, init=False)
     
     def create_body(self, outerframe: ttk.Frame):
         """Create a standard entry form body but with fields initialized with values from the record
@@ -326,7 +323,7 @@ class EditMovieGUI(CommonButtonbox):
             # noinspection PyTypedDict
             entry_field.original_value = self.movie[internal_name]
             entry_field.textvariable.set(entry_field.original_value)
-            self.neuron_linker(internal_name, self.commit_neuron, self.neuron_callback)
+            self.neuron_linker(internal_name, self.commit_button_neuron, self.neuron_callback)
         
         # Create treeview for tag selection.
         self.tag_treeview_observer = MovieTreeview(
@@ -334,7 +331,7 @@ class EditMovieGUI(CommonButtonbox):
                 items=self.all_tags, user_callback=self.treeview_callback,
                 initial_selection=self.selected_tags)()
         
-        self.tag_treeview_observer.register(self.commit_neuron)
+        self.tag_treeview_observer.register(self.commit_button_neuron)
 
         
 @dataclass
@@ -346,8 +343,7 @@ class SearchMovieGUI(MovieGUIBase):
     
     selected_tags: Sequence[str] = field(default_factory=tuple, init=False)
     # Neuron controlling enabled state of Search button
-    # TODO Does this need to be an attribute. Could it be a local during set up?
-    search_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron, init=False)
+    search_button_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron, init=False)
     
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form."""
@@ -365,7 +361,7 @@ class SearchMovieGUI(MovieGUIBase):
                 TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=next(row), column=0,
                 label_text=SELECT_TAGS_TEXT, items=self.all_tags,
                 user_callback=self.treeview_callback)()
-        self.tag_treeview_observer.register(self.search_neuron)
+        self.tag_treeview_observer.register(self.search_button_neuron)
     
     def create_body_item(self, body_frame: ttk.Frame, internal_name: str, text: str, row: int):
         """Create a ttk label and ttk entry.
@@ -421,7 +417,7 @@ class SearchMovieGUI(MovieGUIBase):
         entry = ttk.Entry(body_frame, textvariable=entry_field.textvariable, width=width)
         entry.grid(column=column, row=row)
         entry_field.widget = entry
-        self.neuron_linker(internal_name, self.search_neuron, self.neuron_callback)
+        self.neuron_linker(internal_name, self.search_button_neuron, self.neuron_callback)
     
     # noinspection DuplicatedCode
     def create_buttonbox(self, outerframe: ttk.Frame):
@@ -434,7 +430,7 @@ class SearchMovieGUI(MovieGUIBase):
         search.grid(column=next(column_num), row=0)
         search.bind('<Return>', lambda event, b=search: b.invoke())
         search.state(['disabled'])
-        self.search_neuron.register(self.button_state_callback(search))
+        self.search_button_neuron.register(self.button_state_callback(search))
 
         # Cancel button
         self.create_cancel_button(buttonbox, column=next(column_num))

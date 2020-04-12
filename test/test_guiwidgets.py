@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/12/20, 8:50 AM by stephen.
+#  Last modified 4/12/20, 12:50 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -143,7 +143,7 @@ class TestAddMovieGUI:
     
     def test_neuron_created(self, patch_tk):
         with self.movie_context() as movie_gui:
-            assert movie_gui.commit_neuron.events == dict(title=False, year=True)
+            assert movie_gui.commit_button_neuron.events == dict(title=False, year=True)
     
     def test_minutes_initialized_to_100(self, patch_tk):
         with self.movie_context() as movie_gui:
@@ -278,8 +278,8 @@ class TestAddMovieGUI:
                             lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
             assert calls == [
-                    (movie_gui, 'title', movie_gui.commit_neuron, movie_gui.neuron_callback),
-                    (movie_gui, 'year', movie_gui.commit_neuron, movie_gui.neuron_callback, True)]
+                    (movie_gui, 'title', movie_gui.commit_button_neuron, movie_gui.neuron_callback),
+                    (movie_gui, 'year', movie_gui.commit_button_neuron, movie_gui.neuron_callback, True)]
 
     def test_movie_treeview_call(self, patch_tk, patch_movie_treeview):
         sentinel = object()
@@ -393,7 +393,7 @@ class TestAddMovieGUI:
     
     def test_field_callback(self, patch_tk):
         with self.movie_context() as movie_gui:
-            neuron = movie_gui.commit_neuron
+            neuron = movie_gui.commit_button_neuron
             movie_gui.neuron_callback('year', neuron)()
             assert neuron.events == dict(title=False, year=True)
 
@@ -770,7 +770,8 @@ class TestSearchMovieGUI:
         calls = []
         monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'neuron_linker', lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
-            assert calls[0] == (movie_gui, 'title', movie_gui.search_neuron, movie_gui.neuron_callback)
+            assert calls[0] == (
+            movie_gui, 'title', movie_gui.search_button_neuron, movie_gui.neuron_callback)
     
     # Test create buttonbox
     
