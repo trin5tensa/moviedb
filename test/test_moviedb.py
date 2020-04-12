@@ -1,7 +1,7 @@
 """Tests for moviedatabase."""
 
-#  Copyright© 2019. Stephen Rigden.
-#  Last modified 11/28/19, 5:57 AM by stephen.
+#  Copyright© 2020. Stephen Rigden.
+#  Last modified 4/12/20, 1:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -26,32 +26,41 @@ import moviedb
 TEST_FN = 'test_filename.csv'
 
 
-@pytest.mark.usefixtures('monkeypatch')
 class TestMain:
-    def test_start_up_called(self, monkeypatch):
+    def test_start_up_called(self, class_patches, monkeypatch):
         calls = []
         monkeypatch.setattr(moviedb, 'start_up', lambda: calls.append(True))
-        monkeypatch.setattr(moviedb.gui, 'run', lambda: None)
-        monkeypatch.setattr(moviedb, 'close_down', lambda: None)
         moviedb.main()
         assert calls == [True]
-    
-    def test_gui_called(self, monkeypatch):
-        monkeypatch.setattr(moviedb, 'start_up', lambda: None)
+
+    def test_gui_called(self, class_patches, monkeypatch):
         calls = []
         monkeypatch.setattr(moviedb.gui, 'run', lambda: calls.append(True))
-        monkeypatch.setattr(moviedb, 'close_down', lambda: None)
         moviedb.main()
         assert calls == [True]
-    
-    def test_close_down_called(self, monkeypatch):
-        monkeypatch.setattr(moviedb, 'start_up', lambda: None)
-        monkeypatch.setattr(moviedb.gui, 'run', lambda: None)
+
+    def test_close_down_called(self, class_patches, monkeypatch):
         calls = []
         monkeypatch.setattr(moviedb, 'close_down',
                             lambda: calls.append(True))
         moviedb.main()
         assert calls == [True]
+
+    def test_logging_info_called(self, class_patches):
+        self.info_calls = []
+        moviedb.main()
+        assert self.info_calls == ['The program started successfully.',
+                                   'The program has ended.']
+
+    info_calls = []
+
+    @pytest.fixture()
+    def class_patches(self, monkeypatch):
+        monkeypatch.setattr(moviedb, 'start_up', lambda: None)
+        monkeypatch.setattr(moviedb.gui, 'run', lambda: None)
+        monkeypatch.setattr(moviedb, 'close_down', lambda: None)
+        monkeypatch.setattr(moviedb.logging, 'info',
+                            lambda msg: self.info_calls.append(msg))
 
 
 @pytest.mark.usefixtures('monkeypatch')
