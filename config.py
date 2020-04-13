@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 2/17/20, 6:19 AM by stephen.
+#  Last modified 4/13/20, 8:06 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -80,7 +80,6 @@ class Config:
 
     # Save the root window for easy access for testing.
     tk_root: 'tk.Tk' = None
-    # moviedb-#124 Is 'gui_environment' being used for anything?
     gui_environment: 'mainwindow.MainWindow' = None
 
 
