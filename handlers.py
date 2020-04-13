@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 3/5/20, 8:36 AM by stephen.
+#  Last modified 4/13/20, 6:51 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -45,6 +45,11 @@ def import_movies():
     """Open a csv file and load the contents into the database."""
     csv_fn = guiwidgets.gui_askopenfilename(parent=config.app.tk_root,
                                             filetypes=(('Movie import files', '*.csv'),))
+    
+    # Exit if the user clicked askopenfilename's cancel button
+    if csv_fn == '':
+        return
+    
     try:
         impexp.import_movies(csv_fn)
     except impexp.MoviedbInvalidImportData as exc:

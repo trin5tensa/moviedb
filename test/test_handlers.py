@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 3/5/20, 9:11 AM by stephen.
+#  Last modified 4/13/20, 7:58 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -103,15 +103,20 @@ class TestEditMovie:
 # noinspection PyMissingOrEmptyDocstring
 class TestImportMovies:
     CSV_TEST_FN = 'csv_test_fn'
-    askopenfilename_calls = []
-    import_movies_calls = deque()
-    messagebox_calls = []
-    
+    askopenfilename_calls = None
+    import_movies_calls = None
+    messagebox_calls = None
+
+    def test_user_cancellation_of_askopenfilename_dialog(self, class_patches, monkeypatch):
+        monkeypatch.setattr(handlers.guiwidgets, 'gui_askopenfilename', lambda **kwargs: '')
+        with self.import_movies_context():
+            assert self.import_movies_calls == deque([])
+
     def test_get_filename_dialog_called(self, class_patches):
         with self.import_movies_context():
             assert self.askopenfilename_calls == [dict(parent=handlers.config.app.tk_root,
                                                        filetypes=(('Movie import files', '*.csv'),))]
-    
+
     def test_import_movies_called(self, class_patches):
         with self.import_movies_context():
             assert self.import_movies_calls.popleft() == self.CSV_TEST_FN
@@ -128,18 +133,20 @@ class TestImportMovies:
         monkeypatch.setattr(handlers.guiwidgets, 'gui_askopenfilename', self.dummy_askopenfilename)
         monkeypatch.setattr(handlers.guiwidgets, 'gui_messagebox', self.gui_messagebox)
         monkeypatch.setattr(handlers.impexp, 'import_movies', self.dummy_import_movies)
-    
+
     @contextmanager
     def import_movies_context(self):
+        self.askopenfilename_calls = []
+        self.import_movies_calls = deque()
+        self.messagebox_calls = []
         hold_app = handlers.config.app
         handlers.config.app = handlers.config.Config(name='test moviedb', version='test 1.0.0.dev')
         handlers.config.app.tk_root = 'tk_root'
         try:
-            handlers.import_movies()
-            yield
+            yield handlers.import_movies()
         finally:
             handlers.config.app = hold_app
-    
+
     def dummy_askopenfilename(self, **kwargs):
         self.askopenfilename_calls.append(kwargs)
         return self.CSV_TEST_FN
