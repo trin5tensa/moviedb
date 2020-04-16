@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/12/20, 9:06 AM by stephen.
+#  Last modified 4/15/20, 7:44 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -218,7 +218,7 @@ class CommonButtonbox(MovieGUIBase):
                          for internal_name, movie_field in self.entry_fields.items()}
         
         # Validate the year range
-        # moviedb-#133 SSOT: Replace the literal range limits with the range limits from the SQL schema.
+        # moviedb-#103 SSOT: Replace the literal range limits with the range limits from the SQL schema.
         if not self.validate_int_range(int(return_fields['year']), 1877, 10000):
             msg = 'Invalid year.'
             detail = 'The year must be between 1877 and 10000.'
