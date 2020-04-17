@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/13/20, 7:58 AM by stephen.
+#  Last modified 4/17/20, 7:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -58,10 +58,10 @@ class TestAddMovie:
     def test_movie_gui_called(self, monkeypatch):
         monkeypatch.setattr(handlers.database, 'all_tags', lambda *args: self.TAGS)
         monkeypatch.setattr(handlers.guiwidgets, 'AddMovieGUI',
-                            lambda parent, tags, callback:
-                            self.movie_gui_args.append((parent, tags, callback)))
+                            lambda parent, callback, tags:
+                            self.movie_gui_args.append((parent, callback, tags)))
         with self.add_movie_context():
-            assert self.movie_gui_args == [(DummyParent(), self.TAGS, handlers.add_movie_callback,)]
+            assert self.movie_gui_args == [(DummyParent(), handlers.add_movie_callback, self.TAGS)]
     
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
@@ -83,10 +83,10 @@ class TestEditMovie:
     def test_edit_gui_called(self, monkeypatch):
         monkeypatch.setattr(handlers.database, 'all_tags', lambda *args: self.TAGS)
         monkeypatch.setattr(handlers.guiwidgets, 'SearchMovieGUI',
-                            lambda parent, tags, callback:
-                            self.search_gui_args.append((parent, tags, callback)))
+                            lambda parent, callback, tags:
+                            self.search_gui_args.append((parent, callback, tags)))
         with self.edit_movie_context():
-            assert self.search_gui_args == [(DummyParent(), self.TAGS, handlers.search_movie_callback,)]
+            assert self.search_gui_args == [(DummyParent(), handlers.search_movie_callback, self.TAGS)]
     
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
@@ -225,7 +225,7 @@ class TestSearchMovieCallback:
         monkeypatch.setattr(handlers.guiwidgets, 'EditMovieGUI', DummyEditMovieGUI)
         with self.class_context():
             handlers.search_movie_callback(self.criteria, self.tags)
-            expected = handlers.config.app.tk_root, all_tags, handlers.edit_movie_callback, movie
+            expected = handlers.config.app.tk_root, handlers.edit_movie_callback, all_tags, movie
         assert dummy_edit_movie_gui_instance[0] == expected
 
     def test_multiple_movies_found_calls_select_movie_gui(self, class_setup, monkeypatch):
@@ -365,9 +365,9 @@ class TestSelectMovieCallback:
         sentinel_2 = object()
         with self.class_context():
             assert dummy_edit_movie_gui_instance[0][0] == DummyParent()
-            assert dummy_edit_movie_gui_instance[0][1] == ['Movie night candidate']
+            assert dummy_edit_movie_gui_instance[0][2] == ['Movie night candidate']
             assert dummy_edit_movie_gui_instance[0][3] == 'Test Movie'
-            dummy_edit_movie_gui_instance[0][2](sentinel_1, sentinel_2)
+            dummy_edit_movie_gui_instance[0][1](sentinel_1, sentinel_2)
             assert self.dummy_edit_movie_callback == [(sentinel_1, sentinel_2)]
 
     @pytest.fixture

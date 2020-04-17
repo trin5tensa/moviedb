@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/15/20, 7:44 AM by stephen.
+#  Last modified 4/17/20, 8:05 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -188,8 +188,9 @@ class MovieGUIBase:
 class CommonButtonbox(MovieGUIBase):
     """ A form for adding a movie."""
     
-    # Tags list
-    all_tags: Sequence[str]
+    # moviedb-#146
+    #   Create new required attribute of 'buttons': List of literals ('commit', 'destroy')
+    
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.MovieDef, Sequence[str]], None]
     
@@ -203,12 +204,18 @@ class CommonButtonbox(MovieGUIBase):
         column_num = itertools.count()
         
         # Commit button
+        # moviedb-#146 Commit button if requested
         commit = ttk.Button(buttonbox, text=COMMIT_TEXT, command=self.commit)
         commit.grid(column=next(column_num), row=0)
         commit.bind('<Return>', lambda event, b=commit: b.invoke())
         commit.state(['disabled'])
         self.commit_button_neuron.register(self.button_state_callback(commit))
-
+        
+        # moviedb-#146 Delete button if requested
+        #   create button <delete>
+        #   grid button <delete>
+        #   TODO Figure out how neural network will be linked.
+        
         # Cancel button
         self.create_cancel_button(buttonbox, column=next(column_num))
     
@@ -240,11 +247,12 @@ class CommonButtonbox(MovieGUIBase):
 class AddMovieGUI(CommonButtonbox):
     """ A form for adding a movie."""
     
-    # Tags list
-    all_tags: Sequence[str]
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.MovieDef, Sequence[str]], None]
+    # Tags list
+    all_tags: Sequence[str]
     
+    # noinspection DuplicatedCode
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form with a column for labels and another for user input fields."""
         body_frame = super().create_body(outerframe)
@@ -277,7 +285,7 @@ class AddMovieGUI(CommonButtonbox):
         
         # Create treeview for tag selection.
         # Availability of the add movie commit button is not dependent on the state of the treeview so
-        # the returned neuron is not used in AddMOvieGUI but is available for subclasses.
+        # the returned neuron is not used in AddMovieGUI but is available for subclasses.
         MovieTreeview(TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=5, column=0,
                       label_text=SELECT_TAGS_TEXT, items=self.all_tags,
                       user_callback=self.treeview_callback, initial_selection=self.selected_tags)()
@@ -287,16 +295,17 @@ class AddMovieGUI(CommonButtonbox):
 class EditMovieGUI(CommonButtonbox):
     """ A form for editing a movie."""
     
-    # Tags list
-    all_tags: Sequence[str]
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.MovieUpdateDef, Sequence[str]], None]
+    # Tags list
+    all_tags: Sequence[str]
     # Fields of the movie to be edited.
     movie: config.MovieUpdateDef
     
     # OR Neuron controlling enabled state of Commit button
     commit_button_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron, init=False)
     
+    # noinspection DuplicatedCode
     def create_body(self, outerframe: ttk.Frame):
         """Create a standard entry form body but with fields initialized with values from the record
         which is being edited.
@@ -337,9 +346,11 @@ class EditMovieGUI(CommonButtonbox):
 @dataclass
 class SearchMovieGUI(MovieGUIBase):
     """A form for searching for a movie."""
-    all_tags: Sequence[str]
+    
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.FindMovieDef, Sequence[str]], None]
+    # Tags list
+    all_tags: Sequence[str]
     
     selected_tags: Sequence[str] = field(default_factory=tuple, init=False)
     # Neuron controlling enabled state of Search button

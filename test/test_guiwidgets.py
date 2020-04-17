@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/12/20, 12:50 PM by stephen.
+#  Last modified 4/17/20, 8:05 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -281,6 +281,7 @@ class TestAddMovieGUI:
                     (movie_gui, 'title', movie_gui.commit_button_neuron, movie_gui.neuron_callback),
                     (movie_gui, 'year', movie_gui.commit_button_neuron, movie_gui.neuron_callback, True)]
 
+    # noinspection DuplicatedCode
     def test_movie_treeview_call(self, patch_tk, patch_movie_treeview):
         sentinel = object()
         with self.movie_context():
@@ -593,7 +594,7 @@ class TestEditMovieGUI:
                                                  director='Test Director', minutes=142,
                                                  notes='Test note', tags=('test selected tag',))
         # noinspection PyTypeChecker
-        yield guiwidgets.EditMovieGUI(DummyTk(), all_tag_names, movie_gui_callback, movie)
+        yield guiwidgets.EditMovieGUI(DummyTk(), movie_gui_callback, all_tag_names, movie)
 
     neuron_linker_args = []
     tag_treeview_observer_args = []
@@ -642,6 +643,7 @@ class TestSearchMovieGUI:
                                                   padding=(10, 25, 10, 0)), 'minutes',
                               'Length (minutes)', 3), ]
 
+    # noinspection DuplicatedCode
     def test_create_tag_treeview_called(self, patch_tk, patch_movie_treeview):
         with self.movie_context():
             assert treeview_call[0][1] == guiwidgets.TAG_TREEVIEW_INTERNAL_NAME
@@ -653,6 +655,7 @@ class TestSearchMovieGUI:
             assert treeview_call[0][6] == ('test tag 1', 'test tag 2')
             assert treeview_call[0][7]('test signal') == 'test signal'
 
+    # noinspection PyShadowingNames
     def test_treeview_observer_registered(self, patch_tk, monkeypatch):
         self.tag_treeview_observer_args = []
         monkeypatch.setattr(guiwidgets.MovieGUIBase.tag_treeview_observer, 'register',
@@ -770,8 +773,8 @@ class TestSearchMovieGUI:
         calls = []
         monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'neuron_linker', lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
-            assert calls[0] == (
-            movie_gui, 'title', movie_gui.search_button_neuron, movie_gui.neuron_callback)
+            assert calls[0] == (movie_gui, 'title',
+                                movie_gui.search_button_neuron, movie_gui.neuron_callback)
     
     # Test create buttonbox
     
@@ -849,7 +852,7 @@ class TestSearchMovieGUI:
         monkeypatch.setattr(guiwidgets, 'gui_messagebox', lambda *args: messagebox_calls.append(args))
         tags = []
         # noinspection PyTypeChecker
-        movie_gui = guiwidgets.SearchMovieGUI(DummyTk(), tags, callback)
+        movie_gui = guiwidgets.SearchMovieGUI(DummyTk(), callback, tags)
         movie_gui.search()
         assert messagebox_calls == [(DummyTk(), 'No matches',
                                      'There are no matching movies in the database.')]
@@ -868,7 +871,7 @@ class TestSearchMovieGUI:
         treeview_call = []
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
-        yield guiwidgets.SearchMovieGUI(DummyTk(), tags, movie_gui_callback)
+        yield guiwidgets.SearchMovieGUI(DummyTk(), movie_gui_callback, tags)
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -948,10 +951,12 @@ class TestSelectMovieGUI:
     def test_widget_is_destroyed(self, patch_tk, monkeypatch):
         destroy_called = False
     
+        # noinspection PyUnusedLocal
         def mock_destroy(*args):
             nonlocal destroy_called
             destroy_called = True
     
+        # noinspection PyUnusedLocal
         def selection(*args):
             return ["'Hello Mum, 1954'"]
     
