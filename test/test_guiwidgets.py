@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/17/20, 8:05 AM by stephen.
+#  Last modified 4/18/20, 10:00 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -506,8 +506,8 @@ class TestAddMovieGUI:
         treeview_call = []
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
-        yield guiwidgets.AddMovieGUI(DummyTk(), all_tags=tags,
-                                     callback=movie_gui_callback)
+        yield guiwidgets.AddMovieGUI(DummyTk(), all_tags=tags, callback=movie_gui_callback,
+                                     buttons_to_show='commit')
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -594,7 +594,8 @@ class TestEditMovieGUI:
                                                  director='Test Director', minutes=142,
                                                  notes='Test note', tags=('test selected tag',))
         # noinspection PyTypeChecker
-        yield guiwidgets.EditMovieGUI(DummyTk(), movie_gui_callback, all_tag_names, movie)
+        yield guiwidgets.EditMovieGUI(DummyTk(), movie_gui_callback, ['commit', 'delete'],
+                                      all_tag_names, movie)
 
     neuron_linker_args = []
     tag_treeview_observer_args = []

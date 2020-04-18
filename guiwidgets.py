@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/17/20, 8:05 AM by stephen.
+#  Last modified 4/18/20, 2:19 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,7 +22,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
-from typing import Callable, Dict, List, Sequence, TypeVar
+from typing import Callable, Dict, List, Literal, Sequence, TypeVar
 
 import config
 import exception
@@ -188,11 +188,10 @@ class MovieGUIBase:
 class CommonButtonbox(MovieGUIBase):
     """ A form for adding a movie."""
     
-    # moviedb-#146
-    #   Create new required attribute of 'buttons': List of literals ('commit', 'destroy')
-    
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.MovieDef, Sequence[str]], None]
+    
+    buttons_to_show: List[Literal['commit', 'delete']]
     
     # AND Neuron controlling enabled state of Commit button
     commit_button_neuron: neurons.AndNeuron = field(default_factory=neurons.AndNeuron, init=False)

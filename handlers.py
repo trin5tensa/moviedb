@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/17/20, 6:49 AM by stephen.
+#  Last modified 4/18/20, 2:09 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -32,7 +32,10 @@ def about_dialog():
 def add_movie():
     """ Get new movie data from the user and add it to the database. """
     all_tags = database.all_tags()
-    guiwidgets.AddMovieGUI(config.app.tk_root, add_movie_callback, all_tags)
+    # TODO PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
+    #   Remove 'noinspection PyTypeChecker' when fixed
+    # noinspection PyTypeChecker
+    guiwidgets.AddMovieGUI(config.app.tk_root, add_movie_callback, ['commit'], all_tags)
 
 
 def edit_movie():
@@ -93,7 +96,11 @@ def search_movie_callback(criteria: config.FindMovieDef, tags: Sequence[str]):
         raise exception.MovieSearchFoundNothing
     elif movies_found == 1:
         movie = movies[0]
-        guiwidgets.EditMovieGUI(config.app.tk_root, edit_movie_callback, database.all_tags(), movie)
+        # TODO PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
+        #   Remove 'noinspection PyTypeChecker' when fixed
+        # noinspection PyTypeChecker
+        guiwidgets.EditMovieGUI(config.app.tk_root, edit_movie_callback, ['commit', 'delete'],
+                                database.all_tags(), movie)
     else:
         guiwidgets.SelectMovieGUI(config.app.tk_root, movies, select_movie_callback)
 
@@ -136,4 +143,8 @@ def select_movie_callback(title: str, year: int):
     """
     # Get record from database
     movie = database.find_movies(dict(title=title, year=year))[0]
-    guiwidgets.EditMovieGUI(config.app.tk_root, edit_movie_callback, database.all_tags(), movie)
+    # TODO PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
+    #   Remove 'noinspection PyTypeChecker' when fixed
+    # noinspection PyTypeChecker
+    guiwidgets.EditMovieGUI(config.app.tk_root, edit_movie_callback, ['commit', 'delete'],
+                            database.all_tags(), movie)
