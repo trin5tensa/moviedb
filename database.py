@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/15/20, 7:58 AM by stephen.
+#  Last modified 4/22/20, 7:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -148,9 +148,13 @@ def del_movie(title_year: FindMovieDef):
     Args:
         title_year: Specifies teh movie to be deleted.
     """
-    with _session_scope() as session:
-        movie = _build_movie_query(session, title_year).one()
-        session.delete(movie)
+    # moviedb-#147 Investigate incorrect deletions from database.
+    pass
+
+
+#     with _session_scope() as session:
+#         movie = _build_movie_query(session, title_year).one()
+#         session.delete(movie)
 
 
 def all_tags() -> List[str]:

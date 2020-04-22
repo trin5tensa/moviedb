@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/18/20, 2:19 PM by stephen.
+#  Last modified 4/22/20, 7:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -33,6 +33,7 @@ INTERNAL_NAMES = ('title', 'year', 'director', 'minutes', 'notes')
 TAG_TREEVIEW_INTERNAL_NAME = 'tag treeview'
 FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes')
 COMMIT_TEXT = 'Commit'
+DELETE_TEXT = 'Delete'
 SEARCH_TEXT = 'Search'
 CANCEL_TEXT = 'Cancel'
 SELECT_TAGS_TEXT = 'Select tags'
@@ -189,8 +190,13 @@ class CommonButtonbox(MovieGUIBase):
     """ A form for adding a movie."""
     
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[config.MovieDef, Sequence[str]], None]
+    commit_callback: Callable[[config.MovieDef, Sequence[str]], None]
     
+    # If the user clicks the delete button this callback will be called.
+    delete_callback: Callable[[config.MovieKeyDef], None]
+    
+    # The caller shall specify the buttons which are to be shown in the buttonbox with thw exception
+    # of the cancel button which will always be provided.
     buttons_to_show: List[Literal['commit', 'delete']]
     
     # AND Neuron controlling enabled state of Commit button
@@ -203,23 +209,23 @@ class CommonButtonbox(MovieGUIBase):
         column_num = itertools.count()
         
         # Commit button
-        # moviedb-#146 Commit button if requested
-        commit = ttk.Button(buttonbox, text=COMMIT_TEXT, command=self.commit)
-        commit.grid(column=next(column_num), row=0)
-        commit.bind('<Return>', lambda event, b=commit: b.invoke())
-        commit.state(['disabled'])
-        self.commit_button_neuron.register(self.button_state_callback(commit))
+        if 'commit' in self.buttons_to_show:
+            commit = ttk.Button(buttonbox, text=COMMIT_TEXT, command=self.commit)
+            commit.grid(column=next(column_num), row=0)
+            commit.bind('<Return>', lambda event, b=commit: b.invoke())
+            commit.state(['disabled'])
+            self.commit_button_neuron.register(self.button_state_callback(commit))
         
-        # moviedb-#146 Delete button if requested
-        #   create button <delete>
-        #   grid button <delete>
-        #   TODO Figure out how neural network will be linked.
+        # Delete button
+        if 'delete' in self.buttons_to_show:
+            delete = ttk.Button(buttonbox, text=DELETE_TEXT, command=self.delete)
+            delete.grid(column=next(column_num), row=0)
         
         # Cancel button
         self.create_cancel_button(buttonbox, column=next(column_num))
     
     def commit(self):
-        """The user clicked the commit button."""
+        """The user clicked the 'Commit' button."""
         return_fields = {internal_name: movie_field.textvariable.get()
                          for internal_name, movie_field in self.entry_fields.items()}
         
@@ -230,15 +236,26 @@ class CommonButtonbox(MovieGUIBase):
             detail = 'The year must be between 1877 and 10000.'
             messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
             return
-        
+    
         # Commit and exit
         try:
-            self.callback(return_fields, self.selected_tags)
+            self.commit_callback(return_fields, self.selected_tags)
         except exception.MovieDBConstraintFailure:
             msg = 'Database constraint failure.'
             detail = 'A movie with this title and year is already present in the database.'
             messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
         else:
+            self.destroy()
+    
+    def delete(self):
+        """The user clicked the 'Delete' button. """
+        if messagebox.askyesno(message='Do you want to delete this movie?',
+                               icon='question', default='no', parent=self.parent):
+            movie = config.MovieKeyDef(title=self.entry_fields['title'].original_value,
+                                       year=int(self.entry_fields['year'].original_value))
+            # moviedb-#148 Handle exception for missing database record
+            #   See test_guiwidgets.TestAddMovieGUI.test_commit_callback_method for test method
+            self.delete_callback(movie)
             self.destroy()
 
 
@@ -246,8 +263,6 @@ class CommonButtonbox(MovieGUIBase):
 class AddMovieGUI(CommonButtonbox):
     """ A form for adding a movie."""
     
-    # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[config.MovieDef, Sequence[str]], None]
     # Tags list
     all_tags: Sequence[str]
     
@@ -295,7 +310,7 @@ class EditMovieGUI(CommonButtonbox):
     """ A form for editing a movie."""
     
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[config.MovieUpdateDef, Sequence[str]], None]
+    commit_callback: Callable[[config.MovieUpdateDef, Sequence[str]], None]
     # Tags list
     all_tags: Sequence[str]
     # Fields of the movie to be edited.
@@ -325,9 +340,7 @@ class EditMovieGUI(CommonButtonbox):
             
             entry_field = self.entry_fields[internal_name]
             entry_field.widget = entry
-            # PyCharm Bug:
-            #  Remove note and 'noinspection' when fixed
-            #  Reported - https://youtrack.jetbrains.com/issue/PY-40397
+            # PyCharm https://youtrack.jetbrains.com/issue/PY-40397
             # noinspection PyTypedDict
             entry_field.original_value = self.movie[internal_name]
             entry_field.textvariable.set(entry_field.original_value)
