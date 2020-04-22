@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/13/20, 7:58 AM by stephen.
+#  Last modified 4/22/20, 7:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,7 +16,7 @@
 from collections import deque
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Callable, List, Sequence
+from typing import Callable, List, Literal, Sequence
 
 import pytest
 
@@ -58,10 +58,15 @@ class TestAddMovie:
     def test_movie_gui_called(self, monkeypatch):
         monkeypatch.setattr(handlers.database, 'all_tags', lambda *args: self.TAGS)
         monkeypatch.setattr(handlers.guiwidgets, 'AddMovieGUI',
-                            lambda parent, tags, callback:
-                            self.movie_gui_args.append((parent, tags, callback)))
+                            lambda parent, commit_callback, delete_callback, buttons_to_show, all_tags:
+                            self.movie_gui_args.append((parent, commit_callback, delete_callback,
+                                                        buttons_to_show,
+                                                        all_tags)))
         with self.add_movie_context():
-            assert self.movie_gui_args == [(DummyParent(), self.TAGS, handlers.add_movie_callback,)]
+            assert self.movie_gui_args == [(DummyParent(),
+                                            handlers.add_movie_callback,
+                                            handlers.delete_movie_callback,
+                                            ['commit'], self.TAGS)]
     
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
@@ -75,6 +80,16 @@ class TestAddMovie:
             handlers.config.app = hold_app
 
 
+class TestDeleteMovie:
+    
+    def test_delete_movie_called(self, monkeypatch):
+        calls = []
+        movie = handlers.config.FindMovieDef(title='test title', year=[2042])
+        monkeypatch.setattr(handlers.database, 'del_movie', lambda *args: calls.append(args))
+        handlers.delete_movie_callback(movie)
+        assert calls == [(movie,)]
+
+
 class TestEditMovie:
     TAGS = ['Movie night candidate']
     
@@ -83,10 +98,10 @@ class TestEditMovie:
     def test_edit_gui_called(self, monkeypatch):
         monkeypatch.setattr(handlers.database, 'all_tags', lambda *args: self.TAGS)
         monkeypatch.setattr(handlers.guiwidgets, 'SearchMovieGUI',
-                            lambda parent, tags, callback:
-                            self.search_gui_args.append((parent, tags, callback)))
+                            lambda parent, callback, tags:
+                            self.search_gui_args.append((parent, callback, tags)))
         with self.edit_movie_context():
-            assert self.search_gui_args == [(DummyParent(), self.TAGS, handlers.search_movie_callback,)]
+            assert self.search_gui_args == [(DummyParent(), handlers.search_movie_callback, self.TAGS)]
     
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
@@ -225,7 +240,8 @@ class TestSearchMovieCallback:
         monkeypatch.setattr(handlers.guiwidgets, 'EditMovieGUI', DummyEditMovieGUI)
         with self.class_context():
             handlers.search_movie_callback(self.criteria, self.tags)
-            expected = handlers.config.app.tk_root, all_tags, handlers.edit_movie_callback, movie
+            expected = (handlers.config.app.tk_root, handlers.edit_movie_callback,
+                        handlers.delete_movie_callback, ['commit', 'delete'], all_tags, movie)
         assert dummy_edit_movie_gui_instance[0] == expected
 
     def test_multiple_movies_found_calls_select_movie_gui(self, class_setup, monkeypatch):
@@ -365,9 +381,10 @@ class TestSelectMovieCallback:
         sentinel_2 = object()
         with self.class_context():
             assert dummy_edit_movie_gui_instance[0][0] == DummyParent()
-            assert dummy_edit_movie_gui_instance[0][1] == ['Movie night candidate']
-            assert dummy_edit_movie_gui_instance[0][3] == 'Test Movie'
-            dummy_edit_movie_gui_instance[0][2](sentinel_1, sentinel_2)
+            assert dummy_edit_movie_gui_instance[0][3] == ['commit', 'delete']
+            assert dummy_edit_movie_gui_instance[0][4] == ['Movie night candidate']
+            assert dummy_edit_movie_gui_instance[0][5] == 'Test Movie'
+            dummy_edit_movie_gui_instance[0][1](sentinel_1, sentinel_2)
             assert self.dummy_edit_movie_callback == [(sentinel_1, sentinel_2)]
 
     @pytest.fixture
@@ -409,13 +426,15 @@ dummy_edit_movie_gui_instance = []
 @dataclass
 class DummyEditMovieGUI:
     parent: DummyParent
+    commit_callback: Callable[[handlers.config.MovieUpdateDef, Sequence[str]], None]
+    delete_callback: Callable[..., None]
+    buttons_to_show: List[Literal['commit', 'delete']]
     all_tag_names: Sequence[str]
-    callback: Callable[[handlers.config.MovieUpdateDef, Sequence[str]], None]
     movie: handlers.config.MovieUpdateDef
     
     def __post_init__(self):
-        dummy_edit_movie_gui_instance.append((self.parent, self.all_tag_names,
-                                              self.callback, self.movie))
+        dummy_edit_movie_gui_instance.append((self.parent, self.commit_callback, self.delete_callback,
+                                              self.buttons_to_show, self.all_tag_names, self.movie))
 
 
 dummy_select_movie_gui_instance = []

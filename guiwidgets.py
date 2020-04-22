@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/12/20, 9:06 AM by stephen.
+#  Last modified 4/22/20, 7:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,7 +22,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
-from typing import Callable, Dict, List, Sequence, TypeVar
+from typing import Callable, Dict, List, Literal, Sequence, TypeVar
 
 import config
 import exception
@@ -33,6 +33,7 @@ INTERNAL_NAMES = ('title', 'year', 'director', 'minutes', 'notes')
 TAG_TREEVIEW_INTERNAL_NAME = 'tag treeview'
 FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes')
 COMMIT_TEXT = 'Commit'
+DELETE_TEXT = 'Delete'
 SEARCH_TEXT = 'Search'
 CANCEL_TEXT = 'Cancel'
 SELECT_TAGS_TEXT = 'Select tags'
@@ -188,10 +189,15 @@ class MovieGUIBase:
 class CommonButtonbox(MovieGUIBase):
     """ A form for adding a movie."""
     
-    # Tags list
-    all_tags: Sequence[str]
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[config.MovieDef, Sequence[str]], None]
+    commit_callback: Callable[[config.MovieDef, Sequence[str]], None]
+    
+    # If the user clicks the delete button this callback will be called.
+    delete_callback: Callable[[config.MovieKeyDef], None]
+    
+    # The caller shall specify the buttons which are to be shown in the buttonbox with thw exception
+    # of the cancel button which will always be provided.
+    buttons_to_show: List[Literal['commit', 'delete']]
     
     # AND Neuron controlling enabled state of Commit button
     commit_button_neuron: neurons.AndNeuron = field(default_factory=neurons.AndNeuron, init=False)
@@ -203,36 +209,53 @@ class CommonButtonbox(MovieGUIBase):
         column_num = itertools.count()
         
         # Commit button
-        commit = ttk.Button(buttonbox, text=COMMIT_TEXT, command=self.commit)
-        commit.grid(column=next(column_num), row=0)
-        commit.bind('<Return>', lambda event, b=commit: b.invoke())
-        commit.state(['disabled'])
-        self.commit_button_neuron.register(self.button_state_callback(commit))
-
+        if 'commit' in self.buttons_to_show:
+            commit = ttk.Button(buttonbox, text=COMMIT_TEXT, command=self.commit)
+            commit.grid(column=next(column_num), row=0)
+            commit.bind('<Return>', lambda event, b=commit: b.invoke())
+            commit.state(['disabled'])
+            self.commit_button_neuron.register(self.button_state_callback(commit))
+        
+        # Delete button
+        if 'delete' in self.buttons_to_show:
+            delete = ttk.Button(buttonbox, text=DELETE_TEXT, command=self.delete)
+            delete.grid(column=next(column_num), row=0)
+        
         # Cancel button
         self.create_cancel_button(buttonbox, column=next(column_num))
     
     def commit(self):
-        """The user clicked the commit button."""
+        """The user clicked the 'Commit' button."""
         return_fields = {internal_name: movie_field.textvariable.get()
                          for internal_name, movie_field in self.entry_fields.items()}
         
         # Validate the year range
-        # moviedb-#133 SSOT: Replace the literal range limits with the range limits from the SQL schema.
+        # moviedb-#103 SSOT: Replace the literal range limits with the range limits from the SQL schema.
         if not self.validate_int_range(int(return_fields['year']), 1877, 10000):
             msg = 'Invalid year.'
             detail = 'The year must be between 1877 and 10000.'
             messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
             return
-        
+    
         # Commit and exit
         try:
-            self.callback(return_fields, self.selected_tags)
+            self.commit_callback(return_fields, self.selected_tags)
         except exception.MovieDBConstraintFailure:
             msg = 'Database constraint failure.'
             detail = 'A movie with this title and year is already present in the database.'
             messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
         else:
+            self.destroy()
+    
+    def delete(self):
+        """The user clicked the 'Delete' button. """
+        if messagebox.askyesno(message='Do you want to delete this movie?',
+                               icon='question', default='no', parent=self.parent):
+            movie = config.MovieKeyDef(title=self.entry_fields['title'].original_value,
+                                       year=int(self.entry_fields['year'].original_value))
+            # moviedb-#148 Handle exception for missing database record
+            #   See test_guiwidgets.TestAddMovieGUI.test_commit_callback_method for test method
+            self.delete_callback(movie)
             self.destroy()
 
 
@@ -242,9 +265,8 @@ class AddMovieGUI(CommonButtonbox):
     
     # Tags list
     all_tags: Sequence[str]
-    # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[config.MovieDef, Sequence[str]], None]
     
+    # noinspection DuplicatedCode
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form with a column for labels and another for user input fields."""
         body_frame = super().create_body(outerframe)
@@ -277,7 +299,7 @@ class AddMovieGUI(CommonButtonbox):
         
         # Create treeview for tag selection.
         # Availability of the add movie commit button is not dependent on the state of the treeview so
-        # the returned neuron is not used in AddMOvieGUI but is available for subclasses.
+        # the returned neuron is not used in AddMovieGUI but is available for subclasses.
         MovieTreeview(TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=5, column=0,
                       label_text=SELECT_TAGS_TEXT, items=self.all_tags,
                       user_callback=self.treeview_callback, initial_selection=self.selected_tags)()
@@ -287,16 +309,17 @@ class AddMovieGUI(CommonButtonbox):
 class EditMovieGUI(CommonButtonbox):
     """ A form for editing a movie."""
     
+    # On exit this callback will be called with a dictionary of fields and user entered values.
+    commit_callback: Callable[[config.MovieUpdateDef, Sequence[str]], None]
     # Tags list
     all_tags: Sequence[str]
-    # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[config.MovieUpdateDef, Sequence[str]], None]
     # Fields of the movie to be edited.
     movie: config.MovieUpdateDef
     
     # OR Neuron controlling enabled state of Commit button
     commit_button_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron, init=False)
     
+    # noinspection DuplicatedCode
     def create_body(self, outerframe: ttk.Frame):
         """Create a standard entry form body but with fields initialized with values from the record
         which is being edited.
@@ -317,9 +340,7 @@ class EditMovieGUI(CommonButtonbox):
             
             entry_field = self.entry_fields[internal_name]
             entry_field.widget = entry
-            # PyCharm Bug:
-            #  Remove note and 'noinspection' when fixed
-            #  Reported - https://youtrack.jetbrains.com/issue/PY-40397
+            # PyCharm https://youtrack.jetbrains.com/issue/PY-40397
             # noinspection PyTypedDict
             entry_field.original_value = self.movie[internal_name]
             entry_field.textvariable.set(entry_field.original_value)
@@ -337,9 +358,11 @@ class EditMovieGUI(CommonButtonbox):
 @dataclass
 class SearchMovieGUI(MovieGUIBase):
     """A form for searching for a movie."""
-    all_tags: Sequence[str]
+    
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.FindMovieDef, Sequence[str]], None]
+    # Tags list
+    all_tags: Sequence[str]
     
     selected_tags: Sequence[str] = field(default_factory=tuple, init=False)
     # Neuron controlling enabled state of Search button

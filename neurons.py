@@ -1,6 +1,6 @@
 """Observer pattern and neurons."""
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/5/20, 7:24 AM by stephen.
+#  Last modified 4/19/20, 8:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -110,7 +110,8 @@ class OrNeuron(Neuron):
     """An observer that can observe multiple events.
     
     Use Case:
-    Input forms often have multiple fields which must be completed before the form can be accepted.
+    Input forms often have multiple fields one of which must be completed before the form can be
+    accepted.
     For example, a 'Search' button should only be active if any field that can be used for the search
     is completed.    This requires an observer that responds to multiple stimuli. It will react when
     any observed field sends True.

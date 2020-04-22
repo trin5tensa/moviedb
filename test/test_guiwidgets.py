@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/12/20, 12:50 PM by stephen.
+#  Last modified 4/22/20, 7:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -34,7 +34,7 @@ class TestAddMovieGUI:
     
     def test_callback_initialized(self, patch_tk):
         with self.movie_context() as movie_gui:
-            assert movie_gui.callback == movie_gui_callback
+            assert movie_gui.commit_callback == dummy_commit_callback
     
     def test_fields_initialized(self, patch_tk):
         with self.movie_context() as movie_gui:
@@ -281,6 +281,7 @@ class TestAddMovieGUI:
                     (movie_gui, 'title', movie_gui.commit_button_neuron, movie_gui.neuron_callback),
                     (movie_gui, 'year', movie_gui.commit_button_neuron, movie_gui.neuron_callback, True)]
 
+    # noinspection DuplicatedCode
     def test_movie_treeview_call(self, patch_tk, patch_movie_treeview):
         sentinel = object()
         with self.movie_context():
@@ -438,14 +439,14 @@ class TestAddMovieGUI:
         
         with self.movie_context() as movie_gui:
             validate_int_range = dummy_validate_int_range(True)
-            monkeypatch.setattr(movie_gui, 'callback', lambda *args: None)
+            monkeypatch.setattr(movie_gui, 'commit_callback', lambda *args: None)
             monkeypatch.setattr(movie_gui, 'validate_int_range', validate_int_range)
             movie_gui.commit()
             assert calls == [(4242, 1877, 10000)]
     
     def test_commit_calls_validate_int_range_with_invalid_year(self, patch_tk, monkeypatch):
         with self.movie_context() as movie_gui:
-            monkeypatch.setattr(movie_gui, 'callback', lambda *args: None)
+            monkeypatch.setattr(movie_gui, 'commit_callback', lambda *args: None)
             monkeypatch.setattr(movie_gui, 'validate_int_range', lambda *args: False)
             messagebox = TkMessagebox()
             monkeypatch.setattr(guiwidgets, 'messagebox', messagebox)
@@ -456,7 +457,7 @@ class TestAddMovieGUI:
     def test_commit_callback_method(self, patch_tk, monkeypatch):
         calls = []
         with self.movie_context() as movie_gui:
-            monkeypatch.setattr(movie_gui, 'callback', lambda *args: calls.append(args))
+            monkeypatch.setattr(movie_gui, 'commit_callback', lambda *args: calls.append(args))
             movie_gui.commit()
             assert calls[0][0] == dict(title='4242', year='4242', director='4242',
                                        minutes='4242', notes='4242')
@@ -471,7 +472,7 @@ class TestAddMovieGUI:
             return callback
         
         with self.movie_context() as movie_gui:
-            monkeypatch.setattr(movie_gui, 'callback', dummy_callback())
+            monkeypatch.setattr(movie_gui, 'commit_callback', dummy_callback())
             messagebox = TkMessagebox()
             monkeypatch.setattr(guiwidgets, 'messagebox', messagebox)
             movie_gui.commit()
@@ -482,7 +483,7 @@ class TestAddMovieGUI:
     def test_commit_calls_destroy(self, patch_tk, monkeypatch):
         calls = []
         with self.movie_context() as movie_gui:
-            monkeypatch.setattr(movie_gui, 'callback', lambda *args: None)
+            monkeypatch.setattr(movie_gui, 'commit_callback', lambda *args: None)
             monkeypatch.setattr(movie_gui, 'destroy', lambda *args: calls.append(True))
             movie_gui.commit()
             assert calls == [True]
@@ -505,12 +506,25 @@ class TestAddMovieGUI:
         treeview_call = []
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
-        yield guiwidgets.AddMovieGUI(DummyTk(), all_tags=tags,
-                                     callback=movie_gui_callback)
+        yield guiwidgets.AddMovieGUI(DummyTk(), all_tags=tags, commit_callback=dummy_commit_callback,
+                                     delete_callback=dummy_commit_callback,
+                                     buttons_to_show='commit')
 
 
 # noinspection PyMissingOrEmptyDocstring
 class TestEditMovieGUI:
+    
+    def test_delete_button_created(self, patch_tk, class_fixtures):
+        with self.movie_context() as movie_gui:
+            button = movie_gui.parent.children[0].children[1].children[1]
+            assert button == TtkButton(parent=TtkFrame(parent=TtkFrame(parent=DummyTk()),
+                                                       padding=(5, 5, 10, 10)),
+                                       text='Delete', command=movie_gui.delete)
+    
+    def test_delete_button_gridded(self, patch_tk, class_fixtures):
+        with self.movie_context() as movie_gui:
+            button = movie_gui.parent.children[0].children[1].children[1]
+            assert button.grid_calls[0] == dict(column=1, row=0)
     
     def test_tree_selection_add(self, patch_tk, class_fixtures):
         with self.movie_context() as movie_gui:
@@ -574,7 +588,7 @@ class TestEditMovieGUI:
     
         def dummy_notify(*args):
             notify_calls.append(args[1:])
-    
+
         monkeypatch.setattr(guiwidgets.neurons.Observer, 'notify', dummy_notify)
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
@@ -583,7 +597,36 @@ class TestEditMovieGUI:
             tree = tags_frame.children[0]
             tree.bind_calls[0][1]['func']()
             assert notify_calls[0] == (guiwidgets.TAG_TREEVIEW_INTERNAL_NAME, True)
-
+    
+    def test_delete_calls_askyesno_dialog(self, patch_tk, monkeypatch):
+        calls = []
+        with self.movie_context() as movie_gui:
+            monkeypatch.setattr(guiwidgets.messagebox, 'askyesno',
+                                lambda **kwargs: calls.append(kwargs))
+            monkeypatch.setattr(movie_gui, 'delete_callback', lambda movie: None)
+            monkeypatch.setattr(movie_gui, 'destroy', lambda: None)
+            guiwidgets.CommonButtonbox.delete(movie_gui)
+            assert calls == [dict(message='Do you want to delete this movie?',
+                                  icon='question', default='no', parent=DummyTk())]
+    
+    def test_delete_callback_method(self, patch_tk, monkeypatch):
+        calls = []
+        with self.movie_context() as movie_gui:
+            monkeypatch.setattr(guiwidgets.messagebox, 'askyesno', lambda **kwargs: True)
+            monkeypatch.setattr(movie_gui, 'delete_callback', lambda movie: calls.append(movie))
+            monkeypatch.setattr(movie_gui, 'destroy', lambda: None)
+            movie_gui.delete()
+            assert calls == [dict(title='Test Movie', year=2050)]
+    
+    def test_delete_calls_destroy(self, patch_tk, monkeypatch):
+        calls = []
+        with self.movie_context() as movie_gui:
+            monkeypatch.setattr(guiwidgets.messagebox, 'askyesno', lambda **kwargs: True)
+            monkeypatch.setattr(movie_gui, 'delete_callback', lambda movie: None)
+            monkeypatch.setattr(movie_gui, 'destroy', lambda: calls.append(True))
+            movie_gui.delete()
+            assert calls == [True]
+    
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def movie_context(self):
@@ -593,7 +636,8 @@ class TestEditMovieGUI:
                                                  director='Test Director', minutes=142,
                                                  notes='Test note', tags=('test selected tag',))
         # noinspection PyTypeChecker
-        yield guiwidgets.EditMovieGUI(DummyTk(), all_tag_names, movie_gui_callback, movie)
+        yield guiwidgets.EditMovieGUI(DummyTk(), dummy_commit_callback, dummy_delete_callback,
+                                      ['commit', 'delete'], all_tag_names, movie)
 
     neuron_linker_args = []
     tag_treeview_observer_args = []
@@ -642,6 +686,7 @@ class TestSearchMovieGUI:
                                                   padding=(10, 25, 10, 0)), 'minutes',
                               'Length (minutes)', 3), ]
 
+    # noinspection DuplicatedCode
     def test_create_tag_treeview_called(self, patch_tk, patch_movie_treeview):
         with self.movie_context():
             assert treeview_call[0][1] == guiwidgets.TAG_TREEVIEW_INTERNAL_NAME
@@ -653,6 +698,7 @@ class TestSearchMovieGUI:
             assert treeview_call[0][6] == ('test tag 1', 'test tag 2')
             assert treeview_call[0][7]('test signal') == 'test signal'
 
+    # noinspection PyShadowingNames
     def test_treeview_observer_registered(self, patch_tk, monkeypatch):
         self.tag_treeview_observer_args = []
         monkeypatch.setattr(guiwidgets.MovieGUIBase.tag_treeview_observer, 'register',
@@ -770,8 +816,8 @@ class TestSearchMovieGUI:
         calls = []
         monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'neuron_linker', lambda *args: calls.append(args))
         with self.movie_context() as movie_gui:
-            assert calls[0] == (
-            movie_gui, 'title', movie_gui.search_button_neuron, movie_gui.neuron_callback)
+            assert calls[0] == (movie_gui, 'title',
+                                movie_gui.search_button_neuron, movie_gui.neuron_callback)
     
     # Test create buttonbox
     
@@ -837,8 +883,9 @@ class TestSearchMovieGUI:
         with self.movie_context() as movie_gui:
             movie_gui.selected_tags = ['tag 1', 'tag 2']
             movie_gui.search()
-            assert callback_calls == [(dict(director='4242', minutes=['4242', '4242'], notes='4242',
-                                            title='4242', year=['4242', '4242'], ), ['tag 1', 'tag 2'])]
+            assert commit_callback_calls == [(dict(director='4242', minutes=['4242', '4242'],
+                                                   notes='4242', title='4242', year=['4242', '4242'], ),
+                                              ['tag 1', 'tag 2'])]
     
     def test_callback_raises_movie_search_found_nothing(self, patch_tk, monkeypatch):
         # noinspection PyUnusedLocal
@@ -849,7 +896,7 @@ class TestSearchMovieGUI:
         monkeypatch.setattr(guiwidgets, 'gui_messagebox', lambda *args: messagebox_calls.append(args))
         tags = []
         # noinspection PyTypeChecker
-        movie_gui = guiwidgets.SearchMovieGUI(DummyTk(), tags, callback)
+        movie_gui = guiwidgets.SearchMovieGUI(DummyTk(), callback, tags)
         movie_gui.search()
         assert messagebox_calls == [(DummyTk(), 'No matches',
                                      'There are no matching movies in the database.')]
@@ -868,7 +915,7 @@ class TestSearchMovieGUI:
         treeview_call = []
         tags = ('test tag 1', 'test tag 2')
         # noinspection PyTypeChecker
-        yield guiwidgets.SearchMovieGUI(DummyTk(), tags, movie_gui_callback)
+        yield guiwidgets.SearchMovieGUI(DummyTk(), dummy_commit_callback, tags)
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -943,15 +990,17 @@ class TestSelectMovieGUI:
             assert treeview.bind_calls[0][0] == ('<<TreeviewSelect>>',)
     
             treeview.bind_calls[0][1]['func']()
-            assert callback_calls[2] == ('Hello Mum', 1954)
+            assert commit_callback_calls[2] == ('Hello Mum', 1954)
 
     def test_widget_is_destroyed(self, patch_tk, monkeypatch):
         destroy_called = False
     
+        # noinspection PyUnusedLocal
         def mock_destroy(*args):
             nonlocal destroy_called
             destroy_called = True
     
+        # noinspection PyUnusedLocal
         def selection(*args):
             return ["'Hello Mum, 1954'"]
     
@@ -999,7 +1048,7 @@ class TestSelectMovieGUI:
     @contextmanager
     def select_movie_context(self):
         # noinspection PyTypeChecker
-        yield guiwidgets.SelectMovieGUI(DummyTk(), self.fake_movie_generator(), movie_gui_callback)
+        yield guiwidgets.SelectMovieGUI(DummyTk(), self.fake_movie_generator(), dummy_commit_callback)
 
 
 def test_gui_messagebox(monkeypatch):
@@ -1316,9 +1365,17 @@ def patch_movie_treeview(monkeypatch):
     monkeypatch.setattr(guiwidgets, 'MovieTreeview', DummyTreeview)
 
 
-callback_calls = []
+commit_callback_calls = []
 
 
 # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring
-def movie_gui_callback(movie_dict: guiwidgets.config.MovieDef, tags: Sequence[str]):
-    callback_calls.append((movie_dict, tags))
+def dummy_commit_callback(movie_dict: guiwidgets.config.MovieDef, tags: Sequence[str]):
+    commit_callback_calls.append((movie_dict, tags))
+
+
+delete_callback_calls = []
+
+
+# noinspection PyUnusedLocal,PyMissingOrEmptyDocstring
+def dummy_delete_callback(movie_dict: guiwidgets.config.MovieDef, tags: Sequence[str]):
+    delete_callback_calls.append((movie_dict, tags))
