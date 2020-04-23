@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/22/20, 7:01 AM by stephen.
+#  Last modified 4/23/20, 1:56 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,6 +16,8 @@ This module is the glue between the user's selection of a menu item and the gui.
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from typing import Sequence
+
+import sqlalchemy.orm
 
 import config
 import database
@@ -79,9 +81,19 @@ def delete_movie_callback(movie: config.FindMovieDef):
     
     Args:
         movie:
-
+        
+    Raises:
+        sqlalchemy.orm.exc.NoResultFound
+            This exception is raised if the record cannot be found. This can happen if the movie was
+            deleted by another process in between the user retrieving a record for deletion and the
+            call to actually delete it.
+            The exception is silently ignored.
     """
-    database.del_movie(movie)
+    try:
+        database.del_movie(movie)
+    
+    except sqlalchemy.orm.exc.NoResultFound:
+        pass
 
 
 def search_movie_callback(criteria: config.FindMovieDef, tags: Sequence[str]):

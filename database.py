@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/22/20, 7:01 AM by stephen.
+#  Last modified 4/23/20, 1:56 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,10 +24,11 @@ import sqlalchemy
 import sqlalchemy.exc
 import sqlalchemy.ext.declarative
 import sqlalchemy.ext.hybrid
+import sqlalchemy.orm
 from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, String, Table, Text,
                         UniqueConstraint, )
 from sqlalchemy.ext.hybrid import hybrid_method
-from sqlalchemy.orm import query, relationship
+from sqlalchemy.orm import relationship
 from sqlalchemy.orm.session import sessionmaker
 
 import exception
@@ -148,13 +149,9 @@ def del_movie(title_year: FindMovieDef):
     Args:
         title_year: Specifies teh movie to be deleted.
     """
-    # moviedb-#147 Investigate incorrect deletions from database.
-    pass
-
-
-#     with _session_scope() as session:
-#         movie = _build_movie_query(session, title_year).one()
-#         session.delete(movie)
+    with _session_scope() as session:
+        movie = _build_movie_query(session, title_year).one()
+        session.delete(movie)
 
 
 def all_tags() -> List[str]:
@@ -283,13 +280,13 @@ class Movie(Base):
     # moviedb-#127 Add a synopsis field
     notes = Column(Text)
     UniqueConstraint(title, year)
-    
-    tags = relationship('Tag', secondary='movie_tag', back_populates='movies', cascade='all')
-    reviews = relationship('Review', secondary='movie_review', back_populates='movies', cascade='all')
-    
+
+    tags = relationship('Tag', secondary='movie_tag', back_populates='movies')
+    reviews = relationship('Review', secondary='movie_review', back_populates='movies')
+
     def __init__(self, title: str, year: int, director: str = None,
                  minutes: int = None, notes: str = None):
-
+    
         # Carry out validation which is not done by SQLAlchemy or sqlite3
         null_strings = set(itertools.filterfalse(lambda arg: arg != '', [title, year]))
         if null_strings == {''}:
@@ -366,7 +363,7 @@ class Tag(Base):
     id = Column(sqlalchemy.Integer, sqlalchemy.Sequence('tag_id_sequence'), primary_key=True)
     tag = Column(String(24), nullable=False, unique=True)
 
-    movies = relationship('Movie', secondary='movie_tag', back_populates='tags', cascade='all')
+    movies = relationship('Movie', secondary='movie_tag', back_populates='tags')
 
     def __init__(self, tag: str):
         self.tag = tag

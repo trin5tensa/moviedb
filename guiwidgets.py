@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/22/20, 7:01 AM by stephen.
+#  Last modified 4/23/20, 6:59 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -582,7 +582,7 @@ class MovieTreeview:
         treeview_frame.grid(column=self.column + 1, row=self.row, sticky='w')
         
         # Create the treeview
-        tree = ttk.Treeview(treeview_frame, columns=('tags',), height=12, selectmode='extended',
+        tree = ttk.Treeview(treeview_frame, columns=('tags',), height=10, selectmode='extended',
                             show='tree', padding=5)
         tree.grid(column=0, row=0, sticky='w')
         tree.column('tags', width=100)

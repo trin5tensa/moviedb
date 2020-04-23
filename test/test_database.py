@@ -1,7 +1,7 @@
 """Functional pytests for database module. """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/19/20, 1:09 PM by stephen.
+#  Last modified 4/22/20, 8:59 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -260,7 +260,6 @@ def test_edit_movie_raises__movie_not_found_exception(loaded_database):
     assert cm.match("The movie Non Existent Movie, 1972 is not in the database.")
 
 
-@pytest.mark.skip
 def test_delete_movie(loaded_database):
     database.del_movie(database.FindMovieDef(title='Solaris', year=[1972]))
     movies = database.find_movies(dict(title='Solaris'))

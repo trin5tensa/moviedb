@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/22/20, 7:01 AM by stephen.
+#  Last modified 4/23/20, 12:56 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -382,7 +382,7 @@ class TestSelectMovieCallback:
         with self.class_context():
             assert dummy_edit_movie_gui_instance[0][0] == DummyParent()
             assert dummy_edit_movie_gui_instance[0][3] == ['commit', 'delete']
-            assert dummy_edit_movie_gui_instance[0][4] == ['Movie night candidate']
+            assert dummy_edit_movie_gui_instance[0][4] == ['Test tag 42']
             assert dummy_edit_movie_gui_instance[0][5] == 'Test Movie'
             dummy_edit_movie_gui_instance[0][1](sentinel_1, sentinel_2)
             assert self.dummy_edit_movie_callback == [(sentinel_1, sentinel_2)]
@@ -391,6 +391,7 @@ class TestSelectMovieCallback:
     def class_patches(self, monkeypatch):
         self.dummy_find_movies_calls = []
         monkeypatch.setattr(handlers.database, 'find_movies', self.dummy_find_movies)
+        monkeypatch.setattr(handlers.database, 'all_tags', lambda: ['Test tag 42'])
         monkeypatch.setattr(handlers.guiwidgets, 'EditMovieGUI', DummyEditMovieGUI)
         monkeypatch.setattr(handlers, 'edit_movie_callback',
                             (lambda updates, selected_tags:
