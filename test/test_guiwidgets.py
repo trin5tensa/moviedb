@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/22/20, 7:01 AM by stephen.
+#  Last modified 4/23/20, 6:56 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -209,7 +209,7 @@ class TestAddMovieGUI:
             tags_frame = bodyframe.children[-1]
             assert tags_frame.children[0] == TtkTreeview(parent=TtkFrame(parent=TtkFrame(
                     parent=TtkFrame(parent=DummyTk()), padding=(10, 25, 10, 0)), padding=5),
-                    columns=('tags',), height=12, selectmode='extended', show='tree', padding=5)
+                    columns=('tags',), height=10, selectmode='extended', show='tree', padding=5)
     
     def test_tree_gridded(self, patch_tk):
         with self.movie_context() as movie_gui:
