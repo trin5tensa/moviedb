@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/23/20, 1:56 PM by stephen.
+#  Last modified 4/24/20, 8:44 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -44,6 +44,22 @@ def edit_movie():
     """ Get search movie data from the user and search for compliant records"""
     all_tags = database.all_tags()
     guiwidgets.SearchMovieGUI(config.app.tk_root, search_movie_callback, all_tags)
+
+
+def add_tag():
+    # moviedb-#155
+    #   Code
+    #   Test
+    #   Document
+    print('\nhandlers.add_tag called.')
+
+
+def edit_tag():
+    # TODO
+    #   Code
+    #   Test
+    #   Document
+    print('\nhandlers.edit_tag called.')
 
 
 def import_movies():
