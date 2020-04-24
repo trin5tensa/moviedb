@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/16/20, 7:26 AM by stephen.
+#  Last modified 4/24/20, 8:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -215,4 +215,8 @@ class MenuData:
                         MenuItem('Delete Movie…', handlers.edit_movie),
                         '-',
                         MenuItem('Import…', handlers.import_movies), ]),
+                Menu('Tag', [
+                        MenuItem('Add Tag…', handlers.add_tag),
+                        MenuItem('Edit Tag…', handlers.edit_tag),
+                        MenuItem('Delete Tag…', handlers.edit_tag), ]),
                 ]
