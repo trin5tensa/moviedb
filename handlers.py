@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/24/20, 8:44 AM by stephen.
+#  Last modified 4/26/20, 7:21 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -184,3 +184,13 @@ def select_movie_callback(title: str, year: int):
     # noinspection PyTypeChecker
     guiwidgets.EditMovieGUI(config.app.tk_root, edit_movie_callback, delete_movie_callback,
                             ['commit', 'delete'], database.all_tags(), movie)
+
+
+def add_tag_callback(tag: str):
+    """Add a new user supplied tag to the database.
+    
+    Args:
+        tag:
+
+    """
+    database.add_tag(tag)

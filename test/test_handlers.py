@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/23/20, 12:56 PM by stephen.
+#  Last modified 4/26/20, 7:21 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -408,10 +408,20 @@ class TestSelectMovieCallback:
             yield handlers.select_movie_callback(self.TITLE, self.YEAR)
         finally:
             handlers.config.app = hold_app
-    
+
     def dummy_find_movies(self, *args):
         self.dummy_find_movies_calls.append(args)
         return self.MOVIE
+
+
+class TestAddTagCallback:
+    
+    def test_(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(handlers.database, 'add_tag', lambda *args: calls.append(args))
+        test_tag = 'Test tag'
+        handlers.add_tag_callback(test_tag)
+        assert calls == [(test_tag,)]
 
 
 @dataclass
