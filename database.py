@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/23/20, 1:56 PM by stephen.
+#  Last modified 4/24/20, 9:02 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -176,7 +176,7 @@ def movie_tags(title_year: MovieKeyDef) -> List[str]:
 
 
 def add_tag(new_tag: str):
-    """Add links between a tag and none or more movies. Create the tag if it does not exist.
+    """Create the tag unless it already exists.
 
     Args:
         new_tag: Text of new tag.
