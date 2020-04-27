@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/26/20, 7:21 AM by stephen.
+#  Last modified 4/27/20, 8:33 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -47,11 +47,10 @@ def edit_movie():
 
 
 def add_tag():
-    # moviedb-#155
-    #   Code
-    #   Test
-    #   Document
-    print('\nhandlers.add_tag called.')
+    """Add a new tag to the database."""
+    # PyCharm https://youtrack.jetbrains.com/issue/PY-41268
+    # noinspection PyTypeChecker
+    guiwidgets.AddTagGUI(config.app.tk_root, add_tag_callback, ['commit'])
 
 
 def edit_tag():
