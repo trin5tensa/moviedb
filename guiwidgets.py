@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/23/20, 6:59 AM by stephen.
+#  Last modified 4/27/20, 8:39 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -537,15 +537,48 @@ class SelectMovieGUI(MovieGUIBase):
             title, year = tree.selection()[0][1:-1].split(',')
             self.callback(title.strip("'"), int(year))
             self.destroy()
-        
+
         return selection_callback
 
     def create_buttonbox(self, outerframe: ttk.Frame):
         """Create the buttons."""
         buttonbox = super().create_buttonbox(outerframe)
-
+    
         # Cancel button
         self.create_cancel_button(buttonbox, column=0)
+
+
+@dataclass
+class TagGUIBase:
+    """A base class for the Tag GUI"""
+    parent: tk.Tk
+    commit_callback: Callable[[str], None]
+    # The caller shall specify the buttons which are to be shown in the buttonbox with thw exception
+    # of the cancel button which will always be provided. THe available buttons are those listed.
+    buttons_to_show: List[Literal['commit', 'delete']]
+    
+    # TODO
+    #   Code
+    #   Test
+    #   Document
+
+
+@dataclass
+class AddTagGUI(TagGUIBase):
+    # TODO
+    #   Code
+    #   Test
+    #   Document
+    pass
+
+
+@dataclass
+class EditTagGUI(TagGUIBase):
+    # TODO
+    #   Code
+    #   Test
+    #   Document
+    pass
 
 
 @dataclass
