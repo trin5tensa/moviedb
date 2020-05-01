@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/27/20, 8:39 AM by stephen.
+#  Last modified 4/30/20, 7:52 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -419,14 +419,13 @@ class TestAddTag:
     def test_add_tag(self, monkeypatch):
         tag_gui_args = []
         monkeypatch.setattr(handlers.guiwidgets, 'AddTagGUI',
-                            lambda parent, commit_callback, buttons:
-                            tag_gui_args.append((parent, commit_callback, buttons)))
+                            lambda parent, commit_callback:
+                            tag_gui_args.append((parent, commit_callback)))
         
         tk_parent = DummyParent()
         add_tag_callback = handlers.add_tag_callback
-        buttons_to_show = ['commit']
         with self.add_tag_context():
-            assert tag_gui_args == [(tk_parent, add_tag_callback, buttons_to_show)]
+            assert tag_gui_args == [(tk_parent, add_tag_callback)]
     
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager

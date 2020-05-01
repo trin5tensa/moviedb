@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/27/20, 8:39 AM by stephen.
+#  Last modified 5/1/20, 8:45 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -549,23 +549,150 @@ class SelectMovieGUI(MovieGUIBase):
 
 
 @dataclass
-class TagGUIBase:
-    """A base class for the Tag GUI"""
-    parent: tk.Tk
-    commit_callback: Callable[[str], None]
-    # The caller shall specify the buttons which are to be shown in the buttonbox with thw exception
-    # of the cancel button which will always be provided. THe available buttons are those listed.
-    buttons_to_show: List[Literal['commit', 'delete']]
+class AddTagGUI:
+    # moviedb-#155
+    #   Test
+    #   Document
     
-    # TODO
-    #   Code
-    #   Test
-    #   Document
+    # DayBreak
+    #   Create external functions from methods where marked.
+    #   Integration tests
+    #   Start writing tests
+    
+    parent: tk.Tk
+    add_tag_callback: Callable
+    
+    # The main outer frame of this class.
+    outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
+    
+    # An internal dictionary to simplify field data management.
+    # moviedb-#155
+    #   Does this suite need to be an attribute?
+    entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
+    internal_name: str = field(default='tag', init=False, repr=False)
+    field_text: str = field(default='Tag', init=False, repr=False)
+    
+    def __post_init__(self):
+        # moviedb-#155
+        #   Test
+        #   Document
+        
+        # Initialize an internal dictionary to simplify field data management.
+        self.entry_fields = {self.internal_name: EntryField(self.field_text, '')}
+        
+        # Create outer frames to hold fields and buttons.
+        self.outer_frame, body_frame, buttonbox = InputFormFraming(self.parent)()
+        
+        # Create labwl and field
+        label = ttk.Label(body_frame, text=self.entry_fields[self.internal_name].label_text)
+        label.grid(column=0, row=0, sticky='e', padx=5)
+        entry = ttk.Entry(body_frame, textvariable=self.entry_fields[self.internal_name].textvariable,
+                          width=36)
+        entry.grid(column=1, row=0)
+        self.entry_fields[self.internal_name].widget = entry
+        
+        # Create buttonbox with commit and cancel button
+        column_num = itertools.count()
+        
+        # Commit button
+        # moviedb-#155
+        #   Make this suite into an external 'button' function.
+        #   Test
+        #   Document
+        commit = ttk.Button(buttonbox, text=COMMIT_TEXT, command=self.commit)
+        commit.grid(column=next(column_num), row=0)
+        commit.bind('<Return>', lambda event, b=commit: b.invoke())
+        commit.state(['disabled'])
+        
+        # Cancel button
+        # moviedb-#155
+        #   Make this suite into an external 'button' function.
+        #   Test
+        #   Document
+        cancel = ttk.Button(buttonbox, text=CANCEL_TEXT, command=self.destroy)
+        cancel.grid(column=next(column_num), row=0)
+        cancel.bind('<Return>', lambda event, b=cancel: b.invoke())
+        cancel.focus_set()
+        
+        # Link Commit button to tag field
+        # moviedb-#155
+        #   Make this suite into an external function.
+        #   Test
+        #   Document
+        neuron = neurons.OrNeuron()
+        self.entry_fields[self.internal_name].textvariable.trace_add(
+                'write',
+                self.neuron_callback(self.internal_name, neuron))
+        neuron.register(self.button_state_callback(commit))
+        neuron.register_event(self.internal_name)
+    
+    def neuron_callback(self, internal_name: str, neuron: neurons.Neuron):
+        """Create the callback for an observed field.
+
+        This will be registered as the 'trace_add' callback for an entry field.
+        """
+        
+        # noinspection PyUnusedLocal
+        
+        # moviedb-#155
+        #   Should this be an external function?
+        #   Test
+        #   Document
+        
+        def change_neuron_state(*args):
+            """Call the neuron when the field changes.
+            
+            Args:
+                *args: Not used. Required to match unused arguments from caller.
+            """
+            state = (self.entry_fields[internal_name].textvariable.get()
+                     != str(self.entry_fields[internal_name].original_value))
+            neuron(internal_name, state)
+        
+        return change_neuron_state
+    
+    @staticmethod
+    def button_state_callback(button: ttk.Button) -> Callable:
+        """Create the callback for a button.
+
+        This will be registered with a neuron as s notifee."""
+        
+        # moviedb-#155
+        #   Should this be an external function?
+        #   Test
+        #   Document
+        def change_button_state(state: bool):
+            """Enable or disable the commit button when the title or year field change."""
+            if state:
+                button.state(['!disabled'])
+            else:
+                button.state(['disabled'])
+        
+        return change_button_state
+    
+    def commit(self):
+        """The user clicked the 'Commit' button."""
+        # moviedb-#155
+        #   Should this be an external function?
+        #   Code
+        #   Test
+        tag_field = self.entry_fields[self.internal_name].textvariable.get()
+        
+        self.add_tag_callback(tag_field)
+        self.destroy()
+    
+    def destroy(self):
+        # moviedb-#155
+        #   Should this be an external function?
+        #   Test
+        #   Document
+        """Destroy all widgets of this class."""
+        self.outer_frame.destroy()
 
 
 @dataclass
-class AddTagGUI(TagGUIBase):
-    # TODO
+class EditTagGUI:
+    # moviedb-#155
     #   Code
     #   Test
     #   Document
@@ -573,12 +700,55 @@ class AddTagGUI(TagGUIBase):
 
 
 @dataclass
-class EditTagGUI(TagGUIBase):
-    # TODO
-    #   Code
+class InputFormFraming:
+    # moviedb-#155
     #   Test
     #   Document
-    pass
+    """A support class for windows.
+    
+    It will create a body frame above a buttonbox frame. The body frame is aboce the buttonbox frame
+    and has two columns intended for labels and entry fields.
+    """
+    parent: tk.Tk
+    
+    outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
+    body_frame: ttk.Frame = field(default=None, init=False, repr=False)
+    buttonbox: ttk.Frame = field(default=None, init=False, repr=False)
+    
+    def __post_init__(self):
+        # moviedb-#155
+        #   Test
+        #   Document
+        self.outer_frame = ttk.Frame(self.parent)
+        self.outer_frame.grid(column=0, row=0, sticky='nsew')
+        self.outer_frame.columnconfigure(0, weight=1)
+        self.outer_frame.rowconfigure(0, weight=1)
+        self.outer_frame.rowconfigure(1, minsize=35)
+        
+        self.create_body(self.outer_frame)
+        self.create_buttonbox(self.outer_frame)
+    
+    def __call__(self):
+        # moviedb-#155
+        #   Test
+        #   Document
+        return self.outer_frame, self.body_frame, self.buttonbox
+    
+    def create_body(self, outerframe: ttk.Frame):
+        # moviedb-#155
+        #   Test
+        #   Document
+        self.body_frame = ttk.Frame(outerframe, padding=(10, 25, 10, 0))
+        self.body_frame.grid(column=0, row=0, sticky='n')
+        self.body_frame.columnconfigure(0, weight=1, minsize=30)
+        self.body_frame.columnconfigure(1, weight=1)
+    
+    def create_buttonbox(self, outerframe: ttk.Frame):
+        # moviedb-#155
+        #   Test
+        #   Document
+        self.buttonbox = ttk.Frame(outerframe, padding=(5, 5, 10, 10))
+        self.buttonbox.grid(column=0, row=1, sticky='e')
 
 
 @dataclass
