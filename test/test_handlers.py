@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/30/20, 7:52 AM by stephen.
+#  Last modified 5/2/20, 7:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -273,7 +273,7 @@ class TestSearchMovieCallback:
         self.dummy_find_movies_calls = []
         self.dummy_select_movie_gui_instance = []
         self.criteria = {internal_names: ''
-                         for internal_names in handlers.guiwidgets.INTERNAL_NAMES}
+                         for internal_names in handlers.guiwidgets.MOVIE_FIELD_NAMES}
         self.criteria['title'] = 'Pot'
         self.criteria['year'] = [2000, 2010]
         self.criteria['director'] = []

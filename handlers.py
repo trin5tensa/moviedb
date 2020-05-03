@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/1/20, 8:33 AM by stephen.
+#  Last modified 5/3/20, 6:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -54,10 +54,10 @@ def add_tag():
 
 
 def edit_tag():
-    # TODO
+    # moviedb-#162
     #   Code
     #   Test
-    #   Document_
+    #   Document
     print('\nhandlers.edit_tag called.')
 
 

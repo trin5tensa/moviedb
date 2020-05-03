@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/23/20, 6:56 AM by stephen.
+#  Last modified 5/3/20, 7:33 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -38,28 +38,32 @@ class TestAddMovieGUI:
     
     def test_fields_initialized(self, patch_tk):
         with self.movie_context() as movie_gui:
-            for internal_name in guiwidgets.INTERNAL_NAMES:
+            for internal_name in guiwidgets.MOVIE_FIELD_NAMES:
                 assert isinstance(movie_gui.entry_fields[internal_name], guiwidgets.EntryField)
     
     def test_fields_label_text(self, patch_tk):
         with self.movie_context() as movie_gui:
-            for internal_name, label_text in zip(guiwidgets.INTERNAL_NAMES, guiwidgets.FIELD_TEXTS):
+            for internal_name, label_text in zip(guiwidgets.MOVIE_FIELD_NAMES,
+                                                 guiwidgets.MOVIE_FIELD_TEXTS):
                 assert movie_gui.entry_fields[internal_name].label_text == label_text
     
     def test_fields_database_value(self, patch_tk):
         with self.movie_context() as movie_gui:
-            for internal_name, label_text in zip(guiwidgets.INTERNAL_NAMES, guiwidgets.FIELD_TEXTS):
+            for internal_name, label_text in zip(guiwidgets.MOVIE_FIELD_NAMES,
+                                                 guiwidgets.MOVIE_FIELD_TEXTS):
                 assert movie_gui.entry_fields[internal_name].original_value == ''
     
     def test_fields_text_variable(self, patch_tk):
         with self.movie_context() as movie_gui:
-            for internal_name, label_text in zip(guiwidgets.INTERNAL_NAMES, guiwidgets.FIELD_TEXTS):
+            for internal_name, label_text in zip(guiwidgets.MOVIE_FIELD_NAMES,
+                                                 guiwidgets.MOVIE_FIELD_TEXTS):
                 assert isinstance(movie_gui.entry_fields[internal_name].textvariable,
                                   guiwidgets.tk.StringVar)
     
     def test_fields_observer(self, patch_tk):
         with self.movie_context() as movie_gui:
-            for internal_name, label_text in zip(guiwidgets.INTERNAL_NAMES, guiwidgets.FIELD_TEXTS):
+            for internal_name, label_text in zip(guiwidgets.MOVIE_FIELD_NAMES,
+                                                 guiwidgets.MOVIE_FIELD_TEXTS):
                 assert isinstance(movie_gui.entry_fields[internal_name].observer,
                                   guiwidgets.neurons.Observer)
     
@@ -119,7 +123,7 @@ class TestAddMovieGUI:
             outerframe = movie_gui.parent.children[0]
             bodyframe = outerframe.children[0]
             labels = bodyframe.children[::2]
-            for label, text in zip(labels, guiwidgets.FIELD_TEXTS):
+            for label, text in zip(labels, guiwidgets.MOVIE_FIELD_TEXTS):
                 assert label == TtkLabel(TtkFrame(TtkFrame(DummyTk()), padding=(10, 25, 10, 0)),
                                          text=text)
     
