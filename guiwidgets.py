@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/3/20, 8:00 AM by stephen.
+#  Last modified 5/14/20, 1:26 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -550,10 +550,7 @@ class SelectMovieGUI(MovieGUIBase):
 
 @dataclass
 class AddTagGUI:
-    # moviedb-#155
-    #   Test
-    #   Document
-    
+    """ A form for adding a tag."""
     parent: tk.Tk
     add_tag_callback: Callable
     
@@ -564,28 +561,23 @@ class AddTagGUI:
     entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
     
     def __post_init__(self):
-        # moviedb-#155
-        #   Test
-    
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = create_entry_fields(TAG_FIELD_NAMES, TAG_FIELD_TEXTS)
-    
+
         # Create outer frames to hold fields and buttons.
         self.outer_frame, body_frame, buttonbox = create_input_form_framing(self.parent)
-    
+
         # Create label and field
         create_input_form_fields(body_frame, TAG_FIELD_NAMES, self.entry_fields)
-    
-        # Create buttonbox with commit and cancel button
+
+        # Populate buttonbox with commit and cancel buttons
         column_num = itertools.count()
-    
-        # Create buttons
         commit_button = create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
                                       command=self.commit, enabled=False)
-        button = create_button(buttonbox, CANCEL_TEXT, column=next(column_num), command=self.destroy)
-        button.focus_set()
-    
-        # Link Commit button to tag field
+        create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
+                      command=self.destroy).focus_set()
+
+        # Link commit button to tag field
         neuron = link_or_neuron_to_button(enable_button_wrapper(commit_button))
         link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron,
                              notify_neuron_wrapper(self.entry_fields,
@@ -593,15 +585,11 @@ class AddTagGUI:
     
     def commit(self):
         """The user clicked the 'Commit' button."""
-        # moviedb-#155
-        #   Test
         self.add_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
         self.destroy()
     
     def destroy(self):
         """Destroy all widgets of this class."""
-        # moviedb-#155
-        #   Test
         self.outer_frame.destroy()
 
 
@@ -725,8 +713,6 @@ def create_entry_fields(names: Sequence[str], texts: Sequence[str]) -> dict:
         key: The internal name of the field.
         value: An EntryField instance.
     """
-    # moviedb-#155
-    #   Test
     return {internal_name: EntryField(field_text, '')
             for internal_name, field_text in zip(names, texts)}
 
@@ -745,8 +731,6 @@ def create_input_form_framing(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, ttk.
         Body frame
         Buttonbox frame
     """
-    # moviedb-#155
-    #   Test
     outer_frame = ttk.Frame(parent)
     outer_frame.grid(column=0, row=0, sticky='nsew')
     outer_frame.columnconfigure(0, weight=1)
@@ -771,8 +755,6 @@ def create_input_form_fields(body_frame: ttk.Frame, names: Sequence[str],
         names: A sequence of names of the fields.
         entry_fields: A mapping of the field names to an instance of EntryField.
     """
-    # moviedb-#155
-    #   Test
     
     # Create a column for the labels.
     body_frame.columnconfigure(0, weight=1, minsize=30)
@@ -801,8 +783,6 @@ def create_button(buttonbox: ttk.Frame, text: str, column: int, command: Callabl
     Returns:
         The button
     """
-    # moviedb-#155
-    #   Test
     button = ttk.Button(buttonbox, text=text, command=command)
     button.grid(column=column, row=0)
     button.bind('<Return>', lambda event, b=button: b.invoke())
@@ -822,9 +802,6 @@ def enable_button_wrapper(button: ttk.Button) -> Callable:
     Returns:
         A callable which will set the enabled state of the button.
     """
-    
-    # moviedb-#155
-    #   Test
     def enable_button(state: bool):
         """Enable or disable the button.
         
@@ -848,8 +825,6 @@ def link_or_neuron_to_button(change_button_state: Callable) -> neurons.OrNeuron:
     Returns:
 
     """
-    # moviedb-#155
-    #   Test
     neuron = neurons.OrNeuron()
     neuron.register(change_button_state)
     return neuron
@@ -864,9 +839,6 @@ def link_field_to_neuron(entry_fields: dict, name: str, neuron: neurons.Neuron, 
         neuron:
         notify_neuron:
     """
-    
-    # moviedb-#155
-    #   Test
     entry_fields[name].textvariable.trace_add('write', notify_neuron)
     neuron.register_event(name)
 
@@ -877,16 +849,13 @@ def notify_neuron_wrapper(entry_fields: dict, name: str, neuron: neurons.Neuron)
         This will be registered as the 'trace_add' callback for an entry field.
     
     Args:
-        entry_fields: A mapping of the field names to an instance of EntryField.
+        entry_fields: A mapping of the field names to instances of EntryField.
         name: Field name.
         neuron: The neuron which will be notified of the field's state.
 
     Returns:
         The callback which will be called when the field is changed.
     """
-    
-    # moviedb-#155
-    #   Test
     
     # noinspection PyUnusedLocal
     def notify_neuron(*args):
