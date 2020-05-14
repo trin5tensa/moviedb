@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/3/20, 7:33 AM by stephen.
+#  Last modified 5/14/20, 2:33 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -1055,30 +1055,7 @@ class TestSelectMovieGUI:
         yield guiwidgets.SelectMovieGUI(DummyTk(), self.fake_movie_generator(), dummy_commit_callback)
 
 
-def test_gui_messagebox(monkeypatch):
-    calls = []
-    monkeypatch.setattr(guiwidgets.messagebox, 'showinfo',
-                        lambda *args, **kwargs: calls.append((args, kwargs)))
-    parent = DummyTk()
-    message = 'test message'
-    detail = 'test detail'
-    # noinspection PyTypeChecker
-    guiwidgets.gui_messagebox(parent, message, detail)
-    assert calls == [((parent, message),
-                      dict(detail=detail, icon='info'))]
-
-
-def test_gui_askopenfilename(monkeypatch):
-    calls = []
-    monkeypatch.setattr(guiwidgets.filedialog, 'askopenfilename', lambda **kwargs: calls.append(kwargs))
-    parent = DummyTk()
-    filetypes = (('test filetypes',),)
-    # noinspection PyTypeChecker
-    guiwidgets.gui_askopenfilename(parent, filetypes)
-    assert calls == [(dict(parent=parent, filetypes=filetypes))]
-
-
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class DummyTk:
     """Test dummy for Tk.
@@ -1105,7 +1082,7 @@ class DummyTk:
         self.bell_calls.append(True)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TkStringVar:
     trace_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -1122,7 +1099,7 @@ class TkStringVar:
         return '4242'
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkFrame:
     """Test dummy for Ttk.Frame.
@@ -1155,7 +1132,7 @@ class TtkFrame:
         self.destroy_calls.append(True)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkLabel:
     """Test dummy for Ttk.Label.
@@ -1176,7 +1153,7 @@ class TtkLabel:
         self.grid_calls.append(kwargs)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkEntry:
     """Test dummy for Ttk.Entry.
@@ -1206,7 +1183,7 @@ class TtkEntry:
         return 'test registered_callback'
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkButton:
     parent: TtkFrame
@@ -1238,7 +1215,7 @@ class TtkButton:
         self.invoke_calls.append(True)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkTreeview:
     parent: TtkFrame
@@ -1290,7 +1267,7 @@ class TtkTreeview:
         return ['test tag 1', 'test tag 2']
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkScrollbar:
     parent: TtkFrame
@@ -1310,7 +1287,7 @@ class TtkScrollbar:
         self.grid_calls.append(kwargs)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TkMessagebox:
     showinfo_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -1319,7 +1296,7 @@ class TkMessagebox:
         self.showinfo_calls.append(kwargs)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @pytest.fixture()
 def patch_tk(monkeypatch):
     monkeypatch.setattr(guiwidgets.tk, 'Tk', DummyTk)

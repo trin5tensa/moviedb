@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/7/20, 6:21 AM by stephen.
+#  Last modified 5/14/20, 2:37 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,6 +23,7 @@ import config
 import database
 import exception
 import guiwidgets
+import guiwidgets_2
 import impexp
 
 
@@ -50,9 +51,10 @@ def add_tag():
     """Add a new tag to the database."""
     # PyCharm https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker
-    guiwidgets.AddTagGUI(config.app.tk_root, add_tag_callback)
+    guiwidgets_2.AddTagGUI(config.app.tk_root, add_tag_callback)
 
 
+# noinspection PyMissingOrEmptyDocstring
 def edit_tag():
     # moviedb-#162
     #   Code
@@ -63,8 +65,8 @@ def edit_tag():
 
 def import_movies():
     """Open a csv file and load the contents into the database."""
-    csv_fn = guiwidgets.gui_askopenfilename(parent=config.app.tk_root,
-                                            filetypes=(('Movie import files', '*.csv'),))
+    csv_fn = guiwidgets_2.gui_askopenfilename(parent=config.app.tk_root,
+                                              filetypes=(('Movie import files', '*.csv'),))
     
     # Exit if the user clicked askopenfilename's cancel button
     if csv_fn == '':

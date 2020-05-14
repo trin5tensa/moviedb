@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/14/20, 1:26 PM by stephen.
+#  Last modified 5/14/20, 2:55 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,7 @@ from typing import Callable, Tuple, Union
 
 import pytest
 
-import guiwidgets
+import guiwidgets_2
 
 
 @pytest.mark.usefixtures('patch_tk')
@@ -41,8 +41,9 @@ class TestAddTagGUI:
     def test_create_input_form_fields_called(self, add_tag_gui_fixtures):
         self.create_input_form_fields_calls = []
         with self.add_tag_gui_context() as cm:
-            assert self.create_input_form_fields_calls == [(self.body_frame, guiwidgets.TAG_FIELD_NAMES,
-                                                            cm.entry_fields)]
+            assert self.create_input_form_fields_calls == [
+                    (self.body_frame, guiwidgets_2.TAG_FIELD_NAMES,
+                     cm.entry_fields)]
     
     def test_create_button_called(self, add_tag_gui_fixtures):
         self.create_button_calls = []
@@ -72,7 +73,7 @@ class TestAddTagGUI:
             calls = self.link_field_to_neuron_calls[0]
             assert len(calls) == 4
             assert calls[0]['tag'].label_text == 'Tag'
-            assert calls[1] == guiwidgets.TAG_FIELD_NAMES[0]
+            assert calls[1] == guiwidgets_2.TAG_FIELD_NAMES[0]
             assert calls[2] == self.dummy_neuron
             assert isinstance(calls[3], Callable)
     
@@ -108,7 +109,7 @@ class TestAddTagGUI:
     @contextmanager
     def add_tag_gui_context(self):
         # noinspection PyTypeChecker
-        yield guiwidgets.AddTagGUI(DummyTk(), self.dummy_add_tag_callback)
+        yield guiwidgets_2.AddTagGUI(DummyTk(), self.dummy_add_tag_callback)
     
     @pytest.fixture
     def add_tag_gui_fixtures(self, monkeypatch):
@@ -119,30 +120,55 @@ class TestAddTagGUI:
         self.create_button_calls = []
         self.link_or_neuron_to_button_calls = []
         self.link_field_to_neuron_calls = []
-        
+
         self.dummy_neuron = object()
-        
+
         self.outer_frame = TtkFrame(DummyTk())
         self.body_frame = TtkFrame(self.outer_frame)
         self.buttonbox = TtkFrame(self.outer_frame)
-        
-        monkeypatch.setattr(guiwidgets, 'create_input_form_framing',
+
+        monkeypatch.setattr(guiwidgets_2, 'create_input_form_framing',
                             self.dummy_create_input_form_framing)
-        monkeypatch.setattr(guiwidgets, 'create_input_form_fields',
+        monkeypatch.setattr(guiwidgets_2, 'create_input_form_fields',
                             lambda *args: self.create_input_form_fields_calls.append(args))
-        monkeypatch.setattr(guiwidgets, 'create_button', self.dummy_create_button)
-        monkeypatch.setattr(guiwidgets, 'link_or_neuron_to_button', self.dummy_link_or_neuron_to_button)
-        monkeypatch.setattr(guiwidgets, 'link_field_to_neuron',
+        monkeypatch.setattr(guiwidgets_2, 'create_button', self.dummy_create_button)
+        monkeypatch.setattr(guiwidgets_2, 'link_or_neuron_to_button',
+                            self.dummy_link_or_neuron_to_button)
+        monkeypatch.setattr(guiwidgets_2, 'link_field_to_neuron',
                             lambda *args: self.link_field_to_neuron_calls.append(args))
+
+
+def test_gui_messagebox(monkeypatch):
+    calls = []
+    monkeypatch.setattr(guiwidgets_2.messagebox, 'showinfo',
+                        lambda *args, **kwargs: calls.append((args, kwargs)))
+    parent = DummyTk()
+    message = 'test message'
+    detail = 'test detail'
+    # noinspection PyTypeChecker
+    guiwidgets_2.gui_messagebox(parent, message, detail)
+    assert calls == [((parent, message),
+                      dict(detail=detail, icon='info'))]
+
+
+def test_gui_askopenfilename(monkeypatch):
+    calls = []
+    monkeypatch.setattr(guiwidgets_2.filedialog, 'askopenfilename', lambda **kwargs: calls.append(
+            kwargs))
+    parent = DummyTk()
+    filetypes = (('test filetypes',),)
+    # noinspection PyTypeChecker
+    guiwidgets_2.gui_askopenfilename(parent, filetypes)
+    assert calls == [(dict(parent=parent, filetypes=filetypes))]
 
 
 def test_create_entry_fields(patch_tk):
     names = ('test field',)
     texts = ('Test Field',)
-    entry_fields = guiwidgets.create_entry_fields(names, texts)
+    entry_fields = guiwidgets_2.create_entry_fields(names, texts)
     # noinspection PyTypeChecker
-    assert entry_fields == {names[0]: guiwidgets.EntryField(label_text=texts[0], original_value='',
-                                                            textvariable=TkStringVar(), )}
+    assert entry_fields == {names[0]: guiwidgets_2.EntryField(label_text=texts[0], original_value='',
+                                                              textvariable=TkStringVar(), )}
 
 
 @pytest.mark.usefixtures('patch_tk')
@@ -192,7 +218,7 @@ class TestCreateInputFormFraming:
     @contextmanager
     def call_context(self):
         # noinspection PyTypeChecker
-        yield guiwidgets.create_input_form_framing(DummyTk())
+        yield guiwidgets_2.create_input_form_framing(DummyTk())
 
 
 @pytest.mark.usefixtures('patch_tk')
@@ -236,9 +262,9 @@ class TestCreateInputFormFields:
     def create_fields_context(self):
         body_frame = TtkFrame(DummyTk())
         names = ('tag',)
-        entry_fields = dict(tag=guiwidgets.EntryField('Tag', ''))
+        entry_fields = dict(tag=guiwidgets_2.EntryField('Tag', ''))
         # noinspection PyTypeChecker
-        guiwidgets.create_input_form_fields(body_frame, names, entry_fields)
+        guiwidgets_2.create_input_form_fields(body_frame, names, entry_fields)
         yield body_frame, entry_fields
 
 
@@ -265,14 +291,14 @@ class TestCreateButton:
         column = 0
         command = lambda: None
         # noinspection PyTypeChecker
-        yield guiwidgets.create_button(buttonbox, text, column, command, enabled)
+        yield guiwidgets_2.create_button(buttonbox, text, column, command, enabled)
 
 
 def test_enable_button_wrapper(patch_tk):
     # noinspection PyTypeChecker
     button = TtkButton(DummyTk(), 'Dummy Button')
     # noinspection PyTypeChecker
-    enable_button = guiwidgets.enable_button_wrapper(button)
+    enable_button = guiwidgets_2.enable_button_wrapper(button)
     enable_button(True)
     assert button.state_calls == [['!disabled']]
 
@@ -280,27 +306,27 @@ def test_enable_button_wrapper(patch_tk):
 def test_link_or_neuron_to_button():
     def change_button_state(): pass
     
-    neuron = guiwidgets.link_or_neuron_to_button(change_button_state)
-    assert isinstance(neuron, guiwidgets.neurons.OrNeuron)
+    neuron = guiwidgets_2.link_or_neuron_to_button(change_button_state)
+    assert isinstance(neuron, guiwidgets_2.neurons.OrNeuron)
     assert neuron.notifees == [change_button_state]
 
 
 def test_link_field_to_neuron_trace_add_called(patch_tk, dummy_entry_fields):
     name = 'tag'
-    neuron = guiwidgets.neurons.OrNeuron()
-    notify_neuron = guiwidgets.notify_neuron_wrapper(dummy_entry_fields, name, neuron)
-    guiwidgets.link_field_to_neuron(dummy_entry_fields, name, neuron, notify_neuron)
+    neuron = guiwidgets_2.neurons.OrNeuron()
+    notify_neuron = guiwidgets_2.notify_neuron_wrapper(dummy_entry_fields, name, neuron)
+    guiwidgets_2.link_field_to_neuron(dummy_entry_fields, name, neuron, notify_neuron)
     # noinspection PyUnresolvedReferences
     assert dummy_entry_fields['tag'].textvariable.trace_add_calls == [('write', notify_neuron)]
 
 
 def test_link_field_to_neuron_register_event_called(patch_tk, dummy_entry_fields):
     name = 'tag'
-    neuron = guiwidgets.neurons.OrNeuron()
+    neuron = guiwidgets_2.neurons.OrNeuron()
     notifee = DummyActivateButton()
     neuron.register(notifee)
-    notify_neuron = guiwidgets.notify_neuron_wrapper(dummy_entry_fields, name, neuron)
-    guiwidgets.link_field_to_neuron(dummy_entry_fields, name, neuron, notify_neuron)
+    notify_neuron = guiwidgets_2.notify_neuron_wrapper(dummy_entry_fields, name, neuron)
+    guiwidgets_2.link_field_to_neuron(dummy_entry_fields, name, neuron, notify_neuron)
     assert notifee.state == None
     notify_neuron()
     assert notifee.state
@@ -308,10 +334,10 @@ def test_link_field_to_neuron_register_event_called(patch_tk, dummy_entry_fields
 
 def test_notify_neuron_wrapper(patch_tk, dummy_entry_fields):
     name = 'tag'
-    neuron = guiwidgets.neurons.OrNeuron()
+    neuron = guiwidgets_2.neurons.OrNeuron()
     notifee = DummyActivateButton()
     neuron.register(notifee)
-    notify_neuron = guiwidgets.notify_neuron_wrapper(dummy_entry_fields, name, neuron)
+    notify_neuron = guiwidgets_2.notify_neuron_wrapper(dummy_entry_fields, name, neuron)
     
     # Match tag field contents to original value thus 'activating' the button.
     notify_neuron()
@@ -326,10 +352,10 @@ def test_notify_neuron_wrapper(patch_tk, dummy_entry_fields):
 
 @pytest.fixture
 def dummy_entry_fields():
-    return dict(tag=guiwidgets.EntryField('Tag', ''))
+    return dict(tag=guiwidgets_2.EntryField('Tag', ''))
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class DummyTk:
     """Test dummy for Tk.
@@ -356,7 +382,7 @@ class DummyTk:
         self.bell_calls.append(True)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TkStringVar:
     trace_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -373,7 +399,7 @@ class TkStringVar:
         return '4242'
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkFrame:
     """Test dummy for Ttk.Frame.
@@ -406,7 +432,7 @@ class TtkFrame:
         self.destroy_calls.append(True)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkLabel:
     """Test dummy for Ttk.Label.
@@ -427,7 +453,7 @@ class TtkLabel:
         self.grid_calls.append(kwargs)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkEntry:
     """Test dummy for Ttk.Entry.
@@ -457,7 +483,7 @@ class TtkEntry:
         return 'test registered_callback'
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkButton:
     parent: TtkFrame
@@ -496,12 +522,12 @@ class DummyActivateButton:
         self.state = state
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @pytest.fixture()
 def patch_tk(monkeypatch):
-    monkeypatch.setattr(guiwidgets.tk, 'Tk', DummyTk)
-    monkeypatch.setattr(guiwidgets.tk, 'StringVar', TkStringVar)
-    monkeypatch.setattr(guiwidgets.ttk, 'Frame', TtkFrame)
-    monkeypatch.setattr(guiwidgets.ttk, 'Label', TtkLabel)
-    monkeypatch.setattr(guiwidgets.ttk, 'Entry', TtkEntry)
-    monkeypatch.setattr(guiwidgets.ttk, 'Button', TtkButton)
+    monkeypatch.setattr(guiwidgets_2.tk, 'Tk', DummyTk)
+    monkeypatch.setattr(guiwidgets_2.tk, 'StringVar', TkStringVar)
+    monkeypatch.setattr(guiwidgets_2.ttk, 'Frame', TtkFrame)
+    monkeypatch.setattr(guiwidgets_2.ttk, 'Label', TtkLabel)
+    monkeypatch.setattr(guiwidgets_2.ttk, 'Entry', TtkEntry)
+    monkeypatch.setattr(guiwidgets_2.ttk, 'Button', TtkButton)

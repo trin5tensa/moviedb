@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/2/20, 7:18 AM by stephen.
+#  Last modified 5/14/20, 2:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -123,7 +123,7 @@ class TestImportMovies:
     messagebox_calls = None
 
     def test_user_cancellation_of_askopenfilename_dialog(self, class_patches, monkeypatch):
-        monkeypatch.setattr(handlers.guiwidgets, 'gui_askopenfilename', lambda **kwargs: '')
+        monkeypatch.setattr(handlers.guiwidgets_2, 'gui_askopenfilename', lambda **kwargs: '')
         with self.import_movies_context():
             assert self.import_movies_calls == deque([])
 
@@ -145,7 +145,7 @@ class TestImportMovies:
     
     @pytest.fixture
     def class_patches(self, monkeypatch):
-        monkeypatch.setattr(handlers.guiwidgets, 'gui_askopenfilename', self.dummy_askopenfilename)
+        monkeypatch.setattr(handlers.guiwidgets_2, 'gui_askopenfilename', self.dummy_askopenfilename)
         monkeypatch.setattr(handlers.guiwidgets, 'gui_messagebox', self.gui_messagebox)
         monkeypatch.setattr(handlers.impexp, 'import_movies', self.dummy_import_movies)
 
@@ -418,7 +418,7 @@ class TestAddTag:
     
     def test_add_tag(self, monkeypatch):
         tag_gui_args = []
-        monkeypatch.setattr(handlers.guiwidgets, 'AddTagGUI',
+        monkeypatch.setattr(handlers.guiwidgets_2, 'AddTagGUI',
                             lambda parent, commit_callback:
                             tag_gui_args.append((parent, commit_callback)))
         
