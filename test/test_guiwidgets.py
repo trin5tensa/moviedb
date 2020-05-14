@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/23/20, 6:56 AM by stephen.
+#  Last modified 5/14/20, 2:33 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -38,28 +38,32 @@ class TestAddMovieGUI:
     
     def test_fields_initialized(self, patch_tk):
         with self.movie_context() as movie_gui:
-            for internal_name in guiwidgets.INTERNAL_NAMES:
+            for internal_name in guiwidgets.MOVIE_FIELD_NAMES:
                 assert isinstance(movie_gui.entry_fields[internal_name], guiwidgets.EntryField)
     
     def test_fields_label_text(self, patch_tk):
         with self.movie_context() as movie_gui:
-            for internal_name, label_text in zip(guiwidgets.INTERNAL_NAMES, guiwidgets.FIELD_TEXTS):
+            for internal_name, label_text in zip(guiwidgets.MOVIE_FIELD_NAMES,
+                                                 guiwidgets.MOVIE_FIELD_TEXTS):
                 assert movie_gui.entry_fields[internal_name].label_text == label_text
     
     def test_fields_database_value(self, patch_tk):
         with self.movie_context() as movie_gui:
-            for internal_name, label_text in zip(guiwidgets.INTERNAL_NAMES, guiwidgets.FIELD_TEXTS):
+            for internal_name, label_text in zip(guiwidgets.MOVIE_FIELD_NAMES,
+                                                 guiwidgets.MOVIE_FIELD_TEXTS):
                 assert movie_gui.entry_fields[internal_name].original_value == ''
     
     def test_fields_text_variable(self, patch_tk):
         with self.movie_context() as movie_gui:
-            for internal_name, label_text in zip(guiwidgets.INTERNAL_NAMES, guiwidgets.FIELD_TEXTS):
+            for internal_name, label_text in zip(guiwidgets.MOVIE_FIELD_NAMES,
+                                                 guiwidgets.MOVIE_FIELD_TEXTS):
                 assert isinstance(movie_gui.entry_fields[internal_name].textvariable,
                                   guiwidgets.tk.StringVar)
     
     def test_fields_observer(self, patch_tk):
         with self.movie_context() as movie_gui:
-            for internal_name, label_text in zip(guiwidgets.INTERNAL_NAMES, guiwidgets.FIELD_TEXTS):
+            for internal_name, label_text in zip(guiwidgets.MOVIE_FIELD_NAMES,
+                                                 guiwidgets.MOVIE_FIELD_TEXTS):
                 assert isinstance(movie_gui.entry_fields[internal_name].observer,
                                   guiwidgets.neurons.Observer)
     
@@ -119,7 +123,7 @@ class TestAddMovieGUI:
             outerframe = movie_gui.parent.children[0]
             bodyframe = outerframe.children[0]
             labels = bodyframe.children[::2]
-            for label, text in zip(labels, guiwidgets.FIELD_TEXTS):
+            for label, text in zip(labels, guiwidgets.MOVIE_FIELD_TEXTS):
                 assert label == TtkLabel(TtkFrame(TtkFrame(DummyTk()), padding=(10, 25, 10, 0)),
                                          text=text)
     
@@ -1051,30 +1055,7 @@ class TestSelectMovieGUI:
         yield guiwidgets.SelectMovieGUI(DummyTk(), self.fake_movie_generator(), dummy_commit_callback)
 
 
-def test_gui_messagebox(monkeypatch):
-    calls = []
-    monkeypatch.setattr(guiwidgets.messagebox, 'showinfo',
-                        lambda *args, **kwargs: calls.append((args, kwargs)))
-    parent = DummyTk()
-    message = 'test message'
-    detail = 'test detail'
-    # noinspection PyTypeChecker
-    guiwidgets.gui_messagebox(parent, message, detail)
-    assert calls == [((parent, message),
-                      dict(detail=detail, icon='info'))]
-
-
-def test_gui_askopenfilename(monkeypatch):
-    calls = []
-    monkeypatch.setattr(guiwidgets.filedialog, 'askopenfilename', lambda **kwargs: calls.append(kwargs))
-    parent = DummyTk()
-    filetypes = (('test filetypes',),)
-    # noinspection PyTypeChecker
-    guiwidgets.gui_askopenfilename(parent, filetypes)
-    assert calls == [(dict(parent=parent, filetypes=filetypes))]
-
-
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class DummyTk:
     """Test dummy for Tk.
@@ -1101,7 +1082,7 @@ class DummyTk:
         self.bell_calls.append(True)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TkStringVar:
     trace_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -1118,7 +1099,7 @@ class TkStringVar:
         return '4242'
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkFrame:
     """Test dummy for Ttk.Frame.
@@ -1151,7 +1132,7 @@ class TtkFrame:
         self.destroy_calls.append(True)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkLabel:
     """Test dummy for Ttk.Label.
@@ -1172,7 +1153,7 @@ class TtkLabel:
         self.grid_calls.append(kwargs)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkEntry:
     """Test dummy for Ttk.Entry.
@@ -1202,7 +1183,7 @@ class TtkEntry:
         return 'test registered_callback'
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkButton:
     parent: TtkFrame
@@ -1234,7 +1215,7 @@ class TtkButton:
         self.invoke_calls.append(True)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkTreeview:
     parent: TtkFrame
@@ -1286,7 +1267,7 @@ class TtkTreeview:
         return ['test tag 1', 'test tag 2']
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkScrollbar:
     parent: TtkFrame
@@ -1306,7 +1287,7 @@ class TtkScrollbar:
         self.grid_calls.append(kwargs)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TkMessagebox:
     showinfo_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -1315,7 +1296,7 @@ class TkMessagebox:
         self.showinfo_calls.append(kwargs)
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @pytest.fixture()
 def patch_tk(monkeypatch):
     monkeypatch.setattr(guiwidgets.tk, 'Tk', DummyTk)

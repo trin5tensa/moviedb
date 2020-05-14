@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/27/20, 8:39 AM by stephen.
+#  Last modified 5/14/20, 2:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -123,7 +123,7 @@ class TestImportMovies:
     messagebox_calls = None
 
     def test_user_cancellation_of_askopenfilename_dialog(self, class_patches, monkeypatch):
-        monkeypatch.setattr(handlers.guiwidgets, 'gui_askopenfilename', lambda **kwargs: '')
+        monkeypatch.setattr(handlers.guiwidgets_2, 'gui_askopenfilename', lambda **kwargs: '')
         with self.import_movies_context():
             assert self.import_movies_calls == deque([])
 
@@ -145,7 +145,7 @@ class TestImportMovies:
     
     @pytest.fixture
     def class_patches(self, monkeypatch):
-        monkeypatch.setattr(handlers.guiwidgets, 'gui_askopenfilename', self.dummy_askopenfilename)
+        monkeypatch.setattr(handlers.guiwidgets_2, 'gui_askopenfilename', self.dummy_askopenfilename)
         monkeypatch.setattr(handlers.guiwidgets, 'gui_messagebox', self.gui_messagebox)
         monkeypatch.setattr(handlers.impexp, 'import_movies', self.dummy_import_movies)
 
@@ -273,7 +273,7 @@ class TestSearchMovieCallback:
         self.dummy_find_movies_calls = []
         self.dummy_select_movie_gui_instance = []
         self.criteria = {internal_names: ''
-                         for internal_names in handlers.guiwidgets.INTERNAL_NAMES}
+                         for internal_names in handlers.guiwidgets.MOVIE_FIELD_NAMES}
         self.criteria['title'] = 'Pot'
         self.criteria['year'] = [2000, 2010]
         self.criteria['director'] = []
@@ -418,15 +418,14 @@ class TestAddTag:
     
     def test_add_tag(self, monkeypatch):
         tag_gui_args = []
-        monkeypatch.setattr(handlers.guiwidgets, 'AddTagGUI',
-                            lambda parent, commit_callback, buttons:
-                            tag_gui_args.append((parent, commit_callback, buttons)))
+        monkeypatch.setattr(handlers.guiwidgets_2, 'AddTagGUI',
+                            lambda parent, commit_callback:
+                            tag_gui_args.append((parent, commit_callback)))
         
         tk_parent = DummyParent()
         add_tag_callback = handlers.add_tag_callback
-        buttons_to_show = ['commit']
         with self.add_tag_context():
-            assert tag_gui_args == [(tk_parent, add_tag_callback, buttons_to_show)]
+            assert tag_gui_args == [(tk_parent, add_tag_callback)]
     
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
