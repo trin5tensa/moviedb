@@ -1,7 +1,7 @@
 """Functional pytests for database module. """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/22/20, 8:59 AM by stephen.
+#  Last modified 5/16/20, 6:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -253,10 +253,10 @@ def test_edit_movie(loaded_database):
 
 
 def test_edit_movie_raises__movie_not_found_exception(loaded_database):
-    with pytest.raises(exception.MovieSearchFoundNothing) as cm:
+    with pytest.raises(exception.DatabaseSearchFoundNothing) as cm:
         database.edit_movie(database.FindMovieDef(title='Non Existent Movie', year=[1972]),
                             dict(notes=''))
-    assert cm.typename == 'MovieSearchFoundNothing'
+    assert cm.typename == 'DatabaseSearchFoundNothing'
     assert cm.match("The movie Non Existent Movie, 1972 is not in the database.")
 
 
@@ -343,9 +343,9 @@ class TestTagOperations:
         title_year = database.MovieKeyDef(title='Non Existent Movie', year=1972)
         new_tags = ('green', 'yellow')
         old_tags = ('blue', 'yellow')
-        with pytest.raises(exception.MovieSearchFoundNothing) as cm:
+        with pytest.raises(exception.DatabaseSearchFoundNothing) as cm:
             database.edit_movies_tag(title_year, old_tags, new_tags)
-        assert cm.typename == 'MovieSearchFoundNothing'
+        assert cm.typename == 'DatabaseSearchFoundNothing'
         assert cm.match("The movie Non Existent Movie, 1972 is not in the database.")
 
     def test_del_tag(self, session):

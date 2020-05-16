@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/14/20, 2:33 PM by stephen.
+#  Last modified 5/16/20, 6:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -894,7 +894,7 @@ class TestSearchMovieGUI:
     def test_callback_raises_movie_search_found_nothing(self, patch_tk, monkeypatch):
         # noinspection PyUnusedLocal
         def callback(*args):
-            raise exception.MovieSearchFoundNothing
+            raise exception.DatabaseSearchFoundNothing
 
         messagebox_calls = []
         monkeypatch.setattr(guiwidgets, 'gui_messagebox', lambda *args: messagebox_calls.append(args))
