@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/14/20, 2:37 PM by stephen.
+#  Last modified 5/16/20, 7:38 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,7 @@ This module is the glue between the user's selection of a menu item and the gui.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Sequence
+from typing import Callable, Sequence
 
 import sqlalchemy.orm
 
@@ -132,7 +132,7 @@ def search_movie_callback(criteria: config.FindMovieDef, tags: Sequence[str]):
     movies = database.find_movies(criteria)
     
     if (movies_found := len(movies)) <= 0:
-        raise exception.MovieSearchFoundNothing
+        raise exception.DatabaseSearchFoundNothing
     elif movies_found == 1:
         movie = movies[0]
         # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
@@ -154,12 +154,12 @@ def edit_movie_callback(updates: config.MovieUpdateDef, selected_tags: Sequence[
     # Edit the movie
     movie = config.FindMovieDef(title=updates['title'], year=[updates['year']])
     missing_movie_args = (config.app.tk_root, 'Missing movie',
-                          f'The movie {movie} is not available. It may have been '
+                          f'The movie {movie} is no longer available. It may have been '
                           f'deleted by another process.')
     
     try:
         database.edit_movie(movie, updates)
-    except exception.MovieSearchFoundNothing:
+    except exception.DatabaseSearchFoundNothing:
         guiwidgets.gui_messagebox(*missing_movie_args)
         return
     
@@ -168,7 +168,7 @@ def edit_movie_callback(updates: config.MovieUpdateDef, selected_tags: Sequence[
     old_tags = database.movie_tags(movie)
     try:
         database.edit_movies_tag(movie, old_tags, selected_tags)
-    except exception.MovieSearchFoundNothing:
+    except exception.DatabaseSearchFoundNothing:
         guiwidgets.gui_messagebox(*missing_movie_args)
 
 
@@ -195,3 +195,42 @@ def add_tag_callback(tag: str):
 
     """
     database.add_tag(tag)
+
+
+def edit_tag_callback_wrapper(old_tag: str) -> Callable:
+    """Create the edit tag callback.
+    
+    Args:
+        old_tag:
+
+    Returns:
+        The callback function edit_tag_callback.
+    """
+    
+    def edit_tag_callback(new_tag: str):
+        """Change the tag column of a record of the Tag table.
+        
+        If the tag is not longer in the database this function assumes that it has been deleted by
+        another process. A user alert is raised.
+        
+        Args:
+            new_tag:
+        """
+        # moviedb-#169
+        #   Integration Tests:
+        #       Edit a tag with no links to any movie records
+        #       Edit a tag with a link to a single movie record. Ensure movies remain correctly linked.
+        #       Edit a tag with links to more than one movie record Ensure movies remain
+        #       correctly linked.
+        #       Edit a tag that has been removed from the database during the edit process.
+        
+        missing_tag_args = (config.app.tk_root, 'Missing tag',
+                            f'The tag {old_tag} is no longer available. It may have been '
+                            f'deleted by another process.')
+        
+        try:
+            database.edit_tag(old_tag, new_tag)
+        except exception.DatabaseSearchFoundNothing:
+            guiwidgets.gui_messagebox(*missing_tag_args)
+    
+    return edit_tag_callback

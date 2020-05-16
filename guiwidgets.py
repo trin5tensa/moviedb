@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/14/20, 2:55 PM by stephen.
+#  Last modified 5/16/20, 6:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -504,7 +504,7 @@ class SearchMovieGUI(MovieGUIBase):
         # Commit and exit
         try:
             self.callback(return_fields, self.selected_tags)
-        except exception.MovieSearchFoundNothing:
+        except exception.DatabaseSearchFoundNothing:
             # Warn user and give user the opportunity to reenter the search criteria.
             parent = self.parent
             message = 'No matches'

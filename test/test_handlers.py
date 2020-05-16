@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/14/20, 2:41 PM by stephen.
+#  Last modified 5/16/20, 7:38 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -222,15 +222,15 @@ class TestSearchMovieCallback:
     def test_criteria_correctly_cleaned_up(self, class_setup, monkeypatch):
         monkeypatch.setattr(handlers.database, 'find_movies', self.configure_dummy_find_movies([]))
         clean_criteria = dict(title='Pot', year=[2000, 2010], tags=('blue', 'red'))
-        with pytest.raises(exception.MovieSearchFoundNothing):
+        with pytest.raises(exception.DatabaseSearchFoundNothing):
             handlers.search_movie_callback(self.criteria, self.tags)
         assert self.dummy_find_movies_calls == [(clean_criteria,)]
     
     def test_no_movies_found_raises_exception(self, class_setup, monkeypatch):
         monkeypatch.setattr(handlers.database, 'find_movies', self.configure_dummy_find_movies([]))
-        with pytest.raises(exception.MovieSearchFoundNothing) as exc:
+        with pytest.raises(exception.DatabaseSearchFoundNothing) as exc:
             handlers.search_movie_callback(self.criteria, self.tags)
-        assert isinstance(exc.value, exception.MovieSearchFoundNothing)
+        assert isinstance(exc.value, exception.DatabaseSearchFoundNothing)
     
     def test_single_movie_found_calls_instantiate_edit_movie_gui(self, class_setup, monkeypatch):
         movie = handlers.config.MovieUpdateDef(title='Test Movie')
@@ -302,7 +302,7 @@ class TestEditMovieCallback:
             assert self.edit_movie_calls == [(movie, updates)]
     
     def raise_movie_not_found(self, *args):
-        raise handlers.exception.MovieSearchFoundNothing
+        raise handlers.exception.DatabaseSearchFoundNothing
     
     def test_edit_movie_shows_movie_not_found_gui_alert(self, class_patches, monkeypatch):
         monkeypatch.setattr(handlers.database, 'edit_movie', self.raise_movie_not_found)
@@ -311,7 +311,8 @@ class TestEditMovieCallback:
                             lambda *args: msg_args.append(args))
         with self.class_context():
             assert msg_args == [(DummyParent(), 'Missing movie',
-                                 "The movie {'title': 'Test Title', 'year': [4242]} is not available. "
+                                 "The movie {'title': 'Test Title', 'year': [4242]} is no longer "
+                                 "available. "
                                  "It may have been deleted by another process.")]
 
     def test_edit_movie_tags_shows_movie_not_found_gui_alert(self, class_patches, monkeypatch):
@@ -321,7 +322,8 @@ class TestEditMovieCallback:
                             lambda *args: msg_args.append(args))
         with self.class_context():
             assert msg_args == [(DummyParent(), 'Missing movie',
-                                 "The movie {'title': 'Test Title', 'year': [4242]} is not available. "
+                                 "The movie {'title': 'Test Title', 'year': [4242]} is no longer "
+                                 "available. "
                                  "It may have been deleted by another process.")]
     
     def test_movie_tags_called(self, class_patches):
@@ -447,6 +449,45 @@ class TestAddTagCallback:
         test_tag = 'Test tag'
         handlers.add_tag_callback(test_tag)
         assert calls == [(test_tag,)]
+
+
+class TestEditTagCallback:
+    old_tag = 'test old tag'
+    new_tag = 'test new tag'
+    
+    def test_database_edit_tag_called(self, monkeypatch):
+        edit_tags_args = []
+        monkeypatch.setattr(handlers.database, 'edit_tag', lambda *args: edit_tags_args.append(args))
+        with self.add_tag_callback_context():
+            assert edit_tags_args == [(self.old_tag, self.new_tag)]
+    
+    def test_database_search_found_nothing_raised(self, monkeypatch):
+        # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+        def raise_exception(*args): raise handlers.database.exception.DatabaseSearchFoundNothing
+        
+        message_args = []
+        
+        monkeypatch.setattr(handlers.database, 'edit_tag', raise_exception)
+        monkeypatch.setattr(handlers.guiwidgets, 'gui_messagebox',
+                            lambda *args: message_args.append(args))
+        with self.add_tag_callback_context():
+            assert message_args == [(DummyParent(), 'Missing tag',
+                                     'The tag test old tag is no longer available. '
+                                     'It may have been deleted by another process.')]
+    
+    # noinspection PyMissingOrEmptyDocstring
+    @contextmanager
+    def add_tag_callback_context(self):
+        hold_app = handlers.config.app
+        handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
+        handlers.config.app.tk_root = DummyParent()
+        
+        callback = handlers.edit_tag_callback_wrapper(self.old_tag)
+        
+        try:
+            yield callback(self.new_tag)
+        finally:
+            handlers.config.app = hold_app
 
 
 @dataclass

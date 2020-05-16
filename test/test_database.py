@@ -1,7 +1,7 @@
 """Functional pytests for database module. """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/22/20, 8:59 AM by stephen.
+#  Last modified 5/16/20, 11:36 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -252,11 +252,11 @@ def test_edit_movie(loaded_database):
     assert movies[0]['notes'] == new_note
 
 
-def test_edit_movie_raises__movie_not_found_exception(loaded_database):
-    with pytest.raises(exception.MovieSearchFoundNothing) as cm:
+def test_edit_movie_raises_movie_not_found_exception(loaded_database):
+    with pytest.raises(exception.DatabaseSearchFoundNothing) as cm:
         database.edit_movie(database.FindMovieDef(title='Non Existent Movie', year=[1972]),
                             dict(notes=''))
-    assert cm.typename == 'MovieSearchFoundNothing'
+    assert cm.typename == 'DatabaseSearchFoundNothing'
     assert cm.match("The movie Non Existent Movie, 1972 is not in the database.")
 
 
@@ -330,6 +330,14 @@ class TestTagOperations:
 
         assert old_tag_id == new_tag_id
 
+    def test_edit_tag_raises_exception__database_search_found_nothing(self, session, monkeypatch):
+        old_tag = 'old test tag'
+        new_tag = 'new test tag'
+        with pytest.raises(database.exception.DatabaseSearchFoundNothing) as cm:
+            database.edit_tag(old_tag, new_tag)
+        assert cm.typename == 'DatabaseSearchFoundNothing'
+        assert cm.match(f'The tag {old_tag} is not in the database.')
+
     def test_edit_movies_tag(self, session):
         title_year = database.MovieKeyDef(title='Revanche', year=2008)
         old_tags = ('green', 'yellow')
@@ -339,13 +347,13 @@ class TestTagOperations:
                                                             year=[title_year['year']]))
         assert set(movies[0]['tags']) == {'blue', 'yellow'}
 
-    def test_edit_movies_tag_raises__movie_not_found_exception(self, session):
+    def test_edit_movies_tag_raises_exception__movie_not_found(self, session):
         title_year = database.MovieKeyDef(title='Non Existent Movie', year=1972)
         new_tags = ('green', 'yellow')
         old_tags = ('blue', 'yellow')
-        with pytest.raises(exception.MovieSearchFoundNothing) as cm:
+        with pytest.raises(exception.DatabaseSearchFoundNothing) as cm:
             database.edit_movies_tag(title_year, old_tags, new_tags)
-        assert cm.typename == 'MovieSearchFoundNothing'
+        assert cm.typename == 'DatabaseSearchFoundNothing'
         assert cm.match("The movie Non Existent Movie, 1972 is not in the database.")
 
     def test_del_tag(self, session):
