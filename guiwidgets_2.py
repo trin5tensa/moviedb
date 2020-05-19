@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/14/20, 2:55 PM by stephen.
+#  Last modified 5/19/20, 8:35 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,6 +30,7 @@ import neurons
 TAG_FIELD_NAMES = ('tag',)
 TAG_FIELD_TEXTS = ('Tag',)
 COMMIT_TEXT = 'Commit'
+DELETE_TEXT = 'Delete'
 CANCEL_TEXT = 'Cancel'
 
 ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
@@ -37,7 +38,7 @@ ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
 
 @dataclass
 class AddTagGUI:
-    """ A form for adding a tag."""
+    """ Present a form for adding a tag to the user."""
     parent: tk.Tk
     add_tag_callback: Callable
     
@@ -47,6 +48,7 @@ class AddTagGUI:
     # An internal dictionary to simplify field data management.
     entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
     
+    # noinspection DuplicatedCode
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = create_entry_fields(TAG_FIELD_NAMES, TAG_FIELD_TEXTS)
@@ -76,18 +78,76 @@ class AddTagGUI:
         self.destroy()
     
     def destroy(self):
-        """Destroy all widgets of this class."""
+        """Destroy this instance's widgets."""
         self.outer_frame.destroy()
 
 
 # noinspection PyMissingOrEmptyDocstring
 @dataclass
 class EditTagGUI:
-    # moviedb-#164
-    #   Code
-    #   Test
-    #   Document
-    pass
+    """ Present a form for adding a tag to the user."""
+    parent: tk.Tk
+    delete_tag_callback: Callable
+    edit_tag_callback: Callable
+    
+    # The main outer frame of this class.
+    outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
+    
+    # An internal dictionary to simplify field data management.
+    entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
+    
+    # noinspection DuplicatedCode
+    def __post_init__(self):
+        # Initialize an internal dictionary to simplify field data management.
+        self.entry_fields = create_entry_fields(TAG_FIELD_NAMES, TAG_FIELD_TEXTS)
+        
+        # Create outer frames to hold fields and buttons.
+        self.outer_frame, body_frame, buttonbox = create_input_form_framing(self.parent)
+        
+        # Create label and field
+        create_input_form_fields(body_frame, TAG_FIELD_NAMES, self.entry_fields)
+        
+        # Populate buttonbox with commit, delete, and cancel buttons
+        column_num = itertools.count()
+        commit_button = create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
+                                      command=self.commit, enabled=False)
+        create_button(buttonbox, DELETE_TEXT, column=next(column_num), command=self.delete)
+        create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
+                      command=self.destroy).focus_set()
+        
+        # Link commit button to tag field
+        neuron = link_or_neuron_to_button(enable_button_wrapper(commit_button))
+        link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron,
+                             notify_neuron_wrapper(self.entry_fields,
+                                                   TAG_FIELD_NAMES[0], neuron))
+    
+    def commit(self):
+        """The user clicked the 'Commit' button."""
+        self.edit_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
+        self.destroy()
+    
+    def delete(self):
+        """The user clicked the 'Delete' button.
+        
+        Get the user's confirmation of deletion with a dialog window. Either exit the method or call
+        the registered deletion callback."""
+        
+        # moviedb-#170 Integration tests
+        #   Dialog called
+        #   Both 'yes' and 'no' responses handled appropriately.
+        
+        if messagebox.askyesno(message='Do you want to delete this movie?',
+                               icon='question', default='no', parent=self.parent):
+            # moviedb-#148 Handle exception for missing database record
+            self.delete_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
+            self.destroy()
+    
+    def destroy(self):
+        """Destroy this instance's widgets."""
+        # moviedb-#169 Integration tests
+        #   Form destroyed
+        
+        self.outer_frame.destroy()
 
 
 def gui_messagebox(parent: ParentType, message: str, detail: str = '', icon: str = 'info'):
