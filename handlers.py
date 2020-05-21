@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/16/20, 7:38 AM by stephen.
+#  Last modified 5/21/20, 11:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -210,7 +210,7 @@ def edit_tag_callback_wrapper(old_tag: str) -> Callable:
     def edit_tag_callback(new_tag: str):
         """Change the tag column of a record of the Tag table.
         
-        If the tag is not longer in the database this function assumes that it has been deleted by
+        If the tag is no longer in the database this function assumes that it has been deleted by
         another process. A user alert is raised.
         
         Args:
@@ -220,17 +220,71 @@ def edit_tag_callback_wrapper(old_tag: str) -> Callable:
         #   Integration Tests:
         #       Edit a tag with no links to any movie records
         #       Edit a tag with a link to a single movie record. Ensure movies remain correctly linked.
-        #       Edit a tag with links to more than one movie record Ensure movies remain
+        #       Edit a tag with links to more than one movie record. Ensure movies remain
         #       correctly linked.
         #       Edit a tag that has been removed from the database during the edit process.
-        
+
         missing_tag_args = (config.app.tk_root, 'Missing tag',
                             f'The tag {old_tag} is no longer available. It may have been '
                             f'deleted by another process.')
-        
+
         try:
             database.edit_tag(old_tag, new_tag)
         except exception.DatabaseSearchFoundNothing:
             guiwidgets.gui_messagebox(*missing_tag_args)
-    
+
     return edit_tag_callback
+
+
+def delete_tag_callback_wrapper(tag: str) -> Callable:
+    """Create the edit tag callback.
+    
+    Args:
+        tag:
+
+    Returns:
+        The callback function delete_tag_callback.
+    """
+    
+    def delete_tag_callback():
+        """Change the tag column of a record of the Tag table.
+        
+        If the tag is no longer in the database this function assumes that it has been deleted by
+        another process. The database error is silently suppressed.
+        """
+        # moviedb-#170
+        #   Integration Tests:
+        #       Delete a tag with no links to any movie records
+        #       Delete a tag with a link to a single movie record. Ensure movies remain correctly linked.
+        #       Delete a tag with links to more than one movie record. Ensure movies remain
+        #       correctly linked.
+        #       Delete a tag that has been removed from the database during the edit process.
+        
+        try:
+            database.del_tag(tag)
+        
+        # The record has already been deleted by another process:
+        except exception.DatabaseSearchFoundNothing:
+            pass
+    
+    return delete_tag_callback
+
+
+def select_tag_callback_wrapper(old_tag: str) -> Callable:
+    """Create the select tag callback.
+
+    Args:
+        old_tag:
+    """
+    
+    def select_tag_callback():
+        """Change the tag column of a record of the Tag table.
+
+        If the tag is no longer in the database this function assumes that it has been deleted by
+        another process. A user alert is raised.
+        """
+        
+        guiwidgets_2.EditTagGUI(config.app.tk_root, edit_tag_callback_wrapper(old_tag),
+                                delete_tag_callback_wrapper(old_tag))
+    
+    return select_tag_callback
