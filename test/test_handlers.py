@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/20/20, 8:54 AM by stephen.
+#  Last modified 5/21/20, 12:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -510,11 +510,44 @@ class TestDeleteTagCallback:
         except handlers.database.exception.DatabaseSearchFoundNothing:
             assert False, ("Exception 'handlers.database.exception.DatabaseSearchFoundNothing'"
                            " was not suppressed.")
-    
+
     @contextmanager
     def delete_tag_callback_context(self):
         callback = handlers.delete_tag_callback_wrapper(self.tag)
         yield callback()
+
+
+class TestTagCallbackWrapper:
+    tag = 'Test tag'
+    
+    def test_select_tag_callback_calls_edit_tag_gui(self, monkeypatch):
+        edit_tag_gui_calls = []
+        edit_callback_calls = []
+        delete_callback_calls = []
+        monkeypatch.setattr(handlers.guiwidgets_2, 'EditTagGUI',
+                            lambda *args: edit_tag_gui_calls.append(args))
+        monkeypatch.setattr(handlers, 'edit_tag_callback_wrapper',
+                            lambda *args: edit_callback_calls.append(args))
+        monkeypatch.setattr(handlers, 'delete_tag_callback_wrapper',
+                            lambda *args: delete_callback_calls.append(args))
+        
+        with self.callback_context() as cm:
+            cm()
+            assert len(edit_tag_gui_calls[0]) == 3, (f'EditTagGUI not called or '
+                                                     f'called with incorrect arguments.')
+            assert edit_tag_gui_calls[0][0] == DummyParent()
+            assert edit_callback_calls == [(self.tag,)]
+            assert delete_callback_calls == [(self.tag,)]
+    
+    @contextmanager
+    def callback_context(self):
+        hold_app = handlers.config.app
+        handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
+        handlers.config.app.tk_root = DummyParent()
+        try:
+            yield handlers.select_tag_callback_wrapper(self.tag)
+        finally:
+            handlers.config.app = hold_app
 
 
 @dataclass

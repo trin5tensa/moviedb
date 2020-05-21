@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/20/20, 8:54 AM by stephen.
+#  Last modified 5/21/20, 11:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -270,26 +270,21 @@ def delete_tag_callback_wrapper(tag: str) -> Callable:
     return delete_tag_callback
 
 
-def select_tag_callback_wrapper(old_tag: str):
+def select_tag_callback_wrapper(old_tag: str) -> Callable:
     """Create the select tag callback.
 
     Args:
         old_tag:
     """
     
-    # moviedb-#168
-    #   Complete #178 Create handlers.delete_tag_callback
-    #   Test
-    #   Code
-    def select_tag_callback() -> Callable:
+    def select_tag_callback():
         """Change the tag column of a record of the Tag table.
 
         If the tag is no longer in the database this function assumes that it has been deleted by
         another process. A user alert is raised.
         """
-        # moviedb-#168
-        #   Test
-        #   Code
-        pass
+        
+        guiwidgets_2.EditTagGUI(config.app.tk_root, edit_tag_callback_wrapper(old_tag),
+                                delete_tag_callback_wrapper(old_tag))
     
     return select_tag_callback
