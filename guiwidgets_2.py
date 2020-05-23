@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/23/20, 7:20 AM by stephen.
+#  Last modified 5/23/20, 7:29 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -239,27 +239,9 @@ def create_entry_fields(names: Sequence[str], texts: Sequence[str]) -> dict:
 
 
 def create_body_and_button_frames(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
-    # moviedb-#165
-    #   Copy create_input_form_framing
-    #   Remove the column split of the body frame
-    #   In create_input_form_framing remove everything except the column split and call this function
-    #       to complete its functional requirements.
-    #   .
-    #   Doc
-    #   Pseudo code
-    #   Test
-    #   Code
-    #   Add notes for any required integration tests
-    #   .
-    #   Pseudo code:
-    pass
-
-
-def create_input_form_framing(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
     """Create the outer frames for an input form.
 
-    This consists of an upper body and a lower buttonbox frame. THe body frame has two columns,
-    one for the field labels and one for the entry fields.
+    This consists of an upper body and a lower buttonbox frame.
 
     Args:
         parent: The Tk parent frame.
@@ -272,8 +254,6 @@ def create_input_form_framing(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, ttk.
     outer_frame = ttk.Frame(parent)
     outer_frame.grid(column=0, row=0, sticky='nsew')
     outer_frame.columnconfigure(0, weight=1)
-    outer_frame.rowconfigure(0, weight=1)
-    outer_frame.rowconfigure(1, minsize=35)
     
     body_frame = ttk.Frame(outer_frame, padding=(10, 25, 10, 0))
     body_frame.grid(column=0, row=0, sticky='n')
@@ -281,6 +261,25 @@ def create_input_form_framing(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, ttk.
     buttonbox = ttk.Frame(outer_frame, padding=(5, 5, 10, 10))
     buttonbox.grid(column=0, row=1, sticky='e')
     
+    return outer_frame, body_frame, buttonbox
+
+def create_input_form_framing(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
+    """Create the outer frames for an input form.
+
+    This consists of an upper body and a lower buttonbox frame. The body frame has two columns,
+    one for the field labels and one for the entry fields.
+
+    Args:
+        parent: The Tk parent frame.
+
+    Returns:
+        Outer frame which contains the body and buttonbox frames.
+        Body frame
+        Buttonbox frame
+    """
+    outer_frame, body_frame, buttonbox = create_body_and_button_frames(parent)
+    outer_frame.rowconfigure(0, weight=1)
+    outer_frame.rowconfigure(1, minsize=35)
     return outer_frame, body_frame, buttonbox
 
 
