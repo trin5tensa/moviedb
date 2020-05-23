@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/19/20, 8:35 AM by stephen.
+#  Last modified 5/23/20, 7:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -40,7 +40,7 @@ ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
 class AddTagGUI:
     """ Present a form for adding a tag to the user."""
     parent: tk.Tk
-    add_tag_callback: Callable
+    add_tag_callback: Callable[[str], None]
     
     # The main outer frame of this class.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
@@ -82,13 +82,12 @@ class AddTagGUI:
         self.outer_frame.destroy()
 
 
-# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class EditTagGUI:
     """ Present a form for adding a tag to the user."""
     parent: tk.Tk
-    delete_tag_callback: Callable
-    edit_tag_callback: Callable
+    delete_tag_callback: Callable[[str], None]
+    edit_tag_callback: Callable[[str], None]
     
     # The main outer frame of this class.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
@@ -150,6 +149,57 @@ class EditTagGUI:
         self.outer_frame.destroy()
 
 
+@dataclass
+class SelectTagGUI:
+    """Allow the user to select one tag record from a Tk treeview of tag records."""
+    parent: tk.Tk
+    select_tag_callback: Callable[[str], None]
+    
+    def __post_init__(self):
+        # moviedb-#165
+        #   Test
+        #   Code
+        #   Add notes for any required integration tests
+        #   .
+        #   Pseudo code:
+        #   Call the function 'create_body_and_button_frame' (STUB).
+        #   Create and grid Tk treeview. (see guiwidgets.SelectMovieGUI)
+        #   Set up treeview column widths and titles
+        #   Populate treeview rows
+        #   Bind the treeview callback
+        #   Populate buttonbox with cancel button. Link the cancel button callback to the function
+        #   'destroy'.
+        pass
+    
+    def treeview_callback(self, tag: str):
+        """Call the callback provided by the caller and destroy all Tk widgets associated with this
+        class.
+        
+        Args:
+            tag:
+        """
+        # moviedb-#165
+        #   Test
+        #   Code
+        #   Add notes for any required integration tests.
+        #   .
+        #   Pseudo code:
+        #   Call the function 'select_tag_callback'
+        #   Call the function 'destroy'
+        pass
+    
+    def destroy(self):
+        """Destroy all Tk widgets associated with this class."""
+        # moviedb-#165
+        #   Test
+        #   Code
+        #   Add notes for any required integration tests
+        #   .
+        #   Pseudo code:
+        #   Call the outer_frame's 'destroy' method.
+        pass
+
+
 def gui_messagebox(parent: ParentType, message: str, detail: str = '', icon: str = 'info'):
     """Present a Tk messagebox."""
     messagebox.showinfo(parent, message, detail=detail, icon=icon)
@@ -186,6 +236,23 @@ def create_entry_fields(names: Sequence[str], texts: Sequence[str]) -> dict:
     """
     return {internal_name: EntryField(field_text, '')
             for internal_name, field_text in zip(names, texts)}
+
+
+def create_body_and_button_frames(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
+    # moviedb-#165
+    #   Copy create_input_form_framing
+    #   Remove the column split of the body frame
+    #   In create_input_form_framing remove everything except the column split and call this function
+    #       to complete its functional requirements.
+    #   .
+    #   Doc
+    #   Pseudo code
+    #   Test
+    #   Code
+    #   Add notes for any required integration tests
+    #   .
+    #   Pseudo code:
+    pass
 
 
 def create_input_form_framing(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
