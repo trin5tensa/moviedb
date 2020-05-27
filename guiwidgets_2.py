@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/23/20, 7:29 AM by stephen.
+#  Last modified 5/27/20, 7:23 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -103,7 +103,7 @@ class EditTagGUI:
         # Create outer frames to hold fields and buttons.
         self.outer_frame, body_frame, buttonbox = create_input_form_framing(self.parent)
         
-        # Create label and field
+        # Create field label and field entry widgets.
         create_input_form_fields(body_frame, TAG_FIELD_NAMES, self.entry_fields)
         
         # Populate buttonbox with commit, delete, and cancel buttons
@@ -154,31 +154,51 @@ class SelectTagGUI:
     """Allow the user to select one tag record from a Tk treeview of tag records."""
     parent: tk.Tk
     select_tag_callback: Callable[[str], None]
+    tags_to_show: Sequence[str]
+    
+    # The main outer frame of this class.
+    outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
     
     def __post_init__(self):
-        # moviedb-#165
-        #   Test
-        #   Code
-        #   Add notes for any required integration tests
-        #   .
-        #   Pseudo code:
-        #   Call the function 'create_body_and_button_frame' (STUB).
-        #   Create and grid Tk treeview. (see guiwidgets.SelectMovieGUI)
-        #   Set up treeview column widths and titles
-        #   Populate treeview rows
-        #   Bind the treeview callback
-        #   Populate buttonbox with cancel button. Link the cancel button callback to the function
-        #   'destroy'.
-        pass
+        # Create outer frames to hold fields and buttons.
+        self.outer_frame, body_frame, buttonbox = create_body_and_button_frames(self.parent)
+        
+        # Create and grid treeview
+        # moviedb-#169
+        #   Does this call actually produce a valid treeview?
+        #   Is the 'columns' argument required?
+        tree = ttk.Treeview(body_frame, columns=[], height=25, selectmode='browse')
+        tree.grid(column=0, row=0, sticky='w')
+        
+        # Specify column width and title
+        # moviedb-#169
+        #   Is the column width correctly set?
+        #   Is the column heading correctly set?
+        tree.column('#0', width=350)
+        tree.heading('#0', text=TAG_FIELD_TEXTS[0])
+        
+        # Populate the treeview rows
+        # moviedb-#169
+        #   Is the treeview populated?
+        for tag in self.tags_to_show:
+            tree.insert('', 'end', iid=tag, text=tag, values=[], tags=TAG_FIELD_NAMES[0])
+        
+        # Bind the treeview callback
+        tree.bind('<<TreeviewSelect>>', func=self.treeview_callback(tree))
+        
+        # Create the button
+        column_num = 0
+        create_button(buttonbox, CANCEL_TEXT, column_num, self.destroy)
     
-    def treeview_callback(self, tag: str):
+    def treeview_callback(self, tree: ttk.Treeview):
         """Call the callback provided by the caller and destroy all Tk widgets associated with this
         class.
         
         Args:
-            tag:
+            tree:
         """
         # moviedb-#165
+        #   Document
         #   Test
         #   Code
         #   Add notes for any required integration tests.
@@ -191,6 +211,7 @@ class SelectTagGUI:
     def destroy(self):
         """Destroy all Tk widgets associated with this class."""
         # moviedb-#165
+        #   Document
         #   Test
         #   Code
         #   Add notes for any required integration tests
@@ -263,11 +284,13 @@ def create_body_and_button_frames(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, 
     
     return outer_frame, body_frame, buttonbox
 
+
 def create_input_form_framing(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
     """Create the outer frames for an input form.
 
-    This consists of an upper body and a lower buttonbox frame. The body frame has two columns,
-    one for the field labels and one for the entry fields.
+    An input body frame has two columns, one for the field labels and one for the entry fields.
+    
+    Note: For a plain form without columns call create_input_form_framing directly.
 
     Args:
         parent: The Tk parent frame.

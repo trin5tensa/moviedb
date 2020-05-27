@@ -1,7 +1,7 @@
 """Test support module for Tk dummies."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/19/20, 8:36 AM by stephen.
+#  Last modified 5/27/20, 7:23 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,7 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from dataclasses import dataclass, field
-from typing import Callable, Tuple, Union
+from typing import Callable, List, Literal, Tuple, Union
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
@@ -166,12 +166,46 @@ class TtkButton:
     
     def bind(self, *args):
         self.bind_calls.append(args, )
-    
+
     def state(self, state):
         self.state_calls.append(state)
-    
+
     def focus_set(self):
         self.focus_set_calls.append(True)
-    
+
     def invoke(self):
         self.invoke_calls.append(True)
+
+
+# noinspection PyMissingOrEmptyDocstring
+@dataclass
+class TtkTreeview:
+    parent: TtkFrame
+    columns: List[str] = field(default_factory=list)
+    height: int = field(default=0)
+    selectmode: Literal['browse', 'extended', 'none'] = field(default='extended')
+    
+    grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    column_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    heading_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    insert_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    bind_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    
+    def __post_init__(self):
+        self.parent.children.append(self)
+    
+    def grid(self, **kwargs):
+        self.grid_calls.append(kwargs)
+        pass
+    
+    def column(self, *args, **kwargs):
+        self.column_calls.append((args, kwargs))
+    
+    def heading(self, *args, **kwargs):
+        self.heading_calls.append((args, kwargs))
+    
+    def insert(self, *args, **kwargs):
+        self.insert_calls.append((args, kwargs))
+    
+    def bind(self, *args, **kwargs):
+        self.bind_calls.append((args, kwargs))

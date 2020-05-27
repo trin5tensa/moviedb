@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/19/20, 8:35 AM by stephen.
+#  Last modified 5/27/20, 7:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,7 @@ from typing import Callable
 import pytest
 
 import guiwidgets_2
-from test.dummytk import DummyTk, TkStringVar, TtkButton, TtkEntry, TtkFrame, TtkLabel
+from test.dummytk import DummyTk, TkStringVar, TtkButton, TtkEntry, TtkFrame, TtkLabel, TtkTreeview
 
 
 # noinspection DuplicatedCode,PyMissingOrEmptyDocstring
@@ -278,7 +278,7 @@ class TestEditTagGUI:
     def dummy_askyesno(self, **kwargs):
         self.askyesno_calls.append(kwargs)
         return True
-    
+
     @pytest.fixture
     def delete_button_fixtures(self, monkeypatch):
         self.askyesno_calls = []
@@ -286,6 +286,97 @@ class TestEditTagGUI:
         monkeypatch.setattr(guiwidgets_2.messagebox, 'askyesno', self.dummy_askyesno)
         monkeypatch.setattr(guiwidgets_2.EditTagGUI, 'destroy',
                             lambda *args: self.destroy_calls.append(True))
+
+
+# noinspection PyMissingOrEmptyDocstring
+@pytest.mark.usefixtures('patch_tk')
+class TestSelectTagGUI:
+    tags_to_show = ['tag 1', 'tag 2']
+    
+    def test_select_tag_gui_created(self, select_tag_fixtures):
+        with self.select_gui_context() as cm:
+            assert cm.parent == DummyTk()
+            assert cm.select_tag_callback == self.dummy_select_tag_callback
+    
+    def test_outer_frame_created(self, select_tag_fixtures):
+        with self.select_gui_context() as cm:
+            assert cm.outer_frame == TtkFrame(parent=DummyTk())
+            # Check that it only has two children: The body frame and buttonbox frame.
+            assert len(cm.outer_frame.children) == 2
+    
+    def test_body_frame_created(self, select_tag_fixtures):
+        with self.select_gui_context() as cm:
+            assert cm.outer_frame.children[0] == TtkFrame(parent=TtkFrame(parent=DummyTk()),
+                                                          padding=(10, 25, 10, 0))
+    
+    def test_buttonbox_frame_created(self, select_tag_fixtures):
+        with self.select_gui_context() as cm:
+            assert cm.outer_frame.children[1] == TtkFrame(parent=TtkFrame(parent=DummyTk()),
+                                                          padding=(5, 5, 10, 10))
+    
+    def test_treeview_created(self, select_tag_fixtures):
+        with self.select_gui_context() as cm:
+            assert cm.outer_frame.children[0].children[0] == TtkTreeview(
+                    cm.outer_frame.children[0],
+                    columns=[],
+                    height=25,
+                    selectmode='browse',
+                    )
+    
+    def test_treeview_gridded(self, select_tag_fixtures):
+        with self.select_gui_context() as cm:
+            tree = cm.outer_frame.children[0].children[0]
+            assert tree.grid_calls == [dict(column=0, row=0, sticky='w')]
+    
+    def test_column_width_set(self, select_tag_fixtures):
+        with self.select_gui_context() as cm:
+            tree = cm.outer_frame.children[0].children[0]
+            assert tree.column_calls == [(('#0',), dict(width=350))]
+    
+    def test_column_heading_set(self, select_tag_fixtures):
+        with self.select_gui_context() as cm:
+            tree = cm.outer_frame.children[0].children[0]
+            assert tree.heading_calls == [(('#0',), dict(text=guiwidgets_2.TAG_FIELD_TEXTS[0]))]
+    
+    def test_rows_populated(self, select_tag_fixtures):
+        with self.select_gui_context() as cm:
+            tree = cm.outer_frame.children[0].children[0]
+            assert tree.insert_calls == [
+                    (('', 'end'), dict(iid=self.tags_to_show[0], text=self.tags_to_show[0],
+                                       values=[], tags='tag')),
+                    (('', 'end'), dict(iid=self.tags_to_show[1], text=self.tags_to_show[1],
+                                       values=[], tags='tag')), ]
+    
+    def test_callback_bound_to_treeview(self, select_tag_fixtures):
+        with self.select_gui_context() as cm:
+            tree = cm.outer_frame.children[0].children[0]
+            assert tree.bind_calls == [(('<<TreeviewSelect>>',),
+                                        dict(func=cm.treeview_callback(tree)))]
+    
+    def test_cancel_button_created(self, select_tag_fixtures):
+        with self.select_gui_context() as cm:
+            assert self.create_button_calls == [(cm.outer_frame.children[1], guiwidgets_2.CANCEL_TEXT,
+                                                 0, cm.destroy)]
+    
+    def dummy_select_tag_callback(self, *args):
+        self.select_tag_callback_calls.append(args)
+    
+    def dummy_create_button(self, *args):
+        self.create_button_calls.append(args)
+    
+    @pytest.fixture
+    def select_tag_fixtures(self, monkeypatch):
+        monkeypatch.setattr(guiwidgets_2.ttk, 'Frame', TtkFrame)
+        monkeypatch.setattr(guiwidgets_2.ttk, 'Treeview', TtkTreeview)
+        monkeypatch.setattr(guiwidgets_2, 'create_button', self.dummy_create_button)
+    
+    @contextmanager
+    def select_gui_context(self):
+        self.select_tag_callback_calls = []
+        self.create_body_and_button_frames_calls = []
+        self.create_button_calls = []
+        # noinspection PyTypeChecker
+        yield guiwidgets_2.SelectTagGUI(DummyTk(), self.dummy_select_tag_callback, self.tags_to_show)
 
 
 def test_gui_messagebox(monkeypatch):
