@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/27/20, 7:23 AM by stephen.
+#  Last modified 5/28/20, 7:06 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -184,29 +184,38 @@ class SelectTagGUI:
             tree.insert('', 'end', iid=tag, text=tag, values=[], tags=TAG_FIELD_NAMES[0])
         
         # Bind the treeview callback
-        tree.bind('<<TreeviewSelect>>', func=self.treeview_callback(tree))
+        tree.bind('<<TreeviewSelect>>', func=self.selection_callback_wrapper(tree))
         
         # Create the button
         column_num = 0
         create_button(buttonbox, CANCEL_TEXT, column_num, self.destroy)
-    
-    def treeview_callback(self, tree: ttk.Treeview):
+
+    def selection_callback_wrapper(self, tree: ttk.Treeview) -> Callable:
         """Call the callback provided by the caller and destroy all Tk widgets associated with this
         class.
         
         Args:
             tree:
+
+        Returns:
+            The callback.
         """
-        # moviedb-#165
-        #   Document
-        #   Test
-        #   Code
-        #   Add notes for any required integration tests.
-        #   .
-        #   Pseudo code:
-        #   Call the function 'select_tag_callback'
-        #   Call the function 'destroy'
-        pass
+    
+        # noinspection PyUnusedLocal
+        def selection_callback(*args):
+            """Save the newly changed user selection.
+
+            Args:
+                *args: Not used. Needed for compatibility with Tk:Tcl caller.
+            """
+            # moviedb-#169
+            #   No Tk documentation on exactly what 'selection' passes back so examine
+            #   the return value and adjust code accordingly.
+            tag = tree.selection()[0]
+            self.select_tag_callback(tag)
+            self.destroy()
+    
+        return selection_callback
     
     def destroy(self):
         """Destroy all Tk widgets associated with this class."""

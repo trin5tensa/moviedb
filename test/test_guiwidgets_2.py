@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/27/20, 7:24 AM by stephen.
+#  Last modified 5/28/20, 7:06 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -317,11 +317,8 @@ class TestSelectTagGUI:
     def test_treeview_created(self, select_tag_fixtures):
         with self.select_gui_context() as cm:
             assert cm.outer_frame.children[0].children[0] == TtkTreeview(
-                    cm.outer_frame.children[0],
-                    columns=[],
-                    height=25,
-                    selectmode='browse',
-                    )
+                    cm.outer_frame.children[0], columns=[],
+                    height=25, selectmode='browse', )
     
     def test_treeview_gridded(self, select_tag_fixtures):
         with self.select_gui_context() as cm:
@@ -337,7 +334,7 @@ class TestSelectTagGUI:
         with self.select_gui_context() as cm:
             tree = cm.outer_frame.children[0].children[0]
             assert tree.heading_calls == [(('#0',), dict(text=guiwidgets_2.TAG_FIELD_TEXTS[0]))]
-    
+
     def test_rows_populated(self, select_tag_fixtures):
         with self.select_gui_context() as cm:
             tree = cm.outer_frame.children[0].children[0]
@@ -346,24 +343,51 @@ class TestSelectTagGUI:
                                        values=[], tags='tag')),
                     (('', 'end'), dict(iid=self.tags_to_show[1], text=self.tags_to_show[1],
                                        values=[], tags='tag')), ]
+
+    def test_callback_bound_to_treeview(self, select_tag_fixtures, monkeypatch):
+        sentinel = object()
     
-    def test_callback_bound_to_treeview(self, select_tag_fixtures):
+        def dummy_wrapper(): return sentinel
+    
+        monkeypatch.setattr(guiwidgets_2.SelectTagGUI, 'selection_callback_wrapper',
+                            lambda *args: dummy_wrapper)
         with self.select_gui_context() as cm:
             tree = cm.outer_frame.children[0].children[0]
-            assert tree.bind_calls == [(('<<TreeviewSelect>>',),
-                                        dict(func=cm.treeview_callback(tree)))]
-    
+            args_ = tree.bind_calls[0][0]
+            assert args_ == ('<<TreeviewSelect>>',)
+            kwargs = tree.bind_calls[0][1]
+            assert len(kwargs) == 1
+            assert kwargs['func']() == sentinel
+
     def test_cancel_button_created(self, select_tag_fixtures):
         with self.select_gui_context() as cm:
             assert self.create_button_calls == [(cm.outer_frame.children[1], guiwidgets_2.CANCEL_TEXT,
                                                  0, cm.destroy)]
-    
+
+    def test_select_tag_callback_called(self, select_tag_fixtures, monkeypatch):
+        with self.select_gui_context() as cm:
+            tree = cm.outer_frame.children[0].children[0]
+            selection_callback = cm.selection_callback_wrapper(tree)
+            selection_callback()
+            assert self.select_tag_callback_calls == [('test tag',)]
+
+    def test_destroy_called(self, select_tag_fixtures, monkeypatch):
+        """This tests the call from selection_callback and not the cancel button callback."""
+        destroy_calls = []
+        monkeypatch.setattr(guiwidgets_2.SelectTagGUI, 'destroy',
+                            lambda *args: destroy_calls.append(True))
+        with self.select_gui_context() as cm:
+            tree = cm.outer_frame.children[0].children[0]
+            selection_callback = cm.selection_callback_wrapper(tree)
+            selection_callback()
+            assert destroy_calls == [True, ]
+
     def dummy_select_tag_callback(self, *args):
         self.select_tag_callback_calls.append(args)
-    
+
     def dummy_create_button(self, *args):
         self.create_button_calls.append(args)
-    
+
     @pytest.fixture
     def select_tag_fixtures(self, monkeypatch):
         monkeypatch.setattr(guiwidgets_2.ttk, 'Frame', TtkFrame)

@@ -1,7 +1,7 @@
 """Test support module for Tk dummies."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/27/20, 7:23 AM by stephen.
+#  Last modified 5/28/20, 7:06 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -200,12 +200,16 @@ class TtkTreeview:
     
     def column(self, *args, **kwargs):
         self.column_calls.append((args, kwargs))
-    
+
     def heading(self, *args, **kwargs):
         self.heading_calls.append((args, kwargs))
-    
+
     def insert(self, *args, **kwargs):
         self.insert_calls.append((args, kwargs))
-    
+
     def bind(self, *args, **kwargs):
         self.bind_calls.append((args, kwargs))
+
+    @staticmethod
+    def selection():
+        return ['test tag', 'ignored tag']
