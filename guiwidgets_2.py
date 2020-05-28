@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/28/20, 7:06 AM by stephen.
+#  Last modified 5/28/20, 10:34 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -219,15 +219,7 @@ class SelectTagGUI:
     
     def destroy(self):
         """Destroy all Tk widgets associated with this class."""
-        # moviedb-#165
-        #   Document
-        #   Test
-        #   Code
-        #   Add notes for any required integration tests
-        #   .
-        #   Pseudo code:
-        #   Call the outer_frame's 'destroy' method.
-        pass
+        self.outer_frame.destroy()
 
 
 def gui_messagebox(parent: ParentType, message: str, detail: str = '', icon: str = 'info'):

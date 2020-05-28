@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/28/20, 7:06 AM by stephen.
+#  Last modified 5/28/20, 10:36 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -381,6 +381,11 @@ class TestSelectTagGUI:
             selection_callback = cm.selection_callback_wrapper(tree)
             selection_callback()
             assert destroy_calls == [True, ]
+
+    def test_destroy_calls_tk_destroy(self, select_tag_fixtures):
+        with self.select_gui_context() as cm:
+            cm.destroy()
+            assert cm.outer_frame.destroy_calls == [True, ]
 
     def dummy_select_tag_callback(self, *args):
         self.select_tag_callback_calls.append(args)
