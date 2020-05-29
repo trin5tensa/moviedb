@@ -1,7 +1,7 @@
 """Functional pytests for database module. """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/16/20, 11:36 AM by stephen.
+#  Last modified 5/29/20, 9:09 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -283,17 +283,31 @@ class TestTagOperations:
     def test_add_new_tag(self, session):
         tag = 'Movie night candidate'
         database.add_tag(tag)
-        
+    
         count = (session.query(database.Tag)
                  .filter(database.Tag.tag == 'Movie night candidate')
                  .count())
         assert count == 1
-    
+
+    def test_find_tags_gets_none(self, session):
+        found_tags = database.find_tags('non existent tag')
+        assert found_tags == []
+
+    def test_find_tags_gets_one(self, session):
+        found_tags = database.find_tags('green')
+        assert found_tags == ['green']
+
+    def test_find_tags_gets_many(self, session):
+        tag = 'seen'
+        database.add_tag(tag)
+        found_tags = database.find_tags('ee')
+        assert found_tags == ['green', 'seen']
+
     def test_add_existing_tag_ignored(self, session):
         tag = 'Movie night candidate'
         database.add_tag(tag)
         database.add_tag(tag)
-
+    
         count = (session.query(database.Tag)
                  .filter(database.Tag.tag == 'Movie night candidate')
                  .count())
