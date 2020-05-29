@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/21/20, 11:48 AM by stephen.
+#  Last modified 5/29/20, 7:00 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -195,6 +195,18 @@ def add_tag_callback(tag: str):
 
     """
     database.add_tag(tag)
+
+
+# moviedb-#161
+#   search_tag_callback
+#   Doc
+#   Test
+#   Code
+#   .
+#   Pseudo code
+
+# moviedb-#169
+#   Note any integration tests which are desired
 
 
 def edit_tag_callback_wrapper(old_tag: str) -> Callable:

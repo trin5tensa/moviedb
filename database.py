@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/16/20, 11:34 AM by stephen.
+#  Last modified 5/29/20, 7:02 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -183,12 +183,24 @@ def add_tag(new_tag: str):
     Args:
         new_tag: Text of new tag.
     """
-    
+
     # Add the tag unless it is already in the database.
     try:
         Tag(new_tag).add()
     except sqlalchemy.exc.IntegrityError:
         pass
+
+
+# moviedb-#182
+#   find_tags (based on find_movies)
+#   Doc
+#   Test
+#   Code
+#   .
+#   Pseudo code
+
+# moviedb-#169
+#   Note any integration tests which are desired
 
 
 def add_movie_tag_link(tag: str, movie: MovieKeyDef):
