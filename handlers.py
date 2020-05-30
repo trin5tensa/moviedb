@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/29/20, 7:00 AM by stephen.
+#  Last modified 5/30/20, 8:45 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -197,16 +197,28 @@ def add_tag_callback(tag: str):
     database.add_tag(tag)
 
 
-# moviedb-#161
-#   search_tag_callback
-#   Doc
-#   Test
-#   Code
-#   .
-#   Pseudo code
-
-# moviedb-#169
-#   Note any integration tests which are desired
+def search_tag_callback(tag_pattern: str):
+    """Search for tags matching a supplied substring pattern.
+    
+    Args:
+        tag_substring:
+        
+    Raises:
+        DatabaseSearchFoundNothing if no matching tags are found.
+    """
+    # moviedb-#169
+    #   Check 0, 1, and many handling
+    tags = database.find_tags(tag_pattern)
+    tags_found = len(tags)
+    if tags_found <= 0:
+        raise exception.DatabaseSearchFoundNothing
+    elif tags_found == 1:
+        tag = tags[0]
+        delete_callback = delete_tag_callback_wrapper(tag)
+        edit_callback = edit_tag_callback_wrapper(tag)
+        guiwidgets_2.EditTagGUI(config.app.tk_root, delete_callback, edit_callback)
+    else:
+        guiwidgets_2.SelectTagGUI(config.app.tk_root, select_tag_callback, tags)
 
 
 def edit_tag_callback_wrapper(old_tag: str) -> Callable:
@@ -289,6 +301,8 @@ def select_tag_callback_wrapper(old_tag: str) -> Callable:
         old_tag:
     """
     
+    # moviedb-#184 Replace Select Tag Callback Wrapper
+    
     def select_tag_callback():
         """Change the tag column of a record of the Tag table.
 
@@ -300,3 +314,9 @@ def select_tag_callback_wrapper(old_tag: str) -> Callable:
                                 delete_tag_callback_wrapper(old_tag))
     
     return select_tag_callback
+
+
+def select_tag_callback(tag: str):
+    # moviedb-#184 Replace Select Tag Callback Wrapper
+    # This is a temporary stub
+    pass

@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/28/20, 10:34 AM by stephen.
+#  Last modified 5/29/20, 9:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -84,7 +84,7 @@ class AddTagGUI:
 
 @dataclass
 class EditTagGUI:
-    """ Present a form for adding a tag to the user."""
+    """ Present a form for editing or deleting a tag to the user."""
     parent: tk.Tk
     delete_tag_callback: Callable[[str], None]
     edit_tag_callback: Callable[[str], None]

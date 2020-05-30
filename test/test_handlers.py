@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/21/20, 12:01 PM by stephen.
+#  Last modified 5/30/20, 8:45 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -451,6 +451,52 @@ class TestAddTagCallback:
         assert calls == [(test_tag,)]
 
 
+class TestSearchTagCallback:
+    
+    def test_zero_tags_found_raises_exception(self, monkeypatch):
+        tags_found = []
+        monkeypatch.setattr(handlers.database, 'find_tags', lambda *args: tags_found)
+        tag_pattern = '42'
+        with pytest.raises(exception.DatabaseSearchFoundNothing):
+            with self.search_tag_context(tag_pattern):
+                pass
+    
+    def test_one_tag_found_calls_edit_tag_gui(self, monkeypatch, class_patches):
+        tags_found = ['42']
+        monkeypatch.setattr(handlers.database, 'find_tags', lambda *args: tags_found)
+        tag_pattern = '42'
+        with self.search_tag_context(tag_pattern):
+            args = dummy_edit_tag_gui_instance[0]
+            assert args[0] == DummyParent()
+            assert isinstance(args[1], Callable)
+            assert isinstance(args[2], Callable)
+    
+    def test_multiple_tags_found_calls_select_tag_gui(self, monkeypatch, class_patches):
+        tags_found = ['42', '43']
+        monkeypatch.setattr(handlers.database, 'find_tags', lambda *args: tags_found)
+        tag_pattern = '42'
+        with self.search_tag_context(tag_pattern):
+            args = dummy_select_tag_gui_instance[0]
+            assert args[0] == DummyParent()
+            assert isinstance(args[1], Callable)
+            assert args[2] == ['42', '43']
+    
+    @pytest.fixture
+    def class_patches(self, monkeypatch):
+        monkeypatch.setattr(handlers.guiwidgets_2, 'EditTagGUI', DummyEditTagGUI)
+        monkeypatch.setattr(handlers.guiwidgets_2, 'SelectTagGUI', DummySelectTagGUI)
+    
+    @contextmanager
+    def search_tag_context(self, tag_pattern: str):
+        hold_app = handlers.config.app
+        handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
+        handlers.config.app.tk_root = DummyParent()
+        try:
+            yield handlers.search_tag_callback(tag_pattern)
+        finally:
+            handlers.config.app = hold_app
+
+
 class TestEditTagCallback:
     old_tag = 'test old tag'
     new_tag = 'test new tag'
@@ -586,6 +632,33 @@ class DummySelectMovieGUI:
     
     def __post_init__(self):
         dummy_select_movie_gui_instance.append((self.parent, self.movies, self.callback))
+
+
+dummy_edit_tag_gui_instance = []
+
+
+@dataclass
+class DummyEditTagGUI:
+    parent: DummyParent
+    delete_tag_callback: Callable[[str], None]
+    edit_tag_callback: Callable[[str], None]
+    
+    def __post_init__(self):
+        dummy_edit_tag_gui_instance.append((self.parent, self.delete_tag_callback,
+                                            self.edit_tag_callback))
+
+
+dummy_select_tag_gui_instance = []
+
+
+@dataclass
+class DummySelectTagGUI:
+    parent: DummyParent
+    select_tag_callback: Callable[[str], None]
+    tags_to_show: Sequence[str]
+    
+    def __post_init__(self):
+        dummy_select_tag_gui_instance.append((self.parent, self.select_tag_callback, self.tags_to_show))
 
 
 dummy_gui_messagebox_calls = []
