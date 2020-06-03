@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/16/20, 11:34 AM by stephen.
+#  Last modified 5/29/20, 9:07 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -183,12 +183,26 @@ def add_tag(new_tag: str):
     Args:
         new_tag: Text of new tag.
     """
-    
+
     # Add the tag unless it is already in the database.
     try:
         Tag(new_tag).add()
     except sqlalchemy.exc.IntegrityError:
         pass
+
+
+def find_tags(criteria: str) -> List[str]:
+    """Find tags which match the supplied pattern.
+    
+    Args:
+        criteria: A match pattern.
+
+    Returns:
+        A list of matched tags.
+    """
+    with _session_scope() as session:
+        tags = session.query(Tag).filter(Tag.tag.like(f"%{criteria}%"))
+    return [tag.tag for tag in tags]
 
 
 def add_movie_tag_link(tag: str, movie: MovieKeyDef):

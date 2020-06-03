@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/21/20, 11:48 AM by stephen.
+#  Last modified 6/3/20, 7:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -197,6 +197,30 @@ def add_tag_callback(tag: str):
     database.add_tag(tag)
 
 
+def search_tag_callback(tag_pattern: str):
+    """Search for tags matching a supplied substring pattern.
+    
+    Args:
+        tag_pattern:
+        
+    Raises:
+        DatabaseSearchFoundNothing if no matching tags are found.
+    """
+    # moviedb-#169
+    #   Check 0, 1, and many handling
+    tags = database.find_tags(tag_pattern)
+    tags_found = len(tags)
+    if tags_found <= 0:
+        raise exception.DatabaseSearchFoundNothing
+    elif tags_found == 1:
+        tag = tags[0]
+        delete_callback = delete_tag_callback_wrapper(tag)
+        edit_callback = edit_tag_callback_wrapper(tag)
+        guiwidgets_2.EditTagGUI(config.app.tk_root, delete_callback, edit_callback)
+    else:
+        guiwidgets_2.SelectTagGUI(config.app.tk_root, select_tag_callback, tags)
+
+
 def edit_tag_callback_wrapper(old_tag: str) -> Callable:
     """Create the edit tag callback.
     
@@ -270,21 +294,12 @@ def delete_tag_callback_wrapper(tag: str) -> Callable:
     return delete_tag_callback
 
 
-def select_tag_callback_wrapper(old_tag: str) -> Callable:
-    """Create the select tag callback.
+def select_tag_callback(old_tag: str):
+    """Change the tag column of a record of the Tag table.
 
-    Args:
-        old_tag:
+    If the tag is no longer in the database this function assumes that it has been deleted by
+    another process. A user alert is raised .
     """
-    
-    def select_tag_callback():
-        """Change the tag column of a record of the Tag table.
-
-        If the tag is no longer in the database this function assumes that it has been deleted by
-        another process. A user alert is raised.
-        """
-        
-        guiwidgets_2.EditTagGUI(config.app.tk_root, edit_tag_callback_wrapper(old_tag),
-                                delete_tag_callback_wrapper(old_tag))
-    
-    return select_tag_callback
+    delete_callback = delete_tag_callback_wrapper(old_tag)
+    edit_callback = edit_tag_callback_wrapper(old_tag)
+    guiwidgets_2.EditTagGUI(config.app.tk_root, delete_callback, edit_callback)
