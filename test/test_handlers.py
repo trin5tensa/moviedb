@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/30/20, 8:45 AM by stephen.
+#  Last modified 6/3/20, 7:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -451,6 +451,7 @@ class TestAddTagCallback:
         assert calls == [(test_tag,)]
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestSearchTagCallback:
     
     def test_zero_tags_found_raises_exception(self, monkeypatch):
@@ -466,20 +467,20 @@ class TestSearchTagCallback:
         monkeypatch.setattr(handlers.database, 'find_tags', lambda *args: tags_found)
         tag_pattern = '42'
         with self.search_tag_context(tag_pattern):
-            args = dummy_edit_tag_gui_instance[0]
-            assert args[0] == DummyParent()
-            assert isinstance(args[1], Callable)
-            assert isinstance(args[2], Callable)
+            args_ = dummy_edit_tag_gui_instance[0]
+            assert args_[0] == DummyParent()
+            assert isinstance(args_[1], Callable)
+            assert isinstance(args_[2], Callable)
     
     def test_multiple_tags_found_calls_select_tag_gui(self, monkeypatch, class_patches):
         tags_found = ['42', '43']
         monkeypatch.setattr(handlers.database, 'find_tags', lambda *args: tags_found)
         tag_pattern = '42'
         with self.search_tag_context(tag_pattern):
-            args = dummy_select_tag_gui_instance[0]
-            assert args[0] == DummyParent()
-            assert isinstance(args[1], Callable)
-            assert args[2] == ['42', '43']
+            args_ = dummy_select_tag_gui_instance[0]
+            assert args_[0] == DummyParent()
+            assert isinstance(args_[1], Callable)
+            assert args_[2] == ['42', '43']
     
     @pytest.fixture
     def class_patches(self, monkeypatch):
@@ -536,16 +537,18 @@ class TestEditTagCallback:
             handlers.config.app = hold_app
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestDeleteTagCallback:
     tag = 'test tag'
     
-    def test_databasse_delete_tag_called(self, monkeypatch):
+    def test_database_delete_tag_called(self, monkeypatch):
         del_tag_args = []
         monkeypatch.setattr(handlers.database, 'del_tag', lambda *args: del_tag_args.append(args))
         with self.delete_tag_callback_context():
             assert del_tag_args == [(self.tag,)]
     
     def test_database_search_found_nothing_ignored(self, monkeypatch):
+        # noinspection PyUnusedLocal
         def raise_exception(*args):
             raise handlers.database.exception.DatabaseSearchFoundNothing
         
@@ -556,44 +559,38 @@ class TestDeleteTagCallback:
         except handlers.database.exception.DatabaseSearchFoundNothing:
             assert False, ("Exception 'handlers.database.exception.DatabaseSearchFoundNothing'"
                            " was not suppressed.")
-
+    
     @contextmanager
     def delete_tag_callback_context(self):
         callback = handlers.delete_tag_callback_wrapper(self.tag)
         yield callback()
 
 
-class TestTagCallbackWrapper:
+# noinspection PyMissingOrEmptyDocstring
+class TestSearchTagCallbackWrapper:
     tag = 'Test tag'
     
     def test_select_tag_callback_calls_edit_tag_gui(self, monkeypatch):
-        edit_tag_gui_calls = []
-        edit_callback_calls = []
-        delete_callback_calls = []
-        monkeypatch.setattr(handlers.guiwidgets_2, 'EditTagGUI',
-                            lambda *args: edit_tag_gui_calls.append(args))
-        monkeypatch.setattr(handlers, 'edit_tag_callback_wrapper',
-                            lambda *args: edit_callback_calls.append(args))
-        monkeypatch.setattr(handlers, 'delete_tag_callback_wrapper',
-                            lambda *args: delete_callback_calls.append(args))
+        monkeypatch.setattr(handlers.guiwidgets_2, 'EditTagGUI', DummyEditTagGUI)
         
-        with self.callback_context() as cm:
-            cm()
-            assert len(edit_tag_gui_calls[0]) == 3, (f'EditTagGUI not called or '
-                                                     f'called with incorrect arguments.')
-            assert edit_tag_gui_calls[0][0] == DummyParent()
-            assert edit_callback_calls == [(self.tag,)]
-            assert delete_callback_calls == [(self.tag,)]
+        with self.callback_context():
+            args = dummy_edit_tag_gui_instance[0]
+            assert args[0] == DummyParent()
+            assert args[1].__code__.co_name == 'delete_tag_callback'
+            assert args[2].__code__.co_name == 'edit_tag_callback'
     
     @contextmanager
     def callback_context(self):
+        global dummy_edit_tag_gui_instance
+        dummy_edit_tag_gui_instance = []
         hold_app = handlers.config.app
         handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
         handlers.config.app.tk_root = DummyParent()
         try:
-            yield handlers.select_tag_callback_wrapper(self.tag)
+            yield handlers.select_tag_callback(self.tag)
         finally:
             handlers.config.app = hold_app
+            dummy_edit_tag_gui_instance = []
 
 
 @dataclass
@@ -637,6 +634,7 @@ class DummySelectMovieGUI:
 dummy_edit_tag_gui_instance = []
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class DummyEditTagGUI:
     parent: DummyParent
@@ -651,6 +649,7 @@ class DummyEditTagGUI:
 dummy_select_tag_gui_instance = []
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class DummySelectTagGUI:
     parent: DummyParent
