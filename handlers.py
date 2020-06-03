@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/30/20, 8:45 AM by stephen.
+#  Last modified 6/3/20, 7:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -201,7 +201,7 @@ def search_tag_callback(tag_pattern: str):
     """Search for tags matching a supplied substring pattern.
     
     Args:
-        tag_substring:
+        tag_pattern:
         
     Raises:
         DatabaseSearchFoundNothing if no matching tags are found.
@@ -294,29 +294,12 @@ def delete_tag_callback_wrapper(tag: str) -> Callable:
     return delete_tag_callback
 
 
-def select_tag_callback_wrapper(old_tag: str) -> Callable:
-    """Create the select tag callback.
+def select_tag_callback(old_tag: str):
+    """Change the tag column of a record of the Tag table.
 
-    Args:
-        old_tag:
+    If the tag is no longer in the database this function assumes that it has been deleted by
+    another process. A user alert is raised .
     """
-    
-    # moviedb-#184 Replace Select Tag Callback Wrapper
-    
-    def select_tag_callback():
-        """Change the tag column of a record of the Tag table.
-
-        If the tag is no longer in the database this function assumes that it has been deleted by
-        another process. A user alert is raised.
-        """
-        
-        guiwidgets_2.EditTagGUI(config.app.tk_root, edit_tag_callback_wrapper(old_tag),
-                                delete_tag_callback_wrapper(old_tag))
-    
-    return select_tag_callback
-
-
-def select_tag_callback(tag: str):
-    # moviedb-#184 Replace Select Tag Callback Wrapper
-    # This is a temporary stub
-    pass
+    delete_callback = delete_tag_callback_wrapper(old_tag)
+    edit_callback = edit_tag_callback_wrapper(old_tag)
+    guiwidgets_2.EditTagGUI(config.app.tk_root, delete_callback, edit_callback)
