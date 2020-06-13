@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/29/20, 9:20 AM by stephen.
+#  Last modified 6/13/20, 12:03 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -29,6 +29,7 @@ import neurons
 
 TAG_FIELD_NAMES = ('tag',)
 TAG_FIELD_TEXTS = ('Tag',)
+SEARCH_TEXT = 'Search'
 COMMIT_TEXT = 'Commit'
 DELETE_TEXT = 'Delete'
 CANCEL_TEXT = 'Cancel'
@@ -71,14 +72,63 @@ class AddTagGUI:
         link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron,
                              notify_neuron_wrapper(self.entry_fields,
                                                    TAG_FIELD_NAMES[0], neuron))
-    
+
     def commit(self):
         """The user clicked the 'Commit' button."""
         self.add_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
         self.destroy()
-    
+
     def destroy(self):
         """Destroy this instance's widgets."""
+        self.outer_frame.destroy()
+
+
+@dataclass
+class SearchTagGUI:
+    """Present a form for creating a search pattern which may be used to search the database for
+    matching tags.
+    """
+    parent: tk.Tk
+    search_tag_callback: Callable[[str], None]
+    
+    # The main outer frame of this class.
+    outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
+    
+    # An internal dictionary to simplify field data management.
+    entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
+    
+    def __post_init__(self):
+        """Create the Tk widget."""
+        
+        # Initialize an internal dictionary to simplify field data management.
+        self.entry_fields = create_entry_fields(TAG_FIELD_NAMES, TAG_FIELD_TEXTS)
+        
+        # Create the outer frames to hold fields and buttons.
+        self.outer_frame, body_frame, buttonbox = create_input_form_framing(self.parent)
+        
+        # Create the field label and field entry widgets.
+        create_input_form_fields(body_frame, TAG_FIELD_NAMES, self.entry_fields)
+        
+        # Populate buttonbox with the search and cancel buttons.
+        column_num = itertools.count()
+        search_button = create_button(buttonbox, SEARCH_TEXT, column=next(column_num),
+                                      command=self.search, enabled=False)
+        create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
+                      command=self.destroy).focus_set()
+        
+        # Link the search button to the tag field.
+        button_enabler = enable_button_wrapper(search_button)
+        neuron = link_or_neuron_to_button(button_enabler)
+        notify_neuron = notify_neuron_wrapper(self.entry_fields, TAG_FIELD_NAMES[0], neuron)
+        link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron, notify_neuron)
+    
+    def search(self):
+        """Respond to the user's click of the 'Search' button."""
+        self.search_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
+        self.destroy()
+    
+    def destroy(self):
+        """Destroy the Tk widgets of this class."""
         self.outer_frame.destroy()
 
 
@@ -105,7 +155,7 @@ class EditTagGUI:
         
         # Create field label and field entry widgets.
         create_input_form_fields(body_frame, TAG_FIELD_NAMES, self.entry_fields)
-        
+
         # Populate buttonbox with commit, delete, and cancel buttons
         column_num = itertools.count()
         commit_button = create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
@@ -113,12 +163,12 @@ class EditTagGUI:
         create_button(buttonbox, DELETE_TEXT, column=next(column_num), command=self.delete)
         create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                       command=self.destroy).focus_set()
-        
+
         # Link commit button to tag field
-        neuron = link_or_neuron_to_button(enable_button_wrapper(commit_button))
-        link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron,
-                             notify_neuron_wrapper(self.entry_fields,
-                                                   TAG_FIELD_NAMES[0], neuron))
+        button_enabler = enable_button_wrapper(commit_button)
+        neuron = link_or_neuron_to_button(button_enabler)
+        notify_neuron = notify_neuron_wrapper(self.entry_fields, TAG_FIELD_NAMES[0], neuron)
+        link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron, notify_neuron)
     
     def commit(self):
         """The user clicked the 'Commit' button."""
@@ -143,9 +193,9 @@ class EditTagGUI:
     
     def destroy(self):
         """Destroy this instance's widgets."""
-        # moviedb-#169 Integration tests
-        #   Form destroyed
-        
+        # moviedb-#169 Integration tests:
+        #   Tk widget destroyed
+    
         self.outer_frame.destroy()
 
 

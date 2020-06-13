@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/28/20, 10:36 AM by stephen.
+#  Last modified 6/13/20, 12:03 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -133,6 +133,159 @@ class TestAddTagGUI:
                             self.dummy_link_or_neuron_to_button)
         monkeypatch.setattr(guiwidgets_2, 'link_field_to_neuron',
                             lambda *args: self.link_field_to_neuron_calls.append(args))
+
+
+@pytest.mark.usefixtures('patch_tk')
+class TestSearchTagGUI:
+    
+    def test_search_tag_gui_created(self):
+        with self.search_tag_gui_context() as cm:
+            assert cm.parent == DummyTk()
+            assert cm.search_tag_callback == self.dummy_search_tag_callback
+    
+    def test_internal_dictionary_created(self):
+        with self.search_tag_gui_context() as cm:
+            assert cm.entry_fields['tag'].label_text == 'Tag'
+    
+    def test_create_input_form_framing_called(self, monkeypatch):
+        create_input_form_framing_call = []
+        
+        def dummy_create_input_form_framing(*args):
+            create_input_form_framing_call.append(args)
+            return TtkFrame(DummyTk()), TtkFrame(DummyTk()), TtkFrame(DummyTk())
+        
+        monkeypatch.setattr(guiwidgets_2, 'create_input_form_framing', dummy_create_input_form_framing)
+        with self.search_tag_gui_context():
+            assert create_input_form_framing_call == [(DummyTk(),), ]
+    
+    def test_create_input_form_fields_called(self, monkeypatch):
+        create_input_form_fields_calls = []
+        
+        monkeypatch.setattr(guiwidgets_2, 'create_input_form_fields',
+                            lambda *args: create_input_form_fields_calls.append(args))
+        with self.search_tag_gui_context() as cm:
+            assert create_input_form_fields_calls == [(cm.outer_frame.children[0],
+                                                       guiwidgets_2.TAG_FIELD_NAMES, cm.entry_fields)]
+    
+    def test_search_button_created(self):
+        with self.search_tag_gui_context() as cm:
+            buttonbox = cm.outer_frame.children[1]
+            search_button = buttonbox.children[0]
+            assert search_button == TtkButton(buttonbox, guiwidgets_2.SEARCH_TEXT, command=cm.search)
+    
+    def test_cancel_button_created(self):
+        with self.search_tag_gui_context() as cm:
+            buttonbox = cm.outer_frame.children[1]
+            cancel_button = buttonbox.children[1]
+            assert cancel_button == TtkButton(buttonbox, guiwidgets_2.CANCEL_TEXT, command=cm.destroy)
+    
+    def test_focus_set_on_cancel_button(self):
+        with self.search_tag_gui_context() as cm:
+            buttonbox = cm.outer_frame.children[1]
+            cancel_button = buttonbox.children[1]
+            assert cancel_button.focus_set_calls == [True]
+    
+    def test_enable_button_wrapper_called(self, monkeypatch):
+        dummy_enable_button_wrapper_calls = []
+        monkeypatch.setattr(guiwidgets_2, 'enable_button_wrapper',
+                            lambda *args: dummy_enable_button_wrapper_calls.append(args))
+        with self.search_tag_gui_context() as cm:
+            buttonbox = cm.outer_frame.children[1]
+            search_button = buttonbox.children[0]
+            assert dummy_enable_button_wrapper_calls == [(search_button,)]
+    
+    def test_link_or_neuron_to_button_called(self, monkeypatch):
+        dummy_enable_button = object()
+        
+        def dummy_enable_button_wrapper(*args):
+            return dummy_enable_button
+        
+        monkeypatch.setattr(guiwidgets_2, 'enable_button_wrapper', dummy_enable_button_wrapper)
+        
+        dummy_link_or_neuron_to_button_calls = []
+        monkeypatch.setattr(guiwidgets_2, 'link_or_neuron_to_button',
+                            lambda *args: dummy_link_or_neuron_to_button_calls.append(args))
+        
+        monkeypatch.setattr(guiwidgets_2, 'link_field_to_neuron', lambda *args: None)
+        with self.search_tag_gui_context():
+            assert dummy_link_or_neuron_to_button_calls == [(dummy_enable_button,)]
+    
+    def test_notify_neuron_wrapper_called(self, monkeypatch):
+        dummy_neuron = object()
+        
+        def dummy_link_or_neuron_to_button(*args):
+            return dummy_neuron
+        
+        monkeypatch.setattr(guiwidgets_2, 'link_or_neuron_to_button', dummy_link_or_neuron_to_button)
+        
+        dummy_notify_neuron_wrapper_calls = []
+        monkeypatch.setattr(guiwidgets_2, 'notify_neuron_wrapper',
+                            lambda *args: dummy_notify_neuron_wrapper_calls.append(args))
+        monkeypatch.setattr(guiwidgets_2, 'link_field_to_neuron', lambda *args: None)
+        with self.search_tag_gui_context() as cm:
+            assert dummy_notify_neuron_wrapper_calls == [(cm.entry_fields,
+                                                          guiwidgets_2.TAG_FIELD_NAMES[0],
+                                                          dummy_neuron)]
+    
+    def test_link_field_to_neuron_called(self, monkeypatch):
+        dummy_neuron = object()
+        
+        def dummy_link_or_neuron_to_button(*args):
+            return dummy_neuron
+        
+        monkeypatch.setattr(guiwidgets_2, 'link_or_neuron_to_button', dummy_link_or_neuron_to_button)
+        
+        dummy_notify_neuron = object()
+        
+        def dummy_notify_neuron_wrapper(*args):
+            return dummy_notify_neuron
+        
+        monkeypatch.setattr(guiwidgets_2, 'notify_neuron_wrapper', dummy_notify_neuron_wrapper)
+        
+        dummy_link_field_to_neuron_calls = []
+        monkeypatch.setattr(guiwidgets_2, 'link_field_to_neuron',
+                            lambda *args: dummy_link_field_to_neuron_calls.append(args))
+        
+        with self.search_tag_gui_context() as cm:
+            assert dummy_link_field_to_neuron_calls == [(cm.entry_fields,
+                                                         guiwidgets_2.TAG_FIELD_NAMES[0],
+                                                         dummy_neuron, dummy_notify_neuron)]
+    
+    def test_search_method_calls_the_search_tag_callback(self):
+        with self.search_tag_gui_context() as cm:
+            field = guiwidgets_2.TAG_FIELD_NAMES[0]
+            dummy_search_pattern = cm.entry_fields[field].textvariable.get()
+            cm.search()
+            assert self.dummy_search_tag_callback_calls == [dummy_search_pattern]
+    
+    def test_search_method_calls_the_destroy_method(self, monkeypatch):
+        dummy_destroy_calls = []
+        monkeypatch.setattr(guiwidgets_2.SearchTagGUI, 'destroy',
+                            lambda *args: dummy_destroy_calls.append(True))
+        with self.search_tag_gui_context() as cm:
+            cm.search()
+            assert dummy_destroy_calls == [True]
+    
+    def test_destroy_method_calls_tk_destroy(self):
+        with self.search_tag_gui_context() as cm:
+            cm.destroy()
+            assert cm.outer_frame.destroy_calls == [True]
+    
+    dummy_search_tag_callback_calls = None
+    
+    def dummy_search_tag_callback(self, pattern: str):
+        self.dummy_search_tag_callback_calls.append(pattern)
+    
+    @contextmanager
+    def search_tag_gui_context(self):
+        self.dummy_search_tag_callback_calls = []
+        parent = DummyTk()
+        # noinspection PyTypeChecker
+        try:
+            # noinspection PyTypeChecker
+            yield guiwidgets_2.SearchTagGUI(parent, self.dummy_search_tag_callback)
+        finally:
+            self.dummy_search_tag_callback_calls = None
 
 
 # noinspection DuplicatedCode,PyMissingOrEmptyDocstring
