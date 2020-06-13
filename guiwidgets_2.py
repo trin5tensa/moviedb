@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/13/20, 12:03 PM by stephen.
+#  Last modified 6/13/20, 12:06 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -90,22 +90,23 @@ class SearchTagGUI:
     """
     parent: tk.Tk
     search_tag_callback: Callable[[str], None]
-    
+
     # The main outer frame of this class.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
-    
+
     # An internal dictionary to simplify field data management.
     entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
-    
+
+    # noinspection DuplicatedCode,DuplicatedCode
     def __post_init__(self):
         """Create the Tk widget."""
-        
+    
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = create_entry_fields(TAG_FIELD_NAMES, TAG_FIELD_TEXTS)
-        
+    
         # Create the outer frames to hold fields and buttons.
         self.outer_frame, body_frame, buttonbox = create_input_form_framing(self.parent)
-        
+    
         # Create the field label and field entry widgets.
         create_input_form_fields(body_frame, TAG_FIELD_NAMES, self.entry_fields)
         

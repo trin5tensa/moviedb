@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/13/20, 12:03 PM by stephen.
+#  Last modified 6/13/20, 12:06 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -135,6 +135,7 @@ class TestAddTagGUI:
                             lambda *args: self.link_field_to_neuron_calls.append(args))
 
 
+# noinspection PyMissingOrEmptyDocstring
 @pytest.mark.usefixtures('patch_tk')
 class TestSearchTagGUI:
     
@@ -196,28 +197,30 @@ class TestSearchTagGUI:
     
     def test_link_or_neuron_to_button_called(self, monkeypatch):
         dummy_enable_button = object()
-        
+    
+        # noinspection PyUnusedLocal,PyUnusedLocal
         def dummy_enable_button_wrapper(*args):
             return dummy_enable_button
-        
+    
         monkeypatch.setattr(guiwidgets_2, 'enable_button_wrapper', dummy_enable_button_wrapper)
-        
+    
         dummy_link_or_neuron_to_button_calls = []
         monkeypatch.setattr(guiwidgets_2, 'link_or_neuron_to_button',
                             lambda *args: dummy_link_or_neuron_to_button_calls.append(args))
-        
+    
         monkeypatch.setattr(guiwidgets_2, 'link_field_to_neuron', lambda *args: None)
         with self.search_tag_gui_context():
             assert dummy_link_or_neuron_to_button_calls == [(dummy_enable_button,)]
     
     def test_notify_neuron_wrapper_called(self, monkeypatch):
         dummy_neuron = object()
-        
+    
+        # noinspection PyUnusedLocal,PyUnusedLocal
         def dummy_link_or_neuron_to_button(*args):
             return dummy_neuron
-        
+    
         monkeypatch.setattr(guiwidgets_2, 'link_or_neuron_to_button', dummy_link_or_neuron_to_button)
-        
+    
         dummy_notify_neuron_wrapper_calls = []
         monkeypatch.setattr(guiwidgets_2, 'notify_neuron_wrapper',
                             lambda *args: dummy_notify_neuron_wrapper_calls.append(args))
@@ -229,23 +232,25 @@ class TestSearchTagGUI:
     
     def test_link_field_to_neuron_called(self, monkeypatch):
         dummy_neuron = object()
-        
+    
+        # noinspection PyUnusedLocal,PyUnusedLocal
         def dummy_link_or_neuron_to_button(*args):
             return dummy_neuron
-        
+    
         monkeypatch.setattr(guiwidgets_2, 'link_or_neuron_to_button', dummy_link_or_neuron_to_button)
-        
+    
         dummy_notify_neuron = object()
-        
+    
+        # noinspection PyUnusedLocal,PyUnusedLocal
         def dummy_notify_neuron_wrapper(*args):
             return dummy_notify_neuron
-        
+    
         monkeypatch.setattr(guiwidgets_2, 'notify_neuron_wrapper', dummy_notify_neuron_wrapper)
-        
+    
         dummy_link_field_to_neuron_calls = []
         monkeypatch.setattr(guiwidgets_2, 'link_field_to_neuron',
                             lambda *args: dummy_link_field_to_neuron_calls.append(args))
-        
+    
         with self.search_tag_gui_context() as cm:
             assert dummy_link_field_to_neuron_calls == [(cm.entry_fields,
                                                          guiwidgets_2.TAG_FIELD_NAMES[0],
