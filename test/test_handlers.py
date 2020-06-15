@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/3/20, 7:15 AM by stephen.
+#  Last modified 6/15/20, 7:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -437,6 +437,30 @@ class TestAddTag:
         handlers.config.app.tk_root = DummyParent()
         try:
             yield handlers.add_tag()
+        finally:
+            handlers.config.app = hold_app
+
+
+class TestEditTag:
+    
+    def test_edit_tag(self, monkeypatch):
+        edit_tag_args = []
+        monkeypatch.setattr(handlers.guiwidgets_2, 'SearchTagGUI',
+                            lambda *args: edit_tag_args.append(args))
+        
+        tk_parent = DummyParent()
+        search_tag_callback = handlers.search_tag_callback
+        with self.search_tag_context():
+            assert edit_tag_args == [(tk_parent, search_tag_callback)]
+    
+    # noinspection PyMissingOrEmptyDocstring
+    @contextmanager
+    def search_tag_context(self):
+        hold_app = handlers.config.app
+        handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
+        handlers.config.app.tk_root = DummyParent()
+        try:
+            yield handlers.edit_tag()
         finally:
             handlers.config.app = hold_app
 

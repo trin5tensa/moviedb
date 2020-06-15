@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/3/20, 7:15 AM by stephen.
+#  Last modified 6/15/20, 6:49 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -56,11 +56,8 @@ def add_tag():
 
 # noinspection PyMissingOrEmptyDocstring
 def edit_tag():
-    # moviedb-#162
-    #   Code
-    #   Test
-    #   Document
-    print('\nhandlers.edit_tag called.')
+    """ Get tag string pattern from the user and search for compliant records."""
+    guiwidgets_2.SearchTagGUI(config.app.tk_root, search_tag_callback)
 
 
 def import_movies():
