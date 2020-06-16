@@ -1,7 +1,7 @@
 """Functional pytests for database module. """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/29/20, 9:09 AM by stephen.
+#  Last modified 6/16/20, 8:07 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -123,16 +123,25 @@ def test_add_movie(connection, session, hamlet):
     assert result == expected
 
 
-def test_add_movie_with_empty_title_string(connection, session, monkeypatch):
+def test_add_movie_with_empty_title_string_logs_error(connection, session, monkeypatch):
     expected = 'Null values (empty strings) in row.'
     calls = []
     monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
+    
+    bad_row = dict(title='Hamlet', director='Branagh', minutes=242, year='')
+    with pytest.raises(ValueError):
+        database.add_movie(bad_row)
+    assert calls == [expected]
 
+
+def test_add_movie_with_empty_title_string_raises_value_error(connection, session, monkeypatch):
+    expected = 'Null values (empty strings) in row.'
+    monkeypatch.setattr(database.logging, 'error', lambda msg: None)
+    
     bad_row = dict(title='Hamlet', director='Branagh', minutes=242, year='')
     with pytest.raises(ValueError) as exc:
         database.add_movie(bad_row)
     assert str(exc.value) == expected
-    assert calls[0] == expected
 
 
 def test_add_movie_with_non_numeric_values(connection, session, monkeypatch):
@@ -252,12 +261,25 @@ def test_edit_movie(loaded_database):
     assert movies[0]['notes'] == new_note
 
 
-def test_edit_movie_raises_movie_not_found_exception(loaded_database):
+def test_edit_movie_raises_movie_not_found_exception(loaded_database, monkeypatch):
+    monkeypatch.setattr(database.logging, 'error', lambda msg: None)
     with pytest.raises(exception.DatabaseSearchFoundNothing) as cm:
         database.edit_movie(database.FindMovieDef(title='Non Existent Movie', year=[1972]),
                             dict(notes=''))
     assert cm.typename == 'DatabaseSearchFoundNothing'
     assert cm.match("The movie Non Existent Movie, 1972 is not in the database.")
+
+
+def test_edit_movie_logs_movie_not_found_exception(loaded_database, monkeypatch):
+    calls = []
+    monkeypatch.setattr(database.logging, 'info', lambda msg: calls.append(msg))
+    
+    with pytest.raises(exception.DatabaseSearchFoundNothing):
+        database.edit_movie(database.FindMovieDef(title='Non Existent Movie', year=[1972]),
+                            dict(notes=''))
+    assert calls == [("An incomplete database session has been rolled back because of exception:\n"
+                      "NoResultFound"),
+                     'The movie Non Existent Movie, 1972 is not in the database.']
 
 
 def test_delete_movie(loaded_database):
@@ -344,13 +366,25 @@ class TestTagOperations:
 
         assert old_tag_id == new_tag_id
 
-    def test_edit_tag_raises_exception__database_search_found_nothing(self, session, monkeypatch):
+    def test_edit_tag_raises_exception_database_search_found_nothing(self, session, monkeypatch):
         old_tag = 'old test tag'
         new_tag = 'new test tag'
         with pytest.raises(database.exception.DatabaseSearchFoundNothing) as cm:
             database.edit_tag(old_tag, new_tag)
         assert cm.typename == 'DatabaseSearchFoundNothing'
         assert cm.match(f'The tag {old_tag} is not in the database.')
+
+    def test_edit_tag_logs_database_search_found_nothing(self, session, monkeypatch):
+        calls = []
+        monkeypatch.setattr(database.logging, 'info', lambda msg: calls.append(msg))
+    
+        old_tag = 'old test tag'
+        new_tag = 'new test tag'
+        with pytest.raises(database.exception.DatabaseSearchFoundNothing):
+            database.edit_tag(old_tag, new_tag)
+        assert calls == [("An incomplete database session has been rolled back because of exception:\n"
+                          "NoResultFound"),
+                         f"The tag {old_tag} is not in the database."]
 
     def test_edit_movies_tag(self, session):
         title_year = database.MovieKeyDef(title='Revanche', year=2008)
@@ -361,7 +395,7 @@ class TestTagOperations:
                                                             year=[title_year['year']]))
         assert set(movies[0]['tags']) == {'blue', 'yellow'}
 
-    def test_edit_movies_tag_raises_exception__movie_not_found(self, session):
+    def test_edit_movies_tag_raises_exception_movie_not_found(self, session):
         title_year = database.MovieKeyDef(title='Non Existent Movie', year=1972)
         new_tags = ('green', 'yellow')
         old_tags = ('blue', 'yellow')
@@ -369,6 +403,21 @@ class TestTagOperations:
             database.edit_movies_tag(title_year, old_tags, new_tags)
         assert cm.typename == 'DatabaseSearchFoundNothing'
         assert cm.match("The movie Non Existent Movie, 1972 is not in the database.")
+
+    def test_edit_movies_tag_logs_exception_movie_not_found(self, session, monkeypatch):
+        calls = []
+        monkeypatch.setattr(database.logging, 'info', lambda msg: calls.append(msg))
+    
+        title = 'Non Existent Movie'
+        year = 1972
+        title_year = database.MovieKeyDef(title=title, year=year)
+        new_tags = ('green', 'yellow')
+        old_tags = ('blue', 'yellow')
+        with pytest.raises(exception.DatabaseSearchFoundNothing):
+            database.edit_movies_tag(title_year, old_tags, new_tags)
+        assert calls == [("An incomplete database session has been rolled back because of exception:\n"
+                          "NoResultFound"),
+                         f"The movie {title}, {year} is not in the database."]
 
     def test_del_tag(self, session):
         # Add a tag and links
