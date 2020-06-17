@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/13/20, 12:06 PM by stephen.
+#  Last modified 6/17/20, 7:03 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -125,8 +125,18 @@ class SearchTagGUI:
     
     def search(self):
         """Respond to the user's click of the 'Search' button."""
-        self.search_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
-        self.destroy()
+        # moviedb-#190 Handle DatabaseSearchFoundNothing
+        #   Test
+        try:
+            self.search_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
+        except:
+            # Warn user and give user the opportunity to reenter the search criteria.
+            parent = self.parent
+            message = 'No matches'
+            detail = 'There are no matching tags in the database.'
+            gui_messagebox(parent, message, detail)
+        else:
+            self.destroy()
     
     def destroy(self):
         """Destroy the Tk widgets of this class."""
