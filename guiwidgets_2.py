@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/20/20, 7:17 AM by stephen.
+#  Last modified 6/20/20, 9:42 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -147,23 +147,26 @@ class SearchTagGUI:
 class EditTagGUI:
     """ Present a form for editing or deleting a tag to the user."""
     parent: tk.Tk
+    # moviedb-#193 Add original_tag attribute
     delete_tag_callback: Callable[[str], None]
     edit_tag_callback: Callable[[str], None]
-    
+
     # The main outer frame of this class.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
-    
+
     # An internal dictionary to simplify field data management.
     entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
-    
+
+    # moviedb-#193 Add original_tag to entry_fields
+
     # noinspection DuplicatedCode
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = create_entry_fields(TAG_FIELD_NAMES, TAG_FIELD_TEXTS)
-        
+    
         # Create outer frames to hold fields and buttons.
         self.outer_frame, body_frame, buttonbox = create_input_form_framing(self.parent)
-        
+    
         # Create field label and field entry widgets.
         create_input_form_fields(body_frame, TAG_FIELD_NAMES, self.entry_fields)
 
@@ -389,6 +392,7 @@ def create_input_form_fields(body_frame: ttk.Frame, names: Sequence[str],
         entry = ttk.Entry(body_frame, textvariable=entry_fields[internal_name].textvariable, width=36)
         entry.grid(column=1, row=row_ix)
         entry_fields[internal_name].widget = entry
+        # moviedb-#193 Add entry_fields.original_value to ttk Entry widget.
 
 
 def create_button(buttonbox: ttk.Frame, text: str, column: int, command: Callable,
