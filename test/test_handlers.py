@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/15/20, 7:20 AM by stephen.
+#  Last modified 6/20/20, 2:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -493,8 +493,9 @@ class TestSearchTagCallback:
         with self.search_tag_context(tag_pattern):
             args_ = dummy_edit_tag_gui_instance[0]
             assert args_[0] == DummyParent()
-            assert isinstance(args_[1], Callable)
+            assert args_[1] == '42'
             assert isinstance(args_[2], Callable)
+            assert isinstance(args_[3], Callable)
     
     def test_multiple_tags_found_calls_select_tag_gui(self, monkeypatch, class_patches):
         tags_found = ['42', '43']
@@ -600,8 +601,9 @@ class TestSearchTagCallbackWrapper:
         with self.callback_context():
             args = dummy_edit_tag_gui_instance[0]
             assert args[0] == DummyParent()
-            assert args[1].__code__.co_name == 'delete_tag_callback'
-            assert args[2].__code__.co_name == 'edit_tag_callback'
+            assert args[1] == self.tag
+            assert args[2].__code__.co_name == 'delete_tag_callback'
+            assert args[3].__code__.co_name == 'edit_tag_callback'
     
     @contextmanager
     def callback_context(self):
@@ -662,11 +664,12 @@ dummy_edit_tag_gui_instance = []
 @dataclass
 class DummyEditTagGUI:
     parent: DummyParent
+    tag: str
     delete_tag_callback: Callable[[str], None]
     edit_tag_callback: Callable[[str], None]
     
     def __post_init__(self):
-        dummy_edit_tag_gui_instance.append((self.parent, self.delete_tag_callback,
+        dummy_edit_tag_gui_instance.append((self.parent, self.tag, self.delete_tag_callback,
                                             self.edit_tag_callback))
 
 
