@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/13/20, 12:06 PM by stephen.
+#  Last modified 6/20/20, 7:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,12 +13,16 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from contextlib import contextmanager
-from typing import Callable
+from typing import Callable, Optional, Type
 
 import pytest
 
+import exception
 import guiwidgets_2
 from test.dummytk import DummyTk, TkStringVar, TtkButton, TtkEntry, TtkFrame, TtkLabel, TtkTreeview
+
+
+Exc = Type[Optional[exception.DatabaseSearchFoundNothing]]
 
 
 # noinspection DuplicatedCode,PyMissingOrEmptyDocstring
@@ -138,11 +142,13 @@ class TestAddTagGUI:
 # noinspection PyMissingOrEmptyDocstring
 @pytest.mark.usefixtures('patch_tk')
 class TestSearchTagGUI:
-    
     def test_search_tag_gui_created(self):
         with self.search_tag_gui_context() as cm:
             assert cm.parent == DummyTk()
-            assert cm.search_tag_callback == self.dummy_search_tag_callback
+            callback = self.callback_wrapper()
+            sentinel = 'test pattern'
+            callback(sentinel)
+            assert self.dummy_search_tag_callback_calls == [sentinel]
     
     def test_internal_dictionary_created(self):
         with self.search_tag_gui_context() as cm:
@@ -255,14 +261,26 @@ class TestSearchTagGUI:
             assert dummy_link_field_to_neuron_calls == [(cm.entry_fields,
                                                          guiwidgets_2.TAG_FIELD_NAMES[0],
                                                          dummy_neuron, dummy_notify_neuron)]
-    
+
     def test_search_method_calls_the_search_tag_callback(self):
         with self.search_tag_gui_context() as cm:
             field = guiwidgets_2.TAG_FIELD_NAMES[0]
             dummy_search_pattern = cm.entry_fields[field].textvariable.get()
             cm.search()
             assert self.dummy_search_tag_callback_calls == [dummy_search_pattern]
+
+    def test_failed_search_calls_messagebox(self, monkeypatch):
+        message = 'No matches'
+        detail = 'There are no matching tags in the database.'
+        dummy_gui_messagebox_calls = []
+        monkeypatch.setattr(guiwidgets_2, 'gui_messagebox',
+                            lambda *args: dummy_gui_messagebox_calls.append(args))
     
+        exc: Exc = exception.DatabaseSearchFoundNothing
+        with self.search_tag_gui_context(exc) as cm:
+            cm.search()
+            assert dummy_gui_messagebox_calls == [(cm.parent, message, detail)]
+
     def test_search_method_calls_the_destroy_method(self, monkeypatch):
         dummy_destroy_calls = []
         monkeypatch.setattr(guiwidgets_2.SearchTagGUI, 'destroy',
@@ -270,25 +288,31 @@ class TestSearchTagGUI:
         with self.search_tag_gui_context() as cm:
             cm.search()
             assert dummy_destroy_calls == [True]
-    
+
     def test_destroy_method_calls_tk_destroy(self):
         with self.search_tag_gui_context() as cm:
             cm.destroy()
             assert cm.outer_frame.destroy_calls == [True]
-    
+
     dummy_search_tag_callback_calls = None
+
+    def callback_wrapper(self, exc: Exc = None):
+        def dummy_search_tag_callback(pattern: str):
+            if exc:
+                raise exc
+            else:
+                self.dummy_search_tag_callback_calls.append(pattern)
     
-    def dummy_search_tag_callback(self, pattern: str):
-        self.dummy_search_tag_callback_calls.append(pattern)
-    
+        return dummy_search_tag_callback
+
     @contextmanager
-    def search_tag_gui_context(self):
+    # def search_tag_gui_context(self, exc: guiwidgets_2.exception.DatabaseSearchFoundNothing = None):
+    def search_tag_gui_context(self, exc: Exception = None):
         self.dummy_search_tag_callback_calls = []
         parent = DummyTk()
-        # noinspection PyTypeChecker
         try:
             # noinspection PyTypeChecker
-            yield guiwidgets_2.SearchTagGUI(parent, self.dummy_search_tag_callback)
+            yield guiwidgets_2.SearchTagGUI(parent, self.callback_wrapper(exc))
         finally:
             self.dummy_search_tag_callback_calls = None
 

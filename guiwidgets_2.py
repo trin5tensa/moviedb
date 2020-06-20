@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/17/20, 7:03 AM by stephen.
+#  Last modified 6/20/20, 7:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
 from typing import Callable, Dict, Mapping, Sequence, Tuple, TypeVar
 
+import exception
 import neurons
 
 
@@ -125,11 +126,10 @@ class SearchTagGUI:
     
     def search(self):
         """Respond to the user's click of the 'Search' button."""
-        # moviedb-#190 Handle DatabaseSearchFoundNothing
-        #   Test
         try:
-            self.search_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
-        except:
+            pattern = self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get()
+            self.search_tag_callback(pattern)
+        except exception.DatabaseSearchFoundNothing:
             # Warn user and give user the opportunity to reenter the search criteria.
             parent = self.parent
             message = 'No matches'
