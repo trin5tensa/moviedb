@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/13/20, 12:06 PM by stephen.
+#  Last modified 6/20/20, 7:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
 from typing import Callable, Dict, Mapping, Sequence, Tuple, TypeVar
 
+import exception
 import neurons
 
 
@@ -125,8 +126,17 @@ class SearchTagGUI:
     
     def search(self):
         """Respond to the user's click of the 'Search' button."""
-        self.search_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
-        self.destroy()
+        try:
+            pattern = self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get()
+            self.search_tag_callback(pattern)
+        except exception.DatabaseSearchFoundNothing:
+            # Warn user and give user the opportunity to reenter the search criteria.
+            parent = self.parent
+            message = 'No matches'
+            detail = 'There are no matching tags in the database.'
+            gui_messagebox(parent, message, detail)
+        else:
+            self.destroy()
     
     def destroy(self):
         """Destroy the Tk widgets of this class."""
