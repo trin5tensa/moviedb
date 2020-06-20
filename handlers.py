@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/15/20, 6:49 AM by stephen.
+#  Last modified 6/20/20, 2:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -213,7 +213,9 @@ def search_tag_callback(tag_pattern: str):
         tag = tags[0]
         delete_callback = delete_tag_callback_wrapper(tag)
         edit_callback = edit_tag_callback_wrapper(tag)
-        guiwidgets_2.EditTagGUI(config.app.tk_root, delete_callback, edit_callback)
+        # moviedb-#193  Pass tag To EditTagGUI
+        #   Test
+        guiwidgets_2.EditTagGUI(config.app.tk_root, tag, delete_callback, edit_callback)
     else:
         guiwidgets_2.SelectTagGUI(config.app.tk_root, select_tag_callback, tags)
 
@@ -299,4 +301,4 @@ def select_tag_callback(old_tag: str):
     """
     delete_callback = delete_tag_callback_wrapper(old_tag)
     edit_callback = edit_tag_callback_wrapper(old_tag)
-    guiwidgets_2.EditTagGUI(config.app.tk_root, delete_callback, edit_callback)
+    guiwidgets_2.EditTagGUI(config.app.tk_root, old_tag, delete_callback, edit_callback)
