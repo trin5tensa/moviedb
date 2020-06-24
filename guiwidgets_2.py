@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/20/20, 7:17 AM by stephen.
+#  Last modified 6/23/20, 6:46 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -147,26 +147,28 @@ class SearchTagGUI:
 class EditTagGUI:
     """ Present a form for editing or deleting a tag to the user."""
     parent: tk.Tk
-    delete_tag_callback: Callable[[str], None]
+    tag: str
+    delete_tag_callback: Callable[[], None]
     edit_tag_callback: Callable[[str], None]
-    
+
     # The main outer frame of this class.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
-    
+
     # An internal dictionary to simplify field data management.
     entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
-    
+
     # noinspection DuplicatedCode
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = create_entry_fields(TAG_FIELD_NAMES, TAG_FIELD_TEXTS)
-        
+        self.entry_fields[TAG_FIELD_NAMES[0]].original_value = self.tag
+    
         # Create outer frames to hold fields and buttons.
         self.outer_frame, body_frame, buttonbox = create_input_form_framing(self.parent)
-        
+    
         # Create field label and field entry widgets.
         create_input_form_fields(body_frame, TAG_FIELD_NAMES, self.entry_fields)
-
+    
         # Populate buttonbox with commit, delete, and cancel buttons
         column_num = itertools.count()
         commit_button = create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
@@ -191,22 +193,13 @@ class EditTagGUI:
         
         Get the user's confirmation of deletion with a dialog window. Either exit the method or call
         the registered deletion callback."""
-        
-        # moviedb-#170 Integration tests
-        #   Dialog called
-        #   Both 'yes' and 'no' responses handled appropriately.
-        
-        if messagebox.askyesno(message='Do you want to delete this movie?',
+        if messagebox.askyesno(message=f"Do you want to delete tag '{self.tag}'?",
                                icon='question', default='no', parent=self.parent):
-            # moviedb-#148 Handle exception for missing database record
-            self.delete_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
+            self.delete_tag_callback()
             self.destroy()
     
     def destroy(self):
         """Destroy this instance's widgets."""
-        # moviedb-#169 Integration tests:
-        #   Tk widget destroyed
-    
         self.outer_frame.destroy()
 
 
@@ -225,22 +218,14 @@ class SelectTagGUI:
         self.outer_frame, body_frame, buttonbox = create_body_and_button_frames(self.parent)
         
         # Create and grid treeview
-        # moviedb-#169
-        #   Does this call actually produce a valid treeview?
-        #   Is the 'columns' argument required?
-        tree = ttk.Treeview(body_frame, columns=[], height=25, selectmode='browse')
+        tree = ttk.Treeview(body_frame, columns=[], height=10, selectmode='browse')
         tree.grid(column=0, row=0, sticky='w')
         
         # Specify column width and title
-        # moviedb-#169
-        #   Is the column width correctly set?
-        #   Is the column heading correctly set?
         tree.column('#0', width=350)
         tree.heading('#0', text=TAG_FIELD_TEXTS[0])
         
         # Populate the treeview rows
-        # moviedb-#169
-        #   Is the treeview populated?
         for tag in self.tags_to_show:
             tree.insert('', 'end', iid=tag, text=tag, values=[], tags=TAG_FIELD_NAMES[0])
         
@@ -269,9 +254,6 @@ class SelectTagGUI:
             Args:
                 *args: Not used. Needed for compatibility with Tk:Tcl caller.
             """
-            # moviedb-#169
-            #   No Tk documentation on exactly what 'selection' passes back so examine
-            #   the return value and adjust code accordingly.
             tag = tree.selection()[0]
             self.select_tag_callback(tag)
             self.destroy()
@@ -382,13 +364,15 @@ def create_input_form_fields(body_frame: ttk.Frame, names: Sequence[str],
     body_frame.columnconfigure(0, weight=1, minsize=30)
     # Create a column for the fields.
     body_frame.columnconfigure(1, weight=1)
-    
+
     for row_ix, internal_name in enumerate(names):
-        label = ttk.Label(body_frame, text=entry_fields[internal_name].label_text)
+        entry_field = entry_fields[internal_name]
+        label = ttk.Label(body_frame, text=entry_field.label_text)
         label.grid(column=0, row=row_ix, sticky='e', padx=5)
-        entry = ttk.Entry(body_frame, textvariable=entry_fields[internal_name].textvariable, width=36)
+        entry = ttk.Entry(body_frame, textvariable=entry_field.textvariable, width=36)
         entry.grid(column=1, row=row_ix)
-        entry_fields[internal_name].widget = entry
+        entry_field.widget = entry
+        entry_field.textvariable.set(entry_field.original_value)
 
 
 def create_button(buttonbox: ttk.Frame, text: str, column: int, command: Callable,

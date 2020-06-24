@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/16/20, 7:58 AM by stephen.
+#  Last modified 6/24/20, 6:47 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -140,7 +140,6 @@ def edit_movie(title_year: FindMovieDef, updates: MovieUpdateDef):
     # The specified movie is not available possibly because it was deleted by another process.
     except sqlalchemy.orm.exc.NoResultFound as exc:
         msg = f"The movie {title_year['title']}, {title_year['year'][0]} is not in the database."
-        # moviedb-#169 Integration test that message is logged
         logging.info(msg)
         raise exception.DatabaseSearchFoundNothing(msg) from exc
 
@@ -232,10 +231,9 @@ def edit_tag(old_tag: str, new_tag: str):
             tag = session.query(Tag).filter(Tag.tag == old_tag).one()
             tag.tag = new_tag
     
-    # The specified movie is not available possibly because it was deleted by another process.
+    # The specified tag is not available possibly because it was deleted by another process.
     except sqlalchemy.orm.exc.NoResultFound as exc:
         msg = f"The tag {old_tag} is not in the database."
-        # moviedb-#169 Integration test that message is logged
         logging.info(msg)
         raise exception.DatabaseSearchFoundNothing(msg) from exc
 
@@ -265,7 +263,6 @@ def edit_movies_tag(movie: MovieKeyDef, old_tags: Iterable[str], new_tags: Itera
                 movie.tags.append(tag)
     except sqlalchemy.orm.exc.NoResultFound as exc:
         msg = f"The movie {movie['title']}, {movie['year']} is not in the database."
-        # moviedb-#169 Integration test that message is logged
         logging.info(msg)
         raise exception.DatabaseSearchFoundNothing(msg) from exc
 

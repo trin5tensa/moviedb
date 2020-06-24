@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/20/20, 7:18 AM by stephen.
+#  Last modified 6/24/20, 6:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -320,16 +320,22 @@ class TestSearchTagGUI:
 # noinspection DuplicatedCode,PyMissingOrEmptyDocstring
 @pytest.mark.usefixtures('patch_tk')
 class TestEditTagGUI:
+    test_tag = 'test_tag'
     
     def test_edit_tag_gui_created(self):
         with self.edit_tag_gui_context() as cm:
             assert cm.parent == DummyTk()
+            assert cm.tag == self.test_tag
             assert cm.delete_tag_callback == self.dummy_delete_tag_callback
             assert cm.edit_tag_callback == self.dummy_edit_tag_callback
     
     def test_create_entry_fields_called(self, edit_tag_gui_fixtures):
         with self.edit_tag_gui_context() as cm:
             assert cm.entry_fields['tag'].label_text == 'Tag'
+    
+    def test_create_entry_fields_updated_with_original_value(self, edit_tag_gui_fixtures):
+        with self.edit_tag_gui_context() as cm:
+            assert cm.entry_fields['tag'].original_value == self.test_tag
     
     def test_create_input_form_framing_called(self, edit_tag_gui_fixtures):
         self.create_input_form_framing_calls = []
@@ -385,35 +391,35 @@ class TestEditTagGUI:
     def test_delete_test_delete_calls_askyesno_dialog(self, patch_tk, delete_button_fixtures):
         with self.edit_tag_gui_context() as cm:
             cm.delete()
-            assert self.askyesno_calls == [dict(message='Do you want to delete this movie?',
+            assert self.askyesno_calls == [dict(message=f"Do you want to delete tag '{self.test_tag}'?",
                                                 icon='question', default='no', parent=cm.parent)]
     
     def test_delete_calls_callback_method(self, patch_tk, delete_button_fixtures):
         self.delete_tag_callback_calls = []
         with self.edit_tag_gui_context() as cm:
             cm.delete()
-            assert self.delete_tag_callback_calls == [('4242',)]
-    
+            assert self.delete_tag_callback_calls == [True]
+
     def test_delete_calls_destroy(self, patch_tk, delete_button_fixtures):
         with self.edit_tag_gui_context() as cm:
             cm.delete()
             assert self.destroy_calls == [True]
-    
+
     def test_destroy_destroys_outer_frame(self, edit_tag_gui_fixtures):
         with self.edit_tag_gui_context() as cm:
             cm.commit()
             assert cm.outer_frame.destroy_calls == [True]
-    
-    def dummy_delete_tag_callback(self, *args):
-        self.delete_tag_callback_calls.append(args)
-    
+
+    def dummy_delete_tag_callback(self):
+        self.delete_tag_callback_calls.append(True)
+
     def dummy_edit_tag_callback(self, *args):
         self.edit_tag_callback_calls.append(args)
-    
+
     def dummy_create_input_form_framing(self, *args):
         self.create_input_form_framing_calls.append(args)
         return self.outer_frame, self.body_frame, self.buttonbox
-    
+
     def dummy_create_button(self, *args, **kwargs):
         self.create_button_calls.append((args, kwargs))
         return TtkButton(self.buttonbox, 'Test Button')
@@ -425,7 +431,7 @@ class TestEditTagGUI:
     @contextmanager
     def edit_tag_gui_context(self):
         # noinspection PyTypeChecker
-        yield guiwidgets_2.EditTagGUI(DummyTk(), self.dummy_delete_tag_callback,
+        yield guiwidgets_2.EditTagGUI(DummyTk(), self.test_tag, self.dummy_delete_tag_callback,
                                       self.dummy_edit_tag_callback)
     
     @pytest.fixture
@@ -500,7 +506,7 @@ class TestSelectTagGUI:
         with self.select_gui_context() as cm:
             assert cm.outer_frame.children[0].children[0] == TtkTreeview(
                     cm.outer_frame.children[0], columns=[],
-                    height=25, selectmode='browse', )
+                    height=10, selectmode='browse', )
     
     def test_treeview_gridded(self, select_tag_fixtures):
         with self.select_gui_context() as cm:
@@ -677,6 +683,7 @@ class TestCreateInputFormFraming:
 # noinspection PyMissingOrEmptyDocstring
 @pytest.mark.usefixtures('patch_tk')
 class TestCreateInputFormFields:
+    original_tag = 'test original value'
     
     def test_columns_configured(self):
         with self.create_fields_context() as cm:
@@ -712,11 +719,17 @@ class TestCreateInputFormFields:
             assert entry_fields['tag'].widget == TtkEntry(parent=TtkFrame(parent=DummyTk(), ),
                                                           textvariable=TkStringVar(), width=36)
     
+    def test_entry_text_variable_set(self):
+        with self.create_fields_context() as cm:
+            _, entry_fields = cm
+            assert entry_fields['tag'].textvariable.set_calls == [(self.original_tag,)]
+    
     @contextmanager
     def create_fields_context(self):
         body_frame = TtkFrame(DummyTk())
         names = ('tag',)
         entry_fields = dict(tag=guiwidgets_2.EntryField('Tag', ''))
+        entry_fields['tag'].original_value = self.original_tag
         # noinspection PyTypeChecker
         guiwidgets_2.create_input_form_fields(body_frame, names, entry_fields)
         yield body_frame, entry_fields
