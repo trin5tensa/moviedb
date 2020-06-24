@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/27/20, 8:39 AM by stephen.
+#  Last modified 6/20/20, 2:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -123,7 +123,7 @@ class TestImportMovies:
     messagebox_calls = None
 
     def test_user_cancellation_of_askopenfilename_dialog(self, class_patches, monkeypatch):
-        monkeypatch.setattr(handlers.guiwidgets, 'gui_askopenfilename', lambda **kwargs: '')
+        monkeypatch.setattr(handlers.guiwidgets_2, 'gui_askopenfilename', lambda **kwargs: '')
         with self.import_movies_context():
             assert self.import_movies_calls == deque([])
 
@@ -145,7 +145,7 @@ class TestImportMovies:
     
     @pytest.fixture
     def class_patches(self, monkeypatch):
-        monkeypatch.setattr(handlers.guiwidgets, 'gui_askopenfilename', self.dummy_askopenfilename)
+        monkeypatch.setattr(handlers.guiwidgets_2, 'gui_askopenfilename', self.dummy_askopenfilename)
         monkeypatch.setattr(handlers.guiwidgets, 'gui_messagebox', self.gui_messagebox)
         monkeypatch.setattr(handlers.impexp, 'import_movies', self.dummy_import_movies)
 
@@ -222,15 +222,15 @@ class TestSearchMovieCallback:
     def test_criteria_correctly_cleaned_up(self, class_setup, monkeypatch):
         monkeypatch.setattr(handlers.database, 'find_movies', self.configure_dummy_find_movies([]))
         clean_criteria = dict(title='Pot', year=[2000, 2010], tags=('blue', 'red'))
-        with pytest.raises(exception.MovieSearchFoundNothing):
+        with pytest.raises(exception.DatabaseSearchFoundNothing):
             handlers.search_movie_callback(self.criteria, self.tags)
         assert self.dummy_find_movies_calls == [(clean_criteria,)]
     
     def test_no_movies_found_raises_exception(self, class_setup, monkeypatch):
         monkeypatch.setattr(handlers.database, 'find_movies', self.configure_dummy_find_movies([]))
-        with pytest.raises(exception.MovieSearchFoundNothing) as exc:
+        with pytest.raises(exception.DatabaseSearchFoundNothing) as exc:
             handlers.search_movie_callback(self.criteria, self.tags)
-        assert isinstance(exc.value, exception.MovieSearchFoundNothing)
+        assert isinstance(exc.value, exception.DatabaseSearchFoundNothing)
     
     def test_single_movie_found_calls_instantiate_edit_movie_gui(self, class_setup, monkeypatch):
         movie = handlers.config.MovieUpdateDef(title='Test Movie')
@@ -273,7 +273,7 @@ class TestSearchMovieCallback:
         self.dummy_find_movies_calls = []
         self.dummy_select_movie_gui_instance = []
         self.criteria = {internal_names: ''
-                         for internal_names in handlers.guiwidgets.INTERNAL_NAMES}
+                         for internal_names in handlers.guiwidgets.MOVIE_FIELD_NAMES}
         self.criteria['title'] = 'Pot'
         self.criteria['year'] = [2000, 2010]
         self.criteria['director'] = []
@@ -302,7 +302,7 @@ class TestEditMovieCallback:
             assert self.edit_movie_calls == [(movie, updates)]
     
     def raise_movie_not_found(self, *args):
-        raise handlers.exception.MovieSearchFoundNothing
+        raise handlers.exception.DatabaseSearchFoundNothing
     
     def test_edit_movie_shows_movie_not_found_gui_alert(self, class_patches, monkeypatch):
         monkeypatch.setattr(handlers.database, 'edit_movie', self.raise_movie_not_found)
@@ -311,7 +311,8 @@ class TestEditMovieCallback:
                             lambda *args: msg_args.append(args))
         with self.class_context():
             assert msg_args == [(DummyParent(), 'Missing movie',
-                                 "The movie {'title': 'Test Title', 'year': [4242]} is not available. "
+                                 "The movie {'title': 'Test Title', 'year': [4242]} is no longer "
+                                 "available. "
                                  "It may have been deleted by another process.")]
 
     def test_edit_movie_tags_shows_movie_not_found_gui_alert(self, class_patches, monkeypatch):
@@ -321,7 +322,8 @@ class TestEditMovieCallback:
                             lambda *args: msg_args.append(args))
         with self.class_context():
             assert msg_args == [(DummyParent(), 'Missing movie',
-                                 "The movie {'title': 'Test Title', 'year': [4242]} is not available. "
+                                 "The movie {'title': 'Test Title', 'year': [4242]} is no longer "
+                                 "available. "
                                  "It may have been deleted by another process.")]
     
     def test_movie_tags_called(self, class_patches):
@@ -418,15 +420,14 @@ class TestAddTag:
     
     def test_add_tag(self, monkeypatch):
         tag_gui_args = []
-        monkeypatch.setattr(handlers.guiwidgets, 'AddTagGUI',
-                            lambda parent, commit_callback, buttons:
-                            tag_gui_args.append((parent, commit_callback, buttons)))
+        monkeypatch.setattr(handlers.guiwidgets_2, 'AddTagGUI',
+                            lambda parent, commit_callback:
+                            tag_gui_args.append((parent, commit_callback)))
         
         tk_parent = DummyParent()
         add_tag_callback = handlers.add_tag_callback
-        buttons_to_show = ['commit']
         with self.add_tag_context():
-            assert tag_gui_args == [(tk_parent, add_tag_callback, buttons_to_show)]
+            assert tag_gui_args == [(tk_parent, add_tag_callback)]
     
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
@@ -440,6 +441,30 @@ class TestAddTag:
             handlers.config.app = hold_app
 
 
+class TestEditTag:
+    
+    def test_edit_tag(self, monkeypatch):
+        edit_tag_args = []
+        monkeypatch.setattr(handlers.guiwidgets_2, 'SearchTagGUI',
+                            lambda *args: edit_tag_args.append(args))
+        
+        tk_parent = DummyParent()
+        search_tag_callback = handlers.search_tag_callback
+        with self.search_tag_context():
+            assert edit_tag_args == [(tk_parent, search_tag_callback)]
+    
+    # noinspection PyMissingOrEmptyDocstring
+    @contextmanager
+    def search_tag_context(self):
+        hold_app = handlers.config.app
+        handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
+        handlers.config.app.tk_root = DummyParent()
+        try:
+            yield handlers.edit_tag()
+        finally:
+            handlers.config.app = hold_app
+
+
 class TestAddTagCallback:
     
     def test_(self, monkeypatch):
@@ -448,6 +473,150 @@ class TestAddTagCallback:
         test_tag = 'Test tag'
         handlers.add_tag_callback(test_tag)
         assert calls == [(test_tag,)]
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestSearchTagCallback:
+    
+    def test_zero_tags_found_raises_exception(self, monkeypatch):
+        tags_found = []
+        monkeypatch.setattr(handlers.database, 'find_tags', lambda *args: tags_found)
+        tag_pattern = '42'
+        with pytest.raises(exception.DatabaseSearchFoundNothing):
+            with self.search_tag_context(tag_pattern):
+                pass
+    
+    def test_one_tag_found_calls_edit_tag_gui(self, monkeypatch, class_patches):
+        tags_found = ['42']
+        monkeypatch.setattr(handlers.database, 'find_tags', lambda *args: tags_found)
+        tag_pattern = '42'
+        with self.search_tag_context(tag_pattern):
+            args_ = dummy_edit_tag_gui_instance[0]
+            assert args_[0] == DummyParent()
+            assert args_[1] == '42'
+            assert isinstance(args_[2], Callable)
+            assert isinstance(args_[3], Callable)
+    
+    def test_multiple_tags_found_calls_select_tag_gui(self, monkeypatch, class_patches):
+        tags_found = ['42', '43']
+        monkeypatch.setattr(handlers.database, 'find_tags', lambda *args: tags_found)
+        tag_pattern = '42'
+        with self.search_tag_context(tag_pattern):
+            args_ = dummy_select_tag_gui_instance[0]
+            assert args_[0] == DummyParent()
+            assert isinstance(args_[1], Callable)
+            assert args_[2] == ['42', '43']
+    
+    @pytest.fixture
+    def class_patches(self, monkeypatch):
+        monkeypatch.setattr(handlers.guiwidgets_2, 'EditTagGUI', DummyEditTagGUI)
+        monkeypatch.setattr(handlers.guiwidgets_2, 'SelectTagGUI', DummySelectTagGUI)
+    
+    @contextmanager
+    def search_tag_context(self, tag_pattern: str):
+        hold_app = handlers.config.app
+        handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
+        handlers.config.app.tk_root = DummyParent()
+        try:
+            yield handlers.search_tag_callback(tag_pattern)
+        finally:
+            handlers.config.app = hold_app
+
+
+class TestEditTagCallback:
+    old_tag = 'test old tag'
+    new_tag = 'test new tag'
+    
+    def test_database_edit_tag_called(self, monkeypatch):
+        edit_tags_args = []
+        monkeypatch.setattr(handlers.database, 'edit_tag', lambda *args: edit_tags_args.append(args))
+        with self.add_tag_callback_context():
+            assert edit_tags_args == [(self.old_tag, self.new_tag)]
+    
+    def test_database_search_found_nothing_raised(self, monkeypatch):
+        # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
+        def raise_exception(*args): raise handlers.database.exception.DatabaseSearchFoundNothing
+        
+        message_args = []
+        
+        monkeypatch.setattr(handlers.database, 'edit_tag', raise_exception)
+        monkeypatch.setattr(handlers.guiwidgets, 'gui_messagebox',
+                            lambda *args: message_args.append(args))
+        with self.add_tag_callback_context():
+            assert message_args == [(DummyParent(), 'Missing tag',
+                                     'The tag test old tag is no longer available. '
+                                     'It may have been deleted by another process.')]
+    
+    # noinspection PyMissingOrEmptyDocstring
+    @contextmanager
+    def add_tag_callback_context(self):
+        hold_app = handlers.config.app
+        handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
+        handlers.config.app.tk_root = DummyParent()
+
+        callback = handlers.edit_tag_callback_wrapper(self.old_tag)
+
+        try:
+            yield callback(self.new_tag)
+        finally:
+            handlers.config.app = hold_app
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestDeleteTagCallback:
+    tag = 'test tag'
+    
+    def test_database_delete_tag_called(self, monkeypatch):
+        del_tag_args = []
+        monkeypatch.setattr(handlers.database, 'del_tag', lambda *args: del_tag_args.append(args))
+        with self.delete_tag_callback_context():
+            assert del_tag_args == [(self.tag,)]
+    
+    def test_database_search_found_nothing_ignored(self, monkeypatch):
+        # noinspection PyUnusedLocal
+        def raise_exception(*args):
+            raise handlers.database.exception.DatabaseSearchFoundNothing
+        
+        monkeypatch.setattr(handlers.database, 'del_tag', raise_exception)
+        try:
+            with self.delete_tag_callback_context():
+                pass
+        except handlers.database.exception.DatabaseSearchFoundNothing:
+            assert False, ("Exception 'handlers.database.exception.DatabaseSearchFoundNothing'"
+                           " was not suppressed.")
+    
+    @contextmanager
+    def delete_tag_callback_context(self):
+        callback = handlers.delete_tag_callback_wrapper(self.tag)
+        yield callback()
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestSearchTagCallbackWrapper:
+    tag = 'Test tag'
+    
+    def test_select_tag_callback_calls_edit_tag_gui(self, monkeypatch):
+        monkeypatch.setattr(handlers.guiwidgets_2, 'EditTagGUI', DummyEditTagGUI)
+        
+        with self.callback_context():
+            args = dummy_edit_tag_gui_instance[0]
+            assert args[0] == DummyParent()
+            assert args[1] == self.tag
+            assert args[2].__code__.co_name == 'delete_tag_callback'
+            assert args[3].__code__.co_name == 'edit_tag_callback'
+    
+    @contextmanager
+    def callback_context(self):
+        global dummy_edit_tag_gui_instance
+        dummy_edit_tag_gui_instance = []
+        hold_app = handlers.config.app
+        handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
+        handlers.config.app.tk_root = DummyParent()
+        try:
+            yield handlers.select_tag_callback(self.tag)
+        finally:
+            handlers.config.app = hold_app
+            dummy_edit_tag_gui_instance = []
 
 
 @dataclass
@@ -486,6 +655,36 @@ class DummySelectMovieGUI:
     
     def __post_init__(self):
         dummy_select_movie_gui_instance.append((self.parent, self.movies, self.callback))
+
+
+dummy_edit_tag_gui_instance = []
+
+
+# noinspection PyMissingOrEmptyDocstring
+@dataclass
+class DummyEditTagGUI:
+    parent: DummyParent
+    tag: str
+    delete_tag_callback: Callable[[str], None]
+    edit_tag_callback: Callable[[str], None]
+    
+    def __post_init__(self):
+        dummy_edit_tag_gui_instance.append((self.parent, self.tag, self.delete_tag_callback,
+                                            self.edit_tag_callback))
+
+
+dummy_select_tag_gui_instance = []
+
+
+# noinspection PyMissingOrEmptyDocstring
+@dataclass
+class DummySelectTagGUI:
+    parent: DummyParent
+    select_tag_callback: Callable[[str], None]
+    tags_to_show: Sequence[str]
+    
+    def __post_init__(self):
+        dummy_select_tag_gui_instance.append((self.parent, self.select_tag_callback, self.tags_to_show))
 
 
 dummy_gui_messagebox_calls = []

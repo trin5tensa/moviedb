@@ -1,8 +1,7 @@
-"""Exceptions for the modules of moviesdb. """
-
+"""Enable access to test support modules"""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/16/20, 6:17 AM by stephen.
+#  Last modified 5/19/20, 8:35 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,23 +12,3 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-class MovieDBException(Exception):
-    """Base class for moviedb exceptions."""
-
-
-class DatabaseException(MovieDBException):
-    """Base class for database exceptions."""
-
-
-class MovieDBConstraintFailure(DatabaseException):
-    """Exception raised for title and year constraint violation."""
-
-
-class DatabaseSearchFoundNothing(DatabaseException):
-    """Exception raised when a search found no records."""
-
-
-class MovieSearchInvalidCount(DatabaseException):
-    """Exception raised when count is not a positive integer."""

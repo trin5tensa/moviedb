@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/27/20, 8:39 AM by stephen.
+#  Last modified 5/16/20, 6:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,29 +21,35 @@ import itertools
 import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
-from tkinter import filedialog, messagebox
-from typing import Callable, Dict, List, Literal, Sequence, TypeVar
+from tkinter import messagebox
+from typing import Callable, Dict, List, Literal, Sequence
 
 import config
 import exception
 import neurons
+from guiwidgets_2 import EntryField, create_entry_fields, gui_messagebox
 
 
-INTERNAL_NAMES = ('title', 'year', 'director', 'minutes', 'notes')
+MOVIE_FIELD_NAMES = ('title', 'year', 'director', 'minutes', 'notes',)
+MOVIE_FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes',)
 TAG_TREEVIEW_INTERNAL_NAME = 'tag treeview'
-FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes')
 COMMIT_TEXT = 'Commit'
 DELETE_TEXT = 'Delete'
 SEARCH_TEXT = 'Search'
 CANCEL_TEXT = 'Cancel'
 SELECT_TAGS_TEXT = 'Select tags'
 
-ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
-
 
 @dataclass
 class MovieGUIBase:
-    """ A base class for movie input forms."""
+    """ A base class for movie input forms.
+    
+    WARNING:
+        This module uses the original subclassed approach to Tkinter primary widgets. It
+        is fragile and should not be used as template for future developments.
+        Any proposed refactoring should consider abandoning these classes and using the newer
+        composed classes of guiwidgets_2 as a model for future development.
+    """
     parent: tk.Tk
     
     selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
@@ -60,7 +66,7 @@ class MovieGUIBase:
         self.outer_frame.columnconfigure(0, weight=1)
         self.outer_frame.rowconfigure(0, weight=1)
         self.outer_frame.rowconfigure(1, minsize=35)
-        
+
         self.create_body(self.outer_frame)
         self.create_buttonbox(self.outer_frame)
 
@@ -71,9 +77,7 @@ class MovieGUIBase:
         """
 
         # Initialize an internal dictionary to simplify field data management.
-        self.entry_fields = {internal_name: EntryField(field_text, '')
-                             for internal_name, field_text
-                             in zip(INTERNAL_NAMES, FIELD_TEXTS)}
+        self.entry_fields = create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
 
         body_frame = ttk.Frame(outerframe, padding=(10, 25, 10, 0))
         body_frame.grid(column=0, row=0, sticky='n')
@@ -187,7 +191,14 @@ class MovieGUIBase:
 
 @dataclass
 class CommonButtonbox(MovieGUIBase):
-    """ A form for adding a movie."""
+    """ A form for adding a movie.
+    
+    WARNING:
+        This module uses the original subclassed approach to Tkinter primary widgets. It
+        is fragile and should not be used as template for future developments.
+        Any proposed refactoring should consider abandoning these classes and using the newer
+        composed classes of guiwidgets_2 as a model for future development.
+    """
     
     # On exit this callback will be called with a dictionary of fields and user entered values.
     commit_callback: Callable[[config.MovieDef, Sequence[str]], None]
@@ -261,7 +272,14 @@ class CommonButtonbox(MovieGUIBase):
 
 @dataclass
 class AddMovieGUI(CommonButtonbox):
-    """ A form for adding a movie."""
+    """ A form for adding a movie.
+    
+    WARNING:
+        This module uses the original subclassed approach to Tkinter primary widgets. It
+        is fragile and should not be used as template for future developments.
+        Any proposed refactoring should consider abandoning these classes and using the newer
+        composed classes of guiwidgets_2 as a model for future development.
+    """
     
     # Tags list
     all_tags: Sequence[str]
@@ -273,7 +291,7 @@ class AddMovieGUI(CommonButtonbox):
         
         # Create entry fields and their labels.
         # moviedb-#132 Make 'notes' field into a tk.Text field (NB: no ttk.Text field)
-        for row_ix, internal_name in enumerate(INTERNAL_NAMES):
+        for row_ix, internal_name in enumerate(MOVIE_FIELD_NAMES):
             label = ttk.Label(body_frame, text=self.entry_fields[internal_name].label_text)
             label.grid(column=0, row=row_ix, sticky='e', padx=5)
             entry = ttk.Entry(body_frame, textvariable=self.entry_fields[internal_name].textvariable,
@@ -307,7 +325,14 @@ class AddMovieGUI(CommonButtonbox):
 
 @dataclass
 class EditMovieGUI(CommonButtonbox):
-    """ A form for editing a movie."""
+    """ A form for editing a movie.
+    
+    WARNING:
+        This module uses the original subclassed approach to Tkinter primary widgets. It
+        is fragile and should not be used as template for future developments.
+        Any proposed refactoring should consider abandoning these classes and using the newer
+        composed classes of guiwidgets_2 as a model for future development.
+    """
     
     # On exit this callback will be called with a dictionary of fields and user entered values.
     commit_callback: Callable[[config.MovieUpdateDef, Sequence[str]], None]
@@ -331,13 +356,13 @@ class EditMovieGUI(CommonButtonbox):
         body_frame = super().create_body(outerframe)
         
         # Create entry fields and their labels.
-        for row_ix, internal_name in enumerate(INTERNAL_NAMES):
+        for row_ix, internal_name in enumerate(MOVIE_FIELD_NAMES):
             label = ttk.Label(body_frame, text=self.entry_fields[internal_name].label_text)
             label.grid(column=0, row=row_ix, sticky='e', padx=5)
             entry = ttk.Entry(body_frame, textvariable=self.entry_fields[internal_name].textvariable,
                               width=36)
             entry.grid(column=1, row=row_ix)
-            
+    
             entry_field = self.entry_fields[internal_name]
             entry_field.widget = entry
             # PyCharm https://youtrack.jetbrains.com/issue/PY-40397
@@ -357,7 +382,14 @@ class EditMovieGUI(CommonButtonbox):
         
 @dataclass
 class SearchMovieGUI(MovieGUIBase):
-    """A form for searching for a movie."""
+    """A form for searching for a movie.
+    
+    WARNING:
+        This module uses the original subclassed approach to Tkinter primary widgets. It
+        is fragile and should not be used as template for future developments.
+        Any proposed refactoring should consider abandoning these classes and using the newer
+        composed classes of guiwidgets_2 as a model for future development.
+    """
     
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.FindMovieDef, Sequence[str]], None]
@@ -472,7 +504,7 @@ class SearchMovieGUI(MovieGUIBase):
         # Commit and exit
         try:
             self.callback(return_fields, self.selected_tags)
-        except exception.MovieSearchFoundNothing:
+        except exception.DatabaseSearchFoundNothing:
             # Warn user and give user the opportunity to reenter the search criteria.
             parent = self.parent
             message = 'No matches'
@@ -484,7 +516,14 @@ class SearchMovieGUI(MovieGUIBase):
 
 @dataclass
 class SelectMovieGUI(MovieGUIBase):
-    """A form for selecting a movie."""
+    """A form for selecting a movie.
+    
+    WARNING:
+        This module uses the original subclassed approach to Tkinter primary widgets. It
+        is fragile and should not be used as template for future developments.
+        Any proposed refactoring should consider abandoning these classes and using the newer
+        composed classes of guiwidgets_2 as a model for future development.
+    """
     # A generator of compliant movie records.
     movies: List[config.MovieUpdateDef]
     # On exit this callback will be called with a dictionary of fields and user entered values.
@@ -496,17 +535,17 @@ class SelectMovieGUI(MovieGUIBase):
         
         # Create and grid treeview
         tree = ttk.Treeview(body_frame,
-                            columns=INTERNAL_NAMES[1:],
+                            columns=MOVIE_FIELD_NAMES[1:],
                             height=25, selectmode='browse')
         tree.grid(column=0, row=0, sticky='w')
         
         # Set up column widths and titles
         column_widths = (350, 50, 100, 50, 350)
-        for column_ix, internal_name in enumerate(INTERNAL_NAMES):
+        for column_ix, internal_name in enumerate(MOVIE_FIELD_NAMES):
             if column_ix == 0:
                 internal_name = '#0'
             tree.column(internal_name, width=column_widths[column_ix])
-            tree.heading(internal_name, text=FIELD_TEXTS[column_ix])
+            tree.heading(internal_name, text=MOVIE_FIELD_TEXTS[column_ix])
         
         # Populate rows with movies
         for movie in self.movies:
@@ -546,39 +585,6 @@ class SelectMovieGUI(MovieGUIBase):
     
         # Cancel button
         self.create_cancel_button(buttonbox, column=0)
-
-
-@dataclass
-class TagGUIBase:
-    """A base class for the Tag GUI"""
-    parent: tk.Tk
-    commit_callback: Callable[[str], None]
-    # The caller shall specify the buttons which are to be shown in the buttonbox with thw exception
-    # of the cancel button which will always be provided. THe available buttons are those listed.
-    buttons_to_show: List[Literal['commit', 'delete']]
-    
-    # TODO
-    #   Code
-    #   Test
-    #   Document
-
-
-@dataclass
-class AddTagGUI(TagGUIBase):
-    # TODO
-    #   Code
-    #   Test
-    #   Document
-    pass
-
-
-@dataclass
-class EditTagGUI(TagGUIBase):
-    # TODO
-    #   Code
-    #   Test
-    #   Document
-    pass
 
 
 @dataclass
@@ -656,26 +662,3 @@ class MovieTreeview:
                                  set(current_selection) != set(self.initial_selection))
         
         return update_tag_selection
-
-
-def gui_messagebox(parent: ParentType, message: str, detail: str = '', icon: str = 'info'):
-    """Present a Tk messagebox."""
-    messagebox.showinfo(parent, message, detail=detail, icon=icon)
-
-
-def gui_askopenfilename(parent: ParentType, filetypes: Sequence[Sequence[str]]):
-    """Present a Tk askopenfilename."""
-    return filedialog.askopenfilename(parent=parent, filetypes=filetypes)
-
-
-@dataclass
-class EntryField:
-    """A support class for attributes of a gui entry field."""
-    label_text: str
-    original_value: str
-    widget: ttk.Entry = None
-    textvariable: tk.StringVar = None
-    observer: neurons.Observer = field(default_factory=neurons.Observer, init=False, repr=False)
-    
-    def __post_init__(self):
-        self.textvariable = tk.StringVar()
