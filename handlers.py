@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/20/20, 2:51 PM by stephen.
+#  Last modified 6/23/20, 6:34 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -203,8 +203,6 @@ def search_tag_callback(tag_pattern: str):
     Raises:
         DatabaseSearchFoundNothing if no matching tags are found.
     """
-    # moviedb-#169
-    #   Check 0, 1, and many handling
     tags = database.find_tags(tag_pattern)
     tags_found = len(tags)
     if tags_found <= 0:
@@ -213,8 +211,6 @@ def search_tag_callback(tag_pattern: str):
         tag = tags[0]
         delete_callback = delete_tag_callback_wrapper(tag)
         edit_callback = edit_tag_callback_wrapper(tag)
-        # moviedb-#193  Pass tag To EditTagGUI
-        #   Test
         guiwidgets_2.EditTagGUI(config.app.tk_root, tag, delete_callback, edit_callback)
     else:
         guiwidgets_2.SelectTagGUI(config.app.tk_root, select_tag_callback, tags)
@@ -239,13 +235,6 @@ def edit_tag_callback_wrapper(old_tag: str) -> Callable:
         Args:
             new_tag:
         """
-        # moviedb-#169
-        #   Integration Tests:
-        #       Edit a tag with no links to any movie records
-        #       Edit a tag with a link to a single movie record. Ensure movies remain correctly linked.
-        #       Edit a tag with links to more than one movie record. Ensure movies remain
-        #       correctly linked.
-        #       Edit a tag that has been removed from the database during the edit process.
 
         missing_tag_args = (config.app.tk_root, 'Missing tag',
                             f'The tag {old_tag} is no longer available. It may have been '
@@ -275,14 +264,6 @@ def delete_tag_callback_wrapper(tag: str) -> Callable:
         If the tag is no longer in the database this function assumes that it has been deleted by
         another process. The database error is silently suppressed.
         """
-        # moviedb-#170
-        #   Integration Tests:
-        #       Delete a tag with no links to any movie records
-        #       Delete a tag with a link to a single movie record. Ensure movies remain correctly linked.
-        #       Delete a tag with links to more than one movie record. Ensure movies remain
-        #       correctly linked.
-        #       Delete a tag that has been removed from the database during the edit process.
-        
         try:
             database.del_tag(tag)
         
