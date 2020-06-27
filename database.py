@@ -131,7 +131,14 @@ def edit_movie(title_year: FindMovieDef, updates: MovieUpdateDef):
         title_year: Specifies the movie to be selected.
         updates: Contains the fields which will be updated in the selected movie.
     """
-    
+    # moviedb-#173 Unable to edit movie title or year
+    #   Delete and add movie within a single seesion so everything can be rolled back.
+    #   Handle:
+    #       Existing record no longer exists - So don't try to delete it.
+    #       New record already exists -
+    #           Notify user and if user confirms then delete and add.
+    #           This will arise if the user edited the title or year of record A so that the new
+    #           title/year combination mataches a record B which is already in the database.
     try:
         with _session_scope() as session:
             movie = _build_movie_query(session, title_year).one()
@@ -148,7 +155,7 @@ def del_movie(title_year: FindMovieDef):
     """Change fields in records.
 
     Args:
-        title_year: Specifies teh movie to be deleted.
+        title_year: Specifies the movie to be deleted.
     """
     with _session_scope() as session:
         movie = _build_movie_query(session, title_year).one()

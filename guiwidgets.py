@@ -103,7 +103,7 @@ class MovieGUIBase:
         cancel.bind('<Return>', lambda event, b=cancel: b.invoke())
         cancel.focus_set()
     
-    def neuron_linker(self, internal_name: str, neuron: neurons.AndNeuron,
+    def neuron_linker(self, internal_name: str, neuron: neurons.Neuron,
                       neuron_callback: Callable, initial_state: bool = False):
         """Set a neuron callback which will be called whenever the field is changed by the user.
         

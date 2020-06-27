@@ -144,22 +144,43 @@ def edit_movie_callback(updates: config.MovieUpdateDef, selected_tags: Sequence[
     """ Change movie and links in database in accordance with new user supplied data,
 
     Args:
-        updates: Fields modified by the user or not.
-        selected_tags: Tags selected by the user or previously selected for this record. Tags
-            deselected by the user are not included.
+        updates: Fields with either original values or values modified by the user.
+        selected_tags: Either:
+            Previously unselected tags that have been selected by the user.
+            Previously selected tags that have not been deselected by the user.
     """
     # Edit the movie
     movie = config.FindMovieDef(title=updates['title'], year=[updates['year']])
     missing_movie_args = (config.app.tk_root, 'Missing movie',
                           f'The movie {movie} is no longer available. It may have been '
                           f'deleted by another process.')
+
+
+    # moviedb-#173
+    #   Annotate process for bringing old movie key from caller
     
+    # moviedb-#173 Unable to edit movie title or year
+    #   Pass original movie key from caller
+
+    # moviedb-#173 Unable to edit movie title or year
+    #       If not found raise DatabaseSearchFoundNothing
+    #           Show a dialog with this text:
+    #           'Original record no longer in database'
+    #           'It may have been deleted by another process.'
+
+    # moviedb-#173 Unable to edit movie title or year
+    #   Try to add the original record.
+
+    # moviedb-#173 Unable to edit movie title or year
+    #   Delete this suite - database.edit_movie is going to be deleted
     try:
         database.edit_movie(movie, updates)
     except exception.DatabaseSearchFoundNothing:
         guiwidgets.gui_messagebox(*missing_movie_args)
         return
-    
+
+    # moviedb-#173 Unable to edit movie title or year
+    #   ADD selected tags to newly created movie record.
     # Edit links
     movie = config.MovieKeyDef(title=updates['title'], year=updates['year'])
     old_tags = database.movie_tags(movie)
