@@ -251,10 +251,13 @@ class CommonButtonbox(MovieGUIBase):
         # Commit and exit
         try:
             self.commit_callback(return_fields, self.selected_tags)
+
+        # moviedb-#173 Remove this redundant exception code
         except exception.MovieDBConstraintFailure:
             msg = 'Database constraint failure.'
             detail = 'A movie with this title and year is already present in the database.'
             messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
+            
         else:
             self.destroy()
     
@@ -549,6 +552,7 @@ class SelectMovieGUI(MovieGUIBase):
         
         # Populate rows with movies
         for movie in self.movies:
+            # moviedb-#173 title and year no longer a unique identifier.
             # moviedb-#134 Can iid be improved so unmangling in selection callback is simplified
             #   currently tree.selection()[0][1:-1].split(',')
             tree.insert('', 'end', iid=f"{(title := movie['title'], year := movie['year'])}",

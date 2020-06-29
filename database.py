@@ -131,14 +131,6 @@ def edit_movie(title_year: FindMovieDef, updates: MovieUpdateDef):
         title_year: Specifies the movie to be selected.
         updates: Contains the fields which will be updated in the selected movie.
     """
-    # moviedb-#173 Unable to edit movie title or year
-    #   Delete and add movie within a single seesion so everything can be rolled back.
-    #   Handle:
-    #       Existing record no longer exists - So don't try to delete it.
-    #       New record already exists -
-    #           Notify user and if user confirms then delete and add.
-    #           This will arise if the user edited the title or year of record A so that the new
-    #           title/year combination mataches a record B which is already in the database.
     try:
         with _session_scope() as session:
             movie = _build_movie_query(session, title_year).one()
@@ -309,7 +301,7 @@ class Movie(Base):
                   nullable=False)
     # moviedb-#127 Add a synopsis field
     notes = Column(Text)
-    UniqueConstraint(title, year)
+    # UniqueConstraint(title, year)
 
     tags = relationship('Tag', secondary='movie_tag', back_populates='movies')
     reviews = relationship('Review', secondary='movie_review', back_populates='movies')
@@ -348,6 +340,8 @@ class Movie(Base):
         try:
             with _session_scope() as session:
                 session.add(self)
+        
+        # moviedb-#173 Remove this redundant exception code
         except sqlalchemy.exc.IntegrityError as exc:
             if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
                 msg = exc.orig.args[0]

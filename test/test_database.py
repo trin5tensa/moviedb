@@ -159,16 +159,6 @@ def test_add_movie_with_non_numeric_values(connection, session, monkeypatch):
     assert calls[0] == logging_msg
 
 
-def test_add_movie_with_integrity_error(connection, session, hamlet, monkeypatch):
-    calls = []
-    monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
-    
-    database.add_movie(hamlet)
-    with pytest.raises(exception.MovieDBConstraintFailure):
-        database.add_movie(hamlet)
-    assert calls == ['UNIQUE constraint failed: movies.title, movies.year']
-
-
 def test_add_movie_with_notes(connection, session, revanche):
     expected = tuple(revanche.values())
     database.add_movie(revanche)

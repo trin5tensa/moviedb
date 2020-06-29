@@ -154,33 +154,12 @@ def edit_movie_callback(updates: config.MovieUpdateDef, selected_tags: Sequence[
     missing_movie_args = (config.app.tk_root, 'Missing movie',
                           f'The movie {movie} is no longer available. It may have been '
                           f'deleted by another process.')
-
-
-    # moviedb-#173
-    #   Annotate process for bringing old movie key from caller
-    
-    # moviedb-#173 Unable to edit movie title or year
-    #   Pass original movie key from caller
-
-    # moviedb-#173 Unable to edit movie title or year
-    #       If not found raise DatabaseSearchFoundNothing
-    #           Show a dialog with this text:
-    #           'Original record no longer in database'
-    #           'It may have been deleted by another process.'
-
-    # moviedb-#173 Unable to edit movie title or year
-    #   Try to add the original record.
-
-    # moviedb-#173 Unable to edit movie title or year
-    #   Delete this suite - database.edit_movie is going to be deleted
     try:
         database.edit_movie(movie, updates)
     except exception.DatabaseSearchFoundNothing:
         guiwidgets.gui_messagebox(*missing_movie_args)
         return
 
-    # moviedb-#173 Unable to edit movie title or year
-    #   ADD selected tags to newly created movie record.
     # Edit links
     movie = config.MovieKeyDef(title=updates['title'], year=updates['year'])
     old_tags = database.movie_tags(movie)

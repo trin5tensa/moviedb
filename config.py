@@ -22,7 +22,11 @@ mainwindow: 'mainwindow'
 
 
 class MovieKeyDef(TypedDict):
-    """Mandatory fields for a movie."""
+    """Mandatory field for a movie."""
+    # moviedb-#173
+    # Daybreak
+    #   Add id: int
+    #   Move title and year to MovieDef
     title: str
     year: int
 
@@ -38,6 +42,8 @@ class MovieUpdateDef(TypedDict, total=False):
     """A dictionary of fields for updating.
     
     WARNING: Only use this definition for updating existing records."""
+    # moviedb-#173
+    #   DO NOT add id here. The id of a movie record cannot be updated.
     title: str
     director: str
     year: int
