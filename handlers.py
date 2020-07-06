@@ -132,41 +132,58 @@ def search_movie_callback(criteria: config.FindMovieDef, tags: Sequence[str]):
         raise exception.DatabaseSearchFoundNothing
     elif movies_found == 1:
         movie = movies[0]
+        movie_key = config.MovieKeyDef(title=movie['title'], year=movie['year'])
         # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
         # noinspection PyTypeChecker
-        guiwidgets.EditMovieGUI(config.app.tk_root, edit_movie_callback, delete_movie_callback,
-                                ['commit', 'delete'], database.all_tags(), movie)
+        guiwidgets.EditMovieGUI(config.app.tk_root, edit_movie_callback_wrapper(movie_key),
+                                delete_movie_callback, ['commit', 'delete'],
+                                database.all_tags(), movie)
     else:
         guiwidgets.SelectMovieGUI(config.app.tk_root, movies, select_movie_callback)
 
 
-def edit_movie_callback(updates: config.MovieUpdateDef, selected_tags: Sequence[str]):
-    """ Change movie and links in database in accordance with new user supplied data,
-
+def edit_movie_callback_wrapper(old_movie: config.MovieKeyDef) -> Callable:
+    """ Crete the edit movie callback
+    
     Args:
-        updates: Fields with either original values or values modified by the user.
-        selected_tags: Either:
-            Previously unselected tags that have been selected by the user.
-            Previously selected tags that have not been deselected by the user.
-    """
-    # Edit the movie
-    movie = config.FindMovieDef(title=updates['title'], year=[updates['year']])
-    missing_movie_args = (config.app.tk_root, 'Missing movie',
-                          f'The movie {movie} is no longer available. It may have been '
-                          f'deleted by another process.')
-    try:
-        database.edit_movie(movie, updates)
-    except exception.DatabaseSearchFoundNothing:
-        guiwidgets.gui_messagebox(*missing_movie_args)
-        return
+        old_movie: The movie that is to be edited.
+            The record's key values may be altered by the user. THe edit routing will delete the old
+            record and add the changed details as a new record.
 
-    # Edit links
-    movie = config.MovieKeyDef(title=updates['title'], year=updates['year'])
-    old_tags = database.movie_tags(movie)
-    try:
-        database.edit_movies_tag(movie, old_tags, selected_tags)
-    except exception.DatabaseSearchFoundNothing:
-        guiwidgets.gui_messagebox(*missing_movie_args)
+    Returns:
+        edit_movie_callback
+    """
+    # moviedb-#173
+    #   Review docs and update
+    #   Fix broken tests
+    #   Check test coverage
+    def edit_movie_callback(new_movie: config.MovieDef, selected_tags: Sequence[str]):
+        """ Change movie and links in database in accordance with new user supplied data,
+    
+        Args:
+            new_movie: Fields with either original values or values modified by the user.
+            selected_tags:
+                Consist of:
+                Previously unselected tags that have been selected by the user
+                And previously selected tags that have not been deselected by the user.
+        """
+        
+        # Edit the movie
+        database.replace_movie(old_movie, new_movie)
+        
+        # Edit links
+        old_tags = database.movie_tags(old_movie)
+        new_movie = config.MovieKeyDef(title=new_movie['title'], year=new_movie['year'])
+        
+        try:
+            database.edit_movies_tag(new_movie, old_tags, selected_tags)
+        except exception.DatabaseSearchFoundNothing:
+            missing_movie_args = (config.app.tk_root, 'Missing movie',
+                                  f'The movie {old_movie} is no longer available. It may have been '
+                                  f'deleted by another process.')
+            guiwidgets.gui_messagebox(*missing_movie_args)
+            
+    return edit_movie_callback
 
 
 def select_movie_callback(title: str, year: int):
@@ -176,12 +193,17 @@ def select_movie_callback(title: str, year: int):
         title:
         year:
     """
+    # moviedb-#173
+    #   Review docs and update
+    #   Fix broken tests
+    #   Check test coverage
     # Get record from database
     movie = database.find_movies(dict(title=title, year=year))[0]
+    movie_key = config.MovieKeyDef(title=movie['title'], year=movie['year'])
     # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker
-    guiwidgets.EditMovieGUI(config.app.tk_root, edit_movie_callback, delete_movie_callback,
-                            ['commit', 'delete'], database.all_tags(), movie)
+    guiwidgets.EditMovieGUI(config.app.tk_root, edit_movie_callback_wrapper(movie_key),
+                            delete_movie_callback, ['commit', 'delete'], database.all_tags(), movie)
 
 
 def add_tag_callback(tag: str):

@@ -18,7 +18,7 @@ import itertools
 import logging
 import sys
 from contextlib import contextmanager
-from typing import Generator, Iterable, List, Optional
+from typing import Generator, Iterable, List, Optional, Union
 
 import sqlalchemy
 import sqlalchemy.exc
@@ -47,6 +47,9 @@ movie_review = Table('movie_review', Base.metadata,
                      Column('reviews_id', ForeignKey('reviews.id'), primary_key=True))
 engine: Optional[sqlalchemy.engine.base.Engine] = None
 Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
+
+
+MovieSearch = Union[MovieKeyDef, MovieDef, FindMovieDef]
 
 
 def connect_to_database(filename: str = database_fn):
@@ -113,42 +116,47 @@ def find_movies(criteria: FindMovieDef) -> List[MovieUpdateDef]:
     Returns:
         A list of movies compliant with the search criteria sorted by title and year.
     """
+    # moviedb-#173
+    #   Review docs and update
+    #   Fix broken tests
+    #   Check test coverage
     Movie.validate_columns(criteria.keys())
     
     with _session_scope() as session:
-        movies = _build_movie_query(session, criteria)
+        query = _build_movie_query(session, criteria)
+
     movies = [MovieUpdateDef(title=movie.title, director=movie.director, minutes=movie.minutes,
                              year=movie.year, notes=movie.notes, tags=[tag.tag for tag in movie.tags])
-              for movie in movies]
+              for movie in query]
     movies.sort(key=lambda movie: movie['title'] + str(movie['year']))
     return movies
 
 
-def edit_movie(title_year: FindMovieDef, updates: MovieUpdateDef):
+def replace_movie(old_movie: MovieKeyDef, new_movie: MovieDef):
     """Search for one movie and change one or more fields of that movie.
 
     Args:
-        title_year: Specifies the movie to be selected.
-        updates: Contains the fields which will be updated in the selected movie.
+        old_movie: Specifies the movie to be replaced.
+        new_movie: Specifies the replacing movie..
     """
-    try:
-        with _session_scope() as session:
-            movie = _build_movie_query(session, title_year).one()
-            movie.edit(updates)
+    # moviedb-#173
+    #   Review docs and update
+    #   Fix broken tests
+    #   Check test coverage
+    with _session_scope() as session:
+        movie = _build_movie_query(session, old_movie).one_or_none()
+        if movie:
+            session.delete(movie)
+        add_movie(new_movie)
     
-    # The specified movie is not available possibly because it was deleted by another process.
-    except sqlalchemy.orm.exc.NoResultFound as exc:
-        msg = f"The movie {title_year['title']}, {title_year['year'][0]} is not in the database."
-        logging.info(msg)
-        raise exception.DatabaseSearchFoundNothing(msg) from exc
-
-
+    
 def del_movie(title_year: FindMovieDef):
     """Change fields in records.
 
     Args:
         title_year: Specifies the movie to be deleted.
     """
+    # TODO Change title_year type to MovieKeyDef
     with _session_scope() as session:
         movie = _build_movie_query(session, title_year).one()
         session.delete(movie)
@@ -341,7 +349,6 @@ class Movie(Base):
             with _session_scope() as session:
                 session.add(self)
         
-        # moviedb-#173 Remove this redundant exception code
         except sqlalchemy.exc.IntegrityError as exc:
             if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
                 msg = exc.orig.args[0]
@@ -357,6 +364,7 @@ class Movie(Base):
             updates: Dictionary of fields to be updated. See find_movies for detailed description.
             e.g. {notes='Science Fiction'}
         """
+        # moviedb-#173 Does anything use this method?
         self.validate_columns(updates.keys())
         for key, value in updates.items():
             setattr(self, key, value)
@@ -454,7 +462,7 @@ def _session_scope() -> Generator[Session, None, None]:
         session.close()
 
 
-def _build_movie_query(session: Session, criteria: FindMovieDef) -> sqlalchemy.orm.query.Query:
+def _build_movie_query(session: Session, criteria: MovieSearch) -> sqlalchemy.orm.query.Query:
     """Build a query.
 
     Args:
@@ -465,11 +473,13 @@ def _build_movie_query(session: Session, criteria: FindMovieDef) -> sqlalchemy.o
     Returns:
         An SQL Query object
     """
+    # moviedb-#173
+    #   Review docs and update
+    #   Fix broken tests
+    #   Check test coverage
 
     # noinspection PyUnresolvedReferences
     movies = session.query(Movie).outerjoin(Movie.tags)
-    if 'id' in criteria:
-        movies = movies.filter(Movie.id == criteria['id'])
     if 'title' in criteria:
         movies = movies.filter(Movie.title.like(f"%{criteria['title']}%"))
     if 'director' in criteria:

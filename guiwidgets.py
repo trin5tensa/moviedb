@@ -252,7 +252,6 @@ class CommonButtonbox(MovieGUIBase):
         try:
             self.commit_callback(return_fields, self.selected_tags)
 
-        # moviedb-#173 Remove this redundant exception code
         except exception.MovieDBConstraintFailure:
             msg = 'Database constraint failure.'
             detail = 'A movie with this title and year is already present in the database.'
@@ -336,9 +335,15 @@ class EditMovieGUI(CommonButtonbox):
         Any proposed refactoring should consider abandoning these classes and using the newer
         composed classes of guiwidgets_2 as a model for future development.
     """
-    
+    # moviedb-#173
+    #   Review docs and update
+    #   Fix broken tests
+    #   Check test coverage
+
+    # Moviedb-#173
+    #  commit_callback is already present in a superclass. Delete after all other #173 work is complete.
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    commit_callback: Callable[[config.MovieUpdateDef, Sequence[str]], None]
+    commit_callback: Callable[[config.MovieDef, Sequence[str]], None]
     # Tags list
     all_tags: Sequence[str]
     # Fields of the movie to be edited.
@@ -552,8 +557,7 @@ class SelectMovieGUI(MovieGUIBase):
         
         # Populate rows with movies
         for movie in self.movies:
-            # moviedb-#173 title and year no longer a unique identifier.
-            # moviedb-#134 Can iid be improved so unmangling in selection callback is simplified
+            # moviedb-#134 Can iid be improved so unmangling in selection callback is simplified?
             #   currently tree.selection()[0][1:-1].split(',')
             tree.insert('', 'end', iid=f"{(title := movie['title'], year := movie['year'])}",
                         text=title,

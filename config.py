@@ -21,12 +21,13 @@ tk: 'tk'
 mainwindow: 'mainwindow'
 
 
+# moviedb-#173 CleanUp
+#   Change TypedDict names from …Def to …TypedDict
+#   Move all TypedDicts to database.py
+
+
 class MovieKeyDef(TypedDict):
     """Mandatory field for a movie."""
-    # moviedb-#173
-    # Daybreak
-    #   Add id: int
-    #   Move title and year to MovieDef
     title: str
     year: int
 
@@ -42,8 +43,6 @@ class MovieUpdateDef(TypedDict, total=False):
     """A dictionary of fields for updating.
     
     WARNING: Only use this definition for updating existing records."""
-    # moviedb-#173
-    #   DO NOT add id here. The id of a movie record cannot be updated.
     title: str
     director: str
     year: int
@@ -63,7 +62,6 @@ class FindMovieDef(TypedDict, total=False):
             notes: A matching column will be a superstring of this value.
             tag: Movies matching any tag in this list will be selected.
     """
-    id: int
     title: str
     year: Sequence[int]
     director: str
