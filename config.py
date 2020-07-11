@@ -21,7 +21,7 @@ tk: 'tk'
 mainwindow: 'mainwindow'
 
 
-# moviedb-#173 CleanUp
+# moviedb-#173 Clean Up
 #   Change TypedDict names from …Def to …TypedDict
 #   Move all TypedDicts to database.py
 

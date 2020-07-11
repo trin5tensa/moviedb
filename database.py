@@ -116,10 +116,6 @@ def find_movies(criteria: FindMovieDef) -> List[MovieUpdateDef]:
     Returns:
         A list of movies compliant with the search criteria sorted by title and year.
     """
-    # moviedb-#173
-    #   Review docs and update
-    #   Fix broken tests
-    #   Check test coverage
     Movie.validate_columns(criteria.keys())
     
     with _session_scope() as session:
@@ -139,10 +135,6 @@ def replace_movie(old_movie: MovieKeyDef, new_movie: MovieDef):
         old_movie: Specifies the movie to be replaced.
         new_movie: Specifies the replacing movie..
     """
-    # moviedb-#173
-    #   Review docs and update
-    #   Fix broken tests
-    #   Check test coverage
     with _session_scope() as session:
         movie = _build_movie_query(session, old_movie).one_or_none()
         if movie:
@@ -245,7 +237,7 @@ def edit_tag(old_tag: str, new_tag: str):
         raise exception.DatabaseSearchFoundNothing(msg) from exc
 
 
-def edit_movies_tag(movie: MovieKeyDef, old_tags: Iterable[str], new_tags: Iterable[str]):
+def edit_movie_tag_links(movie: MovieKeyDef, old_tags: Iterable[str], new_tags: Iterable[str]):
     """Replace the links to tags associated with a specified movie with links to a new set of tags.
     
     Args:
@@ -254,9 +246,8 @@ def edit_movies_tag(movie: MovieKeyDef, old_tags: Iterable[str], new_tags: Itera
         new_tags: The new set of tags which will be linked to the movie.
         
     Any tags which appear in both sets will be ignored.
-    This function edits links between movies and tags. Neither the movies nor the tags are edited.
+    This function relinks a movie and its tags. Neither the movie nor the tags are changed.
     """
-    
     try:
         with _session_scope() as session:
             movie = (session.query(Movie)
@@ -356,18 +347,6 @@ class Movie(Base):
                 raise exception.MovieDBConstraintFailure(msg) from exc
             else:
                 raise
-
-    def edit(self, updates: MovieUpdateDef):
-        """Edit any column of the table.
-
-        Args:
-            updates: Dictionary of fields to be updated. See find_movies for detailed description.
-            e.g. {notes='Science Fiction'}
-        """
-        # moviedb-#173 Does anything use this method?
-        self.validate_columns(updates.keys())
-        for key, value in updates.items():
-            setattr(self, key, value)
 
     @classmethod
     def validate_columns(cls, columns: Iterable[str]):

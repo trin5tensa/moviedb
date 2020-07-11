@@ -147,16 +147,12 @@ def edit_movie_callback_wrapper(old_movie: config.MovieKeyDef) -> Callable:
     
     Args:
         old_movie: The movie that is to be edited.
-            The record's key values may be altered by the user. THe edit routing will delete the old
+            The record's key values may be altered by the user. THe edit code will delete the old
             record and add the changed details as a new record.
 
     Returns:
         edit_movie_callback
     """
-    # moviedb-#173
-    #   Review docs and update
-    #   Fix broken tests
-    #   Check test coverage
     def edit_movie_callback(new_movie: config.MovieDef, selected_tags: Sequence[str]):
         """ Change movie and links in database in accordance with new user supplied data,
     
@@ -166,8 +162,10 @@ def edit_movie_callback_wrapper(old_movie: config.MovieKeyDef) -> Callable:
                 Consist of:
                 Previously unselected tags that have been selected by the user
                 And previously selected tags that have not been deselected by the user.
+                
+        Raises exception.DatabaseSearchFoundNothing
         """
-        
+
         # Edit the movie
         database.replace_movie(old_movie, new_movie)
         
@@ -176,11 +174,13 @@ def edit_movie_callback_wrapper(old_movie: config.MovieKeyDef) -> Callable:
         new_movie = config.MovieKeyDef(title=new_movie['title'], year=new_movie['year'])
         
         try:
-            database.edit_movies_tag(new_movie, old_tags, selected_tags)
+            database.edit_movie_tag_links(new_movie, old_tags, selected_tags)
+            
+        # Can't add tags because new movie has been deleted.
         except exception.DatabaseSearchFoundNothing:
             missing_movie_args = (config.app.tk_root, 'Missing movie',
-                                  f'The movie {old_movie} is no longer available. It may have been '
-                                  f'deleted by another process.')
+                                  f'The movie {new_movie} is no longer in the database. It may have '
+                                  f'been deleted by another process. ')
             guiwidgets.gui_messagebox(*missing_movie_args)
             
     return edit_movie_callback
@@ -193,10 +193,7 @@ def select_movie_callback(title: str, year: int):
         title:
         year:
     """
-    # moviedb-#173
-    #   Review docs and update
-    #   Fix broken tests
-    #   Check test coverage
+
     # Get record from database
     movie = database.find_movies(dict(title=title, year=year))[0]
     movie_key = config.MovieKeyDef(title=movie['title'], year=movie['year'])

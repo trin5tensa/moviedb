@@ -335,11 +335,6 @@ class EditMovieGUI(CommonButtonbox):
         Any proposed refactoring should consider abandoning these classes and using the newer
         composed classes of guiwidgets_2 as a model for future development.
     """
-    # moviedb-#173
-    #   Review docs and update
-    #   Fix broken tests
-    #   Check test coverage
-
     # Moviedb-#173
     #  commit_callback is already present in a superclass. Delete after all other #173 work is complete.
     # On exit this callback will be called with a dictionary of fields and user entered values.
