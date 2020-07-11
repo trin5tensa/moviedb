@@ -16,7 +16,7 @@
 from collections import deque
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Callable, List, Literal, Optional, Sequence
+from typing import Callable, List, Literal, Sequence
 
 import pytest
 
@@ -249,8 +249,8 @@ class TestSearchMovieCallback:
                                                             ['commit', 'delete'], all_tags, movie)
 
     def test_multiple_movies_found_calls_select_movie_gui(self, class_setup, monkeypatch):
-        movie1 = handlers.config.MovieUpdateDef(title='Test Movie 1')
-        movie2 = handlers.config.MovieUpdateDef(title='Test Movie 2')
+        movie1 = handlers.config.MovieUpdateDef(title='Test Movie 1', year=2042)
+        movie2 = handlers.config.MovieUpdateDef(title='Test Movie 2', year=2042)
         monkeypatch.setattr(handlers.database, 'find_movies',
                             self.configure_dummy_find_movies([movie1, movie2]))
         monkeypatch.setattr(handlers.guiwidgets,
@@ -296,6 +296,7 @@ class TestSearchMovieCallback:
             handlers.config.app = hold_app
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestEditMovieCallback:
     OLD_TITLE = 'Old Test Title'
     OLD_YEAR = 1942
@@ -333,6 +334,8 @@ class TestEditMovieCallback:
     def test_edit_movie_tag_link_raises_found_nothing(self, patches, monkeypatch):
         with self.class_context() as cm:
             self.gui_messagebox_calls = []
+
+            # noinspection PyUnusedLocal
             def dummy_edit_movie_tag_links(*args):
                 raise handlers.exception.DatabaseSearchFoundNothing
             
@@ -351,7 +354,7 @@ class TestEditMovieCallback:
                     DummyParent(),
                     'Missing movie',
                     f'The movie {self.NEW_MOVIE} is no longer in the database. It may have '
-                                                 f'been deleted by another process. ')]
+                    f'been deleted by another process. ')]
 
     def dummy_movie_tags(self, old_movie):
         self.movie_tags_calls.append((old_movie, ))
@@ -422,8 +425,10 @@ class TestSelectMovieCallback:
     def dummy_find_movies(self, *args):
         self.dummy_find_movies_calls.append(args)
         return self.MOVIES
-    
-    def dummy_edit_movie_callback_wrapper(self, old_movie: handlers.config.MovieKeyTypedDict) -> Callable:
+
+    # noinspection PyUnusedLocal
+    @staticmethod
+    def dummy_edit_movie_callback_wrapper(old_movie: handlers.config.MovieKeyTypedDict) -> Callable:
         def dummy_edit_movie_callback():
             pass
         return dummy_edit_movie_callback

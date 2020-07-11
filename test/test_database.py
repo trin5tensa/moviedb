@@ -237,8 +237,9 @@ class TestFindMovie:
         assert calls[0] == expected
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestReplaceMovie:
-    OLD_MOVIE: database.MovieKeyTypedDict = dict(title='Old Movie', year = 1942)
+    OLD_MOVIE: database.MovieKeyTypedDict = dict(title='Old Movie', year=1942)
     NEW_MOVIE: database.MovieTypedDict = dict(title='New Movie', year=2042, director='Starchild')
     
     build_movie_query_calls = None
@@ -268,7 +269,8 @@ class TestReplaceMovie:
     @contextmanager
     def class_context(self):
         yield database.replace_movie(self.OLD_MOVIE,  self.NEW_MOVIE)
-        
+
+    # noinspection PyMissingOrEmptyDocstring,PyMissingOrEmptyDocstring
     @dataclass
     class DummyQuery:
         def one_or_none(self):

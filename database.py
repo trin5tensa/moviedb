@@ -148,7 +148,6 @@ def del_movie(title_year: FindMovieTypedDict):
     Args:
         title_year: Specifies the movie to be deleted.
     """
-    # TODO Change title_year type to MovieKeyDef
     with _session_scope() as session:
         movie = _build_movie_query(session, title_year).one()
         session.delete(movie)
