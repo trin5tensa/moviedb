@@ -76,7 +76,7 @@ def import_movies():
                                   detail=exc.args[0], icon='warning')
 
 
-def add_movie_callback(movie: config.MovieDef, selected_tags: Sequence[str]):
+def add_movie_callback(movie: config.MovieTypedDict, selected_tags: Sequence[str]):
     """ Add user supplied data to the database.
 
     Args:
@@ -85,12 +85,12 @@ def add_movie_callback(movie: config.MovieDef, selected_tags: Sequence[str]):
     """
 
     database.add_movie(movie)
-    movie = config.MovieKeyDef(title=movie['title'], year=movie['year'])
+    movie = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
     for tag in selected_tags:
         database.add_movie_tag_link(tag, movie)
 
 
-def delete_movie_callback(movie: config.FindMovieDef):
+def delete_movie_callback(movie: config.FindMovieTypedDict):
     """Delete a movie.
     
     Args:
@@ -110,7 +110,7 @@ def delete_movie_callback(movie: config.FindMovieDef):
         pass
 
 
-def search_movie_callback(criteria: config.FindMovieDef, tags: Sequence[str]):
+def search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
     """Find movies which match the user entered criteria.
     Continue to the next appropriate stage of processing depending on whether no movies, one movie,
     or more than one movie is found.
@@ -132,7 +132,7 @@ def search_movie_callback(criteria: config.FindMovieDef, tags: Sequence[str]):
         raise exception.DatabaseSearchFoundNothing
     elif movies_found == 1:
         movie = movies[0]
-        movie_key = config.MovieKeyDef(title=movie['title'], year=movie['year'])
+        movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
         # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
         # noinspection PyTypeChecker
         guiwidgets.EditMovieGUI(config.app.tk_root, edit_movie_callback_wrapper(movie_key),
@@ -142,7 +142,7 @@ def search_movie_callback(criteria: config.FindMovieDef, tags: Sequence[str]):
         guiwidgets.SelectMovieGUI(config.app.tk_root, movies, select_movie_callback)
 
 
-def edit_movie_callback_wrapper(old_movie: config.MovieKeyDef) -> Callable:
+def edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callable:
     """ Crete the edit movie callback
     
     Args:
@@ -153,7 +153,7 @@ def edit_movie_callback_wrapper(old_movie: config.MovieKeyDef) -> Callable:
     Returns:
         edit_movie_callback
     """
-    def edit_movie_callback(new_movie: config.MovieDef, selected_tags: Sequence[str]):
+    def edit_movie_callback(new_movie: config.MovieTypedDict, selected_tags: Sequence[str]):
         """ Change movie and links in database in accordance with new user supplied data,
     
         Args:
@@ -171,7 +171,7 @@ def edit_movie_callback_wrapper(old_movie: config.MovieKeyDef) -> Callable:
         
         # Edit links
         old_tags = database.movie_tags(old_movie)
-        new_movie = config.MovieKeyDef(title=new_movie['title'], year=new_movie['year'])
+        new_movie = config.MovieKeyTypedDict(title=new_movie['title'], year=new_movie['year'])
         
         try:
             database.edit_movie_tag_links(new_movie, old_tags, selected_tags)
@@ -196,7 +196,7 @@ def select_movie_callback(title: str, year: int):
 
     # Get record from database
     movie = database.find_movies(dict(title=title, year=year))[0]
-    movie_key = config.MovieKeyDef(title=movie['title'], year=movie['year'])
+    movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
     # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker
     guiwidgets.EditMovieGUI(config.app.tk_root, edit_movie_callback_wrapper(movie_key),

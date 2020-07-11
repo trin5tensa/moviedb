@@ -201,10 +201,10 @@ class CommonButtonbox(MovieGUIBase):
     """
     
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    commit_callback: Callable[[config.MovieDef, Sequence[str]], None]
+    commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
     
     # If the user clicks the delete button this callback will be called.
-    delete_callback: Callable[[config.MovieKeyDef], None]
+    delete_callback: Callable[[config.MovieKeyTypedDict], None]
     
     # The caller shall specify the buttons which are to be shown in the buttonbox with thw exception
     # of the cancel button which will always be provided.
@@ -264,8 +264,8 @@ class CommonButtonbox(MovieGUIBase):
         """The user clicked the 'Delete' button. """
         if messagebox.askyesno(message='Do you want to delete this movie?',
                                icon='question', default='no', parent=self.parent):
-            movie = config.MovieKeyDef(title=self.entry_fields['title'].original_value,
-                                       year=int(self.entry_fields['year'].original_value))
+            movie = config.MovieKeyTypedDict(title=self.entry_fields['title'].original_value,
+                                             year=int(self.entry_fields['year'].original_value))
             # moviedb-#148 Handle exception for missing database record
             #   See test_guiwidgets.TestAddMovieGUI.test_commit_callback_method for test method
             self.delete_callback(movie)
@@ -335,10 +335,7 @@ class EditMovieGUI(CommonButtonbox):
         Any proposed refactoring should consider abandoning these classes and using the newer
         composed classes of guiwidgets_2 as a model for future development.
     """
-    # Moviedb-#173
-    #  commit_callback is already present in a superclass. Delete after all other #173 work is complete.
-    # On exit this callback will be called with a dictionary of fields and user entered values.
-    commit_callback: Callable[[config.MovieDef, Sequence[str]], None]
+
     # Tags list
     all_tags: Sequence[str]
     # Fields of the movie to be edited.
@@ -395,7 +392,7 @@ class SearchMovieGUI(MovieGUIBase):
     """
     
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[config.FindMovieDef, Sequence[str]], None]
+    callback: Callable[[config.FindMovieTypedDict, Sequence[str]], None]
     # Tags list
     all_tags: Sequence[str]
     

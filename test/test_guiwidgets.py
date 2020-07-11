@@ -1191,7 +1191,7 @@ commit_callback_calls = []
 
 
 # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring
-def dummy_commit_callback(movie_dict: guiwidgets.config.MovieDef, tags: Sequence[str]):
+def dummy_commit_callback(movie_dict: guiwidgets.config.MovieTypedDict, tags: Sequence[str]):
     commit_callback_calls.append((movie_dict, tags))
 
 
@@ -1199,5 +1199,5 @@ delete_callback_calls = []
 
 
 # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring
-def dummy_delete_callback(movie_dict: guiwidgets.config.MovieDef, tags: Sequence[str]):
+def dummy_delete_callback(movie_dict: guiwidgets.config.MovieTypedDict, tags: Sequence[str]):
     delete_callback_calls.append((movie_dict, tags))

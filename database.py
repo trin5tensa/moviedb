@@ -32,7 +32,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm.session import sessionmaker
 
 import exception
-from config import FindMovieDef, MovieDef, MovieKeyDef, MovieUpdateDef
+from config import FindMovieTypedDict, MovieTypedDict, MovieKeyTypedDict, MovieUpdateDef
 
 
 MUYBRIDGE = 1878
@@ -49,7 +49,7 @@ engine: Optional[sqlalchemy.engine.base.Engine] = None
 Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
 
 
-MovieSearch = Union[MovieKeyDef, MovieDef, FindMovieDef]
+MovieSearch = Union[MovieKeyTypedDict, MovieTypedDict, FindMovieTypedDict]
 
 
 def connect_to_database(filename: str = database_fn):
@@ -81,7 +81,7 @@ def connect_to_database(filename: str = database_fn):
             date_last_accessed.value = timestamp
 
 
-def add_movie(movie: MovieDef):
+def add_movie(movie: MovieTypedDict):
     """Add a movie to the database
 
     Args:
@@ -90,7 +90,7 @@ def add_movie(movie: MovieDef):
     Movie(**movie).add()
 
 
-def find_movies(criteria: FindMovieDef) -> List[MovieUpdateDef]:
+def find_movies(criteria: FindMovieTypedDict) -> List[MovieUpdateDef]:
     """Search for movies using any supplied_keys.
     
     Note:
@@ -128,7 +128,7 @@ def find_movies(criteria: FindMovieDef) -> List[MovieUpdateDef]:
     return movies
 
 
-def replace_movie(old_movie: MovieKeyDef, new_movie: MovieDef):
+def replace_movie(old_movie: MovieKeyTypedDict, new_movie: MovieTypedDict):
     """Search for one movie and change one or more fields of that movie.
 
     Args:
@@ -142,7 +142,7 @@ def replace_movie(old_movie: MovieKeyDef, new_movie: MovieDef):
         add_movie(new_movie)
     
     
-def del_movie(title_year: FindMovieDef):
+def del_movie(title_year: FindMovieTypedDict):
     """Change fields in records.
 
     Args:
@@ -164,7 +164,7 @@ def all_tags() -> List[str]:
     return [tag[0] for tag in tags]
 
 
-def movie_tags(title_year: MovieKeyDef) -> List[str]:
+def movie_tags(title_year: MovieKeyTypedDict) -> List[str]:
     """ List the tags of a movie.
     
     Returns: A list of tags
@@ -203,7 +203,7 @@ def find_tags(criteria: str) -> List[str]:
     return [tag.tag for tag in tags]
 
 
-def add_movie_tag_link(tag: str, movie: MovieKeyDef):
+def add_movie_tag_link(tag: str, movie: MovieKeyTypedDict):
     """Add link between a tag and a movie.
 
     Args:
@@ -237,7 +237,7 @@ def edit_tag(old_tag: str, new_tag: str):
         raise exception.DatabaseSearchFoundNothing(msg) from exc
 
 
-def edit_movie_tag_links(movie: MovieKeyDef, old_tags: Iterable[str], new_tags: Iterable[str]):
+def edit_movie_tag_links(movie: MovieKeyTypedDict, old_tags: Iterable[str], new_tags: Iterable[str]):
     """Replace the links to tags associated with a specified movie with links to a new set of tags.
     
     Args:
@@ -452,10 +452,6 @@ def _build_movie_query(session: Session, criteria: MovieSearch) -> sqlalchemy.or
     Returns:
         An SQL Query object
     """
-    # moviedb-#173
-    #   Review docs and update
-    #   Fix broken tests
-    #   Check test coverage
 
     # noinspection PyUnresolvedReferences
     movies = session.query(Movie).outerjoin(Movie.tags)

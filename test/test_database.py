@@ -76,12 +76,12 @@ def loaded_database(hamlet, solaris, dreams, revanche):
     with database._session_scope() as session:
         session.add_all(movies)
     database.add_tag('blue')
-    database.add_movie_tag_link('blue', database.MovieKeyDef(title='Hamlet', year=1996))
+    database.add_movie_tag_link('blue', database.MovieKeyTypedDict(title='Hamlet', year=1996))
     database.add_tag('yellow')
-    database.add_movie_tag_link('yellow', database.MovieKeyDef(title='Revanche', year=2008))
+    database.add_movie_tag_link('yellow', database.MovieKeyTypedDict(title='Revanche', year=2008))
     database.add_tag('green')
-    database.add_movie_tag_link('green', database.MovieKeyDef(title='Revanche', year=2008))
-    database.add_movie_tag_link('green', database.MovieKeyDef(title='Solaris', year=1972))
+    database.add_movie_tag_link('green', database.MovieKeyTypedDict(title='Revanche', year=2008))
+    database.add_movie_tag_link('green', database.MovieKeyTypedDict(title='Solaris', year=1972))
 
 
 def test_init_database_access_with_new_database(connection):
@@ -175,7 +175,7 @@ class TestFindMovie:
     
     def test_search_movie_year(self):
         test_year = 1996
-        movies = database.find_movies(database.FindMovieDef(year=[test_year]))
+        movies = database.find_movies(database.FindMovieTypedDict(year=[test_year]))
         assert movies[0]['year'] == test_year
     
     def test_search_movie_title(self):
@@ -207,7 +207,7 @@ class TestFindMovie:
     
     def test_search_movie_with_minute(self):
         expected = {169}
-        movies = database.find_movies(database.FindMovieDef(minutes=[169]))
+        movies = database.find_movies(database.FindMovieTypedDict(minutes=[169]))
         minutes = {movie['minutes'] for movie in movies}
         assert minutes == expected
     
@@ -238,8 +238,8 @@ class TestFindMovie:
 
 
 class TestReplaceMovie:
-    OLD_MOVIE: database.MovieKeyDef = dict(title='Old Movie', year = 1942)
-    NEW_MOVIE: database.MovieDef = dict(title='New Movie', year=2042, director='Starchild')
+    OLD_MOVIE: database.MovieKeyTypedDict = dict(title='Old Movie', year = 1942)
+    NEW_MOVIE: database.MovieTypedDict = dict(title='New Movie', year=2042, director='Starchild')
     
     build_movie_query_calls = None
     add_movie_calls = None
@@ -276,7 +276,7 @@ class TestReplaceMovie:
 
 
 def test_delete_movie(loaded_database):
-    database.del_movie(database.FindMovieDef(title='Solaris', year=[1972]))
+    database.del_movie(database.FindMovieTypedDict(title='Solaris', year=[1972]))
     movies = database.find_movies(dict(title='Solaris'))
     assert movies == []
 
@@ -287,7 +287,7 @@ def test_all_tags(loaded_database):
 
 
 def test_movie_tags(loaded_database, revanche):
-    title_year = database.MovieKeyDef(title=revanche['title'], year=revanche['year'])
+    title_year = database.MovieKeyTypedDict(title=revanche['title'], year=revanche['year'])
     tags = database.movie_tags(title_year)
     assert set(tags) == {'yellow', 'green'}
 
@@ -332,9 +332,9 @@ class TestTagOperations:
         expected = {'Solaris', "Akira Kurosawa's Dreams"}
         test_tag = 'Foreign'
         database.add_tag(test_tag)
-        movie = database.MovieKeyDef(title='Solaris', year=1972)
+        movie = database.MovieKeyTypedDict(title='Solaris', year=1972)
         database.add_movie_tag_link(test_tag, movie)
-        movie = database.MovieKeyDef(title="Akira Kurosawa's Dreams", year=1972)
+        movie = database.MovieKeyTypedDict(title="Akira Kurosawa's Dreams", year=1972)
         database.add_movie_tag_link(test_tag, movie)
 
         movies = (session.query(database.Movie.title)
@@ -345,7 +345,7 @@ class TestTagOperations:
     def test_edit_tag(self, session):
         old_tag = 'old test tag'
         database.add_tag(old_tag)
-        movie = database.MovieKeyDef(title='Solaris', year=1972)
+        movie = database.MovieKeyTypedDict(title='Solaris', year=1972)
         database.add_movie_tag_link(old_tag, movie)
         old_tag_id, tag = (session.query(database.Tag.id, database.Tag.tag)
                            .filter(database.Tag.tag == 'old test tag')
@@ -380,16 +380,16 @@ class TestTagOperations:
                          f"The tag {old_tag} is not in the database."]
 
     def test_edit_movies_tag(self, session):
-        title_year = database.MovieKeyDef(title='Revanche', year=2008)
+        title_year = database.MovieKeyTypedDict(title='Revanche', year=2008)
         old_tags = ('green', 'yellow')
         new_tags = ('blue', 'yellow')
         database.edit_movie_tag_links(title_year, old_tags, new_tags)
-        movies = database.find_movies(database.FindMovieDef(title=title_year['title'],
-                                                            year=[title_year['year']]))
+        movies = database.find_movies(database.FindMovieTypedDict(title=title_year['title'],
+                                                                  year=[title_year['year']]))
         assert set(movies[0]['tags']) == {'blue', 'yellow'}
 
     def test_edit_movies_tag_raises_exception_movie_not_found(self, session):
-        title_year = database.MovieKeyDef(title='Non Existent Movie', year=1972)
+        title_year = database.MovieKeyTypedDict(title='Non Existent Movie', year=1972)
         new_tags = ('green', 'yellow')
         old_tags = ('blue', 'yellow')
         with pytest.raises(exception.DatabaseSearchFoundNothing) as cm:
@@ -403,7 +403,7 @@ class TestTagOperations:
     
         title = 'Non Existent Movie'
         year = 1972
-        title_year = database.MovieKeyDef(title=title, year=year)
+        title_year = database.MovieKeyTypedDict(title=title, year=year)
         new_tags = ('green', 'yellow')
         old_tags = ('blue', 'yellow')
         with pytest.raises(exception.DatabaseSearchFoundNothing):
@@ -416,9 +416,9 @@ class TestTagOperations:
         # Add a tag and links
         test_tag = 'Going soon'
         database.add_tag(test_tag)
-        movie = database.MovieKeyDef(title='Solaris', year=1972)
+        movie = database.MovieKeyTypedDict(title='Solaris', year=1972)
         database.add_movie_tag_link(test_tag, movie)
-        movie = database.MovieKeyDef(title='Hamlet', year=1996)
+        movie = database.MovieKeyTypedDict(title='Hamlet', year=1996)
         database.add_movie_tag_link(test_tag, movie)
         
         # Delete the tag

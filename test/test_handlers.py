@@ -84,7 +84,7 @@ class TestDeleteMovie:
     
     def test_delete_movie_called(self, monkeypatch):
         calls = []
-        movie = handlers.config.FindMovieDef(title='test title', year=[2042])
+        movie = handlers.config.FindMovieTypedDict(title='test title', year=[2042])
         monkeypatch.setattr(handlers.database, 'del_movie', lambda *args: calls.append(args))
         handlers.delete_movie_callback(movie)
         assert calls == [(movie,)]
@@ -299,11 +299,11 @@ class TestSearchMovieCallback:
 class TestEditMovieCallback:
     OLD_TITLE = 'Old Test Title'
     OLD_YEAR = 1942
-    OLD_MOVIE = handlers.config.MovieDef(title=OLD_TITLE, year=OLD_YEAR)
+    OLD_MOVIE = handlers.config.MovieTypedDict(title=OLD_TITLE, year=OLD_YEAR)
     OLD_TAGS = ['Tag 1', 'Tag 2']
     NEW_TITLE = 'Test Title'
     NEW_YEAR = 2042
-    NEW_MOVIE = handlers.config.MovieDef(title=NEW_TITLE, year=NEW_YEAR)
+    NEW_MOVIE = handlers.config.MovieTypedDict(title=NEW_TITLE, year=NEW_YEAR)
     NEW_TAGS = ['Tag 2', 'Tag 3']
 
     replace_movie_calls: List = None
@@ -370,7 +370,7 @@ class TestEditMovieCallback:
         
     @contextmanager
     def class_context(self):
-        old_movie: handlers.config.MovieDef = dict(title='Old Test Title', year=1942)
+        old_movie: handlers.config.MovieTypedDict = dict(title='Old Test Title', year=1942)
         yield handlers.edit_movie_callback_wrapper(old_movie)
     
 
@@ -423,7 +423,7 @@ class TestSelectMovieCallback:
         self.dummy_find_movies_calls.append(args)
         return self.MOVIES
     
-    def dummy_edit_movie_callback_wrapper(self, old_movie: handlers.config.MovieKeyDef) -> Callable:
+    def dummy_edit_movie_callback_wrapper(self, old_movie: handlers.config.MovieKeyTypedDict) -> Callable:
         def dummy_edit_movie_callback():
             pass
         return dummy_edit_movie_callback
