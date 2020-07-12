@@ -12,8 +12,7 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Dict
 
@@ -77,12 +76,12 @@ def loaded_database(hamlet, solaris, dreams, revanche):
     with database._session_scope() as session:
         session.add_all(movies)
     database.add_tag('blue')
-    database.add_movie_tag_link('blue', database.MovieKeyDef(title='Hamlet', year=1996))
+    database.add_movie_tag_link('blue', database.MovieKeyTypedDict(title='Hamlet', year=1996))
     database.add_tag('yellow')
-    database.add_movie_tag_link('yellow', database.MovieKeyDef(title='Revanche', year=2008))
+    database.add_movie_tag_link('yellow', database.MovieKeyTypedDict(title='Revanche', year=2008))
     database.add_tag('green')
-    database.add_movie_tag_link('green', database.MovieKeyDef(title='Revanche', year=2008))
-    database.add_movie_tag_link('green', database.MovieKeyDef(title='Solaris', year=1972))
+    database.add_movie_tag_link('green', database.MovieKeyTypedDict(title='Revanche', year=2008))
+    database.add_movie_tag_link('green', database.MovieKeyTypedDict(title='Solaris', year=1972))
 
 
 def test_init_database_access_with_new_database(connection):
@@ -159,16 +158,6 @@ def test_add_movie_with_non_numeric_values(connection, session, monkeypatch):
     assert calls[0] == logging_msg
 
 
-def test_add_movie_with_integrity_error(connection, session, hamlet, monkeypatch):
-    calls = []
-    monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
-    
-    database.add_movie(hamlet)
-    with pytest.raises(exception.MovieDBConstraintFailure):
-        database.add_movie(hamlet)
-    assert calls == ['UNIQUE constraint failed: movies.title, movies.year']
-
-
 def test_add_movie_with_notes(connection, session, revanche):
     expected = tuple(revanche.values())
     database.add_movie(revanche)
@@ -186,14 +175,8 @@ class TestFindMovie:
     
     def test_search_movie_year(self):
         test_year = 1996
-        movies = database.find_movies(dict(year=test_year))
+        movies = database.find_movies(database.FindMovieTypedDict(year=[test_year]))
         assert movies[0]['year'] == test_year
-    
-    def test_search_movie_id(self):
-        test_title = 'Hamlet'
-        test_id = 1
-        movies = database.find_movies(dict(id=test_id))
-        assert movies[0]['title'] == test_title
     
     def test_search_movie_title(self):
         expected = 'Hamlet'
@@ -224,7 +207,7 @@ class TestFindMovie:
     
     def test_search_movie_with_minute(self):
         expected = {169}
-        movies = database.find_movies(dict(minutes=169))
+        movies = database.find_movies(database.FindMovieTypedDict(minutes=[169]))
         minutes = {movie['minutes'] for movie in movies}
         assert minutes == expected
     
@@ -254,36 +237,48 @@ class TestFindMovie:
         assert calls[0] == expected
 
 
-def test_edit_movie(loaded_database):
-    database.edit_movie(database.FindMovieDef(title='Solaris', year=[1972]),
-                        dict(notes=(new_note := 'Science Fiction')))
-    movies = database.find_movies(dict(title='Solaris'))
-    assert movies[0]['notes'] == new_note
-
-
-def test_edit_movie_raises_movie_not_found_exception(loaded_database, monkeypatch):
-    monkeypatch.setattr(database.logging, 'error', lambda msg: None)
-    with pytest.raises(exception.DatabaseSearchFoundNothing) as cm:
-        database.edit_movie(database.FindMovieDef(title='Non Existent Movie', year=[1972]),
-                            dict(notes=''))
-    assert cm.typename == 'DatabaseSearchFoundNothing'
-    assert cm.match("The movie Non Existent Movie, 1972 is not in the database.")
-
-
-def test_edit_movie_logs_movie_not_found_exception(loaded_database, monkeypatch):
-    calls = []
-    monkeypatch.setattr(database.logging, 'info', lambda msg: calls.append(msg))
+# noinspection PyMissingOrEmptyDocstring
+class TestReplaceMovie:
+    OLD_MOVIE: database.MovieKeyTypedDict = dict(title='Old Movie', year=1942)
+    NEW_MOVIE: database.MovieTypedDict = dict(title='New Movie', year=2042, director='Starchild')
     
-    with pytest.raises(exception.DatabaseSearchFoundNothing):
-        database.edit_movie(database.FindMovieDef(title='Non Existent Movie', year=[1972]),
-                            dict(notes=''))
-    assert calls == [("An incomplete database session has been rolled back because of exception:\n"
-                      "NoResultFound"),
-                     'The movie Non Existent Movie, 1972 is not in the database.']
+    build_movie_query_calls = None
+    add_movie_calls = None
+
+    def test_build_movie_query_called(self, patches):
+        with self.class_context():
+            assert isinstance(self.build_movie_query_calls[0][0],
+                              database.sqlalchemy.orm.session.Session)
+            assert self.build_movie_query_calls[0][1] == self.OLD_MOVIE
+            
+    def test_add_movie_called(self, patches):
+        with self.class_context():
+            assert self.add_movie_calls == [(self.NEW_MOVIE, )]
+        
+    def dummy_build_movie_query(self, *args):
+        self.build_movie_query_calls.append(args)
+        return self.DummyQuery()
+
+    @pytest.fixture
+    def patches(self, monkeypatch):
+        self.build_movie_query_calls = []
+        self.add_movie_calls = []
+        monkeypatch.setattr(database, '_build_movie_query', self.dummy_build_movie_query)
+        monkeypatch.setattr(database, 'add_movie', lambda *args: self.add_movie_calls.append(args))
+
+    @contextmanager
+    def class_context(self):
+        yield database.replace_movie(self.OLD_MOVIE,  self.NEW_MOVIE)
+
+    # noinspection PyMissingOrEmptyDocstring,PyMissingOrEmptyDocstring
+    @dataclass
+    class DummyQuery:
+        def one_or_none(self):
+            pass
 
 
 def test_delete_movie(loaded_database):
-    database.del_movie(database.FindMovieDef(title='Solaris', year=[1972]))
+    database.del_movie(database.FindMovieTypedDict(title='Solaris', year=[1972]))
     movies = database.find_movies(dict(title='Solaris'))
     assert movies == []
 
@@ -294,7 +289,7 @@ def test_all_tags(loaded_database):
 
 
 def test_movie_tags(loaded_database, revanche):
-    title_year = database.MovieKeyDef(title=revanche['title'], year=revanche['year'])
+    title_year = database.MovieKeyTypedDict(title=revanche['title'], year=revanche['year'])
     tags = database.movie_tags(title_year)
     assert set(tags) == {'yellow', 'green'}
 
@@ -339,9 +334,9 @@ class TestTagOperations:
         expected = {'Solaris', "Akira Kurosawa's Dreams"}
         test_tag = 'Foreign'
         database.add_tag(test_tag)
-        movie = database.MovieKeyDef(title='Solaris', year=1972)
+        movie = database.MovieKeyTypedDict(title='Solaris', year=1972)
         database.add_movie_tag_link(test_tag, movie)
-        movie = database.MovieKeyDef(title="Akira Kurosawa's Dreams", year=1972)
+        movie = database.MovieKeyTypedDict(title="Akira Kurosawa's Dreams", year=1972)
         database.add_movie_tag_link(test_tag, movie)
 
         movies = (session.query(database.Movie.title)
@@ -352,7 +347,7 @@ class TestTagOperations:
     def test_edit_tag(self, session):
         old_tag = 'old test tag'
         database.add_tag(old_tag)
-        movie = database.MovieKeyDef(title='Solaris', year=1972)
+        movie = database.MovieKeyTypedDict(title='Solaris', year=1972)
         database.add_movie_tag_link(old_tag, movie)
         old_tag_id, tag = (session.query(database.Tag.id, database.Tag.tag)
                            .filter(database.Tag.tag == 'old test tag')
@@ -387,20 +382,20 @@ class TestTagOperations:
                          f"The tag {old_tag} is not in the database."]
 
     def test_edit_movies_tag(self, session):
-        title_year = database.MovieKeyDef(title='Revanche', year=2008)
+        title_year = database.MovieKeyTypedDict(title='Revanche', year=2008)
         old_tags = ('green', 'yellow')
         new_tags = ('blue', 'yellow')
-        database.edit_movies_tag(title_year, old_tags, new_tags)
-        movies = database.find_movies(database.FindMovieDef(title=title_year['title'],
-                                                            year=[title_year['year']]))
+        database.edit_movie_tag_links(title_year, old_tags, new_tags)
+        movies = database.find_movies(database.FindMovieTypedDict(title=title_year['title'],
+                                                                  year=[title_year['year']]))
         assert set(movies[0]['tags']) == {'blue', 'yellow'}
 
     def test_edit_movies_tag_raises_exception_movie_not_found(self, session):
-        title_year = database.MovieKeyDef(title='Non Existent Movie', year=1972)
+        title_year = database.MovieKeyTypedDict(title='Non Existent Movie', year=1972)
         new_tags = ('green', 'yellow')
         old_tags = ('blue', 'yellow')
         with pytest.raises(exception.DatabaseSearchFoundNothing) as cm:
-            database.edit_movies_tag(title_year, old_tags, new_tags)
+            database.edit_movie_tag_links(title_year, old_tags, new_tags)
         assert cm.typename == 'DatabaseSearchFoundNothing'
         assert cm.match("The movie Non Existent Movie, 1972 is not in the database.")
 
@@ -410,11 +405,11 @@ class TestTagOperations:
     
         title = 'Non Existent Movie'
         year = 1972
-        title_year = database.MovieKeyDef(title=title, year=year)
+        title_year = database.MovieKeyTypedDict(title=title, year=year)
         new_tags = ('green', 'yellow')
         old_tags = ('blue', 'yellow')
         with pytest.raises(exception.DatabaseSearchFoundNothing):
-            database.edit_movies_tag(title_year, old_tags, new_tags)
+            database.edit_movie_tag_links(title_year, old_tags, new_tags)
         assert calls == [("An incomplete database session has been rolled back because of exception:\n"
                           "NoResultFound"),
                          f"The movie {title}, {year} is not in the database."]
@@ -423,9 +418,9 @@ class TestTagOperations:
         # Add a tag and links
         test_tag = 'Going soon'
         database.add_tag(test_tag)
-        movie = database.MovieKeyDef(title='Solaris', year=1972)
+        movie = database.MovieKeyTypedDict(title='Solaris', year=1972)
         database.add_movie_tag_link(test_tag, movie)
-        movie = database.MovieKeyDef(title='Hamlet', year=1996)
+        movie = database.MovieKeyTypedDict(title='Hamlet', year=1996)
         database.add_movie_tag_link(test_tag, movie)
         
         # Delete the tag

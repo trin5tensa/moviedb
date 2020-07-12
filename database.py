@@ -18,7 +18,7 @@ import itertools
 import logging
 import sys
 from contextlib import contextmanager
-from typing import Generator, Iterable, List, Optional
+from typing import Generator, Iterable, List, Optional, Union
 
 import sqlalchemy
 import sqlalchemy.exc
@@ -32,7 +32,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.orm.session import sessionmaker
 
 import exception
-from config import FindMovieDef, MovieDef, MovieKeyDef, MovieUpdateDef
+from config import FindMovieTypedDict, MovieTypedDict, MovieKeyTypedDict, MovieUpdateDef
 
 
 MUYBRIDGE = 1878
@@ -47,6 +47,9 @@ movie_review = Table('movie_review', Base.metadata,
                      Column('reviews_id', ForeignKey('reviews.id'), primary_key=True))
 engine: Optional[sqlalchemy.engine.base.Engine] = None
 Session: Optional[sqlalchemy.orm.session.sessionmaker] = None
+
+
+MovieSearch = Union[MovieKeyTypedDict, MovieTypedDict, FindMovieTypedDict]
 
 
 def connect_to_database(filename: str = database_fn):
@@ -78,7 +81,7 @@ def connect_to_database(filename: str = database_fn):
             date_last_accessed.value = timestamp
 
 
-def add_movie(movie: MovieDef):
+def add_movie(movie: MovieTypedDict):
     """Add a movie to the database
 
     Args:
@@ -87,7 +90,7 @@ def add_movie(movie: MovieDef):
     Movie(**movie).add()
 
 
-def find_movies(criteria: FindMovieDef) -> List[MovieUpdateDef]:
+def find_movies(criteria: FindMovieTypedDict) -> List[MovieUpdateDef]:
     """Search for movies using any supplied_keys.
     
     Note:
@@ -116,39 +119,34 @@ def find_movies(criteria: FindMovieDef) -> List[MovieUpdateDef]:
     Movie.validate_columns(criteria.keys())
     
     with _session_scope() as session:
-        movies = _build_movie_query(session, criteria)
+        query = _build_movie_query(session, criteria)
+
     movies = [MovieUpdateDef(title=movie.title, director=movie.director, minutes=movie.minutes,
                              year=movie.year, notes=movie.notes, tags=[tag.tag for tag in movie.tags])
-              for movie in movies]
+              for movie in query]
     movies.sort(key=lambda movie: movie['title'] + str(movie['year']))
     return movies
 
 
-def edit_movie(title_year: FindMovieDef, updates: MovieUpdateDef):
+def replace_movie(old_movie: MovieKeyTypedDict, new_movie: MovieTypedDict):
     """Search for one movie and change one or more fields of that movie.
 
     Args:
-        title_year: Specifies the movie to be selected.
-        updates: Contains the fields which will be updated in the selected movie.
+        old_movie: Specifies the movie to be replaced.
+        new_movie: Specifies the replacing movie..
     """
+    with _session_scope() as session:
+        movie = _build_movie_query(session, old_movie).one_or_none()
+        if movie:
+            session.delete(movie)
+        add_movie(new_movie)
     
-    try:
-        with _session_scope() as session:
-            movie = _build_movie_query(session, title_year).one()
-            movie.edit(updates)
     
-    # The specified movie is not available possibly because it was deleted by another process.
-    except sqlalchemy.orm.exc.NoResultFound as exc:
-        msg = f"The movie {title_year['title']}, {title_year['year'][0]} is not in the database."
-        logging.info(msg)
-        raise exception.DatabaseSearchFoundNothing(msg) from exc
-
-
-def del_movie(title_year: FindMovieDef):
+def del_movie(title_year: FindMovieTypedDict):
     """Change fields in records.
 
     Args:
-        title_year: Specifies teh movie to be deleted.
+        title_year: Specifies the movie to be deleted.
     """
     with _session_scope() as session:
         movie = _build_movie_query(session, title_year).one()
@@ -165,7 +163,7 @@ def all_tags() -> List[str]:
     return [tag[0] for tag in tags]
 
 
-def movie_tags(title_year: MovieKeyDef) -> List[str]:
+def movie_tags(title_year: MovieKeyTypedDict) -> List[str]:
     """ List the tags of a movie.
     
     Returns: A list of tags
@@ -204,7 +202,7 @@ def find_tags(criteria: str) -> List[str]:
     return [tag.tag for tag in tags]
 
 
-def add_movie_tag_link(tag: str, movie: MovieKeyDef):
+def add_movie_tag_link(tag: str, movie: MovieKeyTypedDict):
     """Add link between a tag and a movie.
 
     Args:
@@ -238,7 +236,7 @@ def edit_tag(old_tag: str, new_tag: str):
         raise exception.DatabaseSearchFoundNothing(msg) from exc
 
 
-def edit_movies_tag(movie: MovieKeyDef, old_tags: Iterable[str], new_tags: Iterable[str]):
+def edit_movie_tag_links(movie: MovieKeyTypedDict, old_tags: Iterable[str], new_tags: Iterable[str]):
     """Replace the links to tags associated with a specified movie with links to a new set of tags.
     
     Args:
@@ -247,9 +245,8 @@ def edit_movies_tag(movie: MovieKeyDef, old_tags: Iterable[str], new_tags: Itera
         new_tags: The new set of tags which will be linked to the movie.
         
     Any tags which appear in both sets will be ignored.
-    This function edits links between movies and tags. Neither the movies nor the tags are edited.
+    This function relinks a movie and its tags. Neither the movie nor the tags are changed.
     """
-    
     try:
         with _session_scope() as session:
             movie = (session.query(Movie)
@@ -302,7 +299,7 @@ class Movie(Base):
                   nullable=False)
     # moviedb-#127 Add a synopsis field
     notes = Column(Text)
-    UniqueConstraint(title, year)
+    # UniqueConstraint(title, year)
 
     tags = relationship('Tag', secondary='movie_tag', back_populates='movies')
     reviews = relationship('Review', secondary='movie_review', back_populates='movies')
@@ -341,6 +338,7 @@ class Movie(Base):
         try:
             with _session_scope() as session:
                 session.add(self)
+        
         except sqlalchemy.exc.IntegrityError as exc:
             if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
                 msg = exc.orig.args[0]
@@ -348,17 +346,6 @@ class Movie(Base):
                 raise exception.MovieDBConstraintFailure(msg) from exc
             else:
                 raise
-
-    def edit(self, updates: MovieUpdateDef):
-        """Edit any column of the table.
-
-        Args:
-            updates: Dictionary of fields to be updated. See find_movies for detailed description.
-            e.g. {notes='Science Fiction'}
-        """
-        self.validate_columns(updates.keys())
-        for key, value in updates.items():
-            setattr(self, key, value)
 
     @classmethod
     def validate_columns(cls, columns: Iterable[str]):
@@ -453,7 +440,7 @@ def _session_scope() -> Generator[Session, None, None]:
         session.close()
 
 
-def _build_movie_query(session: Session, criteria: FindMovieDef) -> sqlalchemy.orm.query.Query:
+def _build_movie_query(session: Session, criteria: MovieSearch) -> sqlalchemy.orm.query.Query:
     """Build a query.
 
     Args:
@@ -467,8 +454,6 @@ def _build_movie_query(session: Session, criteria: FindMovieDef) -> sqlalchemy.o
 
     # noinspection PyUnresolvedReferences
     movies = session.query(Movie).outerjoin(Movie.tags)
-    if 'id' in criteria:
-        movies = movies.filter(Movie.id == criteria['id'])
     if 'title' in criteria:
         movies = movies.filter(Movie.title.like(f"%{criteria['title']}%"))
     if 'director' in criteria:

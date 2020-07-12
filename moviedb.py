@@ -34,7 +34,6 @@ def main():
     logging.info('The program started successfully.')
     gui.run()
     close_down()
-    logging.info('The program has ended.')
 
 
 def start_up():
@@ -57,6 +56,7 @@ def close_down():
     # moviedb-#84
     #   Update config object with dynamic values
     #   Save the config object
+    logging.info('The program is ending.')
     logging.shutdown()
 
 

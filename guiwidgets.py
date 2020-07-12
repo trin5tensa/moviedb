@@ -103,7 +103,7 @@ class MovieGUIBase:
         cancel.bind('<Return>', lambda event, b=cancel: b.invoke())
         cancel.focus_set()
     
-    def neuron_linker(self, internal_name: str, neuron: neurons.AndNeuron,
+    def neuron_linker(self, internal_name: str, neuron: neurons.Neuron,
                       neuron_callback: Callable, initial_state: bool = False):
         """Set a neuron callback which will be called whenever the field is changed by the user.
         
@@ -201,10 +201,10 @@ class CommonButtonbox(MovieGUIBase):
     """
     
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    commit_callback: Callable[[config.MovieDef, Sequence[str]], None]
+    commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
     
     # If the user clicks the delete button this callback will be called.
-    delete_callback: Callable[[config.MovieKeyDef], None]
+    delete_callback: Callable[[config.MovieKeyTypedDict], None]
     
     # The caller shall specify the buttons which are to be shown in the buttonbox with thw exception
     # of the cancel button which will always be provided.
@@ -251,10 +251,12 @@ class CommonButtonbox(MovieGUIBase):
         # Commit and exit
         try:
             self.commit_callback(return_fields, self.selected_tags)
+
         except exception.MovieDBConstraintFailure:
             msg = 'Database constraint failure.'
             detail = 'A movie with this title and year is already present in the database.'
             messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
+            
         else:
             self.destroy()
     
@@ -262,8 +264,8 @@ class CommonButtonbox(MovieGUIBase):
         """The user clicked the 'Delete' button. """
         if messagebox.askyesno(message='Do you want to delete this movie?',
                                icon='question', default='no', parent=self.parent):
-            movie = config.MovieKeyDef(title=self.entry_fields['title'].original_value,
-                                       year=int(self.entry_fields['year'].original_value))
+            movie = config.MovieKeyTypedDict(title=self.entry_fields['title'].original_value,
+                                             year=int(self.entry_fields['year'].original_value))
             # moviedb-#148 Handle exception for missing database record
             #   See test_guiwidgets.TestAddMovieGUI.test_commit_callback_method for test method
             self.delete_callback(movie)
@@ -333,9 +335,7 @@ class EditMovieGUI(CommonButtonbox):
         Any proposed refactoring should consider abandoning these classes and using the newer
         composed classes of guiwidgets_2 as a model for future development.
     """
-    
-    # On exit this callback will be called with a dictionary of fields and user entered values.
-    commit_callback: Callable[[config.MovieUpdateDef, Sequence[str]], None]
+
     # Tags list
     all_tags: Sequence[str]
     # Fields of the movie to be edited.
@@ -392,7 +392,7 @@ class SearchMovieGUI(MovieGUIBase):
     """
     
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[config.FindMovieDef, Sequence[str]], None]
+    callback: Callable[[config.FindMovieTypedDict, Sequence[str]], None]
     # Tags list
     all_tags: Sequence[str]
     
@@ -549,7 +549,7 @@ class SelectMovieGUI(MovieGUIBase):
         
         # Populate rows with movies
         for movie in self.movies:
-            # moviedb-#134 Can iid be improved so unmangling in selection callback is simplified
+            # moviedb-#134 Can iid be improved so unmangling in selection callback is simplified?
             #   currently tree.selection()[0][1:-1].split(',')
             tree.insert('', 'end', iid=f"{(title := movie['title'], year := movie['year'])}",
                         text=title,

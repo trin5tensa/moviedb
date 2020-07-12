@@ -21,32 +21,27 @@ tk: 'tk'
 mainwindow: 'mainwindow'
 
 
-class MovieKeyDef(TypedDict):
-    """Mandatory fields for a movie."""
+class MovieKeyTypedDict(TypedDict):
+    """Mandatory field for a movie."""
     title: str
     year: int
 
 
-class MovieDef(MovieKeyDef, total=False):
+class MovieTypedDict(MovieKeyTypedDict, total=False):
     """Optional fields for a movie."""
     director: str
     minutes: int
     notes: str
 
 
-class MovieUpdateDef(TypedDict, total=False):
+class MovieUpdateDef(MovieTypedDict, total=False):
     """A dictionary of fields for updating.
     
     WARNING: Only use this definition for updating existing records."""
-    title: str
-    director: str
-    year: int
-    minutes: int
-    notes: str
     tags: Sequence[str]
 
 
-class FindMovieDef(TypedDict, total=False):
+class FindMovieTypedDict(TypedDict, total=False):
     """A dictionary containing none or more of the following keys:
             title: A matching column will be a superstring of this value.
             director: A matching column will be a superstring of this value.
@@ -57,7 +52,6 @@ class FindMovieDef(TypedDict, total=False):
             notes: A matching column will be a superstring of this value.
             tag: Movies matching any tag in this list will be selected.
     """
-    id: int
     title: str
     year: Sequence[int]
     director: str

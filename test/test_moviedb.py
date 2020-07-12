@@ -49,11 +49,11 @@ class TestMain:
     def test_logging_info_called(self, class_patches):
         self.info_calls = []
         moviedb.main()
-        assert self.info_calls == ['The program started successfully.',
-                                   'The program has ended.']
+        assert self.info_calls == ['The program started successfully.']
 
     info_calls = []
 
+    # noinspection PyMissingOrEmptyDocstring
     @pytest.fixture()
     def class_patches(self, monkeypatch):
         monkeypatch.setattr(moviedb, 'start_up', lambda: None)
