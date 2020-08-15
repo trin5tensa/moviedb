@@ -34,6 +34,8 @@ def about_dialog():
 
 def add_movie():
     """ Get new movie data from the user and add it to the database. """
+    # moviedb-#201
+    #  Add movie should end by recalling this function.
     all_tags = database.all_tags()
     # PyCharm https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker
@@ -83,7 +85,6 @@ def add_movie_callback(movie: config.MovieTypedDict, selected_tags: Sequence[str
         movie:
         selected_tags:
     """
-
     database.add_movie(movie)
     movie = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
     for tag in selected_tags:
