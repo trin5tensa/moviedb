@@ -106,7 +106,9 @@ def test_database_integrity_violation(path, monkeypatch):
                 '"(builtins.int) 3\n'
                 '[SQL: 1]\n'
                 '[parameters: 2]\n'
-                '(Background on this error at: http://sqlalche.me/e/gkpj)"\n'
+                # moviedb-#200
+                #  Following line is fragile. URL location changes if sqlalchemy is reinstalled.
+                '(Background on this error at: http://sqlalche.me/e/13/gkpj)"\n'
                 'Hamlet,1996,2\n')
     calls = []
 

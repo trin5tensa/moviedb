@@ -299,7 +299,7 @@ class Movie(Base):
                   nullable=False)
     # moviedb-#127 Add a synopsis field
     notes = Column(Text)
-    # UniqueConstraint(title, year)
+    UniqueConstraint(title, year)
 
     tags = relationship('Tag', secondary='movie_tag', back_populates='movies')
     reviews = relationship('Review', secondary='movie_review', back_populates='movies')
