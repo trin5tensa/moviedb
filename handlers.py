@@ -167,6 +167,7 @@ def edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callable
         Raises exception.DatabaseSearchFoundNothing
         """
 
+        # moviedb-#204 Handle exception.MovieDBMovieNotFound raised by replace_movie.
         # Edit the movie
         database.replace_movie(old_movie, new_movie)
         

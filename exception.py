@@ -27,6 +27,10 @@ class MovieDBConstraintFailure(DatabaseException):
     """Exception raised for title and year constraint violation."""
 
 
+class MovieDBMovieNotFound(DatabaseException):
+    """Exception raised for movie not found in database."""
+
+
 class DatabaseSearchFoundNothing(DatabaseException):
     """Exception raised when a search found no records."""
 

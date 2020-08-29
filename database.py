@@ -14,7 +14,6 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
-import itertools
 import logging
 import sys
 from contextlib import contextmanager
@@ -87,7 +86,18 @@ def add_movie(movie: MovieTypedDict):
     Args:
         movie: The movie to be added.
     """
-    Movie(**movie).add()
+    movie = Movie(**movie)
+    try:
+        with _session_scope() as session:
+            session.add(movie)
+            
+    except sqlalchemy.exc.IntegrityError as exc:
+        if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
+            msg = exc.orig.args[0]
+            logging.error(msg)
+            raise exception.MovieDBConstraintFailure(msg) from exc
+        else:
+            raise
 
 
 def find_movies(criteria: FindMovieTypedDict) -> List[MovieUpdateDef]:
@@ -133,15 +143,42 @@ def replace_movie(old_movie: MovieKeyTypedDict, new_movie: MovieTypedDict):
 
     Args:
         old_movie: Specifies the movie to be replaced.
-        new_movie: Specifies the replacing movie..
+        new_movie: Specifies the replacing movie.
+        
+    Raises:
+        MovieDBMovieNotFound
+            The old movie is no longer present so is no longer capable of being modified.  This
+            function neither assumes nor checks that the new_movie information is sufficient to create a
+            new valid record.
+        MovieDBConstraintFailure
+            The new movie has an edited title or year and the new combination matches that of an
+            existing record.
     """
-    with _session_scope() as session:
-        movie = _build_movie_query(session, old_movie).one_or_none()
-        if movie:
-            session.delete(movie)
-        add_movie(new_movie)
+    try:
+        with _session_scope() as session:
+            # Locate the old movie
+            try:
+                movie = _build_movie_query(session, old_movie).one()
+                
+            # The old movie has gone and is no longer capable of being modified.
+            except sqlalchemy.orm.exc.NoResultFound as exc:
+                msg = (f'The movie was not found in the database. It may have been deleted by an '
+                       f'external process.')
+                logging.error(msg)
+                raise exception.MovieDBMovieNotFound(msg) from exc
     
-    
+            for k, v in new_movie.items():
+                setattr(movie, k, v)
+            
+    except sqlalchemy.exc.IntegrityError as exc:
+        if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
+            msg = exc.orig.args[0]
+            logging.error(msg)
+            raise exception.MovieDBConstraintFailure(msg) from exc
+        else:
+            raise
+
+
 def del_movie(title_year: FindMovieTypedDict):
     """Change fields in records.
 
@@ -304,16 +341,17 @@ class Movie(Base):
     tags = relationship('Tag', secondary='movie_tag', back_populates='movies')
     reviews = relationship('Review', secondary='movie_review', back_populates='movies')
 
-    def __init__(self, title: str, year: int, director: str = None,
-                 minutes: int = None, notes: str = None):
+    def __init__(self, title: str, year: str, director: str = '',
+                 minutes: str = '', notes: str = ''):
     
         # Carry out validation which is not done by SQLAlchemy or sqlite3
-        null_strings = set(itertools.filterfalse(lambda arg: arg != '', [title, year]))
-        if null_strings == {''}:
-            msg = 'Null values (empty strings) in row.'
+        if year == '':
+            msg = f"Year string expected but got empty string."
             logging.error(msg)
             raise ValueError(msg)
-        # noinspection PyStatementEffect
+        
+        if minutes == '':
+            minutes = 0
         try:
             {int(arg) for arg in [minutes, year]}
         except ValueError as exc:
@@ -332,20 +370,6 @@ class Movie(Base):
         return (self.__class__.__qualname__ +
                 f"(title={self.title!r}, year={self.year!r}, "
                 f"director={self.director!r}, minutes={self.minutes!r}, notes={self.notes!r})")
-
-    def add(self):
-        """Add self to database. """
-        try:
-            with _session_scope() as session:
-                session.add(self)
-        
-        except sqlalchemy.exc.IntegrityError as exc:
-            if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
-                msg = exc.orig.args[0]
-                logging.error(msg)
-                raise exception.MovieDBConstraintFailure(msg) from exc
-            else:
-                raise
 
     @classmethod
     def validate_columns(cls, columns: Iterable[str]):
