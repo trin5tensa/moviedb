@@ -468,12 +468,11 @@ class TestAddMovieGUI:
                                        minutes='4242', notes='4242')
             assert movie_gui.outer_frame.destroy_calls[0]
     
-    def test_commit_callback_exception(self, patch_tk, monkeypatch):
+    def test_commit_constraint_exception(self, patch_tk, monkeypatch):
         def dummy_callback():
             # noinspection PyUnusedLocal
             def callback(*args, **kwargs):
                 raise exception.MovieDBConstraintFailure
-
             return callback
         
         with self.movie_context() as movie_gui:
@@ -484,6 +483,23 @@ class TestAddMovieGUI:
             assert messagebox.showinfo_calls == [dict(
                     parent=DummyTk(), message='Database constraint failure.',
                     detail='A movie with this title and year is already present in the database.')]
+
+    def test_commit_movie_not_found_exception(self, patch_tk, monkeypatch):
+        messagebox_detail = 'Not found test message.'
+        
+        def dummy_callback():
+            # noinspection PyUnusedLocal
+            def callback(*args, **kwargs):
+                raise exception.MovieDBMovieNotFound(messagebox_detail)
+            return callback
+        
+        with self.movie_context() as movie_gui:
+            monkeypatch.setattr(movie_gui, 'commit_callback', dummy_callback())
+            messagebox = TkMessagebox()
+            monkeypatch.setattr(guiwidgets, 'messagebox', messagebox)
+            movie_gui.commit()
+            assert messagebox.showinfo_calls == [dict(parent=DummyTk(), message='Missing movie.',
+                                                      detail=messagebox_detail)]
 
     def test_commit_calls_destroy(self, patch_tk, monkeypatch):
         calls = []
@@ -1131,6 +1147,7 @@ class TtkScrollbar:
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TkMessagebox:
+    """A test double for Tk.Messagebox."""
     showinfo_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     
     def showinfo(self, **kwargs):
