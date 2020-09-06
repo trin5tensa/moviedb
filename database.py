@@ -220,7 +220,10 @@ def add_tag(new_tag: str):
 
     # Add the tag unless it is already in the database.
     try:
-        Tag(new_tag).add()
+        tag = Tag(new_tag)
+        with _session_scope() as session:
+            session.add(tag)
+        pass
     except sqlalchemy.exc.IntegrityError:
         pass
 
@@ -405,11 +408,6 @@ class Tag(Base):
     def __repr__(self):  # pragma: no cover
         return (self.__class__.__qualname__ +
                 f"(tag={self.tag!r})")
-
-    def add(self):
-        """Add self to database. """
-        with _session_scope() as session:
-            session.add(self)
 
 
 class Review(Base):
