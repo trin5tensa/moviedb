@@ -35,7 +35,7 @@ def about_dialog():
 def add_movie():
     """ Get new movie data from the user and add it to the database. """
     # moviedb-#201
-    #  Add movie should end by recalling this function.
+    #  Do not require user to go back to menu for multiple movie additions.
     all_tags = database.all_tags()
     # PyCharm https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker

@@ -252,10 +252,18 @@ class CommonButtonbox(MovieGUIBase):
         try:
             self.commit_callback(return_fields, self.selected_tags)
 
+        # Alert user and stay on page
         except exception.MovieDBConstraintFailure:
             msg = 'Database constraint failure.'
             detail = 'A movie with this title and year is already present in the database.'
             messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
+            
+        # Alert user and exit page
+        except exception.MovieDBMovieNotFound as exc:
+            msg = 'Missing movie.'
+            detail = exc.args[0]
+            messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
+            self.destroy()
             
         else:
             self.destroy()
