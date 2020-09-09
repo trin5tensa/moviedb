@@ -486,6 +486,8 @@ def _build_movie_query(session: Session, criteria: MovieSearch) -> sqlalchemy.or
             low, high = min(minutes), max(minutes)
         except TypeError:
             low = high = minutes
+        if not low:
+            low = high
         movies = movies.filter(Movie.minutes.between(low, high))
     if 'year' in criteria:
         year = criteria['year']
@@ -493,6 +495,8 @@ def _build_movie_query(session: Session, criteria: MovieSearch) -> sqlalchemy.or
             low, high = min(year), max(year)
         except TypeError:
             low = high = year
+        if not low:
+            low = high
         movies = movies.filter(Movie.year.between(low, high))
     if 'notes' in criteria:
         movies = movies.filter(Movie.notes.like(f"%{criteria['notes']}%"))
