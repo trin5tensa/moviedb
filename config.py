@@ -14,7 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from dataclasses import dataclass
-from typing import Optional, Sequence, TypedDict
+from typing import Optional, Sequence, Tuple, TypedDict
 
 
 tk: 'tk'
@@ -53,9 +53,9 @@ class FindMovieTypedDict(TypedDict, total=False):
             tag: Movies matching any tag in this list will be selected.
     """
     title: str
-    year: Sequence[int]
+    year: Sequence[str]
     director: str
-    minutes: Sequence[int]
+    minutes: Sequence[str]
     notes: str
     tags: Sequence[str]
 

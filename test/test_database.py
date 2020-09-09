@@ -310,8 +310,14 @@ class TestReplaceMovie:
         return class_context
     
 
-def test_delete_movie(loaded_database):
-    database.del_movie(database.FindMovieTypedDict(title='Solaris', year=[1972]))
+def test_delete_movie_by_title_and_year(loaded_database):
+    database.del_movie(database.FindMovieTypedDict(title='Solaris', year=['1972', '']))
+    movies = database.find_movies(dict(title='Solaris'))
+    assert movies == []
+
+
+def test_delete_movie_by_title_and_length(loaded_database):
+    database.del_movie(database.FindMovieTypedDict(title='Solaris', minutes=['', '169']))
     movies = database.find_movies(dict(title='Solaris'))
     assert movies == []
 
