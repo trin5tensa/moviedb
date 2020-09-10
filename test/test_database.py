@@ -181,7 +181,7 @@ class TestFindMovie:
     
     def test_search_movie_year(self):
         test_year = 1996
-        movies = database.find_movies(database.FindMovieTypedDict(year=[test_year]))
+        movies = database.find_movies(database.FindMovieTypedDict(year=[str(test_year)]))
         assert movies[0]['year'] == test_year
     
     def test_search_movie_title(self):
@@ -205,19 +205,21 @@ class TestFindMovie:
     
     def test_search_movie_with_range_of_minutes(self):
         expected = {122}
-        movies = database.find_movies(dict(minutes=[130, 120]))
+        criteria = database.FindMovieTypedDict(minutes=['130', '120'])
+        movies = database.find_movies(criteria)
         minutes = {movie['minutes'] for movie in movies}
         assert minutes == expected
     
     def test_search_movie_with_range_of_minutes_2(self):
         expected = {119, 122, 169}
-        movies = database.find_movies(dict(minutes=[170, 100]))
+        criteria = database.FindMovieTypedDict(minutes=['170', '100'])
+        movies = database.find_movies(criteria)
         minutes = {movie['minutes'] for movie in movies}
         assert minutes == expected
     
     def test_search_movie_with_minute(self):
         expected = {169}
-        movies = database.find_movies(database.FindMovieTypedDict(minutes=[169]))
+        movies = database.find_movies(database.FindMovieTypedDict(minutes=['169']))
         minutes = {movie['minutes'] for movie in movies}
         assert minutes == expected
     
@@ -240,6 +242,7 @@ class TestFindMovie:
         monkeypatch.setattr(database.logging, 'error', lambda msg: calls.append(msg))
 
         with pytest.raises(ValueError) as exc:
+            # noinspection PyTypeChecker
             for _ in database.find_movies(dict(months=[169])):
                 pass
         assert exc.type is ValueError
@@ -426,7 +429,7 @@ class TestTagOperations:
         new_tags = ('blue', 'yellow')
         database.edit_movie_tag_links(title_year, old_tags, new_tags)
         movies = database.find_movies(database.FindMovieTypedDict(title=title_year['title'],
-                                                                  year=[title_year['year']]))
+                                                                  year=[str(title_year['year'])]))
         assert set(movies[0]['tags']) == {'blue', 'yellow'}
 
     def test_edit_movies_tag_raises_exception_movie_not_found(self, session):
