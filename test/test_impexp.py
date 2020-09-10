@@ -102,14 +102,9 @@ def test_column_heading_validation(path, monkeypatch):
 # noinspection DuplicatedCode
 def test_database_integrity_violation(path, monkeypatch):
     """Test database integrity violation causes record rejection."""
-    expected = ('title,year,notes\n'
-                '"(builtins.int) 3\n'
-                '[SQL: 1]\n'
-                '[parameters: 2]\n'
-                # moviedb-#200
-                #  Following line is fragile. URL location changes if sqlalchemy is reinstalled.
-                '(Background on this error at: http://sqlalche.me/e/13/gkpj)"\n'
-                'Hamlet,1996,2\n')
+    expected_left = ('title,year,notes\n"(builtins.int) 3\n[SQL: 1]\n[parameters: 2]\n'
+                     '(Background on this error at: ')
+    expected_right = 'Hamlet,1996,2\n'
     calls = []
 
     def mock_add_movie(movie: dict):
@@ -124,7 +119,9 @@ def test_database_integrity_violation(path, monkeypatch):
     reject_fn = path / 'violation_data_reject.csv'
     with pytest.raises(impexp.MoviedbInvalidImportData):
         impexp.import_movies(violation_data_fn)
-    assert reject_fn.read() == expected
+        
+    assert reject_fn.read()[:90] == expected_left
+    assert reject_fn.read()[-14:] == expected_right
 
 
 # noinspection DuplicatedCode
