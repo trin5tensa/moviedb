@@ -14,7 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from dataclasses import dataclass
-from typing import Optional, Sequence, Tuple, TypedDict
+from typing import Optional, Sequence, TypedDict
 
 
 tk: 'tk'

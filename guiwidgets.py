@@ -582,7 +582,7 @@ class SelectMovieGUI(MovieGUIBase):
                 *args: Not used. Needed for compatibility with Tk:Tcl caller.
             """
             title, year = tree.selection()[0][1:-1].split(',')
-            self.callback(title.strip("'"), int(year))
+            self.callback(title[1:-1], int(year))
             self.destroy()
 
         return selection_callback

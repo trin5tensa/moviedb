@@ -1001,7 +1001,7 @@ class TestSelectMovieGUI:
     def test_treeview_binds_callback(self, patch_tk, monkeypatch):
         # noinspection PyUnusedLocal
         def selection(*args):
-            return ["'Hello Mum, 1954'"]
+            return ["'\'Hello Mum\', 1954'"]
 
         monkeypatch.setattr(TtkTreeview, 'selection', selection)
         with self.select_movie_context() as movie_gui:
