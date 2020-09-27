@@ -620,6 +620,27 @@ def test_gui_askopenfilename(monkeypatch):
     assert calls == [(dict(parent=parent, filetypes=filetypes))]
 
 
+def test_focus_set_calls_focus_set_on_entry(patch_tk):
+    entry = guiwidgets_2.ttk.Entry(parent=DummyTk())
+    guiwidgets_2.focus_set(entry)
+    # noinspection PyUnresolvedReferences
+    assert entry.focus_set_calls == [True]
+
+
+def test_focus_set_calls_select_range_on_entry(patch_tk):
+    entry = guiwidgets_2.ttk.Entry(parent=DummyTk())
+    guiwidgets_2.focus_set(entry)
+    # noinspection PyUnresolvedReferences
+    assert entry.select_range_calls == [(0, 'end')]
+
+
+def test_focus_set_calls_icursor_on_entry(patch_tk):
+    entry = guiwidgets_2.ttk.Entry(parent=DummyTk())
+    guiwidgets_2.focus_set(entry)
+    # noinspection PyUnresolvedReferences
+    assert entry.icursor_calls == [('end', )]
+
+
 def test_create_entry_fields(patch_tk):
     names = ('test field',)
     texts = ('Test Field',)

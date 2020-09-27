@@ -276,7 +276,7 @@ class TestAddMovieGUI:
             tags_frame = bodyframe.children[-1]
             tree, scrollbar = tags_frame.children
             assert tree.configure_calls[0] == dict(yscrollcommand=scrollbar.set)
-
+    
     def test_neuron_linker_called(self, patch_tk, monkeypatch):
         calls = []
         monkeypatch.setattr(guiwidgets.AddMovieGUI, 'neuron_linker',
@@ -285,7 +285,11 @@ class TestAddMovieGUI:
             assert calls == [
                     (movie_gui, 'title', movie_gui.commit_button_neuron, movie_gui.neuron_callback),
                     (movie_gui, 'year', movie_gui.commit_button_neuron, movie_gui.neuron_callback, True)]
-
+    
+    def test_focus_set_on_title_field(self, patch_tk):
+        with self.movie_context() as movie_gui:
+            assert movie_gui.entry_fields['title'].widget.focus_set_calls == [True]
+    
     # noinspection DuplicatedCode
     def test_movie_treeview_call(self, patch_tk, patch_movie_treeview):
         sentinel = object()
@@ -298,15 +302,15 @@ class TestAddMovieGUI:
             assert treeview_call[0][5] == 'Select tags'
             assert treeview_call[0][6] == ('test tag 1', 'test tag 2')
             assert treeview_call[0][7](sentinel) == sentinel
-
+    
     # Test Buttonbox Initialization
-
+    
     def test_buttonbox_created(self, patch_tk):
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
             buttonbox = outerframe.children[1]
             assert buttonbox == TtkFrame(parent=outerframe, padding=(5, 5, 10, 10))
-
+    
     def test_buttonbox_gridded(self, patch_tk):
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
@@ -366,11 +370,6 @@ class TestAddMovieGUI:
             button.bind_calls[0][1](button)
             assert button.invoke_calls[0]
     
-    def test_cancel_button_focus_set(self, patch_tk):
-        with self.movie_context() as movie_gui:
-            button = movie_gui.parent.children[0].children[1].children[1]
-            assert button.focus_set_calls[0] is True
-    
     # Test Neuron Link Initialization
     
     def test_trace_add_called(self, patch_tk, monkeypatch):
@@ -402,23 +401,23 @@ class TestAddMovieGUI:
             neuron = movie_gui.commit_button_neuron
             movie_gui.neuron_callback('year', neuron)()
             assert neuron.events == dict(title=False, year=True)
-
+    
     def test_button_state_with_true_callback(self, patch_tk):
         with self.movie_context() as movie_gui:
             commit = movie_gui.parent.children[0].children[1].children[0]
             movie_gui.button_state_callback(commit)(True)
             assert commit.state_calls == [['disabled'], ['!disabled']]
-
+    
     def test_button_state_with_false_callback(self, patch_tk):
         with self.movie_context() as movie_gui:
             commit = movie_gui.parent.children[0].children[1].children[0]
             movie_gui.button_state_callback(commit)(False)
             assert commit.state_calls == [['disabled'], ['disabled']]
-
+    
     def test_validate_true_int(self, patch_tk):
         with self.movie_context() as movie_gui:
             assert movie_gui.validate_int('42')
-
+    
     def test_validate_false_int(self, patch_tk):
         with self.movie_context() as movie_gui:
             valid_int = movie_gui.validate_int('forty two')
@@ -473,6 +472,7 @@ class TestAddMovieGUI:
             # noinspection PyUnusedLocal
             def callback(*args, **kwargs):
                 raise exception.MovieDBConstraintFailure
+            
             return callback
         
         with self.movie_context() as movie_gui:
@@ -483,7 +483,7 @@ class TestAddMovieGUI:
             assert messagebox.showinfo_calls == [dict(
                     parent=DummyTk(), message='Database constraint failure.',
                     detail='A movie with this title and year is already present in the database.')]
-
+    
     def test_commit_movie_not_found_exception(self, patch_tk, monkeypatch):
         messagebox_detail = 'Not found test message.'
         
@@ -491,6 +491,7 @@ class TestAddMovieGUI:
             # noinspection PyUnusedLocal
             def callback(*args, **kwargs):
                 raise exception.MovieDBMovieNotFound(messagebox_detail)
+            
             return callback
         
         with self.movie_context() as movie_gui:
@@ -500,7 +501,7 @@ class TestAddMovieGUI:
             movie_gui.commit()
             assert messagebox.showinfo_calls == [dict(parent=DummyTk(), message='Missing movie.',
                                                       detail=messagebox_detail)]
-
+    
     def test_commit_calls_destroy(self, patch_tk, monkeypatch):
         calls = []
         with self.movie_context() as movie_gui:
@@ -508,18 +509,18 @@ class TestAddMovieGUI:
             monkeypatch.setattr(movie_gui, 'destroy', lambda *args: calls.append(True))
             movie_gui.commit()
             assert calls == [True]
-
+    
     def test_treeview_callback(self, patch_tk):
         sentinel = object()
         with self.movie_context() as movie_gui:
             movie_gui.treeview_callback([sentinel])
             assert movie_gui.selected_tags == [sentinel]
-
+    
     def test_destroy_method(self, patch_tk):
         with self.movie_context() as movie_gui:
             movie_gui.destroy()
             assert movie_gui.outer_frame.destroy_calls[0]
-
+    
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def movie_context(self):
@@ -589,27 +590,27 @@ class TestEditMovieGUI:
                 internal_names.append(internal_name)
                 callbacks.append(callback)
                 neurons.append(neuron)
-
+            
             assert internal_names == ['title', 'year', 'director', 'minutes', 'notes']
             for neuron in neurons:
                 assert isinstance(neuron, guiwidgets.neurons.OrNeuron)
             for callback in callbacks:
                 assert callback == movie_gui.neuron_callback
             assert initial_values == []
-
+    
     def test_treeview_observer_registered(self, patch_tk, class_fixtures):
         self.tag_treeview_observer_args = []
         with self.movie_context():
             for args in self.tag_treeview_observer_args:
                 assert isinstance(args[1], Callable)
         assert len(self.tag_treeview_observer_args) == 2
-
+    
     def test_observer_notified(self, patch_tk, monkeypatch):
         notify_calls = []
-    
+        
         def dummy_notify(*args):
             notify_calls.append(args[1:])
-
+        
         monkeypatch.setattr(guiwidgets.neurons.Observer, 'notify', dummy_notify)
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
@@ -648,6 +649,26 @@ class TestEditMovieGUI:
             movie_gui.delete()
             assert calls == [True]
     
+    def test_focus_set_on_title_field(self, patch_tk, monkeypatch):
+        calls = []
+        monkeypatch.setattr(guiwidgets, 'focus_set', lambda *args: calls.append(args))
+        with self.movie_context():
+            assert calls == [(TtkEntry(parent=TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
+                                                       padding=(10, 25, 10, 0)),
+                                       textvariable=TkStringVar(), width=36),)]
+    
+    def test_focus_set_to_notes(self, patch_tk):
+        with self.movie_context() as movie_gui:
+            assert movie_gui.entry_fields['notes'].widget.focus_set_calls == [True]
+    
+    def test_all_notes_test_selected(self, patch_tk):
+        with self.movie_context() as movie_gui:
+            assert movie_gui.entry_fields['notes'].widget.select_range_calls == [(0, 'end')]
+    
+    def test_cursor_placed_at_end_of_notes_entry(self, patch_tk):
+        with self.movie_context() as movie_gui:
+            assert movie_gui.entry_fields['notes'].widget.icursor_calls == [('end',)]
+    
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def movie_context(self):
@@ -659,10 +680,10 @@ class TestEditMovieGUI:
         # noinspection PyTypeChecker
         yield guiwidgets.EditMovieGUI(DummyTk(), dummy_commit_callback, dummy_delete_callback,
                                       ['commit', 'delete'], all_tag_names, movie)
-
+    
     neuron_linker_args = []
     tag_treeview_observer_args = []
-
+    
     @pytest.fixture
     def class_fixtures(self, monkeypatch):
         monkeypatch.setattr(guiwidgets.MovieGUIBase, 'neuron_linker',
@@ -688,6 +709,7 @@ class TestSearchMovieGUI:
         calls = []
         monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'create_body_item',
                             lambda *args: calls.append(args))
+        monkeypatch.setattr(guiwidgets, 'focus_set', lambda *args: None)
         with self.movie_context() as movie_gui:
             assert calls == [(movie_gui, TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
                                                   padding=(10, 25, 10, 0)), 'title', 'Title', 0),
@@ -706,7 +728,13 @@ class TestSearchMovieGUI:
                              (movie_gui, TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
                                                   padding=(10, 25, 10, 0)), 'minutes',
                               'Length (minutes)', 3), ]
-
+    
+    def test_focus_set_called(self, patch_tk, monkeypatch):
+        calls = []
+        monkeypatch.setattr(guiwidgets, 'focus_set', lambda *args: calls.append(True))
+        with self.movie_context():
+            assert calls == [True]
+    
     # noinspection DuplicatedCode
     def test_create_tag_treeview_called(self, patch_tk, patch_movie_treeview):
         with self.movie_context():
@@ -718,7 +746,7 @@ class TestSearchMovieGUI:
             assert treeview_call[0][5] == 'Select tags'
             assert treeview_call[0][6] == ('test tag 1', 'test tag 2')
             assert treeview_call[0][7]('test signal') == 'test signal'
-
+    
     # noinspection PyShadowingNames
     def test_treeview_observer_registered(self, patch_tk, monkeypatch):
         self.tag_treeview_observer_args = []
@@ -728,9 +756,9 @@ class TestSearchMovieGUI:
             for args in self.tag_treeview_observer_args:
                 assert isinstance(args[1], Callable)
         assert len(self.tag_treeview_observer_args) == 2
-
+    
     # Test create body item
-
+    
     def test_body_item_ttk_label_called(self, patch_tk):
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
@@ -752,6 +780,7 @@ class TestSearchMovieGUI:
         monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'create_entry',
                             lambda *args: calls.append(args))
         monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'create_min_max_body_item', lambda *args: None)
+        monkeypatch.setattr(guiwidgets, 'focus_set', lambda *args: None)
         with self.movie_context() as movie_gui:
             assert calls == [(movie_gui, TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
                                                   padding=(10, 25, 10, 0)), 'title', 1, 0, 36),
@@ -912,7 +941,7 @@ class TestSearchMovieGUI:
         # noinspection PyUnusedLocal
         def callback(*args):
             raise exception.DatabaseSearchFoundNothing
-
+        
         messagebox_calls = []
         monkeypatch.setattr(guiwidgets, 'gui_messagebox', lambda *args: messagebox_calls.append(args))
         tags = []
@@ -1002,29 +1031,29 @@ class TestSelectMovieGUI:
         # noinspection PyUnusedLocal
         def selection(*args):
             return ["'\'Hello Mum\', 1954'"]
-
+        
         monkeypatch.setattr(TtkTreeview, 'selection', selection)
         with self.select_movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
             bodyframe = outerframe.children[0]
             treeview = bodyframe.children[0]
             assert treeview.bind_calls[0][0] == ('<<TreeviewSelect>>',)
-    
+            
             treeview.bind_calls[0][1]['func']()
             assert commit_callback_calls[2] == ('Hello Mum', 1954)
-
+    
     def test_widget_is_destroyed(self, patch_tk, monkeypatch):
         destroy_called = False
-    
+        
         # noinspection PyUnusedLocal
         def mock_destroy(*args):
             nonlocal destroy_called
             destroy_called = True
-    
+        
         # noinspection PyUnusedLocal
         def selection(*args):
             return ["'Hello Mum, 1954'"]
-    
+        
         monkeypatch.setattr(TtkTreeview, 'selection', selection)
         monkeypatch.setattr(guiwidgets.SelectMovieGUI, 'destroy', mock_destroy)
         with self.select_movie_context() as movie_gui:
@@ -1034,21 +1063,21 @@ class TestSelectMovieGUI:
             _, kwargs = treeview.bind_calls[0]
             treeview.bind_calls[0][1]['func']()
             assert destroy_called
-
+    
     # Test create buttonbox
-
+    
     def test_buttonbox_created(self, patch_tk):
         with self.select_movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
             buttonbox = outerframe.children[1]
             assert buttonbox == TtkFrame(parent=outerframe, padding=(5, 5, 10, 10))
-
+    
     def test_buttonbox_gridded(self, patch_tk):
         with self.select_movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
             buttonbox = outerframe.children[1]
             assert buttonbox.grid_calls[0] == dict(column=0, row=1, sticky='e')
-
+    
     def test_cancel_button_created(self, patch_tk, monkeypatch):
         create_cancel_button_calls = []
         monkeypatch.setattr(guiwidgets.MovieGUIBase, 'create_cancel_button',
@@ -1058,13 +1087,13 @@ class TestSelectMovieGUI:
             buttonbox = outerframe.children[1]
             assert create_cancel_button_calls[0][0][1] == buttonbox
             assert create_cancel_button_calls[0][1] == dict(column=0)
-
+    
     # Class Support Methods
-
+    
     @staticmethod
     def fake_movie_generator():
         yield dict(title='Test Title', year=2020, director='Director', minutes=200, notes='NB')
-
+    
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def select_movie_context(self):
@@ -1097,28 +1126,28 @@ class TtkTreeview:
     
     def grid(self, **kwargs):
         self.grid_calls.append(kwargs, )
-
+    
     def column(self, *args, **kwargs):
         self.column_calls.append((args, kwargs))
-
+    
     def heading(self, *args, **kwargs):
         self.heading_calls.append((args, kwargs))
-
+    
     def insert(self, *args, **kwargs):
         self.insert_calls.append((args, kwargs))
-
+    
     def bind(self, *args, **kwargs):
         self.bind_calls.append((args, kwargs))
-
+    
     def yview(self, *args, **kwargs):
         self.yview_calls.append((args, kwargs))
-
+    
     def selection_add(self, *args):
         self.selection_add_calls.append(args)
-
+    
     def configure(self, **kwargs):
         self.configure_calls.append(kwargs)
-
+    
     @staticmethod
     def selection():
         return ['test tag 1', 'test tag 2']
@@ -1133,13 +1162,13 @@ class TtkScrollbar:
     
     set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-
+    
     def __post_init__(self):
         self.parent.children.append(self)
-
+    
     def set(self, *args, **kwargs):
         self.set_calls.append((args, kwargs))
-
+    
     def grid(self, **kwargs):
         self.grid_calls.append(kwargs)
 

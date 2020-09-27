@@ -130,6 +130,9 @@ class TtkEntry:
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     config_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     register_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    focus_set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    select_range_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    icursor_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     
     def __post_init__(self):
         self.parent.children.append(self)
@@ -143,6 +146,15 @@ class TtkEntry:
     def register(self, *args):
         self.register_calls.append(args)
         return 'test registered_callback'
+    
+    def focus_set(self):
+        self.focus_set_calls.append(True)
+
+    def select_range(self, *args):
+        self.select_range_calls.append(args)
+    
+    def icursor(self, *args):
+        self.icursor_calls.append(args)
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
