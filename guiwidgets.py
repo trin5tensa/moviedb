@@ -27,7 +27,7 @@ from typing import Callable, Dict, List, Literal, Sequence
 import config
 import exception
 import neurons
-from guiwidgets_2 import EntryField, create_entry_fields, gui_messagebox
+from guiwidgets_2 import EntryField, create_entry_fields, gui_messagebox, focus_set
 
 
 MOVIE_FIELD_NAMES = ('title', 'year', 'director', 'minutes', 'notes',)
@@ -98,10 +98,9 @@ class MovieGUIBase:
             buttonbox:
             column:
         """
-        cancel = ttk.Button(buttonbox, text=CANCEL_TEXT, command=self.destroy)
-        cancel.grid(column=column, row=0)
-        cancel.bind('<Return>', lambda event, b=cancel: b.invoke())
-        cancel.focus_set()
+        cancel_button = ttk.Button(buttonbox, text=CANCEL_TEXT, command=self.destroy)
+        cancel_button.grid(column=column, row=0)
+        cancel_button.bind('<Return>', lambda event, b=cancel_button: b.invoke())
     
     def neuron_linker(self, internal_name: str, neuron: neurons.Neuron,
                       neuron_callback: Callable, initial_state: bool = False):
@@ -311,6 +310,7 @@ class AddMovieGUI(CommonButtonbox):
         
         # Customize title field.
         self.neuron_linker('title', self.commit_button_neuron, self.neuron_callback)
+        focus_set(self.entry_fields['title'].widget)
         
         # Customize minutes field.
         minutes = self.entry_fields['minutes']
@@ -384,10 +384,11 @@ class EditMovieGUI(CommonButtonbox):
                 TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=5, column=0, label_text=SELECT_TAGS_TEXT,
                 items=self.all_tags, user_callback=self.treeview_callback,
                 initial_selection=self.selected_tags)()
-        
         self.tag_treeview_observer.register(self.commit_button_neuron)
-
         
+        focus_set(self.entry_fields['notes'].widget)
+
+
 @dataclass
 class SearchMovieGUI(MovieGUIBase):
     """A form for searching for a movie.
@@ -425,7 +426,9 @@ class SearchMovieGUI(MovieGUIBase):
                 label_text=SELECT_TAGS_TEXT, items=self.all_tags,
                 user_callback=self.treeview_callback)()
         self.tag_treeview_observer.register(self.search_button_neuron)
-    
+        
+        focus_set(self.entry_fields['title'].widget)
+
     def create_body_item(self, body_frame: ttk.Frame, internal_name: str, text: str, row: int):
         """Create a ttk label and ttk entry.
         

@@ -275,6 +275,13 @@ def gui_askopenfilename(parent: ParentType, filetypes: Sequence[Sequence[str]]):
     return filedialog.askopenfilename(parent=parent, filetypes=filetypes)
 
 
+def focus_set(entry: ttk.Entry):
+    """Set initial focus for this class."""
+    entry.focus_set()
+    entry.select_range(0, tk.END)
+    entry.icursor(tk.END)
+
+
 @dataclass
 class EntryField:
     """A support class for attributes of a gui entry field."""
