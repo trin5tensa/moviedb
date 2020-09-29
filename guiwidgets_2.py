@@ -38,6 +38,49 @@ CANCEL_TEXT = 'Cancel'
 ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
 
 
+# moviedb-#201
+#   Write tests for guiwidgets_2.AddMovieGUI.__post_init__
+#   Write guiwidgets_2.AddMovieGUI.__post_init__
+#   Write tests for guiwidgets_2.AddMovieGUI.commit
+#   Write guiwidgets_2.AddMovieGUI.commit
+#   Write tests for guiwidgets_2.AddMovieGUI.cancel
+#   Write guiwidgets_2.AddMovieGUI.cancel
+#   Switch handlers module to use guiwidgets_2.AddMovieGUI
+#   Integration test guiwidgets_2.AddMovieGUI
+#   Rename guiwidgets_2.AddMovieGUI which will be retained until the whole module is deleted.
+#   Document deletion plan for guiwidgets_2.AddMovieGUI and why it cannot be deleted at this time.
+
+
+@dataclass
+class AddMovieGUI:
+    """Create and manage a Tk input form which allows the user to add a movie."""
+    # All widgets of this class will be enclosed in this frame.
+    outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
+    # A more convenient data structure for entry fields.
+    entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
+
+    # moviedb-#201
+    #   AddMovieGUI Pseudo Code
+    #   __post_init__ function
+    #       create_entry_fields
+    #       create_input_form_framing
+    #       create_input_form_fields
+    #       create_button commit
+    #       create_button cancel
+    #       link_and_neuron_to_button commit
+    #       link_field_to_neuron title
+    #       link_field_to_neuron year
+    #   commit function
+    #       Get values of entered fields using movie_field.textvariable.get()
+    #       Validate the year range
+    #       Try to commit
+    #       If MovieDBConstraintFailure report duplicate and stay on page
+    #       Else clear all fields and stay on page
+    #   cancel function
+    #       outer_frame.destroy()
+    pass
+
+
 @dataclass
 class AddTagGUI:
     """ Present a form for adding a tag to the user."""
@@ -314,6 +357,9 @@ def create_body_and_button_frames(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, 
     """Create the outer frames for an input form.
 
     This consists of an upper body and a lower buttonbox frame.
+    
+    Note: Do not call this function if thw input form has label and entry widgets. Use the higher
+    level function create_input_form_framing.
 
     Args:
         parent: The Tk parent frame.
@@ -341,7 +387,7 @@ def create_input_form_framing(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, ttk.
 
     An input body frame has two columns, one for the field labels and one for the entry fields.
     
-    Note: For a plain form without columns call create_input_form_framing directly.
+    Note: For a plain form without columns call the lower level function create_body_and_button_frames.
 
     Args:
         parent: The Tk parent frame.
@@ -437,7 +483,7 @@ def link_or_neuron_to_button(change_button_state: Callable) -> neurons.OrNeuron:
         change_button_state:
 
     Returns:
-
+    
     """
     neuron = neurons.OrNeuron()
     neuron.register(change_button_state)
@@ -453,6 +499,7 @@ def link_field_to_neuron(entry_fields: dict, name: str, neuron: neurons.Neuron, 
         neuron:
         notify_neuron:
     """
+    # moviedb-#201 Consolidate 'entry_fields' and 'name' into a single parameter 'entry_field'.
     entry_fields[name].textvariable.trace_add('write', notify_neuron)
     neuron.register_event(name)
 
