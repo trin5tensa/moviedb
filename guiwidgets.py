@@ -27,11 +27,10 @@ from typing import Callable, Dict, List, Literal, Sequence
 import config
 import exception
 import neurons
-from guiwidgets_2 import EntryField, create_entry_fields, gui_messagebox, focus_set
+from guiwidgets_2 import (EntryField, create_entry_fields, gui_messagebox, focus_set,
+                          MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
 
 
-MOVIE_FIELD_NAMES = ('title', 'year', 'director', 'minutes', 'notes',)
-MOVIE_FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes',)
 TAG_TREEVIEW_INTERNAL_NAME = 'tag treeview'
 COMMIT_TEXT = 'Commit'
 DELETE_TEXT = 'Delete'

@@ -28,6 +28,8 @@ import exception
 import neurons
 
 
+MOVIE_FIELD_NAMES = ('title', 'year', 'director', 'minutes', 'notes',)
+MOVIE_FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes',)
 TAG_FIELD_NAMES = ('tag',)
 TAG_FIELD_TEXTS = ('Tag',)
 SEARCH_TEXT = 'Search'
@@ -54,28 +56,58 @@ ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
 @dataclass
 class AddMovieGUI:
     """Create and manage a Tk input form which allows the user to add a movie."""
+    parent: tk.Tk
+    
     # All widgets of this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
     # A more convenient data structure for entry fields.
     entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
+    
+    def __post_init__(self):
+        # Initialize an internal dictionary to simplify field data management.
+        self.entry_fields = create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
 
+        # Create outer frames to hold fields and buttons.
+        self.outer_frame, body_frame, buttonbox = create_input_form_framing(self.parent)
+
+        # Create labels and fields
+        create_input_form_fields(body_frame, MOVIE_FIELD_NAMES, self.entry_fields)
+        focus_set(self.entry_fields[MOVIE_FIELD_NAMES[0]].widget)
+
+        # Populate buttonbox with commit and cancel buttons
+        column_num = itertools.count()
+        commit_button = create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
+                                      command=self.commit, enabled=False)
+        create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
+                      command=self.destroy, enabled=False)
+        
+        # Link commit button to title and year fields.
+        button_enabler = enable_button_wrapper(commit_button)
+        neuron = link_and_neuron_to_button(button_enabler)
+        
+        notify_neuron = notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[0], neuron)
+        link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[0], neuron, notify_neuron)
+        
+        notify_neuron = notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[1], neuron)
+        link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[1], neuron, notify_neuron)
+
+    def commit(self, *args, **kwargs):
+        """Development Stub."""
+        pass
+    
     # moviedb-#201
-    #   AddMovieGUI Pseudo Code
-    #   __post_init__ function
-    #       create_entry_fields
-    #       create_input_form_framing
-    #       create_input_form_fields
-    #       create_button commit
-    #       create_button cancel
-    #       link_and_neuron_to_button commit
-    #       link_field_to_neuron title
-    #       link_field_to_neuron year
     #   commit function
     #       Get values of entered fields using movie_field.textvariable.get()
     #       Validate the year range
     #       Try to commit
     #       If MovieDBConstraintFailure report duplicate and stay on page
     #       Else clear all fields and stay on page
+
+    def destroy(self, *args, **kwargs):
+        """Development Stub."""
+        pass
+
+    # moviedb-#201
     #   cancel function
     #       outer_frame.destroy()
     pass
@@ -112,7 +144,8 @@ class AddTagGUI:
                       command=self.destroy).focus_set()
         
         # Link commit button to tag field
-        neuron = link_or_neuron_to_button(enable_button_wrapper(commit_button))
+        button_enabler = enable_button_wrapper(commit_button)
+        neuron = link_or_neuron_to_button(button_enabler)
         link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron,
                              notify_neuron_wrapper(self.entry_fields,
                                                    TAG_FIELD_NAMES[0], neuron))
@@ -483,9 +516,23 @@ def link_or_neuron_to_button(change_button_state: Callable) -> neurons.OrNeuron:
         change_button_state:
 
     Returns:
-    
+        Neuron
     """
     neuron = neurons.OrNeuron()
+    neuron.register(change_button_state)
+    return neuron
+
+
+def link_and_neuron_to_button(change_button_state: Callable) -> neurons.AndNeuron:
+    """Create an "Or' neuron and link it to a button.
+    
+    Args:
+        change_button_state:
+
+    Returns:
+        Neuron
+    """
+    neuron = neurons.AndNeuron()
     neuron.register(change_button_state)
     return neuron
 
@@ -499,7 +546,6 @@ def link_field_to_neuron(entry_fields: dict, name: str, neuron: neurons.Neuron, 
         neuron:
         notify_neuron:
     """
-    # moviedb-#201 Consolidate 'entry_fields' and 'name' into a single parameter 'entry_field'.
     entry_fields[name].textvariable.trace_add('write', notify_neuron)
     neuron.register_event(name)
 
@@ -517,7 +563,7 @@ def notify_neuron_wrapper(entry_fields: dict, name: str, neuron: neurons.Neuron)
     Returns:
         The callback which will be called when the field is changed.
     """
-    
+
     # noinspection PyUnusedLocal
     def notify_neuron(*args):
         """Call the neuron when the field changes.

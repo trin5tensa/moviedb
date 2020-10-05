@@ -13,7 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from contextlib import contextmanager
-from typing import Callable, Optional, Type
+from typing import Callable, Optional, Tuple, Type
 
 import pytest
 
@@ -23,6 +23,117 @@ from test.dummytk import DummyTk, TkStringVar, TtkButton, TtkEntry, TtkFrame, Tt
 
 
 Exc = Type[Optional[exception.DatabaseSearchFoundNothing]]
+
+
+# noinspection PyMissingOrEmptyDocstring
+@pytest.mark.usefixtures('patch_tk')
+class TestAddMovieGUI:
+    def test_create_entry_fields_called(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(guiwidgets_2, 'create_entry_fields', lambda *args: calls.append(args))
+        monkeypatch.setattr(guiwidgets_2, 'create_input_form_fields', lambda *args: None)
+        try:
+            with self.add_movie_gui_context():
+                pass
+            
+        # The monkeypatching of create_entry_fields causes a TypeError in code which is not the subject
+        # of this test.
+        except TypeError:
+            pass
+        finally:
+            assert calls == [(guiwidgets_2.MOVIE_FIELD_NAMES, guiwidgets_2.MOVIE_FIELD_TEXTS)]
+
+    def test_create_import_form_framing_called(self, monkeypatch):
+        self.framing_calls = []
+        monkeypatch.setattr(guiwidgets_2, 'create_input_form_framing', self.dummy_create_framing)
+        with self.add_movie_gui_context() as add_movie_context:
+            assert self.framing_calls == [add_movie_context.parent]
+            
+    def test_create_input_form_fields(self, monkeypatch):
+        fields_calls = []
+        monkeypatch.setattr(guiwidgets_2, 'create_input_form_fields',
+                            lambda *args: fields_calls.append(args))
+        monkeypatch.setattr(guiwidgets_2, 'create_input_form_framing', self.dummy_create_framing)
+        monkeypatch.setattr(guiwidgets_2, 'focus_set', lambda *args: None)
+        with self.add_movie_gui_context() as add_movie_context:
+            assert fields_calls == [(self.dummy_body_frame, guiwidgets_2.MOVIE_FIELD_NAMES,
+                                     add_movie_context.entry_fields)]
+            
+    def test_focus_set_called_for_title_field(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(guiwidgets_2, 'focus_set', lambda *args: calls.append(args))
+        with self.add_movie_gui_context() as add_movie_context:
+            assert calls == [(add_movie_context.entry_fields['title'].widget, )]
+            
+    def test_create_buttons(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(guiwidgets_2, 'create_button',
+                            lambda *args, **kwargs: calls.append((args, kwargs)))
+        with self.add_movie_gui_context() as add_movie_context:
+            assert calls == [((TtkFrame(parent=TtkFrame(parent=DummyTk()), padding=(5, 5, 10, 10)),
+                               guiwidgets_2.COMMIT_TEXT,),
+                              dict(column=0, command=add_movie_context.commit, enabled=False)),
+                             ((TtkFrame(parent=TtkFrame(parent=DummyTk()), padding=(5, 5, 10, 10)),
+                               guiwidgets_2.CANCEL_TEXT,),
+                              dict(column=1, command=add_movie_context.destroy, enabled=False))]
+    
+    def test_neuron_linked_to_button(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(guiwidgets_2, 'link_and_neuron_to_button', lambda *args: calls.append(args))
+        monkeypatch.setattr(guiwidgets_2, 'link_field_to_neuron', lambda *args: None)
+        with self.add_movie_gui_context() as add_movie_context:
+            state_change = calls[0][0]
+            buttonbox = add_movie_context.outer_frame.children[1]
+            commit_button = buttonbox.children[0]
+            state_change(True)
+            state_change(False)
+            assert commit_button.state_calls == [['disabled'], ['!disabled'], ['disabled']]
+
+    # noinspection DuplicatedCode
+    def test_notify_neuron_wrapper_called(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(guiwidgets_2, 'notify_neuron_wrapper', lambda *args: calls.append(args))
+        with self.add_movie_gui_context() as add_movie_context:
+            # Function is called twice for 'title' and 'year'.
+            assert len(calls) == 2
+            assert len(calls[0]) == len(calls[1]) == 3
+            assert calls[0][0] == calls[1][0] == add_movie_context.entry_fields
+            assert calls[0][1] == guiwidgets_2.MOVIE_FIELD_NAMES[0]
+            assert calls[1][1] == guiwidgets_2.MOVIE_FIELD_NAMES[1]
+            assert isinstance(calls[0][2], guiwidgets_2.neurons.AndNeuron)
+            assert isinstance(calls[1][2], guiwidgets_2.neurons.AndNeuron)
+
+    # noinspection DuplicatedCode
+    def test_title_and_year_fields_linked_to_neuron(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(guiwidgets_2, 'link_field_to_neuron', lambda *args: calls.append(args))
+        with self.add_movie_gui_context() as add_movie_context:
+            # Function is called twice for 'title' and 'year'.
+            assert len(calls) == 2
+            assert len(calls[0]) == 4
+            assert calls[0][0] == calls[1][0] == add_movie_context.entry_fields
+            assert calls[0][1] == guiwidgets_2.MOVIE_FIELD_NAMES[0]
+            assert calls[1][1] == guiwidgets_2.MOVIE_FIELD_NAMES[1]
+            assert isinstance(calls[0][2], guiwidgets_2.neurons.AndNeuron)
+            assert isinstance(calls[1][2], guiwidgets_2.neurons.AndNeuron)
+            assert isinstance(calls[0][3], Callable)
+            assert isinstance(calls[1][3], Callable)
+
+    @contextmanager
+    def add_movie_gui_context(self):
+        """Yield an AddMovieGUI object for testing."""
+        parent = DummyTk()
+        # noinspection PyTypeChecker
+        yield guiwidgets_2.AddMovieGUI(parent)
+        
+    framing_calls = []
+    dummy_outer_frame = TtkFrame(DummyTk())
+    dummy_body_frame = TtkFrame(DummyTk())
+    dummy_buttonbox = TtkFrame(DummyTk())
+
+    def dummy_create_framing(self, parent) -> Tuple[TtkFrame, TtkFrame, TtkFrame]:
+        self.framing_calls.append(parent)
+        return self.dummy_outer_frame, self.dummy_body_frame, self.dummy_buttonbox
 
 
 # noinspection DuplicatedCode,PyMissingOrEmptyDocstring
@@ -797,6 +908,15 @@ def test_link_or_neuron_to_button():
     
     neuron = guiwidgets_2.link_or_neuron_to_button(change_button_state)
     assert isinstance(neuron, guiwidgets_2.neurons.OrNeuron)
+    assert neuron.notifees == [change_button_state]
+
+
+def test_link_and_neuron_to_button():
+    # noinspection PyMissingOrEmptyDocstring
+    def change_button_state(): pass
+    
+    neuron = guiwidgets_2.link_and_neuron_to_button(change_button_state)
+    assert isinstance(neuron, guiwidgets_2.neurons.AndNeuron)
     assert neuron.notifees == [change_button_state]
 
 
