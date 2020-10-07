@@ -119,21 +119,61 @@ class TestAddMovieGUI:
             assert isinstance(calls[0][3], Callable)
             assert isinstance(calls[1][3], Callable)
 
+    def test_commit_calls_callback(self):
+        with self.add_movie_gui_context() as add_movie_context:
+            add_movie_context.selected_tags = ['tag1', 'tag2']
+            add_movie_context.commit()
+            assert self.commit_callback_calls == ({'title': '4242', 'year': '4242', 'director': '4242',
+                                                   'minutes': '4242', 'notes': '4242'},
+                                                  ['tag1', 'tag2'])
+
+    def test_commit_validates_the_year(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(guiwidgets_2.messagebox, 'showinfo', lambda **kwargs: calls.append(kwargs))
+        with self.add_movie_gui_context() as add_movie_context:
+            outerframe = add_movie_context.parent.children[0]
+            bodyframe = outerframe.children[0]
+            ttkentry_year = bodyframe.children[3]
+            ttkentry_year.textvariable.set_for_test('42')
+            add_movie_context.commit()
+            assert calls == [{'detail': 'The year must be between 1877 and 10000.',
+                              'message': 'Invalid year.', 'parent': DummyTk()}]
+            
+    def test_moviedb_constraint_failure_displays_message(self, monkeypatch):
+        # noinspection PyUnusedLocal
+        def dummy_commit(*args):
+            raise exception.MovieDBConstraintFailure
+        
+        monkeypatch.setattr(self, 'dummy_commit_callback', dummy_commit)
+        calls = []
+        monkeypatch.setattr(guiwidgets_2.messagebox, 'showinfo', lambda **kwargs: calls.append(kwargs))
+        with self.add_movie_gui_context() as add_movie_context:
+            add_movie_context.commit()
+        assert calls == [{'detail': 'A movie with this title and year is already present '
+                                    'in the database.',
+                          'message': 'Database constraint failure.', 'parent': DummyTk()}]
+
     @contextmanager
     def add_movie_gui_context(self):
         """Yield an AddMovieGUI object for testing."""
         parent = DummyTk()
         # noinspection PyTypeChecker
-        yield guiwidgets_2.AddMovieGUI(parent)
-        
+        yield guiwidgets_2.AddMovieGUI(parent, self.dummy_commit_callback)
+    
+    # moviedb-#201 Are all of these dummies actually needed?
     framing_calls = []
     dummy_outer_frame = TtkFrame(DummyTk())
     dummy_body_frame = TtkFrame(DummyTk())
     dummy_buttonbox = TtkFrame(DummyTk())
-
+    
     def dummy_create_framing(self, parent) -> Tuple[TtkFrame, TtkFrame, TtkFrame]:
         self.framing_calls.append(parent)
         return self.dummy_outer_frame, self.dummy_body_frame, self.dummy_buttonbox
+    
+    commit_callback_calls = None
+    
+    def dummy_commit_callback(self, *args):
+        self.commit_callback_calls = args
 
 
 # noinspection DuplicatedCode,PyMissingOrEmptyDocstring

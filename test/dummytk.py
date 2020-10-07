@@ -49,6 +49,7 @@ class DummyTk:
 class TkStringVar:
     trace_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    value: str = '4242'
     
     def trace_add(self, *args):
         self.trace_add_calls.append(args)
@@ -56,9 +57,11 @@ class TkStringVar:
     def set(self, *args):
         self.set_calls.append(args)
     
-    @staticmethod
-    def get():
-        return '4242'
+    def get(self):
+        return self.value
+    
+    def set_for_test(self, value):
+        self.value = value
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
