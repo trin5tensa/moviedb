@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
 from typing import Callable, Dict, Mapping, Sequence, Tuple, TypeVar
 
+import config
 import exception
 import neurons
 
@@ -41,10 +42,6 @@ ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
 
 
 # moviedb-#201
-#   Write tests for guiwidgets_2.AddMovieGUI.__post_init__
-#   Write guiwidgets_2.AddMovieGUI.__post_init__
-#   Write tests for guiwidgets_2.AddMovieGUI.commit
-#   Write guiwidgets_2.AddMovieGUI.commit
 #   Write tests for guiwidgets_2.AddMovieGUI.cancel
 #   Write guiwidgets_2.AddMovieGUI.cancel
 #   Switch handlers module to use guiwidgets_2.AddMovieGUI
@@ -58,6 +55,10 @@ class AddMovieGUI:
     """Create and manage a Tk input form which allows the user to add a movie."""
     parent: tk.Tk
     
+    # On commit this callback will be called with a dictionary of fields and user entered values.
+    commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
+
+    selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
     # All widgets of this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
     # A more convenient data structure for entry fields.
@@ -81,28 +82,41 @@ class AddMovieGUI:
         create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                       command=self.destroy, enabled=False)
         
-        # Link commit button to title and year fields.
+        # Link neuron to commit button
         button_enabler = enable_button_wrapper(commit_button)
         neuron = link_and_neuron_to_button(button_enabler)
         
+        # Link neuron to title field
         notify_neuron = notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[0], neuron)
         link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[0], neuron, notify_neuron)
-        
+
+        # Link neuron to year field
         notify_neuron = notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[1], neuron)
         link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[1], neuron, notify_neuron)
 
-    def commit(self, *args, **kwargs):
-        """Development Stub."""
-        pass
+    def commit(self):
+        """The user clicked the 'Commit' button."""
+        return_fields = {internal_name: movie_field.textvariable.get()
+                         for internal_name, movie_field in self.entry_fields.items()}
     
-    # moviedb-#201
-    #   commit function
-    #       Get values of entered fields using movie_field.textvariable.get()
-    #       Validate the year range
-    #       Try to commit
-    #       If MovieDBConstraintFailure report duplicate and stay on page
-    #       Else clear all fields and stay on page
-
+        # Validate the year range
+        # moviedb-#103 SSOT: Replace the literal range limits with the range limits from the SQL schema.
+        if not validate_int_range(int(return_fields['year']), 1877, 10000):
+            msg = 'Invalid year.'
+            detail = 'The year must be between 1877 and 10000.'
+            messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
+            return
+    
+        # Commit and exit
+        try:
+            self.commit_callback(return_fields, self.selected_tags)
+    
+        # Alert user and stay on page
+        except exception.MovieDBConstraintFailure:
+            msg = 'Database constraint failure.'
+            detail = 'A movie with this title and year is already present in the database.'
+            messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
+    
     def destroy(self, *args, **kwargs):
         """Development Stub."""
         pass
@@ -576,3 +590,16 @@ def notify_neuron_wrapper(entry_fields: dict, name: str, neuron: neurons.Neuron)
         neuron(name, state)
     
     return notify_neuron
+
+
+def validate_int_range(user_input: int, lowest: int = None, highest: int = None) -> bool:
+    """Validate that user input is an integer within a valid range.
+
+    Use Case: Supports field validation by Tk
+    """
+    
+    # moviedb-#201 Test this function
+    # moviedb-#103 Refactor this method if validation can be carried out by database integrity checks.
+    lowest = user_input > lowest if lowest else True
+    highest = user_input < highest if highest else True
+    return lowest and highest
