@@ -149,9 +149,14 @@ class TestAddMovieGUI:
         monkeypatch.setattr(guiwidgets_2.messagebox, 'showinfo', lambda **kwargs: calls.append(kwargs))
         with self.add_movie_gui_context() as add_movie_context:
             add_movie_context.commit()
-        assert calls == [{'detail': 'A movie with this title and year is already present '
-                                    'in the database.',
-                          'message': 'Database constraint failure.', 'parent': DummyTk()}]
+            assert calls == [{'detail': 'A movie with this title and year is already present '
+                                        'in the database.',
+                              'message': 'Database constraint failure.', 'parent': DummyTk()}]
+
+    def test_destroy_deletes_add_movie_form(self, monkeypatch):
+        with self.add_movie_gui_context() as add_movie_context:
+            add_movie_context.destroy()
+            assert add_movie_context.outer_frame.destroy_calls == [True]
 
     @contextmanager
     def add_movie_gui_context(self):

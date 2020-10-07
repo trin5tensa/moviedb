@@ -42,8 +42,6 @@ ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
 
 
 # moviedb-#201
-#   Write tests for guiwidgets_2.AddMovieGUI.cancel
-#   Write guiwidgets_2.AddMovieGUI.cancel
 #   Switch handlers module to use guiwidgets_2.AddMovieGUI
 #   Integration test guiwidgets_2.AddMovieGUI
 #   Rename guiwidgets_2.AddMovieGUI which will be retained until the whole module is deleted.
@@ -117,14 +115,9 @@ class AddMovieGUI:
             detail = 'A movie with this title and year is already present in the database.'
             messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
     
-    def destroy(self, *args, **kwargs):
-        """Development Stub."""
-        pass
-
-    # moviedb-#201
-    #   cancel function
-    #       outer_frame.destroy()
-    pass
+    def destroy(self):
+        """Destroy all widgets of this class."""
+        self.outer_frame.destroy()
 
 
 @dataclass
