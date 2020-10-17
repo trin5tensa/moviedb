@@ -28,15 +28,8 @@ import config
 import exception
 import neurons
 from guiwidgets_2 import (EntryField, create_entry_fields, gui_messagebox, focus_set,
-                          MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
-
-
-TAG_TREEVIEW_INTERNAL_NAME = 'tag treeview'
-COMMIT_TEXT = 'Commit'
-DELETE_TEXT = 'Delete'
-SEARCH_TEXT = 'Search'
-CANCEL_TEXT = 'Cancel'
-SELECT_TAGS_TEXT = 'Select tags'
+                          MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS, TAG_TREEVIEW_INTERNAL_NAME,
+                          COMMIT_TEXT, DELETE_TEXT, SEARCH_TEXT, CANCEL_TEXT, SELECT_TAGS_TEXT)
 
 
 @dataclass

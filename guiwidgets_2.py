@@ -31,8 +31,10 @@ import neurons
 
 MOVIE_FIELD_NAMES = ('title', 'year', 'director', 'minutes', 'notes',)
 MOVIE_FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes',)
+TAG_TREEVIEW_INTERNAL_NAME = 'tag treeview'
 TAG_FIELD_NAMES = ('tag',)
 TAG_FIELD_TEXTS = ('Tag',)
+SELECT_TAGS_TEXT = 'Select tags'
 SEARCH_TEXT = 'Search'
 COMMIT_TEXT = 'Commit'
 DELETE_TEXT = 'Delete'
@@ -44,15 +46,16 @@ ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
 # moviedb-#201
 #   Switch handlers module to use guiwidgets_2.AddMovieGUI
 #   Integration test guiwidgets_2.AddMovieGUI
-#   Rename guiwidgets_2.AddMovieGUI which will be retained until the whole module is deleted.
-#   Document deletion plan for guiwidgets_2.AddMovieGUI and why it cannot be deleted at this time.
+#   Rename guiwidgets.AddMovieGUI. This will be retained until the whole module is deleted.
+#   Document deletion plan for guiwidgets.AddMovieGUI and why it cannot be deleted at this time.
 
 
 @dataclass
 class AddMovieGUI:
-    """Create and manage a Tk input form which allows the user to add a movie."""
-    parent: tk.Tk
+    """Create and manage a Tk input form which enables a user's supply of the data needed to
+    add a movie."""
     
+    parent: tk.Tk
     # On commit this callback will be called with a dictionary of fields and user entered values.
     commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
 
@@ -72,6 +75,10 @@ class AddMovieGUI:
         # Create labels and fields
         create_input_form_fields(body_frame, MOVIE_FIELD_NAMES, self.entry_fields)
         focus_set(self.entry_fields[MOVIE_FIELD_NAMES[0]].widget)
+        
+        # Create movie tags treeview
+        # moviedb-#201 (5) Test MovieTreeview
+        # moviedb-#201 (5) Code call to MovieTreeview
 
         # Populate buttonbox with commit and cancel buttons
         column_num = itertools.count()
@@ -91,6 +98,9 @@ class AddMovieGUI:
         # Link neuron to year field
         notify_neuron = notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[1], neuron)
         link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[1], neuron, notify_neuron)
+
+    # moviedb-#201 (4) Test renamed AddMovieGUI.treeview_callback  (tag_selection_callback?)
+    # moviedb-#201 (4) Code call to renamed AddMovieGUI.MovieTreeview
 
     def commit(self):
         """The user clicked the 'Commit' button."""
@@ -378,6 +388,91 @@ class EntryField:
         self.textvariable = tk.StringVar()
 
 
+@dataclass
+class MovieTagTreeview:
+    """Create and manage a treeview and a descriptive label.
+    
+    The user callback will be called whenever the user has changes the selection. The observer will
+    also be notified with a boolean message stating if the current selection differs from the original
+    selection.
+    """
+    
+    # Internal name of treeview
+    internal_name: str
+
+    # The frame which contains the treeview.
+    body_frame: ttk.Frame
+    # The tk grid row of the label and treeview within the frame's grid.
+    row: int
+    # The tk grid column of the label within the frame's grid. The treeview will be
+    #   placed in the cell to the right.
+    column: int
+    label_text: str
+    # A list of all the items which will be displayed in the treeview.
+    items: Sequence[str]
+    # Caller's callback for notification of reselection.
+    user_callback: Callable[[Sequence[str]], None]
+
+    # Items to be selected on opening.
+    initial_selection: Sequence[str] = field(default_factory=list)
+    observer: neurons.Observer = field(default_factory=neurons.Observer, init=False)
+    
+    def __call__(self) -> neurons.Observer:
+        # Create the label
+        label = ttk.Label(self.body_frame, text=self.label_text, padding=(0, 2))
+        label.grid(column=self.column, row=self.row, sticky='ne', padx=5)
+
+        # Create a frame for the treeview and its scrollbar
+        treeview_frame = ttk.Frame(self.body_frame, padding=5)
+        treeview_frame.grid(column=self.column + 1, row=self.row, sticky='w')
+        
+        # Create the treeview
+        treeview = ttk.Treeview(treeview_frame, columns=('tags',), height=10, selectmode='extended',
+                                show='tree', padding=5)
+        treeview.grid(column=0, row=0, sticky='w')
+        treeview.column('tags', width=100)
+        treeview.bind('<<TreeviewSelect>>',
+                      func=self.selection_callback_wrapper(treeview, self.user_callback))
+        
+        # Create the scrollbar
+        scrollbar = ttk.Scrollbar(treeview_frame, orient=tk.VERTICAL, command=treeview.yview)
+        scrollbar.grid(column=1, row=0)
+        treeview.configure(yscrollcommand=scrollbar.set)
+        
+        # Populate the treeview
+        for item in self.items:
+            treeview.insert('', 'end', item, text=item, tags='tags')
+        treeview.selection_add(self.initial_selection)
+
+        return self.observer
+
+    def selection_callback_wrapper(self, treeview: ttk.Treeview,
+                                   user_callback: Callable[[Sequence[str]], None]) -> Callable:
+        """Create a callback which will be called whenever the user selection is changed.
+
+        Args:
+            treeview:
+            user_callback:
+
+        Returns: The callback.
+        """
+    
+        # noinspection PyUnusedLocal
+        # @wraps
+        def selection_callback(*args):
+            """Notify MovieTreeview's caller and observer's notifees.
+
+            Args:
+                *args: Not used. Needed for compatibility with Tk:Tcl caller.
+            """
+            current_selection = treeview.selection()
+            user_callback(current_selection)
+            self.observer.notify(self.internal_name,
+                                 set(current_selection) != set(self.initial_selection))
+    
+        return selection_callback
+    
+
 def create_entry_fields(names: Sequence[str], texts: Sequence[str]) -> dict:
     """Create an internal dictionary to simplify field data management.
     
@@ -591,8 +686,9 @@ def validate_int_range(user_input: int, lowest: int = None, highest: int = None)
     Use Case: Supports field validation by Tk
     """
     
-    # moviedb-#201 Test this function
-    # moviedb-#103 Refactor this method if validation can be carried out by database integrity checks.
+    # moviedb-#201 Refactor this method if validation can be carried out by
+    #  database integrity checks >>or
+    #  >>or Test this function
     lowest = user_input > lowest if lowest else True
     highest = user_input < highest if highest else True
     return lowest and highest
