@@ -99,9 +99,10 @@ class AddMovieGUI:
         notify_neuron = notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[1], neuron)
         link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[1], neuron, notify_neuron)
 
-    # moviedb-#201 (4) Test renamed AddMovieGUI.treeview_callback  (tag_selection_callback?)
-    # moviedb-#201 (4) Code call to renamed AddMovieGUI.MovieTreeview
-
+    def treeview_callback(self, reselection: Sequence[str]):
+        """Update selected tags with the user's changes."""
+        self.selected_tags = reselection
+        
     def commit(self):
         """The user clicked the 'Commit' button."""
         return_fields = {internal_name: movie_field.textvariable.get()

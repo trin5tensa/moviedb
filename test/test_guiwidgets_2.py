@@ -120,6 +120,10 @@ class TestAddMovieGUI:
             assert isinstance(calls[0][3], Callable)
             assert isinstance(calls[1][3], Callable)
 
+    def test_treeview_callback_updates_selected_tags(self):
+        with self.add_movie_gui_context() as add_movie_context:
+            add_movie_context.treeview_callback(('tag 42', ))
+
     def test_commit_calls_callback(self):
         with self.add_movie_gui_context() as add_movie_context:
             add_movie_context.selected_tags = ['tag1', 'tag2']
