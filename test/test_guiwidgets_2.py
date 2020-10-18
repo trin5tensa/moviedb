@@ -65,7 +65,27 @@ class TestAddMovieGUI:
         monkeypatch.setattr(guiwidgets_2, 'focus_set', lambda *args: calls.append(args))
         with self.add_movie_gui_context() as add_movie_context:
             assert calls == [(add_movie_context.entry_fields['title'].widget, )]
-            
+    
+    def test_movie_tag_treeview_called(self, monkeypatch):
+        calls = []
+        inner_called = False
+        
+        def dummy_movie_tag_treeview(*args, **kwargs):
+            calls.append((args, kwargs))
+            def inner():
+                nonlocal inner_called
+                inner_called = True
+            return inner
+        
+        monkeypatch.setattr(guiwidgets_2, 'MovieTagTreeview', dummy_movie_tag_treeview)
+        with self.add_movie_gui_context() as add_movie_context:
+            assert calls == [((guiwidgets_2.TAG_TREEVIEW_INTERNAL_NAME,
+                               TtkFrame(parent=TtkFrame(parent=DummyTk()), padding=(10, 25, 10, 0))),
+                              dict(row=5, column=0, items=('tag 41', 'tag 42'),
+                                   label_text = guiwidgets_2.SELECT_TAGS_TEXT,
+                                   user_callback=add_movie_context.treeview_callback))]
+            assert inner_called
+    
     def test_create_buttons(self, monkeypatch):
         calls = []
         monkeypatch.setattr(guiwidgets_2, 'create_button',
@@ -167,8 +187,9 @@ class TestAddMovieGUI:
     def add_movie_gui_context(self):
         """Yield an AddMovieGUI object for testing."""
         parent = DummyTk()
+        tags = ('tag 41', 'tag 42')
         # noinspection PyTypeChecker
-        yield guiwidgets_2.AddMovieGUI(parent, self.dummy_commit_callback)
+        yield guiwidgets_2.AddMovieGUI(parent, self.dummy_commit_callback, tags)
     
     # moviedb-#201 Are all of these dummies actually needed?
     framing_calls = []

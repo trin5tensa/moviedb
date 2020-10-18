@@ -58,6 +58,8 @@ class AddMovieGUI:
     parent: tk.Tk
     # On commit this callback will be called with a dictionary of fields and user entered values.
     commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
+    # Complete list of tags in database
+    all_tags: Sequence[str]
 
     selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
     # All widgets of this class will be enclosed in this frame.
@@ -77,9 +79,10 @@ class AddMovieGUI:
         focus_set(self.entry_fields[MOVIE_FIELD_NAMES[0]].widget)
         
         # Create movie tags treeview
-        # moviedb-#201 (5) Test MovieTreeview
-        # moviedb-#201 (5) Code call to MovieTreeview
-
+        MovieTagTreeview(TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=5, column=0,
+                         label_text=SELECT_TAGS_TEXT, items=self.all_tags,
+                         user_callback=self.treeview_callback)()
+        
         # Populate buttonbox with commit and cancel buttons
         column_num = itertools.count()
         commit_button = create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
