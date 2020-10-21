@@ -207,15 +207,14 @@ class TestAddMovieGUI:
         # noinspection PyTypeChecker
         yield guiwidgets_2.AddMovieGUI(parent, self.dummy_commit_callback, tags)
     
-    # moviedb-#201 Are all of these dummies actually needed?
     framing_calls = []
-    dummy_outer_frame = TtkFrame(DummyTk())
     dummy_body_frame = TtkFrame(DummyTk())
-    dummy_buttonbox = TtkFrame(DummyTk())
     
     def dummy_create_framing(self, parent) -> Tuple[TtkFrame, TtkFrame, TtkFrame]:
+        dummy_outer_frame = TtkFrame(DummyTk())
+        dummy_buttonbox = TtkFrame(DummyTk())
         self.framing_calls.append(parent)
-        return self.dummy_outer_frame, self.dummy_body_frame, self.dummy_buttonbox
+        return dummy_outer_frame, self.dummy_body_frame, dummy_buttonbox
     
     commit_callback_calls = None
     

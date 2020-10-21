@@ -272,60 +272,6 @@ class CommonButtonbox(MovieGUIBase):
 
 
 @dataclass
-class AddMovieGUI(CommonButtonbox):
-    """ A form for adding a movie.
-    
-    WARNING:
-        This module uses the original subclassed approach to Tkinter primary widgets. It
-        is fragile and should not be used as template for future developments.
-        Any proposed refactoring should consider abandoning these classes and using the newer
-        composed classes of guiwidgets_2 as a model for future development.
-    """
-    
-    # Tags list
-    all_tags: Sequence[str]
-    
-    # noinspection DuplicatedCode
-    def create_body(self, outerframe: ttk.Frame):
-        """Create the body of the form with a column for labels and another for user input fields."""
-        body_frame = super().create_body(outerframe)
-        
-        # Create entry fields and their labels.
-        # moviedb-#132 Make 'notes' field into a tk.Text field (NB: no ttk.Text field)
-        for row_ix, internal_name in enumerate(MOVIE_FIELD_NAMES):
-            label = ttk.Label(body_frame, text=self.entry_fields[internal_name].label_text)
-            label.grid(column=0, row=row_ix, sticky='e', padx=5)
-            entry = ttk.Entry(body_frame, textvariable=self.entry_fields[internal_name].textvariable,
-                              width=36)
-            entry.grid(column=1, row=row_ix)
-            self.entry_fields[internal_name].widget = entry
-        
-        # Customize title field.
-        self.neuron_linker('title', self.commit_button_neuron, self.neuron_callback)
-        focus_set(self.entry_fields['title'].widget)
-        
-        # Customize minutes field.
-        minutes = self.entry_fields['minutes']
-        minutes.textvariable.set('100')
-        registered_callback = minutes.widget.register(self.validate_int)
-        minutes.widget.config(validate='key', validatecommand=(registered_callback, '%S'))
-        
-        # Customize year field.
-        year = self.entry_fields['year']
-        year.textvariable.set('2020')
-        self.neuron_linker('year', self.commit_button_neuron, self.neuron_callback, True)
-        registered_callback = year.widget.register(self.validate_int)
-        year.widget.config(validate='key', validatecommand=(registered_callback, '%S'))
-        
-        # Create treeview for tag selection.
-        # Availability of the add movie commit button is not dependent on the state of the treeview so
-        # the returned neuron is not used in AddMovieGUI but is available for subclasses.
-        MovieTreeview(TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=5, column=0,
-                      label_text=SELECT_TAGS_TEXT, items=self.all_tags,
-                      user_callback=self.treeview_callback, initial_selection=self.selected_tags)()
-
-
-@dataclass
 class EditMovieGUI(CommonButtonbox):
     """ A form for editing a movie.
     

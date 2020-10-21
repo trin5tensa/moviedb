@@ -43,11 +43,6 @@ CANCEL_TEXT = 'Cancel'
 ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
 
 
-# moviedb-#201
-#   Rename guiwidgets.AddMovieGUI. This will be retained until the whole module is deleted.
-#   Document deletion plan for guiwidgets.AddMovieGUI and why it cannot be deleted at this time.
-
-
 @dataclass
 class AddMovieGUI:
     """Create and manage a Tk input form which enables a user's supply of the data needed to
