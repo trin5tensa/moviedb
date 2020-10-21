@@ -37,8 +37,7 @@ def add_movie():
     all_tags = database.all_tags()
     # PyCharm https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker
-    guiwidgets.AddMovieGUI(config.app.tk_root, add_movie_callback, delete_movie_callback, ['commit'],
-                           all_tags)
+    guiwidgets_2.AddMovieGUI(config.app.tk_root, add_movie_callback, all_tags)
 
 
 def edit_movie():

@@ -209,6 +209,7 @@ class TtkTreeview:
     bind_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     configure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     selection_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    selection_set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     
     def __post_init__(self):
         self.parent.children.append(self)
@@ -236,6 +237,9 @@ class TtkTreeview:
     
     def selection_add(self, *args):
         self.selection_add_calls.append(args)
+
+    def selection_set(self, *args):
+        self.selection_set_calls.append(args)
 
     @staticmethod
     def selection():

@@ -44,8 +44,6 @@ ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
 
 
 # moviedb-#201
-#   Switch handlers module to use guiwidgets_2.AddMovieGUI
-#   Integration test guiwidgets_2.AddMovieGUI
 #   Rename guiwidgets.AddMovieGUI. This will be retained until the whole module is deleted.
 #   Document deletion plan for guiwidgets.AddMovieGUI and why it cannot be deleted at this time.
 
@@ -66,6 +64,8 @@ class AddMovieGUI:
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
     # A more convenient data structure for entry fields.
     entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
+    # Treeview for tags.
+    treeview: 'MovieTagTreeview' = field(default=None, init=False, repr=False)
     
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
@@ -79,16 +79,18 @@ class AddMovieGUI:
         focus_set(self.entry_fields[MOVIE_FIELD_NAMES[0]].widget)
         
         # Create movie tags treeview
-        MovieTagTreeview(TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=5, column=0,
-                         label_text=SELECT_TAGS_TEXT, items=self.all_tags,
-                         user_callback=self.treeview_callback)()
-        
+        # moviedb-#201 Convert MovieTagTreeview.__call__ to __post_init__
+        self.treeview = MovieTagTreeview(TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=5, column=0,
+                                         label_text=SELECT_TAGS_TEXT, items=self.all_tags,
+                                         user_callback=self.treeview_callback)
+        self.treeview()
+
         # Populate buttonbox with commit and cancel buttons
         column_num = itertools.count()
         commit_button = create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
                                       command=self.commit, enabled=False)
         create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
-                      command=self.destroy, enabled=False)
+                      command=self.destroy, enabled=True)
         
         # Link neuron to commit button
         button_enabler = enable_button_wrapper(commit_button)
@@ -128,7 +130,12 @@ class AddMovieGUI:
             msg = 'Database constraint failure.'
             detail = 'A movie with this title and year is already present in the database.'
             messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
-    
+
+        else:
+            # Clear fields ready for next entry.
+            clear_input_form_fields(self.entry_fields)
+            self.treeview.clear_selection()
+                
     def destroy(self):
         """Destroy all widgets of this class."""
         self.outer_frame.destroy()
@@ -381,7 +388,7 @@ def focus_set(entry: ttk.Entry):
 
 @dataclass
 class EntryField:
-    """A support class for attributes of a gui entry field."""
+    """A support class for the attributes of a GUI entry field."""
     label_text: str
     original_value: str
     widget: ttk.Entry = None
@@ -416,10 +423,11 @@ class MovieTagTreeview:
     items: Sequence[str]
     # Caller's callback for notification of reselection.
     user_callback: Callable[[Sequence[str]], None]
-
     # Items to be selected on opening.
     initial_selection: Sequence[str] = field(default_factory=list)
-    observer: neurons.Observer = field(default_factory=neurons.Observer, init=False)
+    
+    treeview: ttk.Treeview = field(default=None, init=False, repr=False)
+    observer: neurons.Observer = field(default_factory=neurons.Observer, init=False, repr=False)
     
     def __call__(self) -> neurons.Observer:
         # Create the label
@@ -431,22 +439,22 @@ class MovieTagTreeview:
         treeview_frame.grid(column=self.column + 1, row=self.row, sticky='w')
         
         # Create the treeview
-        treeview = ttk.Treeview(treeview_frame, columns=('tags',), height=10, selectmode='extended',
+        self.treeview = ttk.Treeview(treeview_frame, columns=('tags',), height=10, selectmode='extended',
                                 show='tree', padding=5)
-        treeview.grid(column=0, row=0, sticky='w')
-        treeview.column('tags', width=100)
-        treeview.bind('<<TreeviewSelect>>',
-                      func=self.selection_callback_wrapper(treeview, self.user_callback))
+        self.treeview.grid(column=0, row=0, sticky='w')
+        self.treeview.column('tags', width=100)
+        self.treeview.bind('<<TreeviewSelect>>',
+                      func=self.selection_callback_wrapper(self.treeview, self.user_callback))
         
         # Create the scrollbar
-        scrollbar = ttk.Scrollbar(treeview_frame, orient=tk.VERTICAL, command=treeview.yview)
+        scrollbar = ttk.Scrollbar(treeview_frame, orient=tk.VERTICAL, command=self.treeview.yview)
         scrollbar.grid(column=1, row=0)
-        treeview.configure(yscrollcommand=scrollbar.set)
+        self.treeview.configure(yscrollcommand=scrollbar.set)
         
         # Populate the treeview
         for item in self.items:
-            treeview.insert('', 'end', item, text=item, tags='tags')
-        treeview.selection_add(self.initial_selection)
+            self.treeview.insert('', 'end', item, text=item, tags='tags')
+        self.treeview.selection_add(self.initial_selection)
 
         return self.observer
 
@@ -476,6 +484,15 @@ class MovieTagTreeview:
     
         return selection_callback
     
+    def clear_selection(self):
+        """Clear the current selection.
+        
+        Use Case:
+            When the user enters a new record the input form is reused. The treeview selection
+            needs to be cleared ready for the next record entry.
+        """
+        self.treeview.selection_set()
+
 
 def create_entry_fields(names: Sequence[str], texts: Sequence[str]) -> dict:
     """Create an internal dictionary to simplify field data management.
@@ -565,6 +582,17 @@ def create_input_form_fields(body_frame: ttk.Frame, names: Sequence[str],
         entry.grid(column=1, row=row_ix)
         entry_field.widget = entry
         entry_field.textvariable.set(entry_field.original_value)
+
+
+def clear_input_form_fields(entry_fields: Mapping[str, EntryField]):
+    """Clear entry fields ready for fresh user input.
+    
+    Args:
+        entry_fields:
+    """
+    
+    for entry_field in entry_fields.values():
+        entry_field.textvariable.set('')
 
 
 def create_button(buttonbox: ttk.Frame, text: str, column: int, command: Callable,

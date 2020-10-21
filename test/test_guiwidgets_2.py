@@ -72,6 +72,7 @@ class TestAddMovieGUI:
         
         def dummy_movie_tag_treeview(*args, **kwargs):
             calls.append((args, kwargs))
+            
             def inner():
                 nonlocal inner_called
                 inner_called = True
@@ -82,7 +83,7 @@ class TestAddMovieGUI:
             assert calls == [((guiwidgets_2.TAG_TREEVIEW_INTERNAL_NAME,
                                TtkFrame(parent=TtkFrame(parent=DummyTk()), padding=(10, 25, 10, 0))),
                               dict(row=5, column=0, items=('tag 41', 'tag 42'),
-                                   label_text = guiwidgets_2.SELECT_TAGS_TEXT,
+                                   label_text=guiwidgets_2.SELECT_TAGS_TEXT,
                                    user_callback=add_movie_context.treeview_callback))]
             assert inner_called
     
@@ -96,7 +97,7 @@ class TestAddMovieGUI:
                               dict(column=0, command=add_movie_context.commit, enabled=False)),
                              ((TtkFrame(parent=TtkFrame(parent=DummyTk()), padding=(5, 5, 10, 10)),
                                guiwidgets_2.CANCEL_TEXT,),
-                              dict(column=1, command=add_movie_context.destroy, enabled=False))]
+                              dict(column=1, command=add_movie_context.destroy, enabled=True))]
     
     def test_neuron_linked_to_button(self, monkeypatch):
         calls = []
@@ -177,6 +178,21 @@ class TestAddMovieGUI:
             assert calls == [{'detail': 'A movie with this title and year is already present '
                                         'in the database.',
                               'message': 'Database constraint failure.', 'parent': DummyTk()}]
+
+    def test_clear_input_form_fields_called(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(guiwidgets_2, 'clear_input_form_fields', lambda *args: calls.append(args))
+        with self.add_movie_gui_context() as add_movie_context:
+            add_movie_context.commit()
+            assert calls == [(add_movie_context.entry_fields,)]
+
+    def test_treeview_clear_selection_called(self, monkeypatch):
+        calls = []
+        with self.add_movie_gui_context() as add_movie_context:
+            monkeypatch.setattr(add_movie_context.treeview, 'clear_selection',
+                                lambda: calls.append(True))
+            add_movie_context.commit()
+            assert calls == [True]
 
     def test_destroy_deletes_add_movie_form(self, monkeypatch):
         with self.add_movie_gui_context() as add_movie_context:
@@ -954,6 +970,12 @@ class TestMovieTagTreeview:
             selection_callback()
             assert calls == [(guiwidgets_2.TAG_TREEVIEW_INTERNAL_NAME, False)]
 
+    def test_clear_selection_calls_selection_set(self):
+        with self.movie_tag_treeview_context() as cm:
+            cm()
+            cm.clear_selection()
+            assert cm.treeview.selection_set_calls == [()]
+
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def movie_tag_treeview_context(self):
@@ -963,7 +985,6 @@ class TestMovieTagTreeview:
         label_text = guiwidgets_2.SELECT_TAGS_TEXT
         items = ['tag 1', 'tag 2']
         initial_selection = ['tag 1', ]
-        
         yield guiwidgets_2.MovieTagTreeview(guiwidgets_2.TAG_TREEVIEW_INTERNAL_NAME, body_frame,
                                             row, column, label_text, items, lambda *args: None,
                                             initial_selection)
@@ -1082,6 +1103,17 @@ class TestCreateInputFormFields:
         # noinspection PyTypeChecker
         guiwidgets_2.create_input_form_fields(body_frame, names, entry_fields)
         yield body_frame, entry_fields
+
+
+@pytest.mark.usefixtures('patch_tk')
+def test_clear_input_form_fields_calls_textvariable_set():
+    textvariable = guiwidgets_2.tk.StringVar()
+    # noinspection PyTypeChecker
+    entry_field = guiwidgets_2.EntryField('label', 'original value', textvariable=textvariable)
+    entry_fields = dict(test_entry=entry_field)
+    guiwidgets_2.clear_input_form_fields(entry_fields)
+    # noinspection PyUnresolvedReferences
+    assert entry_fields['test_entry'].textvariable.set_calls == [('',)]
 
 
 # noinspection PyMissingOrEmptyDocstring

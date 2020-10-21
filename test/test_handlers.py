@@ -57,16 +57,14 @@ class TestAddMovie:
     
     def test_movie_gui_called(self, monkeypatch):
         monkeypatch.setattr(handlers.database, 'all_tags', lambda *args: self.TAGS)
-        monkeypatch.setattr(handlers.guiwidgets, 'AddMovieGUI',
-                            lambda parent, commit_callback, delete_callback, buttons_to_show, all_tags:
-                            self.movie_gui_args.append((parent, commit_callback, delete_callback,
-                                                        buttons_to_show,
-                                                        all_tags)))
+        monkeypatch.setattr(handlers.guiwidgets_2, 'AddMovieGUI',
+                            lambda parent, commit_callback, all_tags:
+                            self.movie_gui_args.append((parent, commit_callback, all_tags)))
+        
         with self.add_movie_context():
             assert self.movie_gui_args == [(DummyParent(),
                                             handlers.add_movie_callback,
-                                            handlers.delete_movie_callback,
-                                            ['commit'], self.TAGS)]
+                                            self.TAGS)]
     
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
@@ -84,6 +82,7 @@ class TestDeleteMovie:
     
     def test_delete_movie_called(self, monkeypatch):
         calls = []
+        # noinspection PyTypeChecker
         movie = handlers.config.FindMovieTypedDict(title='test title', year=[2042])
         monkeypatch.setattr(handlers.database, 'del_movie', lambda *args: calls.append(args))
         handlers.delete_movie_callback(movie)
