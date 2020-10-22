@@ -67,25 +67,14 @@ class TestAddMovieGUI:
             assert calls == [(add_movie_context.entry_fields['title'].widget, )]
     
     def test_movie_tag_treeview_called(self, monkeypatch):
-        calls = []
-        inner_called = False
-        
-        def dummy_movie_tag_treeview(*args, **kwargs):
-            calls.append((args, kwargs))
-            
-            def inner():
-                nonlocal inner_called
-                inner_called = True
-            return inner
-        
-        monkeypatch.setattr(guiwidgets_2, 'MovieTagTreeview', dummy_movie_tag_treeview)
         with self.add_movie_gui_context() as add_movie_context:
-            assert calls == [((guiwidgets_2.TAG_TREEVIEW_INTERNAL_NAME,
-                               TtkFrame(parent=TtkFrame(parent=DummyTk()), padding=(10, 25, 10, 0))),
-                              dict(row=5, column=0, items=('tag 41', 'tag 42'),
-                                   label_text=guiwidgets_2.SELECT_TAGS_TEXT,
-                                   user_callback=add_movie_context.treeview_callback))]
-            assert inner_called
+            # noinspection PyTypeChecker
+            assert add_movie_context.treeview == guiwidgets_2.MovieTagTreeview(
+                    guiwidgets_2.TAG_TREEVIEW_INTERNAL_NAME,
+                    body_frame=TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
+                                        padding=(10, 25, 10, 0)),
+                    row=5, column=0, label_text=guiwidgets_2.SELECT_TAGS_TEXT,
+                    items=('tag 41', 'tag 42'), user_callback=add_movie_context.treeview_callback)
     
     def test_create_buttons(self, monkeypatch):
         calls = []
@@ -842,7 +831,6 @@ def test_focus_set_calls_icursor_on_entry(patch_tk):
 class TestMovieTagTreeview:
     def test_label_created(self):
         with self.movie_tag_treeview_context() as cm:
-            cm()
             label = cm.body_frame.children[0]
             assert label.parent == TtkFrame(parent=DummyTk())
             assert label.text == guiwidgets_2.SELECT_TAGS_TEXT
@@ -850,25 +838,21 @@ class TestMovieTagTreeview:
             
     def test_label_gridded(self):
         with self.movie_tag_treeview_context() as cm:
-            cm()
             label = cm.body_frame.children[0]
             assert label.grid_calls == [dict(column=cm.column, row=cm.row, sticky='ne', padx=5)]
             
     def test_treeview_frame_created(self):
         with self.movie_tag_treeview_context() as cm:
-            cm()
             treeview_frame = cm.body_frame.children[1]
             assert treeview_frame == TtkFrame(parent=TtkFrame(parent=DummyTk()), padding=5)
 
     def test_treeview_frame_gridded(self):
         with self.movie_tag_treeview_context() as cm:
-            cm()
             treeview_frame = cm.body_frame.children[1]
             assert treeview_frame.grid_calls == [dict(column=cm.column + 1, row=cm.row, sticky='w')]
 
     def test_treeview_created(self):
         with self.movie_tag_treeview_context() as cm:
-            cm()
             treeview_frame = cm.body_frame.children[1]
             treeview = treeview_frame.children[0]
             assert treeview == TtkTreeview(parent=TtkFrame(parent=TtkFrame(parent=DummyTk()), padding=5),
@@ -876,53 +860,46 @@ class TestMovieTagTreeview:
 
     def test_treeview_gridded(self):
         with self.movie_tag_treeview_context() as cm:
-            cm()
             treeview_frame = cm.body_frame.children[1]
             treeview = treeview_frame.children[0]
             assert treeview.grid_calls == [dict(column=0, row=0, sticky='w')]
 
     def test_treeview_column_width_set(self):
         with self.movie_tag_treeview_context() as cm:
-            cm()
             treeview_frame = cm.body_frame.children[1]
             treeview = treeview_frame.children[0]
             assert treeview.column_calls == [(('tags', ), dict(width=100))]
 
     def test_treeview_bind_called(self, monkeypatch):
         calls = []
+        monkeypatch.setattr(guiwidgets_2.MovieTagTreeview, 'selection_callback_wrapper',
+                            lambda *args: calls.append(args))
         with self.movie_tag_treeview_context() as cm:
-            monkeypatch.setattr(cm, 'selection_callback_wrapper',
-                                lambda *args: calls.append(args))
-            cm()
             treeview_frame = cm.body_frame.children[1]
             treeview = treeview_frame.children[0]
             assert treeview.bind_calls[0][0] == ('<<TreeviewSelect>>', )
-            assert calls == [(treeview, cm.user_callback)]
+            assert calls == [(cm, cm.treeview, cm.user_callback)]
 
     def test_scrollbar_created(self):
         with self.movie_tag_treeview_context() as cm:
-            cm()
             treeview_frame = cm.body_frame.children[1]
             treeview, scrollbar = treeview_frame.children
             assert scrollbar == TtkScrollbar(treeview_frame, 'vertical', treeview.yview)
 
     def test_scrollbar_gridded(self):
         with self.movie_tag_treeview_context() as cm:
-            cm()
             treeview_frame = cm.body_frame.children[1]
             _, scrollbar = treeview_frame.children
             assert scrollbar.grid_calls == [dict(column=1, row=0)]
 
     def test_treeview_configured_with_scrollbar(self):
         with self.movie_tag_treeview_context() as cm:
-            cm()
             treeview_frame = cm.body_frame.children[1]
             treeview, scrollbar = treeview_frame.children
             assert treeview.configure_calls == [dict(yscrollcommand=scrollbar.set)]
             
     def test_treeview_populated_with_items(self):
         with self.movie_tag_treeview_context() as cm:
-            cm()
             treeview_frame = cm.body_frame.children[1]
             treeview = treeview_frame.children[0]
             assert treeview.insert_calls == [(('', 'end', 'tag 1'), dict(text='tag 1', tags='tags')),
@@ -930,16 +907,10 @@ class TestMovieTagTreeview:
 
     def test_set_initial_selection(self):
         with self.movie_tag_treeview_context() as cm:
-            cm()
             treeview_frame = cm.body_frame.children[1]
             treeview = treeview_frame.children[0]
             assert treeview.selection_add_calls == [(cm.initial_selection,)]
             
-    def test_calling_movie_tag_treeview_returns_observer(self):
-        with self.movie_tag_treeview_context() as cm:
-            result = cm()
-            assert result == cm.observer
-
     def test_callback_called_with_current_user_selection(self):
         tree = TtkTreeview(TtkFrame(DummyTk()))
         calls = []
@@ -971,7 +942,6 @@ class TestMovieTagTreeview:
 
     def test_clear_selection_calls_selection_set(self):
         with self.movie_tag_treeview_context() as cm:
-            cm()
             cm.clear_selection()
             assert cm.treeview.selection_set_calls == [()]
 

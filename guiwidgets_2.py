@@ -74,11 +74,9 @@ class AddMovieGUI:
         focus_set(self.entry_fields[MOVIE_FIELD_NAMES[0]].widget)
         
         # Create movie tags treeview
-        # moviedb-#201 Convert MovieTagTreeview.__call__ to __post_init__
         self.treeview = MovieTagTreeview(TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=5, column=0,
                                          label_text=SELECT_TAGS_TEXT, items=self.all_tags,
                                          user_callback=self.treeview_callback)
-        self.treeview()
 
         # Populate buttonbox with commit and cancel buttons
         column_num = itertools.count()
@@ -424,7 +422,7 @@ class MovieTagTreeview:
     treeview: ttk.Treeview = field(default=None, init=False, repr=False)
     observer: neurons.Observer = field(default_factory=neurons.Observer, init=False, repr=False)
     
-    def __call__(self) -> neurons.Observer:
+    def __post_init__(self):
         # Create the label
         label = ttk.Label(self.body_frame, text=self.label_text, padding=(0, 2))
         label.grid(column=self.column, row=self.row, sticky='ne', padx=5)
@@ -450,8 +448,6 @@ class MovieTagTreeview:
         for item in self.items:
             self.treeview.insert('', 'end', item, text=item, tags='tags')
         self.treeview.selection_add(self.initial_selection)
-
-        return self.observer
 
     def selection_callback_wrapper(self, treeview: ttk.Treeview,
                                    user_callback: Callable[[Sequence[str]], None]) -> Callable:
