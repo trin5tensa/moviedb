@@ -92,10 +92,18 @@ def add_movie(movie: MovieTypedDict):
             session.add(movie)
             
     except sqlalchemy.exc.IntegrityError as exc:
+        # The combination of title and year matches a record already in the database.
         if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
             msg = exc.orig.args[0]
             logging.error(msg)
             raise exception.MovieDBConstraintFailure(msg) from exc
+        
+        # The year is not in the valid range.
+        if exc.orig.args[0] == 'CHECK constraint failed: movies':
+            msg = f"Invalid year '{exc.params[3]}'."
+            logging.error(msg)
+            raise exception.MovieYearConstraintFailure(msg) from exc
+        
         else:
             raise
 

@@ -166,7 +166,6 @@ class MovieGUIBase:
         Use Case: Supports field validation by Tk
         """
     
-        # moviedb-#103 Delete this method if validation can be carried out by database integrity checks.
         lowest = user_input > lowest if lowest else True
         highest = user_input < highest if highest else True
         return lowest and highest
@@ -232,7 +231,6 @@ class CommonButtonbox(MovieGUIBase):
                          for internal_name, movie_field in self.entry_fields.items()}
         
         # Validate the year range
-        # moviedb-#103 SSOT: Replace the literal range limits with the range limits from the SQL schema.
         if not self.validate_int_range(int(return_fields['year']), 1877, 10000):
             msg = 'Invalid year.'
             detail = 'The year must be between 1877 and 10000.'
@@ -559,7 +557,8 @@ class MovieTreeview:
     # Items to be selected on opening.
     initial_selection: Sequence[str] = field(default_factory=list)
     observer: neurons.Observer = field(default_factory=neurons.Observer, init=False)
-    
+
+    # noinspection DuplicatedCode
     def __call__(self) -> neurons.Observer:
         # Create the label
         label = ttk.Label(self.body_frame, text=self.label_text, padding=(0, 2))

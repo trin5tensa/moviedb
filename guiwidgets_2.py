@@ -106,29 +106,26 @@ class AddMovieGUI:
         return_fields = {internal_name: movie_field.textvariable.get()
                          for internal_name, movie_field in self.entry_fields.items()}
     
-        # Validate the year range
-        # moviedb-#103 SSOT: Replace the literal range limits with the range limits from the SQL schema.
-        if not validate_int_range(int(return_fields['year']), 1877, 10000):
-            msg = 'Invalid year.'
-            detail = 'The year must be between 1877 and 10000.'
-            messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
-            return
-    
         # Commit and exit
         try:
             self.commit_callback(return_fields, self.selected_tags)
     
-        # Alert user and stay on page
+        # Alert user to title and year constraint failure.
         except exception.MovieDBConstraintFailure:
             msg = 'Database constraint failure.'
             detail = 'A movie with this title and year is already present in the database.'
             messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
-
+            
+        # Alert user to invalid year.
+        except exception.MovieYearConstraintFailure as exc:
+            msg = exc.args[0]
+            messagebox.showinfo(parent=self.parent, message=msg)
+            
+        # Clear fields ready for next entry.
         else:
-            # Clear fields ready for next entry.
             clear_input_form_fields(self.entry_fields)
             self.treeview.clear_selection()
-                
+            
     def destroy(self):
         """Destroy all widgets of this class."""
         self.outer_frame.destroy()
@@ -421,7 +418,8 @@ class MovieTagTreeview:
     
     treeview: ttk.Treeview = field(default=None, init=False, repr=False)
     observer: neurons.Observer = field(default_factory=neurons.Observer, init=False, repr=False)
-    
+
+    # noinspection DuplicatedCode
     def __post_init__(self):
         # Create the label
         label = ttk.Label(self.body_frame, text=self.label_text, padding=(0, 2))
@@ -433,11 +431,11 @@ class MovieTagTreeview:
         
         # Create the treeview
         self.treeview = ttk.Treeview(treeview_frame, columns=('tags',), height=10, selectmode='extended',
-                                show='tree', padding=5)
+                                     show='tree', padding=5)
         self.treeview.grid(column=0, row=0, sticky='w')
         self.treeview.column('tags', width=100)
         self.treeview.bind('<<TreeviewSelect>>',
-                      func=self.selection_callback_wrapper(self.treeview, self.user_callback))
+                           func=self.selection_callback_wrapper(self.treeview, self.user_callback))
         
         # Create the scrollbar
         scrollbar = ttk.Scrollbar(treeview_frame, orient=tk.VERTICAL, command=self.treeview.yview)
@@ -701,17 +699,3 @@ def notify_neuron_wrapper(entry_fields: dict, name: str, neuron: neurons.Neuron)
         neuron(name, state)
     
     return notify_neuron
-
-
-def validate_int_range(user_input: int, lowest: int = None, highest: int = None) -> bool:
-    """Validate that user input is an integer within a valid range.
-
-    Use Case: Supports field validation by Tk
-    """
-    
-    # moviedb-#201 Refactor this method if validation can be carried out by
-    #  database integrity checks >>or
-    #  >>or Test this function
-    lowest = user_input > lowest if lowest else True
-    highest = user_input < highest if highest else True
-    return lowest and highest

@@ -141,18 +141,6 @@ class TestAddMovieGUI:
             assert self.commit_callback_calls == ({'title': '4242', 'year': '4242', 'director': '4242',
                                                    'minutes': '4242', 'notes': '4242'},
                                                   ['tag1', 'tag2'])
-
-    def test_commit_validates_the_year(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets_2.messagebox, 'showinfo', lambda **kwargs: calls.append(kwargs))
-        with self.add_movie_gui_context() as add_movie_context:
-            outerframe = add_movie_context.parent.children[0]
-            bodyframe = outerframe.children[0]
-            ttkentry_year = bodyframe.children[3]
-            ttkentry_year.textvariable.set_for_test('42')
-            add_movie_context.commit()
-            assert calls == [{'detail': 'The year must be between 1877 and 10000.',
-                              'message': 'Invalid year.', 'parent': DummyTk()}]
             
     def test_moviedb_constraint_failure_displays_message(self, monkeypatch):
         # noinspection PyUnusedLocal
@@ -167,6 +155,20 @@ class TestAddMovieGUI:
             assert calls == [{'detail': 'A movie with this title and year is already present '
                                         'in the database.',
                               'message': 'Database constraint failure.', 'parent': DummyTk()}]
+            
+    def test_movie_year_constraint_failure_displays_message(self, monkeypatch):
+        message = "Invalid year '42'"
+        
+        # noinspection PyUnusedLocal
+        def dummy_commit(*args):
+            raise exception.MovieYearConstraintFailure(message)
+        
+        monkeypatch.setattr(self, 'dummy_commit_callback', dummy_commit)
+        calls = []
+        monkeypatch.setattr(guiwidgets_2.messagebox, 'showinfo', lambda **kwargs: calls.append(kwargs))
+        with self.add_movie_gui_context() as add_movie_context:
+            add_movie_context.commit()
+            assert calls == [dict(message=message, parent=DummyTk())]
 
     def test_clear_input_form_fields_called(self, monkeypatch):
         calls = []
