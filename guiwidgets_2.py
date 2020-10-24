@@ -24,18 +24,111 @@ from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
 from typing import Callable, Dict, Mapping, Sequence, Tuple, TypeVar
 
+import config
 import exception
 import neurons
 
 
+MOVIE_FIELD_NAMES = ('title', 'year', 'director', 'minutes', 'notes',)
+MOVIE_FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes',)
+TAG_TREEVIEW_INTERNAL_NAME = 'tag treeview'
 TAG_FIELD_NAMES = ('tag',)
 TAG_FIELD_TEXTS = ('Tag',)
+SELECT_TAGS_TEXT = 'Select tags'
 SEARCH_TEXT = 'Search'
 COMMIT_TEXT = 'Commit'
 DELETE_TEXT = 'Delete'
 CANCEL_TEXT = 'Cancel'
 
 ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
+
+
+@dataclass
+class AddMovieGUI:
+    """Create and manage a Tk input form which enables a user's supply of the data needed to
+    add a movie."""
+    
+    parent: tk.Tk
+    # On commit this callback will be called with a dictionary of fields and user entered values.
+    commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
+    # Complete list of tags in database
+    all_tags: Sequence[str]
+
+    selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
+    # All widgets of this class will be enclosed in this frame.
+    outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
+    # A more convenient data structure for entry fields.
+    entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
+    # Treeview for tags.
+    treeview: 'MovieTagTreeview' = field(default=None, init=False, repr=False)
+    
+    def __post_init__(self):
+        # Initialize an internal dictionary to simplify field data management.
+        self.entry_fields = create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
+
+        # Create outer frames to hold fields and buttons.
+        self.outer_frame, body_frame, buttonbox = create_input_form_framing(self.parent)
+
+        # Create labels and fields
+        create_input_form_fields(body_frame, MOVIE_FIELD_NAMES, self.entry_fields)
+        focus_set(self.entry_fields[MOVIE_FIELD_NAMES[0]].widget)
+        
+        # Create movie tags treeview
+        self.treeview = MovieTagTreeview(TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=5, column=0,
+                                         label_text=SELECT_TAGS_TEXT, items=self.all_tags,
+                                         user_callback=self.treeview_callback)
+
+        # Populate buttonbox with commit and cancel buttons
+        column_num = itertools.count()
+        commit_button = create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
+                                      command=self.commit, enabled=False)
+        create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
+                      command=self.destroy, enabled=True)
+        
+        # Link neuron to commit button
+        button_enabler = enable_button_wrapper(commit_button)
+        neuron = link_and_neuron_to_button(button_enabler)
+        
+        # Link neuron to title field
+        notify_neuron = notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[0], neuron)
+        link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[0], neuron, notify_neuron)
+
+        # Link neuron to year field
+        notify_neuron = notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[1], neuron)
+        link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[1], neuron, notify_neuron)
+
+    def treeview_callback(self, reselection: Sequence[str]):
+        """Update selected tags with the user's changes."""
+        self.selected_tags = reselection
+        
+    def commit(self):
+        """The user clicked the 'Commit' button."""
+        return_fields = {internal_name: movie_field.textvariable.get()
+                         for internal_name, movie_field in self.entry_fields.items()}
+    
+        # Commit and exit
+        try:
+            self.commit_callback(return_fields, self.selected_tags)
+    
+        # Alert user to title and year constraint failure.
+        except exception.MovieDBConstraintFailure:
+            msg = 'Database constraint failure.'
+            detail = 'A movie with this title and year is already present in the database.'
+            messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
+            
+        # Alert user to invalid year.
+        except exception.MovieYearConstraintFailure as exc:
+            msg = exc.args[0]
+            messagebox.showinfo(parent=self.parent, message=msg)
+            
+        # Clear fields ready for next entry.
+        else:
+            clear_input_form_fields(self.entry_fields)
+            self.treeview.clear_selection()
+            
+    def destroy(self):
+        """Destroy all widgets of this class."""
+        self.outer_frame.destroy()
 
 
 @dataclass
@@ -69,7 +162,8 @@ class AddTagGUI:
                       command=self.destroy).focus_set()
         
         # Link commit button to tag field
-        neuron = link_or_neuron_to_button(enable_button_wrapper(commit_button))
+        button_enabler = enable_button_wrapper(commit_button)
+        neuron = link_or_neuron_to_button(button_enabler)
         link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron,
                              notify_neuron_wrapper(self.entry_fields,
                                                    TAG_FIELD_NAMES[0], neuron))
@@ -284,7 +378,7 @@ def focus_set(entry: ttk.Entry):
 
 @dataclass
 class EntryField:
-    """A support class for attributes of a gui entry field."""
+    """A support class for the attributes of a GUI entry field."""
     label_text: str
     original_value: str
     widget: ttk.Entry = None
@@ -293,6 +387,100 @@ class EntryField:
     
     def __post_init__(self):
         self.textvariable = tk.StringVar()
+
+
+@dataclass
+class MovieTagTreeview:
+    """Create and manage a treeview and a descriptive label.
+    
+    The user callback will be called whenever the user has changes the selection. The observer will
+    also be notified with a boolean message stating if the current selection differs from the original
+    selection.
+    """
+    
+    # Internal name of treeview
+    internal_name: str
+
+    # The frame which contains the treeview.
+    body_frame: ttk.Frame
+    # The tk grid row of the label and treeview within the frame's grid.
+    row: int
+    # The tk grid column of the label within the frame's grid. The treeview will be
+    #   placed in the cell to the right.
+    column: int
+    label_text: str
+    # A list of all the items which will be displayed in the treeview.
+    items: Sequence[str]
+    # Caller's callback for notification of reselection.
+    user_callback: Callable[[Sequence[str]], None]
+    # Items to be selected on opening.
+    initial_selection: Sequence[str] = field(default_factory=list)
+    
+    treeview: ttk.Treeview = field(default=None, init=False, repr=False)
+    observer: neurons.Observer = field(default_factory=neurons.Observer, init=False, repr=False)
+
+    # noinspection DuplicatedCode
+    def __post_init__(self):
+        # Create the label
+        label = ttk.Label(self.body_frame, text=self.label_text, padding=(0, 2))
+        label.grid(column=self.column, row=self.row, sticky='ne', padx=5)
+
+        # Create a frame for the treeview and its scrollbar
+        treeview_frame = ttk.Frame(self.body_frame, padding=5)
+        treeview_frame.grid(column=self.column + 1, row=self.row, sticky='w')
+        
+        # Create the treeview
+        self.treeview = ttk.Treeview(treeview_frame, columns=('tags',), height=10, selectmode='extended',
+                                     show='tree', padding=5)
+        self.treeview.grid(column=0, row=0, sticky='w')
+        self.treeview.column('tags', width=100)
+        self.treeview.bind('<<TreeviewSelect>>',
+                           func=self.selection_callback_wrapper(self.treeview, self.user_callback))
+        
+        # Create the scrollbar
+        scrollbar = ttk.Scrollbar(treeview_frame, orient=tk.VERTICAL, command=self.treeview.yview)
+        scrollbar.grid(column=1, row=0)
+        self.treeview.configure(yscrollcommand=scrollbar.set)
+        
+        # Populate the treeview
+        for item in self.items:
+            self.treeview.insert('', 'end', item, text=item, tags='tags')
+        self.treeview.selection_add(self.initial_selection)
+
+    def selection_callback_wrapper(self, treeview: ttk.Treeview,
+                                   user_callback: Callable[[Sequence[str]], None]) -> Callable:
+        """Create a callback which will be called whenever the user selection is changed.
+
+        Args:
+            treeview:
+            user_callback:
+
+        Returns: The callback.
+        """
+    
+        # noinspection PyUnusedLocal
+        # @wraps
+        def selection_callback(*args):
+            """Notify MovieTreeview's caller and observer's notifees.
+
+            Args:
+                *args: Not used. Needed for compatibility with Tk:Tcl caller.
+            """
+            current_selection = treeview.selection()
+            user_callback(current_selection)
+            self.observer.notify(self.internal_name,
+                                 set(current_selection) != set(self.initial_selection))
+    
+        return selection_callback
+    
+    def clear_selection(self):
+        """Clear the current selection.
+        
+        Use Case:
+            When the user enters a new record the input form is reused. The treeview selection
+            needs to be cleared ready for the next record entry.
+        """
+        self.treeview.selection_set()
 
 
 def create_entry_fields(names: Sequence[str], texts: Sequence[str]) -> dict:
@@ -314,6 +502,9 @@ def create_body_and_button_frames(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, 
     """Create the outer frames for an input form.
 
     This consists of an upper body and a lower buttonbox frame.
+    
+    Note: Do not call this function if thw input form has label and entry widgets. Use the higher
+    level function create_input_form_framing.
 
     Args:
         parent: The Tk parent frame.
@@ -341,7 +532,7 @@ def create_input_form_framing(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, ttk.
 
     An input body frame has two columns, one for the field labels and one for the entry fields.
     
-    Note: For a plain form without columns call create_input_form_framing directly.
+    Note: For a plain form without columns call the lower level function create_body_and_button_frames.
 
     Args:
         parent: The Tk parent frame.
@@ -380,6 +571,17 @@ def create_input_form_fields(body_frame: ttk.Frame, names: Sequence[str],
         entry.grid(column=1, row=row_ix)
         entry_field.widget = entry
         entry_field.textvariable.set(entry_field.original_value)
+
+
+def clear_input_form_fields(entry_fields: Mapping[str, EntryField]):
+    """Clear entry fields ready for fresh user input.
+    
+    Args:
+        entry_fields:
+    """
+    
+    for entry_field in entry_fields.values():
+        entry_field.textvariable.set('')
 
 
 def create_button(buttonbox: ttk.Frame, text: str, column: int, command: Callable,
@@ -437,9 +639,23 @@ def link_or_neuron_to_button(change_button_state: Callable) -> neurons.OrNeuron:
         change_button_state:
 
     Returns:
-
+        Neuron
     """
     neuron = neurons.OrNeuron()
+    neuron.register(change_button_state)
+    return neuron
+
+
+def link_and_neuron_to_button(change_button_state: Callable) -> neurons.AndNeuron:
+    """Create an "Or' neuron and link it to a button.
+    
+    Args:
+        change_button_state:
+
+    Returns:
+        Neuron
+    """
+    neuron = neurons.AndNeuron()
     neuron.register(change_button_state)
     return neuron
 
@@ -470,7 +686,7 @@ def notify_neuron_wrapper(entry_fields: dict, name: str, neuron: neurons.Neuron)
     Returns:
         The callback which will be called when the field is changed.
     """
-    
+
     # noinspection PyUnusedLocal
     def notify_neuron(*args):
         """Call the neuron when the field changes.

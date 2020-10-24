@@ -14,7 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from dataclasses import dataclass, field
-from typing import Callable, List, Literal, Tuple, Union
+from typing import Callable, Literal, Sequence, Tuple, Union
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
@@ -49,6 +49,7 @@ class DummyTk:
 class TkStringVar:
     trace_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    value: str = '4242'
     
     def trace_add(self, *args):
         self.trace_add_calls.append(args)
@@ -56,9 +57,11 @@ class TkStringVar:
     def set(self, *args):
         self.set_calls.append(args)
     
-    @staticmethod
-    def get():
-        return '4242'
+    def get(self):
+        return self.value
+    
+    def set_for_test(self, value):
+        self.value = value
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
@@ -193,22 +196,26 @@ class TtkButton:
 @dataclass
 class TtkTreeview:
     parent: TtkFrame
-    columns: List[str] = field(default_factory=list)
+    columns: Sequence[str] = field(default_factory=list)
     height: int = field(default=0)
     selectmode: Literal['browse', 'extended', 'none'] = field(default='extended')
+    show: Literal['tree', 'headings'] = field(default='headings')
+    padding: int = field(default=0)
     
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     column_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     heading_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     insert_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     bind_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    configure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    selection_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    selection_set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     
     def __post_init__(self):
         self.parent.children.append(self)
     
     def grid(self, **kwargs):
         self.grid_calls.append(kwargs)
-        pass
     
     def column(self, *args, **kwargs):
         self.column_calls.append((args, kwargs))
@@ -222,6 +229,37 @@ class TtkTreeview:
     def bind(self, *args, **kwargs):
         self.bind_calls.append((args, kwargs))
 
+    def yview(self, *args, **kwargs):
+        pass
+    
+    def configure(self, **kwargs):
+        self.configure_calls.append(kwargs)
+    
+    def selection_add(self, *args):
+        self.selection_add_calls.append(args)
+
+    def selection_set(self, *args):
+        self.selection_set_calls.append(args)
+
     @staticmethod
     def selection():
         return ['test tag', 'ignored tag']
+
+
+# noinspection PyMissingOrEmptyDocstring
+@dataclass
+class TtkScrollbar:
+    parent: TtkFrame
+    orient: Literal['horizontal', 'vertical']
+    command: Callable
+    
+    grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    
+    def __post_init__(self):
+        self.parent.children.append(self)
+
+    def grid(self, **kwargs):
+        self.grid_calls.append(kwargs)
+    
+    def set(self):
+        pass
