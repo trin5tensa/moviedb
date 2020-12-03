@@ -4,8 +4,8 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 
-#  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/23/20, 6:46 AM by stephen.
+#  Copyright ©2020. Stephen Rigden.
+#  Last modified 12/3/20, 7:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or

@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
-#  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/24/20, 6:47 AM by stephen.
+#  Copyright ©2020. Stephen Rigden.
+#  Last modified 12/3/20, 6:56 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or

@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
-#  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/20/20, 2:51 PM by stephen.
+#  Copyright (c) 2020. Stephen Rigden.
+#  Last modified 12/3/20, 6:44 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or

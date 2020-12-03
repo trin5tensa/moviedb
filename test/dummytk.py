@@ -1,7 +1,7 @@
 """Test support module for Tk dummies."""
 
-#  Copyright© 2020. Stephen Rigden.
-#  Last modified 5/28/20, 7:06 AM by stephen.
+#  Copyright ©2020. Stephen Rigden.
+#  Last modified 12/3/20, 6:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or

@@ -1,7 +1,7 @@
 """Test module."""
 
-#  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/24/20, 6:57 AM by stephen.
+#  Copyright (c) 2020. Stephen Rigden.
+#  Last modified 12/3/20, 6:44 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,6 +12,7 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 from contextlib import contextmanager
 from typing import Callable, Optional, Tuple, Type
 
