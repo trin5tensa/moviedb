@@ -1,21 +1,5 @@
 """The Movie Database API interface"""
 
-
-# TODO
-#   https://github.com/celiao/tmdbsimple
-#   ✅ Work through examples in docs.
-#   ✅ Review code of tmdbsimple.movies
-#   ✅ Review code of tmdbsimple.search
-#   ✅ Review code of tmdbsimple.discover
-#   ✅ Review code of tmdbsimple.find
-#   Select exact matches for 'The Host'
-#   Carry out second search to get all release dates for each match.
-#   Select movies with release date of '2006'
-
-# TODO NOTES
-#   Will need some method of entering the API Key once for each session.
-#   What happens if there are multiple hits for a title/year combination? (Are there any?)
-
 #  Copyright (c) 2020. Stephen Rigden.
 #  Last modified 11/24/20, 7:32 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
@@ -61,22 +45,23 @@ for m in search.results:
 """
 0)  TMDB Project
     ------------
-    .1) Update all copyrights
+    ✅.1) Update all copyrights
         Add this prototype to commit list
-    .2) Add sort to database.all_tags
+    ✅.2) Add sort to database.all_tags
     
 1)  Update database schema
     ----------------------
-    Add these fields to the database schema:
-        tmdb_id
-        original_title
-        release_date (YYYY-MM_DD)
-            To research:
-                Does SQL support a date format?
-                Csn this TMDB field be merged with Movie.year?
-        synopsis (= tmdb.overview)
+    .1) Add these fields to the database schema:
+            tmdb_id
+            original_title
+            release_date. SQLAlchemy uses python's datetime.date()
+            synopsis (= tmdb.overview)
+        NB: genres will be added as tags
+
+    .2) Create a property 'year'.
+        This will return the year from Movie.release_date if populated otherwise it will return
+        Movie.year.
         
-    NB: genres will be added as tags
 
 2) Module tmdb.py
    --------------
@@ -93,6 +78,8 @@ for m in search.results:
             Multiple compliant records.
     
         .1) Validate the year.
+        Review the following in light of SQLAlchemy's use of pythons datetime.date() for its Date type.
+            It may be easier just to stay within python's datetime module. Or it may not.
         The year can be four digit year or tmdb's YYYY-MM-DD format.
         Validate the year is a four digit integer or a valid YYYY-MM-DD date.
         (See Kenneth Reitz's maya at https://github.com/timofurrer/maya for datetime package)
