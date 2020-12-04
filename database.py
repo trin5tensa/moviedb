@@ -201,11 +201,11 @@ def del_movie(title_year: FindMovieTypedDict):
 def all_tags() -> List[str]:
     """ List all tags in the database.
     
-    Returns: A list of tags
+    Returns: A sorted list of tags
     """
     with _session_scope() as session:
         tags = session.query(Tag.tag)
-    return [tag[0] for tag in tags]
+    return sorted([tag[0] for tag in tags])
 
 
 def movie_tags(title_year: MovieKeyTypedDict) -> List[str]:

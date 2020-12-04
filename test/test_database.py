@@ -328,7 +328,7 @@ def test_delete_movie_by_title_and_length(loaded_database):
 
 def test_all_tags(loaded_database):
     tags = database.all_tags()
-    assert set(tags) == {'blue', 'yellow', 'green'}
+    assert tags == ['blue', 'green', 'yellow']
 
 
 def test_movie_tags(loaded_database, revanche):
