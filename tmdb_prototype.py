@@ -52,8 +52,9 @@ for m in search.results:
     
 1)  Update database schema
     ----------------------
+    ✅.0) Setup
     
-    .2)Add these fields to the database schema:
+    .1)Add these fields to the database schema:
             tmdb_id
             original_title
             release_date. SQLAlchemy uses python's datetime.date()
