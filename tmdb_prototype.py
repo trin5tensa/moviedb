@@ -1,7 +1,7 @@
 """The Movie Database API interface"""
 
-#  Copyright (c) 2020. Stephen Rigden.
-#  Last modified 11/24/20, 7:32 AM by stephen.
+#  Copyright ©2020. Stephen Rigden.
+#  Last modified 12/5/20, 12:08 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -54,7 +54,7 @@ for m in search.results:
     ----------------------
     ✅.0) Setup.
     
-    .1)Add these fields to the database schema:
+    ✅.1)Add these fields to the database schema:
             tmdb_id
             original_title
             release_date. SQLAlchemy uses python's datetime.date()
