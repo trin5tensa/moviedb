@@ -52,7 +52,7 @@ for m in search.results:
     
 1)  Update database schema
     ----------------------
-    ✅.0) Setup
+    ✅.0) Setup.
     
     .1)Add these fields to the database schema:
             tmdb_id
