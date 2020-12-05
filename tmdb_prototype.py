@@ -45,13 +45,15 @@ for m in search.results:
 """
 0)  TMDB Project
     ------------
+    ✅.0) Setup
     ✅.1) Update all copyrights
-        Add this prototype to commit list
+            Add this prototype to commit list
     ✅.2) Add sort to database.all_tags
     
 1)  Update database schema
     ----------------------
-    .1) Add these fields to the database schema:
+    
+    .2)Add these fields to the database schema:
             tmdb_id
             original_title
             release_date. SQLAlchemy uses python's datetime.date()
