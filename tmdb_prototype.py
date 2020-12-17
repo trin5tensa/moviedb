@@ -1,7 +1,7 @@
 """The Movie Database API interface"""
 
 #  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/5/20, 12:08 PM by stephen.
+#  Last modified 12/17/20, 12:21 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -61,9 +61,15 @@ for m in search.results:
             synopsis (= tmdb.overview)
         NB: genres will be added as tags
 
-    .2) Create a property 'year'.
+    ❌.2) Create a property 'year'.
         This will return the year from Movie.release_date if populated otherwise it will return
         Movie.year.
+        Hybrid attributes:
+        https://docs.sqlalchemy.org/en/14/orm/extensions/hybrid.html#defining-setters
+        SQL Expressions as Mapped Attributes:
+        https://docs.sqlalchemy.org/en/13/orm/mapped_sql_expr.html
+        SO: using hybrid properties in a query
+        https://stackoverflow.com/questions/42485423/sqlalchemy-using-hybrid-properties-in-a-query
         
 
 2) Module tmdb.py
