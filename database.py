@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/3/20, 6:56 AM by stephen.
+#  Last modified 12/5/20, 12:08 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,14 +24,14 @@ import sqlalchemy.exc
 import sqlalchemy.ext.declarative
 import sqlalchemy.ext.hybrid
 import sqlalchemy.orm
-from sqlalchemy import (CheckConstraint, Column, ForeignKey, Integer, String, Table, Text,
+from sqlalchemy import (CheckConstraint, Column, Date, ForeignKey, Integer, String, Table, Text,
                         UniqueConstraint, )
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.session import sessionmaker
 
 import exception
-from config import FindMovieTypedDict, MovieTypedDict, MovieKeyTypedDict, MovieUpdateDef
+from config import FindMovieTypedDict, MovieKeyTypedDict, MovieTypedDict, MovieUpdateDef
 
 
 MUYBRIDGE = 1878
@@ -345,15 +345,19 @@ class Movie(Base):
     minutes = Column(Integer)
     year = Column(Integer, CheckConstraint(f'year>={MUYBRIDGE}'), CheckConstraint('year<10000'),
                   nullable=False)
-    # moviedb-#127 Add a synopsis field
     notes = Column(Text)
+    tmdb_id = Column(Integer)
+    original_title = Column(String(80))
+    release_date = Column(Date)
+    synopsis = Column(Text)
     UniqueConstraint(title, year)
 
     tags = relationship('Tag', secondary='movie_tag', back_populates='movies')
     reviews = relationship('Review', secondary='movie_review', back_populates='movies')
 
-    def __init__(self, title: str, year: str, director: str = '',
-                 minutes: str = '', notes: str = ''):
+    def __init__(self, title: str, year: str, director: str = '', minutes: str = '', notes: str = '',
+                 tmdb_id: str = '', original_title: str = '', release_date: datetime.date = None,
+                 synopsis: str = ''):
     
         # Carry out validation which is not done by SQLAlchemy or sqlite3
         if year == '':
@@ -376,6 +380,10 @@ class Movie(Base):
         self.minutes = minutes
         self.year = year
         self.notes = notes
+        self.tmdb_id = tmdb_id
+        self.original_title = original_title
+        self.release_date = release_date
+        self.synopsis = synopsis
 
     def __repr__(self):  # pragma: no cover
         return (self.__class__.__qualname__ +
