@@ -1,7 +1,7 @@
 """The Movie Database API interface"""
 
 #  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/17/20, 12:21 PM by stephen.
+#  Last modified 12/18/20, 8:25 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -75,6 +75,9 @@ for m in search.results:
 2) Module tmdb.py
    --------------
     NB: This module will be called from handlers.py
+    
+    tmdbsimple docs
+    https://github.com/celiao/tmdbsimple
 
     .1) Create data dataclass for tmdb data as defined in yield from get_tmdb_data.
     
