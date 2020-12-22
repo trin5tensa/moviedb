@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/3/20, 7:01 AM by stephen.
+#  Last modified 12/22/20, 8:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -29,7 +29,7 @@ import impexp
 
 def about_dialog():
     """Display the about dialog."""
-    guiwidgets.gui_messagebox(config.app.tk_root, config.app.name, config.app.version)
+    guiwidgets.gui_messagebox(config.tk_root, config.app.name, config.app.version)
 
 
 def add_movie():
@@ -37,31 +37,31 @@ def add_movie():
     all_tags = database.all_tags()
     # PyCharm https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker
-    guiwidgets_2.AddMovieGUI(config.app.tk_root, add_movie_callback, all_tags)
+    guiwidgets_2.AddMovieGUI(config.tk_root, add_movie_callback, all_tags)
 
 
 def edit_movie():
     """ Get search movie data from the user and search for compliant records"""
     all_tags = database.all_tags()
-    guiwidgets.SearchMovieGUI(config.app.tk_root, search_movie_callback, all_tags)
+    guiwidgets.SearchMovieGUI(config.tk_root, search_movie_callback, all_tags)
 
 
 def add_tag():
     """Add a new tag to the database."""
     # PyCharm https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker
-    guiwidgets_2.AddTagGUI(config.app.tk_root, add_tag_callback)
+    guiwidgets_2.AddTagGUI(config.tk_root, add_tag_callback)
 
 
 # noinspection PyMissingOrEmptyDocstring
 def edit_tag():
     """ Get tag string pattern from the user and search for compliant records."""
-    guiwidgets_2.SearchTagGUI(config.app.tk_root, search_tag_callback)
+    guiwidgets_2.SearchTagGUI(config.tk_root, search_tag_callback)
 
 
 def import_movies():
     """Open a csv file and load the contents into the database."""
-    csv_fn = guiwidgets_2.gui_askopenfilename(parent=config.app.tk_root,
+    csv_fn = guiwidgets_2.gui_askopenfilename(parent=config.tk_root,
                                               filetypes=(('Movie import files', '*.csv'),))
     
     # Exit if the user clicked askopenfilename's cancel button
@@ -71,7 +71,7 @@ def import_movies():
     try:
         impexp.import_movies(csv_fn)
     except impexp.MoviedbInvalidImportData as exc:
-        guiwidgets.gui_messagebox(config.app.tk_root, message='Errors were found in the input file.',
+        guiwidgets.gui_messagebox(config.tk_root, message='Errors were found in the input file.',
                                   detail=exc.args[0], icon='warning')
 
 
@@ -133,11 +133,11 @@ def search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[st
         movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
         # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
         # noinspection PyTypeChecker
-        guiwidgets.EditMovieGUI(config.app.tk_root, edit_movie_callback_wrapper(movie_key),
+        guiwidgets.EditMovieGUI(config.tk_root, edit_movie_callback_wrapper(movie_key),
                                 delete_movie_callback, ['commit', 'delete'],
                                 database.all_tags(), movie)
     else:
-        guiwidgets.SelectMovieGUI(config.app.tk_root, movies, select_movie_callback)
+        guiwidgets.SelectMovieGUI(config.tk_root, movies, select_movie_callback)
 
 
 def edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callable:
@@ -176,7 +176,7 @@ def edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callable
             
         # Can't add tags because new movie has been deleted.
         except exception.DatabaseSearchFoundNothing:
-            missing_movie_args = (config.app.tk_root, 'Missing movie',
+            missing_movie_args = (config.tk_root, 'Missing movie',
                                   f'The movie {new_movie} is no longer in the database. It may have '
                                   f'been deleted by another process. ')
             guiwidgets.gui_messagebox(*missing_movie_args)
@@ -197,7 +197,7 @@ def select_movie_callback(title: str, year: int):
     movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
     # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker
-    guiwidgets.EditMovieGUI(config.app.tk_root, edit_movie_callback_wrapper(movie_key),
+    guiwidgets.EditMovieGUI(config.tk_root, edit_movie_callback_wrapper(movie_key),
                             delete_movie_callback, ['commit', 'delete'], database.all_tags(), movie)
 
 
@@ -228,9 +228,9 @@ def search_tag_callback(tag_pattern: str):
         tag = tags[0]
         delete_callback = delete_tag_callback_wrapper(tag)
         edit_callback = edit_tag_callback_wrapper(tag)
-        guiwidgets_2.EditTagGUI(config.app.tk_root, tag, delete_callback, edit_callback)
+        guiwidgets_2.EditTagGUI(config.tk_root, tag, delete_callback, edit_callback)
     else:
-        guiwidgets_2.SelectTagGUI(config.app.tk_root, select_tag_callback, tags)
+        guiwidgets_2.SelectTagGUI(config.tk_root, select_tag_callback, tags)
 
 
 def edit_tag_callback_wrapper(old_tag: str) -> Callable:
@@ -253,7 +253,7 @@ def edit_tag_callback_wrapper(old_tag: str) -> Callable:
             new_tag:
         """
 
-        missing_tag_args = (config.app.tk_root, 'Missing tag',
+        missing_tag_args = (config.tk_root, 'Missing tag',
                             f'The tag {old_tag} is no longer available. It may have been '
                             f'deleted by another process.')
 
@@ -299,4 +299,4 @@ def select_tag_callback(old_tag: str):
     """
     delete_callback = delete_tag_callback_wrapper(old_tag)
     edit_callback = edit_tag_callback_wrapper(old_tag)
-    guiwidgets_2.EditTagGUI(config.app.tk_root, old_tag, delete_callback, edit_callback)
+    guiwidgets_2.EditTagGUI(config.tk_root, old_tag, delete_callback, edit_callback)

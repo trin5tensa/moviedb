@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
-#  Copyright (c) 2020. Stephen Rigden.
-#  Last modified 12/3/20, 6:44 AM by stephen.
+#  Copyright ©2020. Stephen Rigden.
+#  Last modified 12/22/20, 8:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -39,7 +39,7 @@ class TestAboutDialog:
     def about_context(self):
         hold_app = handlers.config.app
         handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
-        handlers.config.app.tk_root = DummyParent()
+        handlers.config.tk_root = DummyParent()
         try:
             handlers.about_dialog()
             yield
@@ -71,7 +71,7 @@ class TestAddMovie:
     def add_movie_context(self):
         hold_app = handlers.config.app
         handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
-        handlers.config.app.tk_root = DummyParent()
+        handlers.config.tk_root = DummyParent()
         try:
             yield handlers.add_movie()
         finally:
@@ -107,7 +107,7 @@ class TestEditMovie:
     def edit_movie_context(self):
         hold_app = handlers.config.app
         handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
-        handlers.config.app.tk_root = DummyParent()
+        handlers.config.tk_root = DummyParent()
         try:
             yield handlers.edit_movie()
         finally:
@@ -128,7 +128,7 @@ class TestImportMovies:
 
     def test_get_filename_dialog_called(self, class_patches):
         with self.import_movies_context():
-            assert self.askopenfilename_calls == [dict(parent=handlers.config.app.tk_root,
+            assert self.askopenfilename_calls == [dict(parent=handlers.config.tk_root,
                                                        filetypes=(('Movie import files', '*.csv'),))]
 
     def test_import_movies_called(self, class_patches):
@@ -138,7 +138,7 @@ class TestImportMovies:
     def test_import_movies_raises_invalid_data_exception(self, class_patches, monkeypatch):
         monkeypatch.setattr(handlers.impexp, 'import_movies', self.dummy_import_movies_with_exception)
         with self.import_movies_context():
-            assert self.messagebox_calls == [((handlers.config.app.tk_root,),
+            assert self.messagebox_calls == [((handlers.config.tk_root,),
                                               dict(message='Errors were found in the input file.',
                                                    detail='Test exception message', icon='warning'))]
     
@@ -155,7 +155,7 @@ class TestImportMovies:
         self.messagebox_calls = []
         hold_app = handlers.config.app
         handlers.config.app = handlers.config.Config(name='test moviedb', version='test 1.0.0.dev')
-        handlers.config.app.tk_root = 'tk_root'
+        handlers.config.tk_root = 'tk_root'
         try:
             yield handlers.import_movies()
         finally:
@@ -240,9 +240,9 @@ class TestSearchMovieCallback:
         
         with self.class_context():
             handlers.search_movie_callback(self.criteria, self.tags)
-            expected = (handlers.config.app.tk_root, handlers.edit_movie_callback_wrapper(self.criteria),
+            expected = (handlers.config.tk_root, handlers.edit_movie_callback_wrapper(self.criteria),
                         handlers.delete_movie_callback, ['commit', 'delete'], all_tags, movie)
-            assert dummy_edit_movie_gui_instance[0][0] == handlers.config.app.tk_root
+            assert dummy_edit_movie_gui_instance[0][0] == handlers.config.tk_root
             assert expected[1].__name__ == 'edit_movie_callback'
             assert dummy_edit_movie_gui_instance[0][2:] == (handlers.delete_movie_callback,
                                                             ['commit', 'delete'], all_tags, movie)
@@ -256,7 +256,7 @@ class TestSearchMovieCallback:
                             'SelectMovieGUI', DummySelectMovieGUI)
         with self.class_context():
             handlers.search_movie_callback(self.criteria, self.tags)
-            expected = handlers.config.app.tk_root, [movie1, movie2], handlers.select_movie_callback
+            expected = handlers.config.tk_root, [movie1, movie2], handlers.select_movie_callback
         assert dummy_select_movie_gui_instance[0] == expected
     
     dummy_find_movies_calls = None
@@ -288,7 +288,7 @@ class TestSearchMovieCallback:
     def class_context(self):
         hold_app = handlers.config.app
         handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
-        handlers.config.app.tk_root = DummyParent()
+        handlers.config.tk_root = DummyParent()
         try:
             yield
         finally:
@@ -344,7 +344,7 @@ class TestEditMovieCallback:
                                 lambda *args: self.gui_messagebox_calls.append(args))
             hold_app = handlers.config.app
             handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
-            handlers.config.app.tk_root = DummyParent()
+            handlers.config.tk_root = DummyParent()
 
             cm(self.NEW_MOVIE, self.NEW_TAGS)
             handlers.config.app = hold_app
@@ -415,7 +415,7 @@ class TestSelectMovieCallback:
         dummy_edit_movie_gui_instance = []
         hold_app = handlers.config.app
         handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
-        handlers.config.app.tk_root = DummyParent()
+        handlers.config.tk_root = DummyParent()
         try:
             yield handlers.select_movie_callback(self.TITLE, self.YEAR)
         finally:
@@ -451,7 +451,7 @@ class TestAddTag:
     def add_tag_context(self):
         hold_app = handlers.config.app
         handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
-        handlers.config.app.tk_root = DummyParent()
+        handlers.config.tk_root = DummyParent()
         try:
             yield handlers.add_tag()
         finally:
@@ -475,7 +475,7 @@ class TestEditTag:
     def search_tag_context(self):
         hold_app = handlers.config.app
         handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
-        handlers.config.app.tk_root = DummyParent()
+        handlers.config.tk_root = DummyParent()
         try:
             yield handlers.edit_tag()
         finally:
@@ -533,7 +533,7 @@ class TestSearchTagCallback:
     def search_tag_context(self, tag_pattern: str):
         hold_app = handlers.config.app
         handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
-        handlers.config.app.tk_root = DummyParent()
+        handlers.config.tk_root = DummyParent()
         try:
             yield handlers.search_tag_callback(tag_pattern)
         finally:
@@ -569,7 +569,7 @@ class TestEditTagCallback:
     def add_tag_callback_context(self):
         hold_app = handlers.config.app
         handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
-        handlers.config.app.tk_root = DummyParent()
+        handlers.config.tk_root = DummyParent()
 
         callback = handlers.edit_tag_callback_wrapper(self.old_tag)
 
@@ -628,7 +628,7 @@ class TestSearchTagCallbackWrapper:
         dummy_edit_tag_gui_instance = []
         hold_app = handlers.config.app
         handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
-        handlers.config.app.tk_root = DummyParent()
+        handlers.config.tk_root = DummyParent()
         try:
             yield handlers.select_tag_callback(self.tag)
         finally:

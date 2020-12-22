@@ -1,7 +1,7 @@
-"""Main moviedatabase program"""
+"""Main movie database program"""
 
 #  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/3/20, 7:02 AM by stephen.
+#  Last modified 12/22/20, 8:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,6 +16,7 @@
 import argparse
 import logging
 import os
+import pickle
 import sys
 
 import config
@@ -38,24 +39,34 @@ def main():
 
 def start_up():
     """Initialize the program."""
-    # moviedb-#84 Load the config object
+
+    # moviedb-#226
+    #   Encapsulate new code
+    #   Test new code in this suite and check the integrity of tests of the existing code
+    #   Mock all interactions with save and load config file
+
     # Start the logger.
     root_dir, program_name = os.path.split(__file__)
     program, _ = program_name.split('.')
     start_logger(root_dir, program)
-    
-    # Initialize application configuration data.
-    config.app = config.Config(program, VERSION)
-    
+
+    # Load the config.Config pickle file
+    load_config_file(program, root_dir)
+
     # Open the default database
     database.connect_to_database()
 
 
 def close_down():
     """Execute close down activities."""
-    # moviedb-#84
-    #   Update config object with dynamic values
-    #   Save the config object
+
+    # moviedb-#226
+    #   Encapsulate new code
+    #   Test new code in this suite and check the integrity of tests of the existing code
+
+    # Save the config.Config pickle file
+    save_config_file()
+
     logging.info('The program is ending.')
     logging.shutdown()
 
@@ -70,6 +81,54 @@ def start_logger(root_dir: str, program: str):
                         filename=q_name, filemode='w')
 
 
+def load_config_file(program_name: str, root_dir: str):
+    """
+    Load root_dir/program_name or initialize persistent metadata.
+    
+    Args:
+        program_name:
+        root_dir:
+    """
+    
+    # moviedb-#226
+    #   Encapsulate new code
+    #   Test new code in this suite and check the integrity of tests of the existing code
+    #   Mock all interactions with save and load config file
+    
+    pickle_fn = program_name + config.CONFIG_PICKLE_EXTENSION
+    parent_dir, _ = os.path.split(root_dir)
+    config_pickle_path = os.path.normpath(os.path.join(parent_dir, pickle_fn))
+    try:
+        with open(config_pickle_path, 'rb') as f:
+            config_data = pickle.load(f)
+    except FileNotFoundError as exc:
+        msg = (f"The config.Config save file was not found. A new version will be initialized. "
+               f"{exc.strerror}: {exc.filename}")
+        logging.info(msg)
+
+        # Initialize application configuration data for first use.
+        config.app = config.Config(program_name, VERSION)
+
+    else:
+        config.app = config_data
+
+
+def save_config_file():
+    """Save persistent metadata."""
+
+    # moviedb-#226
+    #   Encapsulate new code
+    #   Test new code in this suite and check the integrity of tests of the existing code
+
+    # Save the config.Config pickle file
+    pickle_fn = config.app.name + config.CONFIG_PICKLE_EXTENSION
+    root_dir, _ = os.path.split(__file__)
+    parent_dir, _ = os.path.split(root_dir)
+    config_pickle_path = os.path.normpath(os.path.join(parent_dir, pickle_fn))
+    with open(config_pickle_path, 'wb') as f:
+        pickle.dump(config.app, f)
+    
+    
 def command_line_args() -> argparse.Namespace:  # pragma: no cover
     """Parse the command line arguments.
 

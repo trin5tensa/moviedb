@@ -1,7 +1,7 @@
 """The Movie Database API interface"""
 
 #  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/18/20, 8:25 AM by stephen.
+#  Last modified 12/22/20, 8:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -114,7 +114,8 @@ for m in search.results:
     
 3) Save config file.
    -----------------
-    Update config.Config to hold the session's api_key.
+    
+    ✅ Update config.Config to hold the session's api_key.
     Save config file to permanent storage and reload it at program start.
    
 4) Call TMDB for AddMovie.
