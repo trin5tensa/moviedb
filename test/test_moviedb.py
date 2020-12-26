@@ -1,7 +1,7 @@
 """Tests for movie database."""
 
 #  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/26/20, 8:34 AM by stephen.
+#  Last modified 12/26/20, 11:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -199,15 +199,34 @@ class TestLoadConfigFile:
 def test_save_config_file(monkeypatch):
     hold_config_app = moviedb.config.app
     moviedb.config.app = moviedb.config.Config('test moviedb', 'test version')
+
     calls = []
-    
-    monkeypatch.setattr(moviedb.pickle, 'dump', lambda *args: calls.append(args))
+    monkeypatch.setattr(moviedb, '_save_config_file', lambda *args: calls.append(args))
     moviedb.save_config_file()
+    
+    assert calls[0][0][-34:] == 'Movies Project/test moviedb.pickle'
     moviedb.config.app = hold_config_app
+
+
+def test__save_config_file(monkeypatch, tmpdir):
+    test_parent_dir = 'Test Parent Dir'
+    test_program_name = 'test_program_name'
+
+    hold_config_app = moviedb.config.app
+    moviedb.config.app = moviedb.config.Config('test moviedb', 'test version')
+
+    pickle_fn = (tmpdir.mkdir(test_parent_dir) /
+                 test_program_name + moviedb.config.CONFIG_PICKLE_EXTENSION)
+
+    calls = []
+    monkeypatch.setattr(moviedb.pickle, 'dump', lambda *args: calls.append(args))
+    
+    moviedb._save_config_file(pickle_fn)
 
     assert calls[0][0] == moviedb.config.app
     assert isinstance(calls[0][1], io.BufferedWriter)
-    assert calls[0][1].name == '/Users/stephen/Documents/Coding/Movies Project/test moviedb.pickle'
+    assert calls[0][1].name[-35:] == 'Parent Dir/test_program_name.pickle'
+    moviedb.config.app = hold_config_app
 
 
 @dataclass

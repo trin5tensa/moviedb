@@ -1,7 +1,7 @@
 """Main movie database program"""
 
 #  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/26/20, 8:34 AM by stephen.
+#  Last modified 12/26/20, 11:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -101,13 +101,25 @@ def load_config_file(root_dir: str, program: str):
 
 def save_config_file():
     """Save persistent metadata."""
-
-    # Save the config.Config pickle file
     pickle_fn = config.app.name + config.CONFIG_PICKLE_EXTENSION
     root_dir, _ = os.path.split(__file__)
     parent_dir, _ = os.path.split(root_dir)
     config_pickle_path = os.path.normpath(os.path.join(parent_dir, pickle_fn))
-    with open(config_pickle_path, 'wb') as f:
+    _save_config_file(config_pickle_path)
+    
+    
+def _save_config_file(fn: str):
+    """
+    Pickle and save persistent metadata.
+    
+    The separation of save_config_file and _save_config_file allows the test module to use a
+    temporary in-memory file location during file operations.
+    
+    Args:
+        fn: Path of pickled config file.
+    """
+    
+    with open(fn, 'wb') as f:
         pickle.dump(config.app, f)
     
     
