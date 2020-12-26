@@ -1,7 +1,7 @@
 """Main movie database program"""
 
 #  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/22/20, 8:01 AM by stephen.
+#  Last modified 12/26/20, 8:34 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -40,18 +40,13 @@ def main():
 def start_up():
     """Initialize the program."""
 
-    # moviedb-#226
-    #   Encapsulate new code
-    #   Test new code in this suite and check the integrity of tests of the existing code
-    #   Mock all interactions with save and load config file
-
     # Start the logger.
     root_dir, program_name = os.path.split(__file__)
     program, _ = program_name.split('.')
     start_logger(root_dir, program)
 
     # Load the config.Config pickle file
-    load_config_file(program, root_dir)
+    load_config_file(root_dir, program)
 
     # Open the default database
     database.connect_to_database()
@@ -59,10 +54,6 @@ def start_up():
 
 def close_down():
     """Execute close down activities."""
-
-    # moviedb-#226
-    #   Encapsulate new code
-    #   Test new code in this suite and check the integrity of tests of the existing code
 
     # Save the config.Config pickle file
     save_config_file()
@@ -81,21 +72,16 @@ def start_logger(root_dir: str, program: str):
                         filename=q_name, filemode='w')
 
 
-def load_config_file(program_name: str, root_dir: str):
+def load_config_file(root_dir: str, program: str):
     """
     Load root_dir/program_name or initialize persistent metadata.
     
     Args:
-        program_name:
         root_dir:
+        program:
     """
     
-    # moviedb-#226
-    #   Encapsulate new code
-    #   Test new code in this suite and check the integrity of tests of the existing code
-    #   Mock all interactions with save and load config file
-    
-    pickle_fn = program_name + config.CONFIG_PICKLE_EXTENSION
+    pickle_fn = program + config.CONFIG_PICKLE_EXTENSION
     parent_dir, _ = os.path.split(root_dir)
     config_pickle_path = os.path.normpath(os.path.join(parent_dir, pickle_fn))
     try:
@@ -107,7 +93,7 @@ def load_config_file(program_name: str, root_dir: str):
         logging.info(msg)
 
         # Initialize application configuration data for first use.
-        config.app = config.Config(program_name, VERSION)
+        config.app = config.Config(program, VERSION)
 
     else:
         config.app = config_data
@@ -115,10 +101,6 @@ def load_config_file(program_name: str, root_dir: str):
 
 def save_config_file():
     """Save persistent metadata."""
-
-    # moviedb-#226
-    #   Encapsulate new code
-    #   Test new code in this suite and check the integrity of tests of the existing code
 
     # Save the config.Config pickle file
     pickle_fn = config.app.name + config.CONFIG_PICKLE_EXTENSION

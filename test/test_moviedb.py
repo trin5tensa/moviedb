@@ -1,7 +1,7 @@
-"""Tests for moviedatabase."""
+"""Tests for movie database."""
 
 #  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/22/20, 8:01 AM by stephen.
+#  Last modified 12/26/20, 8:34 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,7 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import io
-from contextlib import redirect_stdout
+from contextlib import contextmanager, redirect_stdout
 from dataclasses import dataclass
 from typing import Tuple
 
@@ -63,44 +63,66 @@ class TestMain:
                             lambda msg: self.info_calls.append(msg))
 
 
-@pytest.mark.usefixtures('monkeypatch')
 class TestStartUp:
     
     # noinspection PyMissingOrEmptyDocstring
     @pytest.fixture()
-    def monkeypatch_startup(self, monkeypatch) -> Tuple[list, list]:
+    def monkeypatch_startup(self, monkeypatch) -> Tuple[list, list, list]:
         logger_calls = []
         monkeypatch.setattr(moviedb, 'start_logger',
                             lambda *args: logger_calls.append(args))
+        load_config_calls = []
+        monkeypatch.setattr(moviedb, 'load_config_file', lambda *args: load_config_calls.append(args))
         connect_calls = []
         monkeypatch.setattr(moviedb.database, 'connect_to_database',
                             lambda: connect_calls.append(True))
-        return logger_calls, connect_calls
+        return logger_calls, load_config_calls, connect_calls
     
     def test_start_logger_called(self, monkeypatch_startup):
         expected_path = 'movies'
         expected_filename = 'moviedb'
-        logger_calls, _ = monkeypatch_startup
+        logger_calls, _, _ = monkeypatch_startup
         moviedb.start_up()
         path, filename = logger_calls[0]
         assert path[-len(expected_path):] == expected_path
         assert filename == expected_filename
     
     def test_config_data_initialized(self, monkeypatch_startup):
+        expected_path = 'movies'
+        expected_filename = 'moviedb'
+        _, load_config_calls, _ = monkeypatch_startup
         moviedb.start_up()
-        assert isinstance(moviedb.config.app, moviedb.config.Config)
-        assert moviedb.config.app.name == 'moviedb'
-        assert moviedb.config.app.version == '1.0.0.dev'
-        assert moviedb.config.app.geometry is None
-        assert moviedb.config.gui_environment is None
+        path, filename = load_config_calls[0]
+        assert path[-len(expected_path):] == expected_path
+        assert filename == expected_filename
     
     def test_start_database_called(self, monkeypatch_startup):
-        _, connect_calls = monkeypatch_startup
+        _, _, connect_calls = monkeypatch_startup
         moviedb.start_up()
         assert connect_calls == [True]
 
 
+def test_save_config_file_called(monkeypatch):
+    calls = []
+    monkeypatch.setattr(moviedb, 'save_config_file', lambda *args: calls.append(True))
+    monkeypatch.setattr(moviedb.logging, 'info', lambda *args: None)
+    monkeypatch.setattr(moviedb.logging, 'shutdown', lambda: None)
+    moviedb.close_down()
+    assert calls == [True]
+
+
+def test_ending_of_program_logged(monkeypatch):
+    monkeypatch.setattr(moviedb, 'save_config_file', lambda *args: None)
+    calls = []
+    monkeypatch.setattr(moviedb.logging, 'info', lambda *args: calls.append(args))
+    monkeypatch.setattr(moviedb.logging, 'shutdown', lambda: None)
+    moviedb.close_down()
+    assert calls == [('The program is ending.', )]
+
+
 def test_start_logger_called(monkeypatch):
+    monkeypatch.setattr(moviedb, 'save_config_file', lambda *args: None)
+    monkeypatch.setattr(moviedb.logging, 'info', lambda *args: None)
     calls = []
     monkeypatch.setattr(moviedb.logging, 'shutdown',
                         lambda: calls.append(True))
@@ -122,6 +144,70 @@ def test_start_logger(monkeypatch):
     moviedb.start_logger(log_root, log_fn)
     format_args = calls[0]
     assert format_args == expected
+    
+    
+class TestLoadConfigFile:
+    TEST_PARENT_DIR = 'Test Parent Dir'
+    TEST_ROOT_DIR = 'Test Root Dir'
+    TEST_PROGRAM_NAME = 'test_program_name'
+    TEST_VERSION = '42.0.0001'
+    
+    def test_pickle_load_called(self, monkeypatch, tmpdir):
+        pickle_load_calls = []
+        monkeypatch.setattr(moviedb.pickle, 'load', lambda *args: pickle_load_calls.append(args))
+        with self.class_context(tmpdir, create_config_file=True):
+            assert isinstance(pickle_load_calls[0][0], io.BufferedReader)
+            assert pickle_load_calls[0][0].name[-35:] == 'Parent Dir/test_program_name.pickle'
+    
+    def test_config_app_updated_with_read_data(self, tmpdir):
+        with self.class_context(tmpdir, create_config_file=True):
+            assert moviedb.config.app == moviedb.config.Config(self.TEST_PROGRAM_NAME,
+                                                               self.TEST_VERSION)
+
+    def test_file_not_found_logged(self, monkeypatch, tmpdir):
+        logging_info_calls = []
+        monkeypatch.setattr(moviedb.logging, 'info', lambda *args: logging_info_calls.append(args))
+        info_text = "The config.Config save file was not found. A new version will be initialized."
+        path_string = (self.TEST_PARENT_DIR + '/' + self.TEST_PROGRAM_NAME +
+                       moviedb.config.CONFIG_PICKLE_EXTENSION)
+        with self.class_context(tmpdir, create_config_file=False):
+            assert logging_info_calls[0][0][:77] == info_text
+            assert logging_info_calls[0][0][-40:] == path_string
+    
+    def test_config_app_initialised_for_first_use(self, tmpdir):
+        with self.class_context(tmpdir, create_config_file=False):
+            assert moviedb.config.app == moviedb.config.Config(self.TEST_PROGRAM_NAME, moviedb.VERSION)
+    
+    @contextmanager
+    def class_context(self, tmpdir, create_config_file):
+        hold_config_app = moviedb.config.app
+        config_pickle_dir = tmpdir.mkdir(self.TEST_PARENT_DIR)
+        config_pickle_fn = self.TEST_PROGRAM_NAME + moviedb.config.CONFIG_PICKLE_EXTENSION
+        config_pickle_path = moviedb.os.path.normpath(moviedb.os.path.join(
+                config_pickle_dir, config_pickle_fn))
+        root_dir = config_pickle_dir / self.TEST_ROOT_DIR
+        
+        if create_config_file:
+            test_config_file = moviedb.config.Config(self.TEST_PROGRAM_NAME, self.TEST_VERSION)
+            with open(config_pickle_path, 'wb') as f:
+                moviedb.pickle.dump(test_config_file, f)
+        
+        yield moviedb.load_config_file(root_dir, self.TEST_PROGRAM_NAME)
+        moviedb.config.app = hold_config_app
+
+    
+def test_save_config_file(monkeypatch):
+    hold_config_app = moviedb.config.app
+    moviedb.config.app = moviedb.config.Config('test moviedb', 'test version')
+    calls = []
+    
+    monkeypatch.setattr(moviedb.pickle, 'dump', lambda *args: calls.append(args))
+    moviedb.save_config_file()
+    moviedb.config.app = hold_config_app
+
+    assert calls[0][0] == moviedb.config.app
+    assert isinstance(calls[0][1], io.BufferedWriter)
+    assert calls[0][1].name == '/Users/stephen/Documents/Coding/Movies Project/test moviedb.pickle'
 
 
 @dataclass
