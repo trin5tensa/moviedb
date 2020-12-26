@@ -1,7 +1,7 @@
 """Application configuration data """
 
-#  Copyright© 2020. Stephen Rigden.
-#  Last modified 4/13/20, 8:06 AM by stephen.
+#  Copyright ©2020. Stephen Rigden.
+#  Last modified 12/22/20, 8:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,6 +15,9 @@
 
 from dataclasses import dataclass
 from typing import Optional, Sequence, TypedDict
+
+
+CONFIG_PICKLE_EXTENSION = '.pickle'
 
 
 tk: 'tk'
@@ -64,17 +67,22 @@ class FindMovieTypedDict(TypedDict, total=False):
 class Config:
     """The applications configuration data.
     
-    A single object of this class is created in the application's start_up() function.
+    A single object of this class is loaded in the application's start_up() function and pickled
+    on exit.
     """
+    
     # Program
     name: str
     version: str
+    
     # tk.Tk screen geometry
     geometry: str = None
 
-    # Save the root window for easy access for testing.
-    tk_root: 'tk.Tk' = None
-    gui_environment: 'mainwindow.MainWindow' = None
+    # TMDB
+    tmdb_api_key: str = None
+    tmdb_do_not_ask_again: bool = False
 
 
 app: Optional[Config] = None
+tk_root: 'tk.Tk' = None
+gui_environment: 'mainwindow.MainWindow' = None
