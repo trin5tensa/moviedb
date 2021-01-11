@@ -1,10 +1,19 @@
-"""Title of module (not the <name>.py).
+"""TMDB Interface
 
-Description of module.
+TMDB (The Movie DataBase)
+API Overview
+https://www.themoviedb.org/documentation/api
+Docs
+https://developers.themoviedb.org/3/getting-started/introduction
+Discover examples
+https://www.themoviedb.org/documentation/api/discover
+
+tmdbsimple.py
+https://github.com/celiao/tmdbsimple
 """
 
-#  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/27/20, 7:47 AM by stephen.
+#  Copyright ©2021. Stephen Rigden.
+#  Last modified 1/11/21, 7:08 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,40 +25,260 @@ Description of module.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# TODO Update module title and description
-# TODO Remove layout reminder comments.
-# Python package imports
-
+import logging
 import sys
+from typing import List
+
+import requests
+import tmdbsimple as tmdb
 
 
-# Third party package imports
+def search_movies(tmdb_api_key: str, title_query: str, primary_release_year: int = None,
+                  year: int = None, language: str = None, include_adult: bool = False,
+                  region: str = None) -> List[dict]:
+    """Search for movies.
+    
+    Args:
+        tmdb_api_key:
+        title_query: (required) Pass a text query to search. This value should be URI encoded.
+        year: (optional) A filter to limit the results to a specific year (looking at all release dates).
+        primary_release_year: (optional) A filter to limit the results to a specific primary
+            release year.
+        language: (optional) ISO 639-1 code.
+        include_adult: (optional) Choose whether to include adult content in the results.
+        region: (optional) Specify a ISO 3166-1 code to filter by region. Must be uppercase.
+
+    Raises:
+        TMDBAPIKeyException:
+            API Key error.
+        TMDBConnectionTimeout:
+            Unable to connect to TMDB
+
+    Returns:
+        Movies with a title that is a superstring of the title_query restricted by the caller's
+        filter arguments.
+        This function returns the first twenty compliant records.
+    """
+    # moviedb-#225
+    #  Test this function
+    
+    tmdb.API_KEY = tmdb_api_key
+    
+    search = tmdb.Search()
+    try:
+        search.movie(query=title_query, primary_release_year=primary_release_year, year=year,
+                     language=language, include_adult=include_adult, region=region, timeout=0.001)
+
+    except requests.exceptions.HTTPError as exc:
+        if (exc.args[0][:38]) == '401 Client Error: Unauthorized for url':
+            msg = f"API Key error: {exc.args[0]}"
+            logging.error(msg)
+            raise TMDBAPIKeyException(msg) from exc
+    
+        raise
+    
+    except requests.exceptions.ConnectionError as exc:
+        msg = f"Unable to connect to TMDB. \n{exc.args[0].args[0]}"
+        logging.info(msg)
+        raise TMDBConnectionTimeout(msg) from exc
+
+    return search.results
 
 
-# Project Imports
+def get_tmdb_directors(tmdb_api_key: str, tmdb_movie_id: str) -> List[str]:
+    """
+    Retrieve the details of a movie using its TMDB id.
+
+    Args:
+        tmdb_api_key: The TMDB API key
+        tmdb_movie_id: The movie's TMDB id.
+
+    Raises:
+        TMDBAPIKeyException:
+            API Key error.
+        TMDBMovieIDMissing:
+            A TMDB movie cannot be found although it is known to have formerly existed.
+        TMDBConnectionTimeout:
+            Unable to connect to TMDB
+            
+    Returns:
+        A dict representation of the JSON returned from the API. This may include any or none of the
+        following keys. The list is partial and does not include keys which are not of interest to
+        this program at the time of writing.
+    """
+
+    # moviedb-#225
+    #  Test this function
+
+    tmdb.API_KEY = tmdb_api_key
+    movie = tmdb.Movies(tmdb_movie_id)
+
+    # noinspection DuplicatedCode
+    try:
+        movie_credits = movie.credits(timeout=0.001)
+
+    except requests.exceptions.HTTPError as exc:
+        # Incorrect API key
+        if (exc.args[0][:38]) == '401 Client Error: Unauthorized for url':
+            msg = f"API Key error: {exc.args[0]}"
+            logging.error(msg)
+            raise TMDBAPIKeyException(msg) from exc
+
+        # Movie not found. Since this movie id originated from TMDB this is unexpected.
+        # As of 1/5/2021 the TMDB URL ends with movie/XXX where XXX is the requested tmdb_id code.
+        if (exc.args[0][:36]) == '404 Client Error: Not Found for url:':
+            msg = f"The TMDB id '{tmdb_movie_id}' was not found on the TMDB site. \n{exc.args[0]}"
+            logging.error(msg)
+            raise TMDBMovieIDMissing(msg) from exc
+
+        raise
+    
+    except requests.exceptions.ConnectionError as exc:
+        msg = f"Unable to connect to TMDB. \n{exc.args[0].args[0]}"
+        logging.info(msg)
+        raise TMDBConnectionTimeout(msg) from exc
+    
+    else:
+        crew = movie_credits['crew']
+        return [person.get('name') for person in crew if person.get('job') == 'Director']
 
 
-# Constants
+def get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict:
+    """
+    Retrieve the details of a movie using its TMDB id.
+    
+    Args:
+        tmdb_api_key: The TMDB API key
+        tmdb_movie_id: The movie's TMDB id.
+
+    Raises:
+        TMDBAPIKeyException:
+            API Key error.
+        TMDBMovieIDMissing:
+            A TMDB movie cannot be found although it is known to have formerly existed.
+        TMDBConnectionTimeout:
+            Unable to connect to TMDB
+            
+    Returns:
+        A dict representation of the JSON returned from the API. This may include any or none of the
+        following keys. The list is partial and does not include keys which are not of interest to
+        this program at the time of writing.
+
+        genres (Single item list containing a dictionary with keys: id, name)
+        id
+        imdb_id
+        original_language
+        original_title
+        overview
+        production_companies (Single item list containing a dictionary with keys: id, logo_path,
+        name, origin_country)
+        production_countries (Single item list containing a dictionary with keys: id, name)
+        release_date
+        runtime
+        spoken_languages (Single item list containing a dictionary with keys: id, logo_path,
+        name, origin_country)
+        title
+    """
+    
+    # moviedb-#225 Test this function
+    
+    tmdb.API_KEY = tmdb_api_key
+    movie = tmdb.Movies(tmdb_movie_id)
+
+    # noinspection DuplicatedCode
+    try:
+        return movie.info(timeout=0.001)
+    
+    except requests.exceptions.HTTPError as exc:
+        # Incorrect API key
+        if (exc.args[0][:38]) == '401 Client Error: Unauthorized for url':
+            msg = f"API Key error: {exc.args[0]}"
+            logging.error(msg)
+            raise TMDBAPIKeyException(msg) from exc
+            
+        # Movie not found. Since this movie id originated from TMDB this is unexpected.
+        # The TMDB URL ends with movie/XXX where XXX is the requested tmdb_id code.
+        if (exc.args[0][:36]) == '404 Client Error: Not Found for url:':
+            msg = f"The TMDB id '{tmdb_movie_id}' was not found on the TMDB site. \n{exc.args[0]}"
+            logging.error(msg)
+            raise TMDBMovieIDMissing(msg) from exc
+        
+        raise
+    
+    except requests.exceptions.ConnectionError as exc:
+        msg = f"Unable to connect to TMDB. \n{exc.args[0].args[0]}"
+        logging.info(msg)
+        raise TMDBConnectionTimeout(msg) from exc
+        
+
+class TMDBException(Exception):
+    """Base class for tmdb exceptions."""
+    
+    
+class TMDBAPIKeyException(TMDBException):
+    """Exception raised for problems with the TMDB API Key"""
+    
+    
+class TMDBMovieIDMissing(TMDBException):
+    """
+    Exception raised if a TMDB movie was be found
+    although it is known to have formerly existed.
+    """
+    
+    
+class TMDBNoRecordsFound(TMDBException):
+    """No compliant records found."""
+    
+    
+class TMDBConnectionTimeout(TMDBException):
+    """Failed to establish a new connection."""
+    
+
+def intg_test_search_by_tmdb_id(api_key):
+    """Retrieve Seven Samurai."""
+    movie = get_tmdb_movie_info(api_key, '346')
+    assert movie['id'] == 346
+    assert movie['title'] == 'Seven Samurai'
 
 
-# API Classes, DataClasses, and TypedDicts
+def intg_test_search_movies(api_key):
+    try:
+        print("Expected error message: 'API Key error: 401 Client Error'")
+        search_movies('garbage key', 'Gobble&*()Recook !@#$')
+    except TMDBAPIKeyException:
+        pass
+
+    # Raise invalid API exception
+    movies = search_movies(api_key, 'Gobble&*()Recook !@#$')
+    assert movies == []
+
+    # Get all movies with title containing 'The Bourne'
+    movies = search_movies(api_key, 'The Bourne')
+    ids_retrieved = {movie['id'] for movie in movies}
+    ids_expected = {2501, 2502, 2503, 49040, 781206, 324668}
+    diff = ids_expected - ids_retrieved
+    assert diff == set(), f"Expected movie(s) not retrieved, {diff}"
+    
+    # Get all movies with title containing 'The Bourne' and year = 2002
+    movies = search_movies(api_key, 'The Bourne', primary_release_year=2002)
+    ids_retrieved = {movie['id'] for movie in movies}
+    ids_expected = {2501}
+    diff = ids_expected - ids_retrieved
+    assert diff == set(), f"Expected movie(s) not retrieved, {diff}"
 
 
-# API Functions
-
-
-# Internal Module Classes, DataClasses, and TypedDicts
-
-
-# Internal Module Functions
+def intg_test_get_directors(api_key):
+    directors = get_tmdb_directors(api_key, '2501')
+    assert directors == ['Doug Liman'], f"Unexpected director(s): {directors}"
 
 
 def main():
     """Integration tests and usage examples."""
-    # TODO Remove this function or write integration tests
-    pass
+    api_key = input('Enter TMDB API key >>> ')
+    intg_test_search_by_tmdb_id(api_key)
+    intg_test_search_movies(api_key)
+    intg_test_get_directors(api_key)
 
-
+ 
 if __name__ == '__main__':
-    # TODO Remove this function or write integration tests
     sys.exit(main())
