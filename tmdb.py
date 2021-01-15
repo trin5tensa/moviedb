@@ -13,7 +13,7 @@ https://github.com/celiao/tmdbsimple
 """
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 1/11/21, 7:08 AM by stephen.
+#  Last modified 1/15/21, 6:58 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +30,10 @@ import sys
 from typing import List
 
 import requests
-import tmdbsimple as tmdb
+import tmdbsimple
+
+
+TIMEOUT = 0.001
 
 
 def search_movies(tmdb_api_key: str, title_query: str, primary_release_year: int = None,
@@ -62,12 +65,12 @@ def search_movies(tmdb_api_key: str, title_query: str, primary_release_year: int
     # moviedb-#225
     #  Test this function
     
-    tmdb.API_KEY = tmdb_api_key
+    tmdbsimple.API_KEY = tmdb_api_key
     
-    search = tmdb.Search()
+    search = tmdbsimple.Search()
     try:
         search.movie(query=title_query, primary_release_year=primary_release_year, year=year,
-                     language=language, include_adult=include_adult, region=region, timeout=0.001)
+                     language=language, include_adult=include_adult, region=region, timeout=TIMEOUT)
 
     except requests.exceptions.HTTPError as exc:
         if (exc.args[0][:38]) == '401 Client Error: Unauthorized for url':
@@ -110,12 +113,12 @@ def get_tmdb_directors(tmdb_api_key: str, tmdb_movie_id: str) -> List[str]:
     # moviedb-#225
     #  Test this function
 
-    tmdb.API_KEY = tmdb_api_key
-    movie = tmdb.Movies(tmdb_movie_id)
+    tmdbsimple.API_KEY = tmdb_api_key
+    movie = tmdbsimple.Movies(tmdb_movie_id)
 
     # noinspection DuplicatedCode
     try:
-        movie_credits = movie.credits(timeout=0.001)
+        movie_credits = movie.credits(timeout=TIMEOUT)
 
     except requests.exceptions.HTTPError as exc:
         # Incorrect API key
@@ -180,14 +183,12 @@ def get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict:
         title
     """
     
-    # moviedb-#225 Test this function
-    
-    tmdb.API_KEY = tmdb_api_key
-    movie = tmdb.Movies(tmdb_movie_id)
+    tmdbsimple.API_KEY = tmdb_api_key
+    movie = tmdbsimple.Movies(tmdb_movie_id)
 
     # noinspection DuplicatedCode
     try:
-        return movie.info(timeout=0.001)
+        return movie.info(timeout=TIMEOUT)
     
     except requests.exceptions.HTTPError as exc:
         # Incorrect API key
@@ -206,7 +207,7 @@ def get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict:
         raise
     
     except requests.exceptions.ConnectionError as exc:
-        msg = f"Unable to connect to TMDB. \n{exc.args[0].args[0]}"
+        msg = f"Unable to connect to TMDB. {exc.args[0].args[0]}"
         logging.info(msg)
         raise TMDBConnectionTimeout(msg) from exc
         
@@ -255,7 +256,7 @@ def intg_test_search_movies(api_key):
     # Get all movies with title containing 'The Bourne'
     movies = search_movies(api_key, 'The Bourne')
     ids_retrieved = {movie['id'] for movie in movies}
-    ids_expected = {2501, 2502, 2503, 49040, 781206, 324668}
+    ids_expected = {2501, 2502, 2503, 49040, 324668}
     diff = ids_expected - ids_retrieved
     assert diff == set(), f"Expected movie(s) not retrieved, {diff}"
     
