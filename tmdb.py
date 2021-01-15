@@ -13,7 +13,7 @@ https://github.com/celiao/tmdbsimple
 """
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 1/15/21, 6:58 AM by stephen.
+#  Last modified 1/15/21, 8:44 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -137,7 +137,7 @@ def get_tmdb_directors(tmdb_api_key: str, tmdb_movie_id: str) -> List[str]:
         raise
     
     except requests.exceptions.ConnectionError as exc:
-        msg = f"Unable to connect to TMDB. \n{exc.args[0].args[0]}"
+        msg = f"Unable to connect to TMDB. {exc.args[0].args[0]}"
         logging.info(msg)
         raise TMDBConnectionTimeout(msg) from exc
     
