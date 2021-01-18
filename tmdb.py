@@ -13,7 +13,7 @@ https://github.com/celiao/tmdbsimple
 """
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 1/15/21, 8:44 AM by stephen.
+#  Last modified 1/18/21, 8:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -62,30 +62,38 @@ def search_movies(tmdb_api_key: str, title_query: str, primary_release_year: int
         filter arguments.
         This function returns the first twenty compliant records.
     """
-    # moviedb-#225
-    #  Test this function
     
     tmdbsimple.API_KEY = tmdb_api_key
-    
     search = tmdbsimple.Search()
+    
     try:
         search.movie(query=title_query, primary_release_year=primary_release_year, year=year,
                      language=language, include_adult=include_adult, region=region, timeout=TIMEOUT)
 
     except requests.exceptions.HTTPError as exc:
         if (exc.args[0][:38]) == '401 Client Error: Unauthorized for url':
-            msg = f"API Key error: {exc.args[0]}"
+            msg = f"API Key error: {exc.args[0][:38]}"
             logging.error(msg)
             raise TMDBAPIKeyException(msg) from exc
-    
-        raise
+
+        else:
+            logging.error(exc)
+            raise
     
     except requests.exceptions.ConnectionError as exc:
         msg = f"Unable to connect to TMDB. \n{exc.args[0].args[0]}"
         logging.info(msg)
         raise TMDBConnectionTimeout(msg) from exc
 
-    return search.results
+    else:
+        return search.results
+
+
+# moviedb-#225 Add a convenience function to return movie_info + directors:
+#   Make movie_info and directors private
+#   Change directors to return a single item 'Directors': List
+#   Write new function get_tmdb_movie_info which returns a concatenated dictionary for the specified
+#   movie
 
 
 def get_tmdb_directors(tmdb_api_key: str, tmdb_movie_id: str) -> List[str]:
@@ -110,9 +118,6 @@ def get_tmdb_directors(tmdb_api_key: str, tmdb_movie_id: str) -> List[str]:
         this program at the time of writing.
     """
 
-    # moviedb-#225
-    #  Test this function
-
     tmdbsimple.API_KEY = tmdb_api_key
     movie = tmdbsimple.Movies(tmdb_movie_id)
 
@@ -134,8 +139,10 @@ def get_tmdb_directors(tmdb_api_key: str, tmdb_movie_id: str) -> List[str]:
             logging.error(msg)
             raise TMDBMovieIDMissing(msg) from exc
 
-        raise
-    
+        else:
+            logging.error(exc)
+            raise
+
     except requests.exceptions.ConnectionError as exc:
         msg = f"Unable to connect to TMDB. {exc.args[0].args[0]}"
         logging.info(msg)
@@ -204,7 +211,9 @@ def get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict:
             logging.error(msg)
             raise TMDBMovieIDMissing(msg) from exc
         
-        raise
+        else:
+            logging.error(exc)
+            raise
     
     except requests.exceptions.ConnectionError as exc:
         msg = f"Unable to connect to TMDB. {exc.args[0].args[0]}"

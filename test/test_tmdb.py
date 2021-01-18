@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 1/15/21, 8:44 AM by stephen.
+#  Last modified 1/18/21, 8:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,6 +15,7 @@
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from typing import List
 
 import pytest
 
@@ -22,7 +23,84 @@ import tmdb
 
 
 CREDITS = dict(crew=[dict(name='Eric Idle', job='Composer'),
-                     dict(name='Terry Gilliam', job='Director'),])
+                     dict(name='Terry Gilliam', job='Director'), ])
+MOVIES = [dict(id=1, title='forty two dalmatians'), dict(id=2, title='one forty two squadron')]
+
+
+# noinspection PyPep8Naming
+class TestSearchMovies:
+    api_key = 'dummy api key'
+    title_query = 'forty two'
+
+    def test_api_key_registered(self, monkeypatch):
+        monkeypatch.setattr(tmdb.tmdbsimple, 'Search', DummySearch)
+        with self.get_search_context(self.api_key, self.title_query):
+            assert tmdb.tmdbsimple.API_KEY == self.api_key
+            
+    def test_search_results_returned(self, monkeypatch):
+        monkeypatch.setattr(tmdb.tmdbsimple, 'Search', DummySearch)
+        with self.get_search_context(self.api_key, self.title_query) as cm:
+            assert tmdb.tmdbsimple.API_KEY == self.api_key
+            assert cm == MOVIES
+
+    def test_401_logs_error(self, monkeypatch):
+        monkeypatch.setattr(tmdb.tmdbsimple, 'Search', DummySearch401)
+        error_args = []
+        monkeypatch.setattr(tmdb.logging, 'error', lambda *args: error_args.append(args))
+        with pytest.raises(tmdb.TMDBAPIKeyException):
+            with self.get_search_context(self.api_key, self.title_query):
+                pass
+        assert error_args[0][0] == 'API Key error: 401 Client Error: Unauthorized for url'
+
+    def test_401_raises_TMDBAPIKeyException(self, monkeypatch):
+        monkeypatch.setattr(tmdb.tmdbsimple, 'Search', DummySearch401)
+        monkeypatch.setattr(tmdb.logging, 'error', lambda *args: None)
+        with pytest.raises(tmdb.TMDBAPIKeyException) as exc:
+            with self.get_search_context(self.api_key, self.title_query):
+                pass
+        assert exc.value.args[0] == 'API Key error: 401 Client Error: Unauthorized for url'
+
+    def test_unexpected_HTTP_error_logged(self, monkeypatch):
+        monkeypatch.setattr(tmdb.tmdbsimple, 'Search', DummySearchUnspecifiedError)
+        error_args = []
+        monkeypatch.setattr(tmdb.logging, 'error', lambda *args: error_args.append(args))
+        with pytest.raises(tmdb.requests.exceptions.HTTPError) as exc:
+            with self.get_search_context(self.api_key, self.title_query):
+                pass
+        assert isinstance(error_args[0][0], tmdb.requests.exceptions.HTTPError)
+        assert str(error_args[0][0]) == 'Unspecified error:'
+        
+    def test_unexpected_HTTP_error_reraised(self, monkeypatch):
+        monkeypatch.setattr(tmdb.tmdbsimple, 'Search', DummySearchUnspecifiedError)
+        monkeypatch.setattr(tmdb.logging, 'error', lambda *args: None)
+        with pytest.raises(tmdb.requests.exceptions.HTTPError) as exc:
+            with self.get_search_context(self.api_key, self.title_query):
+                pass
+        assert exc.value.args[0] == f"Unspecified error:"
+        
+    def test_connection_failure_logged(self, monkeypatch):
+        monkeypatch.setattr(tmdb.tmdbsimple, 'Search', DummySearchConnectionError)
+        error_args = []
+        monkeypatch.setattr(tmdb.logging, 'info', lambda *args: error_args.append(args))
+        with pytest.raises(tmdb.TMDBConnectionTimeout):
+            with self.get_search_context(self.api_key, self.title_query):
+                pass
+        assert error_args[0][0] == (f"Unable to connect to TMDB. \n"
+                                    f"DummyConnectionPool(args=('Max retries exceeded',))")
+
+    def test_connection_failure_raises_TMDBConnectionTimeout(self, monkeypatch):
+        monkeypatch.setattr(tmdb.tmdbsimple, 'Search', DummySearchConnectionError)
+        monkeypatch.setattr(tmdb.logging, 'info', lambda *args: None)
+        with pytest.raises(tmdb.TMDBConnectionTimeout) as exc:
+            with self.get_search_context(self.api_key, self.title_query):
+                pass
+        assert 'Max retries exceeded' in exc.value.args[0]
+
+    @contextmanager
+    def get_search_context(self, api_key: str, title_query: str):
+        hold_api_key = tmdb.tmdbsimple.API_KEY
+        yield tmdb.search_movies(api_key, title_query)
+        tmdb.tmdbsimple.API_KEY = hold_api_key
 
 
 # noinspection PyPep8Naming
@@ -76,8 +154,19 @@ class TestGetTMDBDirectors:
         assert exc.value.args[0] == (f"The TMDB id '42' was not found on the TMDB site. \n"
                                      f"404 Client Error: Not Found for url:")
 
+    def test_unexpected_HTTP_error_logged(self, monkeypatch):
+        monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMoviesUnspecifiedError)
+        error_args = []
+        monkeypatch.setattr(tmdb.logging, 'error', lambda *args: error_args.append(args))
+        with pytest.raises(tmdb.requests.exceptions.HTTPError) as exc:
+            with self.get_director_context(self.api_key, self.movie_id):
+                pass
+        assert isinstance(error_args[0][0], tmdb.requests.exceptions.HTTPError)
+        assert str(error_args[0][0]) == 'Unspecified error:'
+
     def test_unexpected_HTTP_error_reraised(self, monkeypatch):
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMoviesUnspecifiedError)
+        monkeypatch.setattr(tmdb.logging, 'error', lambda *args: None)
         with pytest.raises(tmdb.requests.exceptions.HTTPError) as exc:
             with self.get_director_context(self.api_key, self.movie_id):
                 pass
@@ -102,7 +191,7 @@ class TestGetTMDBDirectors:
         assert 'Max retries exceeded' in exc.value.args[0]
 
     @contextmanager
-    def get_director_context(self, api_key, movie_id):
+    def get_director_context(self, api_key: str, movie_id: str):
         hold_api_key = tmdb.tmdbsimple.API_KEY
         yield tmdb.get_tmdb_directors(api_key, movie_id)
         tmdb.tmdbsimple.API_KEY = hold_api_key
@@ -159,8 +248,19 @@ class TestGetTMDBMovieInfo:
         assert exc.value.args[0] == (f"The TMDB id '42' was not found on the TMDB site. \n"
                                      f"404 Client Error: Not Found for url:")
     
+    def test_unexpected_HTTP_error_logged(self, monkeypatch):
+        monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMoviesUnspecifiedError)
+        error_args = []
+        monkeypatch.setattr(tmdb.logging, 'error', lambda *args: error_args.append(args))
+        with pytest.raises(tmdb.requests.exceptions.HTTPError) as exc:
+            with self.get_movie_info_context(self.api_key, self.movie_id):
+                pass
+        assert isinstance(error_args[0][0], tmdb.requests.exceptions.HTTPError)
+        assert str(error_args[0][0]) == 'Unspecified error:'
+
     def test_unexpected_HTTP_error_reraised(self, monkeypatch):
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMoviesUnspecifiedError)
+        monkeypatch.setattr(tmdb.logging, 'error', lambda *args: None)
         with pytest.raises(tmdb.requests.exceptions.HTTPError) as exc:
             with self.get_movie_info_context(self.api_key, self.movie_id):
                 pass
@@ -185,7 +285,7 @@ class TestGetTMDBMovieInfo:
         assert 'Max retries exceeded' in exc.value.args[0]
 
     @contextmanager
-    def get_movie_info_context(self, api_key, movie_id):
+    def get_movie_info_context(self, api_key: str, movie_id: str):
         hold_api_key = tmdb.tmdbsimple.API_KEY
         yield tmdb.get_tmdb_movie_info(api_key, movie_id)
         tmdb.tmdbsimple.API_KEY = hold_api_key
@@ -208,7 +308,8 @@ class DummyMovies:
 @dataclass
 class DummyMovies401(DummyMovies):
     """A test dummy for TMDB's Movies class which raises an API key failure."""
-    def raise_exception(self):
+    @staticmethod
+    def raise_exception():
         msg = '401 Client Error: Unauthorized for url'
         raise tmdb.requests.exceptions.HTTPError(msg)
     
@@ -222,7 +323,8 @@ class DummyMovies401(DummyMovies):
 @dataclass
 class DummyMovies404(DummyMovies):
     """A test dummy for TMDB's Movies class which raises a URL not found exception."""
-    def raise_exception(self):
+    @staticmethod
+    def raise_exception():
         msg = '404 Client Error: Not Found for url:'
         raise tmdb.requests.exceptions.HTTPError(msg)
 
@@ -235,8 +337,9 @@ class DummyMovies404(DummyMovies):
 
 @dataclass
 class DummyMoviesUnspecifiedError(DummyMovies):
-    """A test dummy for TMDB's Movies class which raises an unspecified HTTP error ."""
-    def raise_exception(self):
+    """A test dummy for TMDB's Movies class which raises an unspecified HTTP error."""
+    @staticmethod
+    def raise_exception():
         msg = 'Unspecified error:'
         raise tmdb.requests.exceptions.HTTPError(msg)
 
@@ -246,9 +349,10 @@ class DummyMoviesUnspecifiedError(DummyMovies):
     def credits(self, timeout):
         self.raise_exception()
 
+
 @dataclass
 class DummyConnectionPool:
-    """A support class for the test dummy DummyMoviesConnectionError."""
+    """A support class for ConnectionError test dummies."""
     args: tuple = field(default_factory=tuple, init=False)
     
     def __post_init__(self):
@@ -257,7 +361,7 @@ class DummyConnectionPool:
 
 @dataclass
 class DummyConnectionError:
-    """A support class for the test dummy DummyMoviesConnectionError."""
+    """A support class for ConnectionError test dummies."""
     args: tuple = field(default_factory=tuple, init=False)
     
     def __post_init__(self):
@@ -267,7 +371,8 @@ class DummyConnectionError:
 @dataclass
 class DummyMoviesConnectionError(DummyMovies):
     """A test dummy for TMDB's Movies class which raises a timeout error."""
-    def raise_exception(self):
+    @staticmethod
+    def raise_exception():
         exception = DummyConnectionError()
         raise tmdb.requests.exceptions.ConnectionError(exception)
 
@@ -276,3 +381,40 @@ class DummyMoviesConnectionError(DummyMovies):
 
     def credits(self, timeout):
         self.raise_exception()
+
+
+@dataclass
+class DummySearch:
+    """A test dummy for TMDB's Search class."""
+    results: List[dict] = field(default_factory=list, init=False)
+    
+    def __post_init__(self):
+        if not self.results:
+            self.results = MOVIES
+    
+    def movie(self, query: str = None, **kwargs):
+        pass
+
+
+@dataclass
+class DummySearch401(DummySearch):
+    """A test dummy for TMDB's Movies class which raises an API key failure."""
+    def movie(self, query: str = None, **kwargs):
+        msg = '401 Client Error: Unauthorized for url'
+        raise tmdb.requests.exceptions.HTTPError(msg)
+
+
+@dataclass
+class DummySearchUnspecifiedError(DummySearch):
+    """A test dummy for TMDB's Movies class which raises an an unspecified HTTP error ."""
+    def movie(self, query: str = None, **kwargs):
+        msg = 'Unspecified error:'
+        raise tmdb.requests.exceptions.HTTPError(msg)
+
+
+@dataclass
+class DummySearchConnectionError(DummySearch):
+    """A test dummy for TMDB's Movies class which raises a timeout error."""
+    def movie(self, query: str = None, **kwargs):
+        exception = DummyConnectionError()
+        raise tmdb.requests.exceptions.ConnectionError(exception)
