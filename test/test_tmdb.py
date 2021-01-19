@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 1/18/21, 8:53 AM by stephen.
+#  Last modified 1/19/21, 9:07 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,10 +21,29 @@ import pytest
 
 import tmdb
 
-
 CREDITS = dict(crew=[dict(name='Eric Idle', job='Composer'),
                      dict(name='Terry Gilliam', job='Director'), ])
 MOVIES = [dict(id=1, title='forty two dalmatians'), dict(id=2, title='one forty two squadron')]
+
+
+class TestGetTMDBMovieInfo:
+    MOVIE_INFO = dict(id=42, title='Forty Two')
+    DIRECTORS = {'Directors': ['Terry Gilliam']}
+
+    def test_concatenated_movie_info_returned(self, monkeypatch):
+        api_key = 'dummy api key'
+        movie_id = '42'
+
+        monkeypatch.setattr(tmdb, '_get_tmdb_movie_info', lambda api_key, movie_id: self.MOVIE_INFO)
+        monkeypatch.setattr(tmdb, '_get_tmdb_directors', lambda api_key, movie_id: self.DIRECTORS)
+        with self.get_movie_info_context(api_key, movie_id) as cm:
+            assert cm == self.MOVIE_INFO | self.DIRECTORS
+
+    @contextmanager
+    def get_movie_info_context(self, api_key: str, movie_id: str):
+        hold_api_key = tmdb.tmdbsimple.API_KEY
+        yield tmdb.get_tmdb_movie_info(api_key, movie_id)
+        tmdb.tmdbsimple.API_KEY = hold_api_key
 
 
 # noinspection PyPep8Naming
@@ -116,8 +135,8 @@ class TestGetTMDBDirectors:
     def test_director_returned(self, monkeypatch):
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMovies)
         with self.get_director_context(self.api_key, self.movie_id) as cm:
-            assert cm[0] == 'Terry Gilliam'
-            
+            assert cm == dict(Director=['Terry Gilliam'])
+
     def test_401_logs_error(self, monkeypatch):
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMovies401)
         error_args = []
@@ -193,12 +212,12 @@ class TestGetTMDBDirectors:
     @contextmanager
     def get_director_context(self, api_key: str, movie_id: str):
         hold_api_key = tmdb.tmdbsimple.API_KEY
-        yield tmdb.get_tmdb_directors(api_key, movie_id)
+        yield tmdb._get_tmdb_directors(api_key, movie_id)
         tmdb.tmdbsimple.API_KEY = hold_api_key
 
 
 # noinspection PyPep8Naming
-class TestGetTMDBMovieInfo:
+class TestGetTMDBMovieInfoPrivate:
     api_key = 'dummy api key'
     movie_id = '42'
 
@@ -287,7 +306,7 @@ class TestGetTMDBMovieInfo:
     @contextmanager
     def get_movie_info_context(self, api_key: str, movie_id: str):
         hold_api_key = tmdb.tmdbsimple.API_KEY
-        yield tmdb.get_tmdb_movie_info(api_key, movie_id)
+        yield tmdb._get_tmdb_movie_info(api_key, movie_id)
         tmdb.tmdbsimple.API_KEY = hold_api_key
         
 
