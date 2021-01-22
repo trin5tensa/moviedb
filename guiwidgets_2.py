@@ -4,8 +4,8 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 
-#  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/3/20, 7:01 AM by stephen.
+#  Copyright ©2021. Stephen Rigden.
+#  Last modified 1/22/21, 2:28 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -85,17 +85,21 @@ class AddMovieGUI:
         create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                       command=self.destroy, enabled=True)
         
-        # Link neuron to commit button
-        button_enabler = enable_button_wrapper(commit_button)
-        neuron = link_and_neuron_to_button(button_enabler)
+        # Link commit neuron to commit button
+        commit_button_enabler = enable_button_wrapper(commit_button)
+        commit_neuron = link_and_neuron_to_button(commit_button_enabler)
         
-        # Link neuron to title field
-        notify_neuron = notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[0], neuron)
-        link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[0], neuron, notify_neuron)
+        # Link commit neuron to title field
+        title_field_neuron = notify_neuron_wrapper(self.entry_fields,
+                                                   MOVIE_FIELD_NAMES[0], commit_neuron)
+        link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[0], commit_neuron,
+                             title_field_neuron)
 
-        # Link neuron to year field
-        notify_neuron = notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[1], neuron)
-        link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[1], neuron, notify_neuron)
+        # Link commit neuron to year field
+        year_field_neuron = notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[1],
+                                                  commit_neuron)
+        link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[1], commit_neuron,
+                             year_field_neuron)
 
     def treeview_callback(self, reselection: Sequence[str]):
         """Update selected tags with the user's changes."""
