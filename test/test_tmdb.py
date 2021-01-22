@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 1/19/21, 9:07 AM by stephen.
+#  Last modified 1/22/21, 6:44 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,6 +21,7 @@ import pytest
 
 import tmdb
 
+
 CREDITS = dict(crew=[dict(name='Eric Idle', job='Composer'),
                      dict(name='Terry Gilliam', job='Director'), ])
 MOVIES = [dict(id=1, title='forty two dalmatians'), dict(id=2, title='one forty two squadron')]
@@ -34,9 +35,10 @@ class TestGetTMDBMovieInfo:
         api_key = 'dummy api key'
         movie_id = '42'
 
-        monkeypatch.setattr(tmdb, '_get_tmdb_movie_info', lambda api_key, movie_id: self.MOVIE_INFO)
-        monkeypatch.setattr(tmdb, '_get_tmdb_directors', lambda api_key, movie_id: self.DIRECTORS)
+        monkeypatch.setattr(tmdb, '_get_tmdb_movie_info', lambda *args: self.MOVIE_INFO)
+        monkeypatch.setattr(tmdb, '_get_tmdb_directors', lambda *args: self.DIRECTORS)
         with self.get_movie_info_context(api_key, movie_id) as cm:
+            # noinspection PyTypeChecker
             assert cm == self.MOVIE_INFO | self.DIRECTORS
 
     @contextmanager
@@ -83,7 +85,7 @@ class TestSearchMovies:
         monkeypatch.setattr(tmdb.tmdbsimple, 'Search', DummySearchUnspecifiedError)
         error_args = []
         monkeypatch.setattr(tmdb.logging, 'error', lambda *args: error_args.append(args))
-        with pytest.raises(tmdb.requests.exceptions.HTTPError) as exc:
+        with pytest.raises(tmdb.requests.exceptions.HTTPError):
             with self.get_search_context(self.api_key, self.title_query):
                 pass
         assert isinstance(error_args[0][0], tmdb.requests.exceptions.HTTPError)
@@ -177,7 +179,7 @@ class TestGetTMDBDirectors:
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMoviesUnspecifiedError)
         error_args = []
         monkeypatch.setattr(tmdb.logging, 'error', lambda *args: error_args.append(args))
-        with pytest.raises(tmdb.requests.exceptions.HTTPError) as exc:
+        with pytest.raises(tmdb.requests.exceptions.HTTPError):
             with self.get_director_context(self.api_key, self.movie_id):
                 pass
         assert isinstance(error_args[0][0], tmdb.requests.exceptions.HTTPError)
@@ -271,7 +273,7 @@ class TestGetTMDBMovieInfoPrivate:
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMoviesUnspecifiedError)
         error_args = []
         monkeypatch.setattr(tmdb.logging, 'error', lambda *args: error_args.append(args))
-        with pytest.raises(tmdb.requests.exceptions.HTTPError) as exc:
+        with pytest.raises(tmdb.requests.exceptions.HTTPError):
             with self.get_movie_info_context(self.api_key, self.movie_id):
                 pass
         assert isinstance(error_args[0][0], tmdb.requests.exceptions.HTTPError)
