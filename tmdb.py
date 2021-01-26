@@ -13,7 +13,7 @@ https://github.com/celiao/tmdbsimple
 """
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 1/19/21, 9:07 AM by stephen.
+#  Last modified 1/26/21, 7:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -37,7 +37,7 @@ TIMEOUT = 0.001
 
 def search_movies(tmdb_api_key: str, title_query: str, primary_release_year: int = None,
                   year: int = None, language: str = None, include_adult: bool = False,
-                  region: str = None) -> list[dict]:
+                  region: str = None) -> list[dict[str, Union[str, list[str]]]]:
     """Search for movies.
     
     Args:

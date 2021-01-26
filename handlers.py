@@ -2,8 +2,8 @@
 
 This module is the glue between the user's selection of a menu item and the gui."""
 
-#  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/22/20, 8:01 AM by stephen.
+#  Copyright ©2021. Stephen Rigden.
+#  Last modified 1/26/21, 7:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,7 @@ This module is the glue between the user's selection of a menu item and the gui.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Callable, Sequence
+from typing import Callable, Sequence, Union
 
 import sqlalchemy.orm
 
@@ -25,6 +25,7 @@ import exception
 import guiwidgets
 import guiwidgets_2
 import impexp
+import tmdb
 
 
 def about_dialog():
@@ -300,3 +301,48 @@ def select_tag_callback(old_tag: str):
     delete_callback = delete_tag_callback_wrapper(old_tag)
     edit_callback = edit_tag_callback_wrapper(old_tag)
     guiwidgets_2.EditTagGUI(config.tk_root, old_tag, delete_callback, edit_callback)
+
+
+def search_tmdb(title: str, year: int) -> list[dict[str, Union[str, list[str]]]]:
+    # moviedb-#247
+    tmdb_key = config.Config.tmdb_api_key
+    if config.Config.tmdb_do_not_ask_again:
+        return
+
+    # moviedb-#243 Make this into a support function
+    if not tmdb_key:
+        #  moviedb-#242 Create config preferences dialog with menu item for access
+        #  moviedb-#243
+        #   Create an alert dialog explaining the key must be set in the preferences dialog.
+        #   Call the preferences dialog
+        #   Return if config.Config.tmdb_do_not_ask_again
+        pass
+
+    try:
+        search_results = tmdb.search_movies(tmdb_key, title, year)
+
+    except tmdb.TMDBAPIKeyException:
+        # moviedb-#247
+        pass
+
+    except tmdb.TMDBConnectionTimeout:
+        # moviedb-#247
+        pass
+
+    # moviedb-#246
+    #   Make this into a support function
+    #   Turn tmdb_data into list suitable for GUI
+    #   If compliant records:
+    #       >5 Return title and year for first 20. Note that `tmdb.search_movies`
+    #       only returns 20 at a time.
+    #       <=5 Return title, year, directors, and cast
+    #   Create named tuple in this module
+    #   Fields: Title, Year, Directors, Cast.
+
+
+def get_tmdb_movie(tmdb_id: int) -> list[dict[str, Union[str, list[str]]]]:
+    # moviedb-#244 Add movie cast retrieval to tmdb.get_tmdb_movie_info
+    # moviedb-#245 Write get_tmdb_movie first. It'll be needed by handlers.search_tmdb if
+    #  there are <= 5 records.
+    # moviedb-#245 Return title, year, directors, and lead cast
+    pass
