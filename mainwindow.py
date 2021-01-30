@@ -1,7 +1,7 @@
 """Main Window."""
 
-#  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/3/20, 6:57 AM by stephen.
+#  Copyright ©2021. Stephen Rigden.
+#  Last modified 1/30/21, 9:52 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -198,6 +198,7 @@ class MenuData:
         self.menus = [
                 Menu('Moviedb', [
                         MenuItem('About…', handlers.about_dialog),
+                        MenuItem('Preferences…', handlers.preferences_dialog),
                         MenuItem(QUIT_ITEM), ]),
                 Menu('File', [
                         MenuItem('New…'),

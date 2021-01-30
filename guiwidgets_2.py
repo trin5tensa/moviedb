@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 1/22/21, 2:28 PM by stephen.
+#  Last modified 1/30/21, 9:52 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,7 +22,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
-from typing import Callable, Dict, Mapping, Sequence, Tuple, TypeVar
+from typing import Callable, ClassVar, Dict, Iterator, Mapping, Sequence, Tuple, TypeVar
 
 import config
 import exception
@@ -37,15 +37,16 @@ TAG_FIELD_TEXTS = ('Tag',)
 SELECT_TAGS_TEXT = 'Select tags'
 SEARCH_TEXT = 'Search'
 COMMIT_TEXT = 'Commit'
+SAVE_TEXT = 'Save'
 DELETE_TEXT = 'Delete'
 CANCEL_TEXT = 'Cancel'
 
-ParentType = TypeVar('ParentType', tk.Tk, ttk.Frame)
+ParentType = TypeVar('ParentType', tk.Tk, tk.Toplevel, ttk.Frame)
 
 
 @dataclass
 class AddMovieGUI:
-    """Create and manage a Tk input form which enables a user's supply of the data needed to
+    """Create and manage a Tk input form which allows a user to supply the data needed to
     add a movie."""
     
     parent: tk.Tk
@@ -70,7 +71,9 @@ class AddMovieGUI:
         self.outer_frame, body_frame, buttonbox = create_input_form_framing(self.parent)
 
         # Create labels and fields
-        create_input_form_fields(body_frame, MOVIE_FIELD_NAMES, self.entry_fields)
+        label_field = LabelFieldWidget(body_frame)
+        for movie_field_name in MOVIE_FIELD_NAMES:
+            label_field.add_entry_row(self.entry_fields[movie_field_name])
         focus_set(self.entry_fields[MOVIE_FIELD_NAMES[0]].widget)
         
         # Create movie tags treeview
@@ -156,8 +159,10 @@ class AddTagGUI:
         self.outer_frame, body_frame, buttonbox = create_input_form_framing(self.parent)
         
         # Create label and field
-        create_input_form_fields(body_frame, TAG_FIELD_NAMES, self.entry_fields)
-        
+        label_field = LabelFieldWidget(body_frame)
+        for movie_field_name in TAG_FIELD_NAMES:
+            label_field.add_entry_row(self.entry_fields[movie_field_name])
+            
         # Populate buttonbox with commit and cancel buttons
         column_num = itertools.count()
         commit_button = create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
@@ -207,7 +212,9 @@ class SearchTagGUI:
         self.outer_frame, body_frame, buttonbox = create_input_form_framing(self.parent)
     
         # Create the field label and field entry widgets.
-        create_input_form_fields(body_frame, TAG_FIELD_NAMES, self.entry_fields)
+        label_field = LabelFieldWidget(body_frame)
+        for movie_field_name in TAG_FIELD_NAMES:
+            label_field.add_entry_row(self.entry_fields[movie_field_name])
         
         # Populate buttonbox with the search and cancel buttons.
         column_num = itertools.count()
@@ -265,7 +272,9 @@ class EditTagGUI:
         self.outer_frame, body_frame, buttonbox = create_input_form_framing(self.parent)
     
         # Create field label and field entry widgets.
-        create_input_form_fields(body_frame, TAG_FIELD_NAMES, self.entry_fields)
+        label_field = LabelFieldWidget(body_frame)
+        for movie_field_name in TAG_FIELD_NAMES:
+            label_field.add_entry_row(self.entry_fields[movie_field_name])
     
         # Populate buttonbox with commit, delete, and cancel buttons
         column_num = itertools.count()
@@ -363,6 +372,66 @@ class SelectTagGUI:
         self.outer_frame.destroy()
 
 
+@dataclass
+class PreferencesGUI:
+    # moviedb-#242 Test this class
+    parent: tk.Tk
+
+    field_names: ClassVar[tuple[str]] = ('api_key', 'tmdb_dont_ask')
+    field_texts: ClassVar[tuple[str]] = ('TMDB API Key', 'Do not ask again')
+
+    # On commit this callback will be called with the updated preference .
+    save_callback: Callable[[str, bool], None]
+
+    top_window: tk.Toplevel = None
+    # A more convenient data structure for entry fields.
+    entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
+
+    def __post_init__(self):
+        print()
+        print(f"guiwidgets_2.PreferencesGUI.__post_init__ called.")
+        
+        # Create a toplevel window
+        # moviedb-#242
+        #  Can we get the actual frontmost window from self.parent? This is expected to
+        #  center the dialog on that window.
+        self.top_window = tk.Toplevel(self.parent)
+        
+        # Create outer frames to hold fields and buttons.
+        self.outer_frame, body_frame, buttonbox = create_input_form_framing(self.top_window)
+        
+        # Initialize an internal dictionary to simplify field data management.
+        self.entry_fields = create_entry_fields(self.field_names, self.field_texts)
+        print(f"{self.entry_fields}")
+        
+        # Create labels and fields
+        label_field = LabelFieldWidget(body_frame)
+        # moviedb-#242 Convert 'tmdb_dont_ask' to checkbox input
+        for movie_field_name in self.field_names:
+            label_field.add_entry_row(self.entry_fields[movie_field_name])
+        focus_set(self.entry_fields[self.field_names[0]].widget)
+        # moviedb-#242 Populate fields with data from config
+
+        # Create  buttons
+        column_num = itertools.count()
+        create_button(buttonbox, SAVE_TEXT, column=next(column_num),
+                      command=self.save, enabled=True)
+        create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
+                      command=self.destroy, enabled=True)
+        
+    def save(self):
+        # moviedb-#242 Get values from user entries
+        tmdb_api_key = 'Garbage'
+        tmdb_do_not_ask_again = True
+        
+        self.save_callback(tmdb_api_key, tmdb_do_not_ask_again)
+        self.destroy()
+        
+    def destroy(self):
+        """Destroy all widgets of this class."""
+        self.top_window.destroy()
+
+
 def gui_messagebox(parent: ParentType, message: str, detail: str = '', icon: str = 'info'):
     """Present a Tk messagebox."""
     messagebox.showinfo(parent, message, detail=detail, icon=icon)
@@ -386,11 +455,47 @@ class EntryField:
     label_text: str
     original_value: str
     widget: ttk.Entry = None
+    # There is an uninvestigated problem with pytest's monkeypatching of tk.StringVar if
+    #   textvariable is initialized as:
+    #   textvariable: tk.StringVar = field(default_factory=tk.StringVar, init=False, repr=False)
     textvariable: tk.StringVar = None
     observer: neurons.Observer = field(default_factory=neurons.Observer, init=False, repr=False)
-    
+
     def __post_init__(self):
         self.textvariable = tk.StringVar()
+
+
+@dataclass
+class LabelFieldWidget:
+    # moviedb-#242 Test this class
+    parent: tk.Frame
+    row: Iterator = field(default=None, init=False, repr=False)
+    
+    def __post_init__(self):
+        self.row = itertools.count()
+
+        # Create a column for the labels.
+        self.parent.columnconfigure(0, weight=1, minsize=30)
+        # Create a column for the fields.
+        self.parent.columnconfigure(1, weight=1)
+        
+    def add_entry_row(self, entry_field: EntryField):
+        # moviedb-#242 Test this method
+        row_ix = next(self.row)
+        self._create_label(entry_field, row_ix)
+        entry = ttk.Entry(self.parent, textvariable=entry_field.textvariable, width=36)
+        entry.grid(column=1, row=row_ix)
+        entry_field.widget = entry
+        entry_field.textvariable.set(entry_field.original_value)
+        
+    # moviedb-#242 add_checkbox_row
+    
+    # TODO add_treeview_row
+
+    def _create_label(self, entry_field: EntryField, row_ix: int):
+        # moviedb-#242 Test this method
+        label = ttk.Label(self.parent, text=entry_field.label_text)
+        label.grid(column=0, row=row_ix, sticky='e', padx=5)
 
 
 @dataclass
@@ -502,12 +607,12 @@ def create_entry_fields(names: Sequence[str], texts: Sequence[str]) -> dict:
             for internal_name, field_text in zip(names, texts)}
 
 
-def create_body_and_button_frames(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
+def create_body_and_button_frames(parent: ParentType) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
     """Create the outer frames for an input form.
 
     This consists of an upper body and a lower buttonbox frame.
     
-    Note: Do not call this function if thw input form has label and entry widgets. Use the higher
+    Note: Do not call this function if the input form has label and entry widgets. Use the higher
     level function create_input_form_framing.
 
     Args:
@@ -531,7 +636,7 @@ def create_body_and_button_frames(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, 
     return outer_frame, body_frame, buttonbox
 
 
-def create_input_form_framing(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
+def create_input_form_framing(parent: ParentType) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
     """Create the outer frames for an input form.
 
     An input body frame has two columns, one for the field labels and one for the entry fields.
@@ -550,31 +655,6 @@ def create_input_form_framing(parent: tk.Tk) -> Tuple[ttk.Frame, ttk.Frame, ttk.
     outer_frame.rowconfigure(0, weight=1)
     outer_frame.rowconfigure(1, minsize=35)
     return outer_frame, body_frame, buttonbox
-
-
-def create_input_form_fields(body_frame: ttk.Frame, names: Sequence[str],
-                             entry_fields: Mapping[str, EntryField]):
-    """Create the labels and fields for an entry form.
-    
-    Args:
-        body_frame: The outer frame for the labels and fields.
-        names: A sequence of names of the fields.
-        entry_fields: A mapping of the field names to an instance of EntryField.
-    """
-    
-    # Create a column for the labels.
-    body_frame.columnconfigure(0, weight=1, minsize=30)
-    # Create a column for the fields.
-    body_frame.columnconfigure(1, weight=1)
-
-    for row_ix, internal_name in enumerate(names):
-        entry_field = entry_fields[internal_name]
-        label = ttk.Label(body_frame, text=entry_field.label_text)
-        label.grid(column=0, row=row_ix, sticky='e', padx=5)
-        entry = ttk.Entry(body_frame, textvariable=entry_field.textvariable, width=36)
-        entry.grid(column=1, row=row_ix)
-        entry_field.widget = entry
-        entry_field.textvariable.set(entry_field.original_value)
 
 
 def clear_input_form_fields(entry_fields: Mapping[str, EntryField]):

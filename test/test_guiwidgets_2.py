@@ -1,7 +1,7 @@
 """Test module."""
 
-#  Copyright (c) 2020. Stephen Rigden.
-#  Last modified 12/3/20, 6:44 AM by stephen.
+#  Copyright ©2021. Stephen Rigden.
+#  Last modified 1/30/21, 9:52 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,8 +20,8 @@ import pytest
 
 import exception
 import guiwidgets_2
-from test.dummytk import (DummyTk, TkStringVar, TtkButton, TtkEntry, TtkFrame, TtkLabel,
-                          TtkTreeview, TtkScrollbar)
+from test.dummytk import (DummyTk, TkStringVar, TtkButton, TtkEntry, TtkFrame, TtkLabel, TtkScrollbar,
+                          TtkTreeview, )
 
 
 Exc = Type[Optional[exception.DatabaseSearchFoundNothing]]
@@ -30,21 +30,6 @@ Exc = Type[Optional[exception.DatabaseSearchFoundNothing]]
 # noinspection PyMissingOrEmptyDocstring
 @pytest.mark.usefixtures('patch_tk')
 class TestAddMovieGUI:
-    def test_create_entry_fields_called(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets_2, 'create_entry_fields', lambda *args: calls.append(args))
-        monkeypatch.setattr(guiwidgets_2, 'create_input_form_fields', lambda *args: None)
-        try:
-            with self.add_movie_gui_context():
-                pass
-            
-        # The monkeypatching of create_entry_fields causes a TypeError in code which is not the subject
-        # of this test.
-        except TypeError:
-            pass
-        finally:
-            assert calls == [(guiwidgets_2.MOVIE_FIELD_NAMES, guiwidgets_2.MOVIE_FIELD_TEXTS)]
-
     def test_create_import_form_framing_called(self, monkeypatch):
         self.framing_calls = []
         monkeypatch.setattr(guiwidgets_2, 'create_input_form_framing', self.dummy_create_framing)
@@ -52,14 +37,14 @@ class TestAddMovieGUI:
             assert self.framing_calls == [add_movie_context.parent]
             
     def test_create_input_form_fields(self, monkeypatch):
-        fields_calls = []
-        monkeypatch.setattr(guiwidgets_2, 'create_input_form_fields',
-                            lambda *args: fields_calls.append(args))
+        add_entry_row_calls = []
+        monkeypatch.setattr(guiwidgets_2.LabelFieldWidget, 'add_entry_row',
+                            lambda *args: add_entry_row_calls.append(args))
         monkeypatch.setattr(guiwidgets_2, 'create_input_form_framing', self.dummy_create_framing)
         monkeypatch.setattr(guiwidgets_2, 'focus_set', lambda *args: None)
-        with self.add_movie_gui_context() as add_movie_context:
-            assert fields_calls == [(self.dummy_body_frame, guiwidgets_2.MOVIE_FIELD_NAMES,
-                                     add_movie_context.entry_fields)]
+        with self.add_movie_gui_context():
+            field_texts = tuple(label[1].label_text for label in add_entry_row_calls)
+            assert field_texts == guiwidgets_2.MOVIE_FIELD_TEXTS
             
     def test_focus_set_called_for_title_field(self, monkeypatch):
         calls = []
@@ -232,12 +217,10 @@ class TestAddTagGUI:
         with self.add_tag_gui_context():
             assert self.create_input_form_framing_calls == [(DummyTk(),)]
     
-    def test_create_input_form_fields_called(self, add_tag_gui_fixtures):
-        self.create_input_form_fields_calls = []
-        with self.add_tag_gui_context() as cm:
-            assert self.create_input_form_fields_calls == [
-                    (self.body_frame, guiwidgets_2.TAG_FIELD_NAMES,
-                     cm.entry_fields)]
+    def test_add_entry_row_called(self, add_tag_gui_fixtures):
+        with self.add_tag_gui_context():
+            assert len(self.add_entry_row_calls) == 1
+            assert self.add_entry_row_calls[0][1].label_text == 'Tag'
     
     def test_create_button_called(self, add_tag_gui_fixtures):
         self.create_button_calls = []
@@ -306,7 +289,7 @@ class TestAddTagGUI:
         self.add_tag_callback_calls = []
         self.create_entry_fields_calls = []
         self.create_input_form_framing_calls = []
-        self.create_input_form_fields_calls = []
+        self.add_entry_row_calls = []
         self.create_button_calls = []
         self.link_or_neuron_to_button_calls = []
         self.link_field_to_neuron_calls = []
@@ -319,8 +302,8 @@ class TestAddTagGUI:
 
         monkeypatch.setattr(guiwidgets_2, 'create_input_form_framing',
                             self.dummy_create_input_form_framing)
-        monkeypatch.setattr(guiwidgets_2, 'create_input_form_fields',
-                            lambda *args: self.create_input_form_fields_calls.append(args))
+        monkeypatch.setattr(guiwidgets_2.LabelFieldWidget, 'add_entry_row',
+                            lambda *args: self.add_entry_row_calls.append(args))
         monkeypatch.setattr(guiwidgets_2, 'create_button', self.dummy_create_button)
         monkeypatch.setattr(guiwidgets_2, 'link_or_neuron_to_button',
                             self.dummy_link_or_neuron_to_button)
@@ -354,14 +337,12 @@ class TestSearchTagGUI:
         with self.search_tag_gui_context():
             assert create_input_form_framing_call == [(DummyTk(),), ]
     
-    def test_create_input_form_fields_called(self, monkeypatch):
-        create_input_form_fields_calls = []
-        
-        monkeypatch.setattr(guiwidgets_2, 'create_input_form_fields',
-                            lambda *args: create_input_form_fields_calls.append(args))
-        with self.search_tag_gui_context() as cm:
-            assert create_input_form_fields_calls == [(cm.outer_frame.children[0],
-                                                       guiwidgets_2.TAG_FIELD_NAMES, cm.entry_fields)]
+    def test_add_entry_row_called(self, monkeypatch):
+        add_entry_row_calls = []
+        monkeypatch.setattr(guiwidgets_2.LabelFieldWidget, 'add_entry_row',
+                            lambda *args: add_entry_row_calls.append(args))
+        with self.search_tag_gui_context():
+            assert add_entry_row_calls[0][1].label_text == 'Tag'
     
     def test_search_button_created(self):
         with self.search_tag_gui_context() as cm:
@@ -532,11 +513,9 @@ class TestEditTagGUI:
             assert self.create_input_form_framing_calls == [(DummyTk(),)]
     
     def test_create_input_form_fields_called(self, edit_tag_gui_fixtures):
-        self.create_input_form_fields_calls = []
-        with self.edit_tag_gui_context() as cm:
-            assert self.create_input_form_fields_calls == [
-                    (self.body_frame, guiwidgets_2.TAG_FIELD_NAMES,
-                     cm.entry_fields)]
+        self.add_entry_row_calls = []
+        with self.edit_tag_gui_context():
+            assert self.add_entry_row_calls[0][1].label_text == 'Tag'
     
     def test_create_button_called(self, edit_tag_gui_fixtures):
         self.create_button_calls = []
@@ -628,7 +607,7 @@ class TestEditTagGUI:
         self.edit_tag_callback_calls = []
         self.create_entry_fields_calls = []
         self.create_input_form_framing_calls = []
-        self.create_input_form_fields_calls = []
+        self.add_entry_row_calls = []
         self.create_button_calls = []
         self.link_or_neuron_to_button_calls = []
         self.link_field_to_neuron_calls = []
@@ -641,8 +620,8 @@ class TestEditTagGUI:
         
         monkeypatch.setattr(guiwidgets_2, 'create_input_form_framing',
                             self.dummy_create_input_form_framing)
-        monkeypatch.setattr(guiwidgets_2, 'create_input_form_fields',
-                            lambda *args: self.create_input_form_fields_calls.append(args))
+        monkeypatch.setattr(guiwidgets_2.LabelFieldWidget, 'add_entry_row',
+                            lambda *args: self.add_entry_row_calls.append(args))
         monkeypatch.setattr(guiwidgets_2, 'create_button', self.dummy_create_button)
         monkeypatch.setattr(guiwidgets_2, 'link_or_neuron_to_button',
                             self.dummy_link_or_neuron_to_button)
@@ -1020,61 +999,6 @@ class TestCreateBodyAndButtonFrames:
     def call_context(self):
         # noinspection PyTypeChecker
         yield guiwidgets_2.create_input_form_framing(DummyTk())
-
-
-# noinspection PyMissingOrEmptyDocstring
-@pytest.mark.usefixtures('patch_tk')
-class TestCreateInputFormFields:
-    original_tag = 'test original value'
-    
-    def test_columns_configured(self):
-        with self.create_fields_context() as cm:
-            body_frame, _ = cm
-            assert body_frame.columnconfigure_calls == [((0,), dict(minsize=30, weight=1)),
-                                                        ((1,), dict(weight=1))]
-    
-    def test_label_created(self):
-        with self.create_fields_context() as cm:
-            body_frame, _ = cm
-            assert body_frame.children[0] == TtkLabel(parent=TtkFrame(parent=DummyTk(), padding=''),
-                                                      text='Tag', padding='')
-    
-    def test_label_gridded(self):
-        with self.create_fields_context() as cm:
-            body_frame, entry_fields = cm
-            assert body_frame.children[0].grid_calls == [dict(column=0, padx=5, row=0, sticky='e')]
-    
-    def test_entry_created(self):
-        with self.create_fields_context() as cm:
-            body_frame, _ = cm
-            assert body_frame.children[1] == TtkEntry(parent=TtkFrame(parent=DummyTk()),
-                                                      textvariable=TkStringVar(), width=36)
-    
-    def test_entry_gridded(self):
-        with self.create_fields_context() as cm:
-            body_frame, _ = cm
-            assert body_frame.children[1].grid_calls == [dict(column=1, row=0)]
-    
-    def test_entry_added_to_entry_fields(self):
-        with self.create_fields_context() as cm:
-            _, entry_fields = cm
-            assert entry_fields['tag'].widget == TtkEntry(parent=TtkFrame(parent=DummyTk(), ),
-                                                          textvariable=TkStringVar(), width=36)
-    
-    def test_entry_text_variable_set(self):
-        with self.create_fields_context() as cm:
-            _, entry_fields = cm
-            assert entry_fields['tag'].textvariable.set_calls == [(self.original_tag,)]
-    
-    @contextmanager
-    def create_fields_context(self):
-        body_frame = TtkFrame(DummyTk())
-        names = ('tag',)
-        entry_fields = dict(tag=guiwidgets_2.EntryField('Tag', ''))
-        entry_fields['tag'].original_value = self.original_tag
-        # noinspection PyTypeChecker
-        guiwidgets_2.create_input_form_fields(body_frame, names, entry_fields)
-        yield body_frame, entry_fields
 
 
 @pytest.mark.usefixtures('patch_tk')
