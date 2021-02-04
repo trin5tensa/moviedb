@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 1/30/21, 9:52 AM by stephen.
+#  Last modified 2/4/21, 8:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -35,22 +35,16 @@ def about_dialog():
 
 def preferences_dialog():
     """Display the preferences dialog"""
-    # moviedb-#242 Complete this function
     # moviedb-#242 Test this function
-    print()
-    print(f"handlers.preferences_dialog called")
-    
-    # moviedb-#242 Call gui
-    #  Arguments from config.app: tmdb_api_key: str, tmdb_do_not_ask_again: bool
-    #  Return: tmdb_api_key: str, tmdb_do_not_ask_again: bool
-    guiwidgets_2.PreferencesGUI(config.tk_root, preferences_callback)
+    guiwidgets_2.PreferencesGUI(config.tk_root, config.app.tmdb_api_key,
+                                config.app.tmdb_do_not_ask_again, preferences_callback)
 
 
 def preferences_callback(tmdb_api_key: str, tmdb_do_not_ask_again: bool):
-    # moviedb-#242 Update config.app with gui return values
+    
     # moviedb-#242 Test this function
-    print()
-    print(f"preferences_callback called with \n{tmdb_api_key=}, \n{tmdb_do_not_ask_again=}")
+    config.app.tmdb_api_key = tmdb_api_key
+    config.app.tmdb_do_not_ask_again = tmdb_do_not_ask_again
 
 
 def add_movie():

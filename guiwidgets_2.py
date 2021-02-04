@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 1/30/21, 9:52 AM by stephen.
+#  Last modified 2/4/21, 8:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,7 +22,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
-from typing import Callable, ClassVar, Dict, Iterator, Mapping, Sequence, Tuple, TypeVar
+from typing import Callable, Dict, Iterator, Mapping, Sequence, Tuple, TypeVar
 
 import config
 import exception
@@ -375,10 +375,17 @@ class SelectTagGUI:
 @dataclass
 class PreferencesGUI:
     # moviedb-#242 Test this class
-    parent: tk.Tk
 
-    field_names: ClassVar[tuple[str]] = ('api_key', 'tmdb_dont_ask')
-    field_texts: ClassVar[tuple[str]] = ('TMDB API Key', 'Do not ask again')
+    parent: tk.Tk
+    
+    # Preference fields
+    api_key: str
+    do_not_ask: bool
+    
+    api_key_name = 'api_key'
+    api_key_text = 'TMDB API key'
+    dont_ask_name = 'tmdb_dont_ask'
+    dont_ask_text = 'Do not ask again'
 
     # On commit this callback will be called with the updated preference .
     save_callback: Callable[[str, bool], None]
@@ -388,9 +395,6 @@ class PreferencesGUI:
     entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
 
     def __post_init__(self):
-        print()
-        print(f"guiwidgets_2.PreferencesGUI.__post_init__ called.")
-        
         # Create a toplevel window
         # moviedb-#242
         #  Can we get the actual frontmost window from self.parent? This is expected to
@@ -401,28 +405,39 @@ class PreferencesGUI:
         self.outer_frame, body_frame, buttonbox = create_input_form_framing(self.top_window)
         
         # Initialize an internal dictionary to simplify field data management.
-        self.entry_fields = create_entry_fields(self.field_names, self.field_texts)
-        print(f"{self.entry_fields}")
-        
+        self.entry_fields = create_entry_fields((self.api_key_name, self.dont_ask_name),
+                                                (self.api_key_text, self.dont_ask_text))
+
         # Create labels and fields
         label_field = LabelFieldWidget(body_frame)
-        # moviedb-#242 Convert 'tmdb_dont_ask' to checkbox input
-        for movie_field_name in self.field_names:
-            label_field.add_entry_row(self.entry_fields[movie_field_name])
-        focus_set(self.entry_fields[self.field_names[0]].widget)
-        # moviedb-#242 Populate fields with data from config
+        label_field.add_entry_row(self.entry_fields[self.api_key_name], self.api_key)
+        label_field.add_checkbox_row(self.entry_fields[self.dont_ask_name], self.do_not_ask)
+        focus_set(self.entry_fields[self.api_key_name].widget)
 
         # Create  buttons
         column_num = itertools.count()
-        create_button(buttonbox, SAVE_TEXT, column=next(column_num),
-                      command=self.save, enabled=True)
+        save_button = create_button(buttonbox, SAVE_TEXT, column=next(column_num),
+                      command=self.save, enabled=False)
         create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                       command=self.destroy, enabled=True)
         
+        # Link save button to save neuron
+        save_button_enabler = enable_button_wrapper(save_button)
+        save_neuron = link_or_neuron_to_button(save_button_enabler)
+        
+        # Link api key field to save neuron
+        api_key_field_neuron = notify_neuron_wrapper(self.entry_fields, self.api_key_name, save_neuron)
+        link_field_to_neuron(self.entry_fields, self.api_key_name, save_neuron, api_key_field_neuron)
+
+        # Link tmdb don't ask field to save neuron
+        tmdb_dont_ask_field_neuron = notify_neuron_wrapper(self.entry_fields,
+                                                           self.dont_ask_name, save_neuron)
+        link_field_to_neuron(self.entry_fields, self.dont_ask_name, save_neuron,
+                             tmdb_dont_ask_field_neuron)
+
     def save(self):
-        # moviedb-#242 Get values from user entries
-        tmdb_api_key = 'Garbage'
-        tmdb_do_not_ask_again = True
+        tmdb_api_key: str = self.entry_fields[self.api_key_name].textvariable.get()
+        tmdb_do_not_ask_again: bool = self.entry_fields[self.dont_ask_name].textvariable.get() == '1'
         
         self.save_callback(tmdb_api_key, tmdb_do_not_ask_again)
         self.destroy()
@@ -471,25 +486,47 @@ class LabelFieldWidget:
     parent: tk.Frame
     row: Iterator = field(default=None, init=False, repr=False)
     
+    col_0_width: int = 30
+    col_1_width: int = 36
+    
     def __post_init__(self):
         self.row = itertools.count()
 
         # Create a column for the labels.
-        self.parent.columnconfigure(0, weight=1, minsize=30)
+        self.parent.columnconfigure(0, weight=1, minsize=self.col_0_width)
         # Create a column for the fields.
         self.parent.columnconfigure(1, weight=1)
         
-    def add_entry_row(self, entry_field: EntryField):
+    def add_entry_row(self, entry_field: EntryField, initial: str = ''):
         # moviedb-#242 Test this method
+        
         row_ix = next(self.row)
         self._create_label(entry_field, row_ix)
-        entry = ttk.Entry(self.parent, textvariable=entry_field.textvariable, width=36)
-        entry.grid(column=1, row=row_ix)
-        entry_field.widget = entry
-        entry_field.textvariable.set(entry_field.original_value)
+        entry_field.widget = ttk.Entry(self.parent, textvariable=entry_field.textvariable,
+                                       width=self.col_1_width)
+        entry_field.widget.grid(column=1, row=row_ix)
+        entry_field.original_value = initial
+        entry_field.textvariable.set(initial)
         
-    # moviedb-#242 add_checkbox_row
+    def add_checkbox_row(self, entry_field: EntryField, initial: bool = False):
+        
+        # moviedb-#242 Move this note to the method's docs.
+        #   Checkbutton has a 'command' parameter which is used for callbacks.
+        #   For consistency with other widgets this method will use the text variable via
+        #   link_field_to_neuron. This link is set up by the caller.
     
+        # moviedb-#242 Test this method
+        
+        row_ix = next(self.row)
+        entry_field.widget = ttk.Checkbutton(self.parent, text=entry_field.label_text,
+                                             variable=entry_field.textvariable, width=self.col_1_width)
+        entry_field.widget.grid(column=1, row=row_ix)
+        if initial:
+            entry_field.original_value = '1'
+        else:
+            entry_field.original_value = '0'
+        entry_field.textvariable.set(entry_field.original_value)
+
     # TODO add_treeview_row
 
     def _create_label(self, entry_field: EntryField, row_ix: int):
@@ -778,6 +815,9 @@ def notify_neuron_wrapper(entry_fields: dict, name: str, neuron: neurons.Neuron)
         Args:
             *args: Not used. Required to match unused arguments from caller.
         """
+        print()
+        print(f"{entry_fields[name].textvariable.get()=}")
+        print(f"{str(entry_fields[name].original_value)=}")
         state = (entry_fields[name].textvariable.get()
                  != str(entry_fields[name].original_value))
         neuron(name, state)
