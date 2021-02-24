@@ -1,7 +1,7 @@
 """Observer pattern and neurons."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 2/4/21, 8:48 AM by stephen.
+#  Last modified 2/24/21, 2:31 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -38,7 +38,8 @@ class Observer:
         the notify method (cf. docs for Neuron.register)).
 
         Args:
-            notifee: Any callable.
+            notifee: This callable will be invoked by the notify method with the arguments
+            supplied to that method.
         """
         self.notifees.append(notifee)
     
@@ -71,7 +72,7 @@ class Neuron(Observer):
         """Update one event and update all notifees."""
         raise NotImplementedError
     
-    def register_event(self, event_id: Callable, state: bool = False):
+    def register_event(self, event_id: Any, state: bool = False):
         """Register an event
         
         Each registered notifee: Callable will be called whenever the notify method of this class is
@@ -80,7 +81,7 @@ class Neuron(Observer):
         subclasses.
         
         Args:
-            event_id:
+            event_id: The unique id of the notifier. This is only used to distinguish between notifiers.
             state:
         """
         self.events[event_id] = state

@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 2/4/21, 8:48 AM by stephen.
+#  Last modified 2/24/21, 2:31 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -325,11 +325,10 @@ def search_tmdb(title: str, year: int) -> list[dict[str, Union[str, list[str]]]]
 
     # moviedb-#243 Make this into a support function
     if not tmdb_key:
-        #  moviedb-#242 Create config preferences dialog with menu item for access
         #  moviedb-#243
+        #   Return if config.Config.tmdb_do_not_ask_again
         #   Create an alert dialog explaining the key must be set in the preferences dialog.
         #   Call the preferences dialog
-        #   Return if config.Config.tmdb_do_not_ask_again
         pass
 
     try:
