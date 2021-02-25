@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 2/24/21, 2:31 PM by stephen.
+#  Last modified 2/25/21, 8:43 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -34,15 +34,20 @@ def about_dialog():
 
 
 def preferences_dialog():
-    """Display the preferences dialog"""
-    # moviedb-#242 Test this function
+    """Display the preferences dialog."""
     guiwidgets_2.PreferencesGUI(config.tk_root, config.app.tmdb_api_key,
                                 config.app.tmdb_do_not_ask_again, preferences_callback)
 
 
 def preferences_callback(tmdb_api_key: str, tmdb_do_not_ask_again: bool):
-    
-    # moviedb-#242 Test this function
+    """
+    Update the config file with the user's changes.
+
+    Args:
+        tmdb_api_key:
+        tmdb_do_not_ask_again:
+    """
+
     config.app.tmdb_api_key = tmdb_api_key
     config.app.tmdb_do_not_ask_again = tmdb_do_not_ask_again
 
