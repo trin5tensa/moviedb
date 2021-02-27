@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 2/24/21, 2:31 PM by stephen.
+#  Last modified 2/27/21, 7:42 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -103,7 +103,7 @@ class AddMovieGUI:
         _link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[1], commit_neuron,
                               year_field_neuron)
         
-        # TODO Save neurons for test access to neuron network
+        # moviedb-#252 Save neurons for test access to neuron network
 
     def treeview_callback(self, reselection: Sequence[str]):
         """Update selected tags with the user's changes."""
@@ -178,7 +178,7 @@ class AddTagGUI:
                               _notify_neuron_wrapper(self.entry_fields,
                                                      TAG_FIELD_NAMES[0], neuron))
 
-        # TODO Save neurons for test access to neuron network
+        # moviedb-#252 Save neurons for test access to neuron network
 
     def commit(self):
         """The user clicked the 'Commit' button."""
@@ -232,8 +232,8 @@ class SearchTagGUI:
         notify_neuron = _notify_neuron_wrapper(self.entry_fields, TAG_FIELD_NAMES[0], neuron)
         _link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron, notify_neuron)
         
-        # TODO Save neurons for test access to neuron network
-    
+        # moviedb-#252 Save neurons for test access to neuron network
+
     def search(self):
         """Respond to the user's click of the 'Search' button."""
         try:
@@ -295,7 +295,7 @@ class EditTagGUI:
         notify_neuron = _notify_neuron_wrapper(self.entry_fields, TAG_FIELD_NAMES[0], neuron)
         _link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron, notify_neuron)
         
-        # TODO Save neurons for test access to neuron network
+        # moviedb-#252 Save neurons for test access to neuron network
     
     def commit(self):
         """The user clicked the 'Commit' button."""
@@ -435,7 +435,6 @@ class PreferencesGUI:
         # Link api key field to save neuron
         self.entry_fields[self.api_key_name].observer = _notify_neuron_wrapper(
                 self.entry_fields, self.api_key_name, save_neuron)
-        # TODO Resolve type warnings
         _link_field_to_neuron(self.entry_fields, self.api_key_name, save_neuron,
                               self.entry_fields[self.api_key_name].observer)
 
@@ -445,13 +444,7 @@ class PreferencesGUI:
         _link_field_to_neuron(self.entry_fields, self.dont_ask_name, save_neuron,
                               self.entry_fields[self.dont_ask_name].observer)
 
-        # TODO
-        #   Center dialog on topmost window of moviedb
-        #   ? New function center_widget(widget_X, widget_Y) which centers widget_X on widget_Y
-        # print()
-        # print(f"{self.parent}")
-        # print(f"{self.parent.winfo_geometry()}")
-        # print(f"{self.toplevel.winfo_geometry()}")
+        # moviedb-#251 Center dialog on topmost window of moviedb
 
     def save(self):
         """Save the edited preference values to the config file."""
@@ -593,8 +586,8 @@ class _EntryField:
     # _link_field_to_neuron. This observer attribute is available for testing. If used it must be
     # initialized when the observer is created. This is usually in the __post_init__ method of the input
     # form widget.
-    observer: neurons.Observer = field(default_factory=neurons.Observer, init=False, repr=False)
-    
+    observer: Callable = field(default=None, init=False, repr=False)
+
     def __post_init__(self):
         self.textvariable = tk.StringVar()
         self.textvariable.set(self.original_value)
@@ -651,7 +644,7 @@ class _LabelFieldWidget:
                                              variable=entry_field.textvariable, width=self.col_1_width)
         entry_field.widget.grid(column=1, row=row_ix)
     
-    # TODO add_treeview_row
+    # moviedb-#250 add_treeview_row
     
     def _create_label(self, entry_field: _EntryField, row_ix: int):
         """

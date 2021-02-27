@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 2/24/21, 2:31 PM by stephen.
+#  Last modified 2/27/21, 7:42 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -193,7 +193,7 @@ class MenuData:
         Menu separators: Use '-' or any other character of type str.
         """
 
-        # TODO This menu doesn't comply with Apple guidelines
+        # moviedb-#249 Apple menu guidelines
         #   See TKDocs Platform Menus | macOS
         #   https://tkdocs.com/tutorial/menus.html
         self.menus = [
