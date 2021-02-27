@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
-#  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/22/20, 8:01 AM by stephen.
+#  Copyright ©2021. Stephen Rigden.
+#  Last modified 2/25/21, 8:43 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -50,6 +50,43 @@ class TestAboutDialog:
         self.messagebox_calls.append(args)
 
 
+class TestPreferences:
+    test_tmdb_api_key = 'test_tmdb_api_key'
+    test_tmdb_do_not_ask_again = 'test_tmdb_do_not_ask_again'
+    calls = []
+
+    def test_preferences_dialog_instantiates_preferences_gui(self, monkeypatch):
+        with self.preferences_context(monkeypatch):
+            assert self.calls == [(DummyParent(), self.test_tmdb_api_key,
+                                   self.test_tmdb_do_not_ask_again, handlers.preferences_callback)]
+
+    def test_preferences_callback_updates_config(self, monkeypatch):
+        # NB This method uses the config set up of the context manager
+        # BUT has no interest in the test instance of PreferencesGUI.
+        user_api_key = 'user_api_key'
+        user_dont_ask = False
+        with self.preferences_context(monkeypatch):
+            handlers.preferences_callback(user_api_key, user_dont_ask)
+            assert handlers.config.app.tmdb_api_key == user_api_key
+            assert handlers.config.app.tmdb_do_not_ask_again == user_dont_ask
+
+    @contextmanager
+    def preferences_context(self, monkeypatch):
+        hold_app = handlers.config.app
+        handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
+        handlers.config.app.tmdb_api_key = self.test_tmdb_api_key
+        handlers.config.app.tmdb_do_not_ask_again = self.test_tmdb_do_not_ask_again
+        hold_root = handlers.config.tk_root
+        handlers.config.tk_root = DummyParent()
+        monkeypatch.setattr(handlers.guiwidgets_2, 'PreferencesGUI',
+                            lambda *args: self.calls.append(args))
+        try:
+            yield handlers.preferences_dialog()
+        finally:
+            handlers.config.app = hold_app
+            handlers.config.tk_root = hold_root
+
+
 class TestAddMovie:
     TAGS = ['Movie night candidate']
     
@@ -71,11 +108,13 @@ class TestAddMovie:
     def add_movie_context(self):
         hold_app = handlers.config.app
         handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
+        hold_root = handlers.config.tk_root
         handlers.config.tk_root = DummyParent()
         try:
             yield handlers.add_movie()
         finally:
             handlers.config.app = hold_app
+            handlers.config.tk_root = hold_root
 
 
 class TestDeleteMovie:

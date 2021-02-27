@@ -1,7 +1,7 @@
 """Main Window."""
 
-#  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/3/20, 6:57 AM by stephen.
+#  Copyright ©2021. Stephen Rigden.
+#  Last modified 2/27/21, 7:42 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,7 +23,6 @@ from typing import Callable, List, Sequence, Tuple, Union
 import config
 import handlers
 
-
 # The quit item needs special processing.
 QUIT_ITEM = 'Quit'
 
@@ -36,7 +35,6 @@ class MainWindow:
     tk_kwargs: Mapping = None
     
     def __post_init__(self):
-        """This is the part of __init__ that handles everything that shouldn't be in __init__."""
         self.parent.title(config.app.name)
         self.parent.option_add('*tearOff', False)
         self.parent.geometry(self.set_geometry())
@@ -195,9 +193,13 @@ class MenuData:
         Menu separators: Use '-' or any other character of type str.
         """
 
+        # moviedb-#249 Apple menu guidelines
+        #   See TKDocs Platform Menus | macOS
+        #   https://tkdocs.com/tutorial/menus.html
         self.menus = [
                 Menu('Moviedb', [
                         MenuItem('About…', handlers.about_dialog),
+                        MenuItem('Preferences…', handlers.preferences_dialog),
                         MenuItem(QUIT_ITEM), ]),
                 Menu('File', [
                         MenuItem('New…'),
