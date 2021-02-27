@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 2/27/21, 7:42 AM by stephen.
+#  Last modified 2/27/21, 9:05 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -92,18 +92,14 @@ class AddMovieGUI:
         commit_neuron = _link_and_neuron_to_button(commit_button_enabler)
         
         # Link commit neuron to title field
-        title_field_neuron = _notify_neuron_wrapper(self.entry_fields,
-                                                    MOVIE_FIELD_NAMES[0], commit_neuron)
-        _link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[0], commit_neuron,
-                              title_field_neuron)
+        observer = _notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[0], commit_neuron)
+        self.entry_fields[MOVIE_FIELD_NAMES[0]].observer = observer
+        _link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[0], commit_neuron, observer)
 
         # Link commit neuron to year field
-        year_field_neuron = _notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[1],
-                                                   commit_neuron)
-        _link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[1], commit_neuron,
-                              year_field_neuron)
-        
-        # moviedb-#252 Save neurons for test access to neuron network
+        observer = _notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[1], commit_neuron)
+        self.entry_fields[MOVIE_FIELD_NAMES[1]].observer = observer
+        _link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[1], commit_neuron, observer)
 
     def treeview_callback(self, reselection: Sequence[str]):
         """Update selected tags with the user's changes."""
@@ -175,10 +171,8 @@ class AddTagGUI:
         button_enabler = _enable_button_wrapper(commit_button)
         neuron = _link_or_neuron_to_button(button_enabler)
         _link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron,
-                              _notify_neuron_wrapper(self.entry_fields,
-                                                     TAG_FIELD_NAMES[0], neuron))
-
-        # moviedb-#252 Save neurons for test access to neuron network
+                              _notify_neuron_wrapper(self.entry_fields, TAG_FIELD_NAMES[0], neuron))
+        self.entry_fields[TAG_FIELD_NAMES[0]].observer = neuron
 
     def commit(self):
         """The user clicked the 'Commit' button."""
@@ -231,8 +225,7 @@ class SearchTagGUI:
         neuron = _link_or_neuron_to_button(button_enabler)
         notify_neuron = _notify_neuron_wrapper(self.entry_fields, TAG_FIELD_NAMES[0], neuron)
         _link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron, notify_neuron)
-        
-        # moviedb-#252 Save neurons for test access to neuron network
+        self.entry_fields[TAG_FIELD_NAMES[0]].observer = neuron
 
     def search(self):
         """Respond to the user's click of the 'Search' button."""
@@ -294,9 +287,8 @@ class EditTagGUI:
         neuron = _link_or_neuron_to_button(button_enabler)
         notify_neuron = _notify_neuron_wrapper(self.entry_fields, TAG_FIELD_NAMES[0], neuron)
         _link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron, notify_neuron)
-        
-        # moviedb-#252 Save neurons for test access to neuron network
-    
+        self.entry_fields[TAG_FIELD_NAMES[0]].observer = neuron
+
     def commit(self):
         """The user clicked the 'Commit' button."""
         self.edit_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
