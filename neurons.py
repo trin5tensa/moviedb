@@ -1,7 +1,7 @@
 """Observer pattern and neurons."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 2/24/21, 2:31 PM by stephen.
+#  Last modified 3/5/21, 8:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -69,13 +69,12 @@ class Neuron(Observer):
     events: Dict[Any, bool] = field(default_factory=dict, init=False, repr=False)
     
     def __call__(self, event_id: Any, state: bool):
-        """Update one event and update all notifees."""
         raise NotImplementedError
     
     def register_event(self, event_id: Any, state: bool = False):
         """Register an event
         
-        Each registered notifee: Callable will be called whenever the notify method of this class is
+        Each registered notifee will be called whenever the notify method of this class is
         called. The registered notifees will be invoked using a calculated boolean argument (cf. docs
         for Observer.register)). The calculation algorithm is contained in the __call__ method of
         subclasses.
@@ -85,6 +84,18 @@ class Neuron(Observer):
             state:
         """
         self.events[event_id] = state
+
+    def notify(self, fired: bool):
+        """Call every notifee.
+        
+        Whereas Observer.notify will accept any arguments (*args, **kwargs) the arguments to
+        Neuron.notify must be restricted to a single boolean to indicate whether or not the neuron
+        has fired.
+        
+        Args:
+            fired:
+        """
+        super().notify(fired)
 
 
 @dataclass

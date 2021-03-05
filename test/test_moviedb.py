@@ -1,7 +1,7 @@
 """Tests for movie database."""
 
-#  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/26/20, 11:50 AM by stephen.
+#  Copyright ©2021. Stephen Rigden.
+#  Last modified 3/5/21, 8:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -167,11 +167,11 @@ class TestLoadConfigFile:
     def test_file_not_found_logged(self, monkeypatch, tmpdir):
         logging_info_calls = []
         monkeypatch.setattr(moviedb.logging, 'info', lambda *args: logging_info_calls.append(args))
-        info_text = "The config.Config save file was not found. A new version will be initialized."
+        info_text = "The config save file was not found. A new version will be initialized."
         path_string = (self.TEST_PARENT_DIR + '/' + self.TEST_PROGRAM_NAME +
                        moviedb.config.CONFIG_PICKLE_EXTENSION)
         with self.class_context(tmpdir, create_config_file=False):
-            assert logging_info_calls[0][0][:77] == info_text
+            assert logging_info_calls[0][0][:70] == info_text
             assert logging_info_calls[0][0][-40:] == path_string
     
     def test_config_app_initialised_for_first_use(self, tmpdir):
