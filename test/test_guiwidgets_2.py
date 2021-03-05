@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 3/5/21, 8:14 AM by stephen.
+#  Last modified 3/5/21, 8:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -1008,6 +1008,7 @@ class TestLabelFieldWidget:
                                         self.dummy_callers_callback)
             assert calls == [(labelfield, guiwidgets_2.SELECT_TAGS_TEXT, 0)]
 
+    # noinspection PyPep8Naming
     def test_add_treeview_row_creates_MovieTagTreeview_object(self, monkeypatch):
         items = ['tag 1', 'tag 2']
         with self.labelfield_context() as labelfield:
@@ -1017,6 +1018,7 @@ class TestLabelFieldWidget:
                                         self.dummy_callers_callback)
             assert calls == [(labelfield.parent, 0, items, self.dummy_callers_callback)]
 
+    # noinspection PyPep8Naming
     def test_add_treeview_row_returns_MovieTagTreeview_object(self, monkeypatch):
         items = ['tag 1', 'tag 2']
         with self.labelfield_context() as labelfield:
