@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 2/27/21, 9:05 AM by stephen.
+#  Last modified 3/5/21, 8:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -28,9 +28,9 @@ import config
 import exception
 import neurons
 
+
 MOVIE_FIELD_NAMES = ('title', 'year', 'director', 'minutes', 'notes',)
 MOVIE_FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes',)
-TAG_TREEVIEW_INTERNAL_NAME = 'tag treeview'
 TAG_FIELD_NAMES = ('tag',)
 TAG_FIELD_TEXTS = ('Tag',)
 SELECT_TAGS_TEXT = 'Select tags'
@@ -60,7 +60,7 @@ class AddMovieGUI:
     # A more convenient data structure for entry fields.
     entry_fields: Dict[str, '_EntryField'] = field(default_factory=dict, init=False, repr=False)
     # Treeview for tags.
-    treeview: 'MovieTagTreeview' = field(default=None, init=False, repr=False)
+    treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
     
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
@@ -76,9 +76,8 @@ class AddMovieGUI:
         _focus_set(self.entry_fields[MOVIE_FIELD_NAMES[0]].widget)
         
         # Create movie tags treeview
-        self.treeview = MovieTagTreeview(TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=5, column=0,
-                                         label_text=SELECT_TAGS_TEXT, items=self.all_tags,
-                                         user_callback=self.treeview_callback)
+        self.treeview = label_field.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
+                                                     callers_callback=self.treeview_callback)
 
         # Populate buttonbox with commit and cancel buttons
         column_num = itertools.count()
@@ -461,7 +460,7 @@ def gui_askopenfilename(parent: ParentType, filetypes: Sequence[Sequence[str]]):
 
 
 @dataclass
-class MovieTagTreeview:
+class _MovieTagTreeview:
     """Create and manage a treeview and a descriptive label.
     
     The user callback will be called whenever the user has changes the selection. The observer will
@@ -469,36 +468,25 @@ class MovieTagTreeview:
     selection.
     """
     
-    # Internal name of treeview
-    internal_name: str
-
     # The frame which contains the treeview.
     body_frame: ttk.Frame
     # The tk grid row of the label and treeview within the frame's grid.
     row: int
-    # The tk grid column of the label within the frame's grid. The treeview will be
-    #   placed in the cell to the right.
-    column: int
-    label_text: str
     # A list of all the items which will be displayed in the treeview.
     items: Sequence[str]
     # Caller's callback for notification of reselection.
-    user_callback: Callable[[Sequence[str]], None]
+    callers_callback: Callable[[Sequence[str]], None]
     # Items to be selected on opening.
     initial_selection: Sequence[str] = field(default_factory=list)
     
     treeview: ttk.Treeview = field(default=None, init=False, repr=False)
-    observer: neurons.Observer = field(default_factory=neurons.Observer, init=False, repr=False)
+    observer: neurons.Neuron = field(default_factory=neurons.Neuron, init=False, repr=False)
 
     # noinspection DuplicatedCode
     def __post_init__(self):
-        # Create the label
-        label = ttk.Label(self.body_frame, text=self.label_text, padding=(0, 2))
-        label.grid(column=self.column, row=self.row, sticky='ne', padx=5)
-
         # Create a frame for the treeview and its scrollbar
         treeview_frame = ttk.Frame(self.body_frame, padding=5)
-        treeview_frame.grid(column=self.column + 1, row=self.row, sticky='w')
+        treeview_frame.grid(column=1, row=self.row, sticky='w')
         
         # Create the treeview
         self.treeview = ttk.Treeview(treeview_frame, columns=('tags',), height=10, selectmode='extended',
@@ -506,7 +494,7 @@ class MovieTagTreeview:
         self.treeview.grid(column=0, row=0, sticky='w')
         self.treeview.column('tags', width=100)
         self.treeview.bind('<<TreeviewSelect>>',
-                           func=self.selection_callback_wrapper(self.treeview, self.user_callback))
+                           func=self.selection_callback_wrapper(self.treeview, self.callers_callback))
         
         # Create the scrollbar
         scrollbar = ttk.Scrollbar(treeview_frame, orient=tk.VERTICAL, command=self.treeview.yview)
@@ -530,7 +518,6 @@ class MovieTagTreeview:
         """
     
         # noinspection PyUnusedLocal
-        # @wraps
         def selection_callback(*args):
             """Notify MovieTreeview's caller and observer's notifees.
 
@@ -539,11 +526,10 @@ class MovieTagTreeview:
             """
             current_selection = treeview.selection()
             user_callback(current_selection)
-            self.observer.notify(self.internal_name,
-                                 set(current_selection) != set(self.initial_selection))
+            self.observer.notify(set(current_selection) != set(self.initial_selection))
     
         return selection_callback
-    
+
     def clear_selection(self):
         """Clear the current selection.
         
@@ -559,12 +545,12 @@ class _EntryField:
     """
     A support class for the attributes of a GUI entry field.
 
-    Note: This is typically used for an input form in conjunction with _create_entry_fields and
-    _set_original_value.
+    This is typically used for an input form in conjunction with static data using
+    _create_entry_fields and dynamic data using _set_original_value.
     _create_entry_fields creates a dictionary of EntryField objects using lists of internal names and
     label texts. These values are usually derived from static text.
-    _set_original_value adds the original value of fields if not blank. This data is usually
-    supplied by the input form's caller.
+    _set_original_value adds the original value of fields if not blank. This dynamic data is usually
+    supplied by the external caller.
     """
     label_text: str
     original_value: str = ''
@@ -573,11 +559,8 @@ class _EntryField:
     #   textvariable is initialized as:
     #   textvariable: tk.StringVar = field(default_factory=tk.StringVar, init=False, repr=False)
     textvariable: tk.StringVar = None
-    # The observer attribute is *not* needed for normal operation. In normal operation the neuron
-    # network is initiated by Tk's textvariable.trace method. See the textvariable.trace_add method in
-    # _link_field_to_neuron. This observer attribute is available for testing. If used it must be
-    # initialized when the observer is created. This is usually in the __post_init__ method of the input
-    # form widget.
+    # The observer attribute is *not* needed for normal operation. If initialized when the observer is
+    # first created it will permit external testing of the chain of neurons.
     observer: Callable = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
@@ -615,7 +598,7 @@ class _LabelFieldWidget:
             entry_field:
         """
         row_ix = next(self.row)
-        self._create_label(entry_field, row_ix)
+        self._create_label(entry_field.label_text, row_ix)
         entry_field.widget = ttk.Entry(self.parent, textvariable=entry_field.textvariable,
                                        width=self.col_1_width)
         entry_field.widget.grid(column=1, row=row_ix)
@@ -636,18 +619,29 @@ class _LabelFieldWidget:
                                              variable=entry_field.textvariable, width=self.col_1_width)
         entry_field.widget.grid(column=1, row=row_ix)
     
-    # moviedb-#250 add_treeview_row
-    
-    def _create_label(self, entry_field: _EntryField, row_ix: int):
+    def add_treeview_row(self, label_text, items, callers_callback) -> _MovieTagTreeview:
         """
-        Create a label for the current row.
+        Add a label and a treeview as the bottom row.
+
+        Args:
+            label_text:
+            items: A list of all the items which will be displayed in the treeview.
+            callers_callback: Caller's callback for notification of reselection.
+        """
+        
+        row_ix = next(self.row)
+        self._create_label(label_text, row_ix)
+        return _MovieTagTreeview(self.parent, row_ix, items, callers_callback)
+
+    def _create_label(self, text: str, row_ix: int):
+        """ Create a label for the current row.
     
         Args:
-            entry_field: Has the label text attribute.
+            text:
             row_ix: The row into which the label will be placed.
         """
 
-        label = ttk.Label(self.parent, text=entry_field.label_text)
+        label = ttk.Label(self.parent, text=text)
         label.grid(column=0, row=row_ix, sticky='e', padx=5)
 
 

@@ -1,7 +1,7 @@
 """Main movie database program"""
 
-#  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/26/20, 11:50 AM by stephen.
+#  Copyright ©2021. Stephen Rigden.
+#  Last modified 3/5/21, 8:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -88,7 +88,7 @@ def load_config_file(root_dir: str, program: str):
         with open(config_pickle_path, 'rb') as f:
             config_data = pickle.load(f)
     except FileNotFoundError as exc:
-        msg = (f"The config.Config save file was not found. A new version will be initialized. "
+        msg = (f"The config save file was not found. A new version will be initialized. "
                f"{exc.strerror}: {exc.filename}")
         logging.info(msg)
 

@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 2/24/21, 2:31 PM by stephen.
+#  Last modified 3/5/21, 8:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -28,9 +28,11 @@ import config
 import exception
 import neurons
 from guiwidgets_2 import (CANCEL_TEXT, COMMIT_TEXT, DELETE_TEXT, MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS,
-                          SEARCH_TEXT, SELECT_TAGS_TEXT, TAG_TREEVIEW_INTERNAL_NAME, _EntryField,
+                          SEARCH_TEXT, SELECT_TAGS_TEXT, _EntryField,
                           _create_entry_fields, _focus_set, gui_messagebox, )
 
+
+TAG_TREEVIEW_INTERNAL_NAME = 'tag treeview'
 
 @dataclass
 class MovieGUIBase:
