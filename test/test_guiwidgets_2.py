@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 3/5/21, 8:16 AM by stephen.
+#  Last modified 3/7/21, 7:46 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,7 +22,6 @@ import exception
 import guiwidgets_2
 from test.dummytk import (DummyTk, TkStringVar, TkToplevel, TtkButton, TtkCheckbutton, TtkEntry,
                           TtkFrame, TtkLabel, TtkScrollbar, TtkTreeview, )
-
 
 Exc = Type[Optional[exception.DatabaseSearchFoundNothing]]
 
@@ -183,6 +182,8 @@ class TestAddTagGUI:
     
     def test_add_tag_gui_created(self):
         with self.add_tag_gui_context() as cm:
+            print()
+            print(f"{cm=}")
             assert cm.parent == DummyTk()
             assert cm.add_tag_callback == self.dummy_add_tag_callback
     

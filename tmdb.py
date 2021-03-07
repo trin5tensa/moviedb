@@ -13,7 +13,7 @@ https://github.com/celiao/tmdbsimple
 """
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 1/26/21, 7:57 AM by stephen.
+#  Last modified 3/7/21, 7:46 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -42,7 +42,8 @@ def search_movies(tmdb_api_key: str, title_query: str, primary_release_year: int
     
     Args:
         tmdb_api_key:
-        title_query: (required) Pass a text query to search. This value should be URI encoded.
+        title_query: (required) Pass a text query to search. This value should be URI encoded. (See
+            Percent-encoding on Wikipedia: https://en.wikipedia.org/wiki/Percent-encoding)
         year: (optional) A filter to limit the results to a specific year (looking at all release dates).
         primary_release_year: (optional) A filter to limit the results to a specific primary
             release year.
@@ -57,7 +58,7 @@ def search_movies(tmdb_api_key: str, title_query: str, primary_release_year: int
             Unable to connect to TMDB
 
     Returns:
-        Movies with a title that is a superstring of the title_query restricted by the caller's
+        Movies with a title that is a superstring of title_query restricted by the caller's
         filter arguments.
         This function returns the first twenty compliant records.
     """

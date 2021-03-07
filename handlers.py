@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 2/25/21, 8:43 AM by stephen.
+#  Last modified 3/7/21, 7:46 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -36,20 +36,7 @@ def about_dialog():
 def preferences_dialog():
     """Display the preferences dialog."""
     guiwidgets_2.PreferencesGUI(config.tk_root, config.app.tmdb_api_key,
-                                config.app.tmdb_do_not_ask_again, preferences_callback)
-
-
-def preferences_callback(tmdb_api_key: str, tmdb_do_not_ask_again: bool):
-    """
-    Update the config file with the user's changes.
-
-    Args:
-        tmdb_api_key:
-        tmdb_do_not_ask_again:
-    """
-
-    config.app.tmdb_api_key = tmdb_api_key
-    config.app.tmdb_do_not_ask_again = tmdb_do_not_ask_again
+                                config.app.tmdb_do_not_ask_again, _preferences_callback)
 
 
 def add_movie():
@@ -57,26 +44,26 @@ def add_movie():
     all_tags = database.all_tags()
     # PyCharm https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker
-    guiwidgets_2.AddMovieGUI(config.tk_root, add_movie_callback, all_tags)
+    guiwidgets_2.AddMovieGUI(config.tk_root, _add_movie_callback, all_tags)
 
 
 def edit_movie():
     """ Get search movie data from the user and search for compliant records"""
     all_tags = database.all_tags()
-    guiwidgets.SearchMovieGUI(config.tk_root, search_movie_callback, all_tags)
+    guiwidgets.SearchMovieGUI(config.tk_root, _search_movie_callback, all_tags)
 
 
 def add_tag():
     """Add a new tag to the database."""
     # PyCharm https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker
-    guiwidgets_2.AddTagGUI(config.tk_root, add_tag_callback)
+    guiwidgets_2.AddTagGUI(config.tk_root, _add_tag_callback)
 
 
 # noinspection PyMissingOrEmptyDocstring
 def edit_tag():
     """ Get tag string pattern from the user and search for compliant records."""
-    guiwidgets_2.SearchTagGUI(config.tk_root, search_tag_callback)
+    guiwidgets_2.SearchTagGUI(config.tk_root, _search_tag_callback)
 
 
 def import_movies():
@@ -95,7 +82,20 @@ def import_movies():
                                   detail=exc.args[0], icon='warning')
 
 
-def add_movie_callback(movie: config.MovieTypedDict, selected_tags: Sequence[str]):
+def _preferences_callback(tmdb_api_key: str, tmdb_do_not_ask_again: bool):
+    """
+    Update the config file with the user's changes.
+
+    Args:
+        tmdb_api_key:
+        tmdb_do_not_ask_again:
+    """
+
+    config.app.tmdb_api_key = tmdb_api_key
+    config.app.tmdb_do_not_ask_again = tmdb_do_not_ask_again
+
+
+def _add_movie_callback(movie: config.MovieTypedDict, selected_tags: Sequence[str]):
     """ Add user supplied data to the database.
 
     Args:
@@ -108,7 +108,7 @@ def add_movie_callback(movie: config.MovieTypedDict, selected_tags: Sequence[str
         database.add_movie_tag_link(tag, movie)
 
 
-def delete_movie_callback(movie: config.FindMovieTypedDict):
+def _delete_movie_callback(movie: config.FindMovieTypedDict):
     """Delete a movie.
     
     Args:
@@ -128,7 +128,7 @@ def delete_movie_callback(movie: config.FindMovieTypedDict):
         pass
 
 
-def search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
+def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
     """Find movies which match the user entered criteria.
     Continue to the next appropriate stage of processing depending on whether no movies, one movie,
     or more than one movie is found.
@@ -153,14 +153,14 @@ def search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[st
         movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
         # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
         # noinspection PyTypeChecker
-        guiwidgets.EditMovieGUI(config.tk_root, edit_movie_callback_wrapper(movie_key),
-                                delete_movie_callback, ['commit', 'delete'],
+        guiwidgets.EditMovieGUI(config.tk_root, _edit_movie_callback_wrapper(movie_key),
+                                _delete_movie_callback, ['commit', 'delete'],
                                 database.all_tags(), movie)
     else:
-        guiwidgets.SelectMovieGUI(config.tk_root, movies, select_movie_callback)
+        guiwidgets.SelectMovieGUI(config.tk_root, movies, _select_movie_callback)
 
 
-def edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callable:
+def _edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callable:
     """ Crete the edit movie callback
     
     Args:
@@ -204,7 +204,7 @@ def edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callable
     return edit_movie_callback
 
 
-def select_movie_callback(title: str, year: int):
+def _select_movie_callback(title: str, year: int):
     """Edit a movie selected by the user from a list of movies.
     
     Args:
@@ -217,11 +217,11 @@ def select_movie_callback(title: str, year: int):
     movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
     # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker
-    guiwidgets.EditMovieGUI(config.tk_root, edit_movie_callback_wrapper(movie_key),
-                            delete_movie_callback, ['commit', 'delete'], database.all_tags(), movie)
+    guiwidgets.EditMovieGUI(config.tk_root, _edit_movie_callback_wrapper(movie_key),
+                            _delete_movie_callback, ['commit', 'delete'], database.all_tags(), movie)
 
 
-def add_tag_callback(tag: str):
+def _add_tag_callback(tag: str):
     """Add a new user supplied tag to the database.
     
     Args:
@@ -231,7 +231,7 @@ def add_tag_callback(tag: str):
     database.add_tag(tag)
 
 
-def search_tag_callback(tag_pattern: str):
+def _search_tag_callback(tag_pattern: str):
     """Search for tags matching a supplied substring pattern.
     
     Args:
@@ -246,14 +246,14 @@ def search_tag_callback(tag_pattern: str):
         raise exception.DatabaseSearchFoundNothing
     elif tags_found == 1:
         tag = tags[0]
-        delete_callback = delete_tag_callback_wrapper(tag)
-        edit_callback = edit_tag_callback_wrapper(tag)
+        delete_callback = _delete_tag_callback_wrapper(tag)
+        edit_callback = _edit_tag_callback_wrapper(tag)
         guiwidgets_2.EditTagGUI(config.tk_root, tag, delete_callback, edit_callback)
     else:
-        guiwidgets_2.SelectTagGUI(config.tk_root, select_tag_callback, tags)
+        guiwidgets_2.SelectTagGUI(config.tk_root, _select_tag_callback, tags)
 
 
-def edit_tag_callback_wrapper(old_tag: str) -> Callable:
+def _edit_tag_callback_wrapper(old_tag: str) -> Callable:
     """Create the edit tag callback.
     
     Args:
@@ -285,7 +285,7 @@ def edit_tag_callback_wrapper(old_tag: str) -> Callable:
     return edit_tag_callback
 
 
-def delete_tag_callback_wrapper(tag: str) -> Callable:
+def _delete_tag_callback_wrapper(tag: str) -> Callable:
     """Create the edit tag callback.
     
     Args:
@@ -311,18 +311,18 @@ def delete_tag_callback_wrapper(tag: str) -> Callable:
     return delete_tag_callback
 
 
-def select_tag_callback(old_tag: str):
+def _select_tag_callback(old_tag: str):
     """Change the tag column of a record of the Tag table.
 
     If the tag is no longer in the database this function assumes that it has been deleted by
     another process. A user alert is raised .
     """
-    delete_callback = delete_tag_callback_wrapper(old_tag)
-    edit_callback = edit_tag_callback_wrapper(old_tag)
+    delete_callback = _delete_tag_callback_wrapper(old_tag)
+    edit_callback = _edit_tag_callback_wrapper(old_tag)
     guiwidgets_2.EditTagGUI(config.tk_root, old_tag, delete_callback, edit_callback)
 
 
-def search_tmdb(title: str, year: int) -> list[dict[str, Union[str, list[str]]]]:
+def _search_tmdb(title: str, year: int) -> list[dict[str, Union[str, list[str]]]]:
     # moviedb-#247
     tmdb_key = config.Config.tmdb_api_key
     if config.Config.tmdb_do_not_ask_again:
@@ -358,7 +358,7 @@ def search_tmdb(title: str, year: int) -> list[dict[str, Union[str, list[str]]]]
     #   Fields: Title, Year, Directors, Cast.
 
 
-def get_tmdb_movie(tmdb_id: int) -> list[dict[str, Union[str, list[str]]]]:
+def _get_tmdb_movie(tmdb_id: int) -> list[dict[str, Union[str, list[str]]]]:
     # moviedb-#244 Add movie cast retrieval to tmdb.get_tmdb_movie_info
     # moviedb-#245 Write get_tmdb_movie first. It'll be needed by handlers.search_tmdb if
     #  there are <= 5 records.
