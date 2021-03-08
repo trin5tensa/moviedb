@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 3/7/21, 7:46 AM by stephen.
+#  Last modified 3/8/21, 7:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -323,28 +323,42 @@ def _select_tag_callback(old_tag: str):
 
 
 def _search_tmdb(title: str, year: int) -> list[dict[str, Union[str, list[str]]]]:
-    # moviedb-#247
-    tmdb_key = config.Config.tmdb_api_key
-    if config.Config.tmdb_do_not_ask_again:
-        return
+    """ Return a list of movies from TMDB.
 
-    # moviedb-#243 Make this into a support function
-    if not tmdb_key:
-        #  moviedb-#243
-        #   Return if config.Config.tmdb_do_not_ask_again
-        #   Create an alert dialog explaining the key must be set in the preferences dialog.
-        #   Call the preferences dialog
-        pass
+    Args:
+        title:
+        year:
+
+    Raises:
+        TMDBAPIKeyException
+        TMDBConnectionTimeout
+
+    Returns:
+        A list of up to twenty movies retrieved from TMDB.
+
+    """
+    # DayBreak
+    #   While loop
+    #       api_key == None, do-not_ask == False: Ask user to modify preferences
+    #           -> Message dialog then preferences_dialog.
+    #       api_key == None, do-not_ask == True: log and raise exception
+    #       api_key is not None, do-not_ask == False: Exit while loop
+    #       api_key is not None,  do-not_ask == True: Exit while loop
 
     try:
-        search_results = tmdb.search_movies(tmdb_key, title, year)
+        search_results = tmdb.search_movies(config.app.tmdb_api_key, title, year)
 
     except tmdb.TMDBAPIKeyException:
         # moviedb-#247
+        #   Alert user and direct user to fix in preferences
+        #   If do_not_ask == True set config.app.api_key to None and log what has been done and why
+        #   reraise exception
         pass
 
     except tmdb.TMDBConnectionTimeout:
         # moviedb-#247
+        #   Alert user
+        #   reraise exception
         pass
 
     # moviedb-#246
@@ -358,9 +372,9 @@ def _search_tmdb(title: str, year: int) -> list[dict[str, Union[str, list[str]]]
     #   Fields: Title, Year, Directors, Cast.
 
 
-def _get_tmdb_movie(tmdb_id: int) -> list[dict[str, Union[str, list[str]]]]:
+def _get_tmdb_movie_and_cast(tmdb_id: int) -> list[dict[str, Union[str, list[str]]]]:
     # moviedb-#244 Add movie cast retrieval to tmdb.get_tmdb_movie_info
     # moviedb-#245 Write get_tmdb_movie first. It'll be needed by handlers.search_tmdb if
     #  there are <= 5 records.
-    # moviedb-#245 Return title, year, directors, and lead cast
+    # moviedb-#245 Return title, year, directors, and lead cast.
     pass
