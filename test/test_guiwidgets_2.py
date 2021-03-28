@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 3/7/21, 7:46 AM by stephen.
+#  Last modified 3/28/21, 8:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -182,8 +182,6 @@ class TestAddTagGUI:
     
     def test_add_tag_gui_created(self):
         with self.add_tag_gui_context() as cm:
-            print()
-            print(f"{cm=}")
             assert cm.parent == DummyTk()
             assert cm.add_tag_callback == self.dummy_add_tag_callback
     
@@ -769,7 +767,7 @@ class TestPreferencesGUI:
     def test_create_entry_fields_called(self):
         with self.preferences_context() as preferences_gui:
             assert list(preferences_gui.entry_fields.keys()) == [preferences_gui.api_key_name,
-                                                                 preferences_gui.dont_ask_name, ]
+                                                                 preferences_gui.use_tmdb_name, ]
     
     def test_set_original_value_called(self):
         with self.preferences_context() as preferences_gui:
@@ -808,7 +806,7 @@ class TestPreferencesGUI:
             # noinspection PyTypeChecker
             assert checkbutton == TtkCheckbutton(parent=TtkFrame(
                     parent=TtkFrame(parent=TkToplevel(parent=DummyTk(),)),
-                    padding=(10, 25, 10, 0)), text=preferences_gui.dont_ask_text,
+                    padding=(10, 25, 10, 0)), text=preferences_gui.use_tmdb_text,
                     variable=TkStringVar(value='4242'), width=36)
 
     def test_focus_set_called(self, monkeypatch):
@@ -852,7 +850,7 @@ class TestPreferencesGUI:
             ak_textvariable.set_for_test('42')
             ak_observer = ak_entry_field.observer
 
-            da_name = preferences_gui.dont_ask_name
+            da_name = preferences_gui.use_tmdb_name
             da_entry_field = preferences_gui.entry_fields[da_name]
             da_original_value = da_entry_field.original_value
             da_textvariable = da_entry_field.textvariable

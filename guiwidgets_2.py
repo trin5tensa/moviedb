@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 3/5/21, 8:14 AM by stephen.
+#  Last modified 3/28/21, 8:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -27,7 +27,6 @@ from typing import Callable, Dict, Iterator, Mapping, Sequence, Tuple, TypeVar
 import config
 import exception
 import neurons
-
 
 MOVIE_FIELD_NAMES = ('title', 'year', 'director', 'minutes', 'notes',)
 MOVIE_FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes',)
@@ -385,8 +384,8 @@ class PreferencesGUI:
     # Internal field names and associated GUI texts.
     api_key_name = 'api_key'
     api_key_text = 'TMDB API key'
-    dont_ask_name = 'tmdb_dont_ask'
-    dont_ask_text = 'Do not ask again'
+    use_tmdb_name = 'use_tmdb'
+    use_tmdb_text = 'Use TMDB (The Movie Database)'
 
     toplevel: tk.Toplevel = None
     # A more convenient data structure for entry fields.
@@ -401,15 +400,15 @@ class PreferencesGUI:
         self.outer_frame, body_frame, buttonbox = _create_input_form_framing(self.toplevel)
         
         # Initialize an internal dictionary to simplify field data management.
-        self.entry_fields = _create_entry_fields((self.api_key_name, self.dont_ask_name),
-                                                 (self.api_key_text, self.dont_ask_text))
-        original_values = {self.api_key_name: self.api_key, self.dont_ask_name: self.do_not_ask}
+        self.entry_fields = _create_entry_fields((self.api_key_name, self.use_tmdb_name),
+                                                 (self.api_key_text, self.use_tmdb_text))
+        original_values = {self.api_key_name: self.api_key, self.use_tmdb_name: self.do_not_ask}
         _set_original_value(self.entry_fields, original_values)
         
         # Create labels and fields
         label_field = _LabelFieldWidget(body_frame)
         label_field.add_entry_row(self.entry_fields[self.api_key_name])
-        label_field.add_checkbox_row(self.entry_fields[self.dont_ask_name])
+        label_field.add_checkbox_row(self.entry_fields[self.use_tmdb_name])
         _focus_set(self.entry_fields[self.api_key_name].widget)
 
         # Create buttons
@@ -419,6 +418,10 @@ class PreferencesGUI:
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                        command=self.destroy, enabled=True)
         
+        # moviedb-#257 Create an XORNeuron
+        #   Neuron linking tmdb_api_key and use_tmdb should be an XorNeuron.
+        #   because user should either provide a key or state that she doesn't want to use TMDB.
+        #   This needs a new Neuron sub class and a new _link_xor_neuron_to_button function
         # Link save button to save neuron
         save_button_enabler = _enable_button_wrapper(save_button)
         save_neuron = _link_or_neuron_to_button(save_button_enabler)
@@ -430,17 +433,17 @@ class PreferencesGUI:
                               self.entry_fields[self.api_key_name].observer)
 
         # Link tmdb don't ask field to save neuron
-        self.entry_fields[self.dont_ask_name].observer = _notify_neuron_wrapper(
-                self.entry_fields, self.dont_ask_name, save_neuron)
-        _link_field_to_neuron(self.entry_fields, self.dont_ask_name, save_neuron,
-                              self.entry_fields[self.dont_ask_name].observer)
+        self.entry_fields[self.use_tmdb_name].observer = _notify_neuron_wrapper(
+                self.entry_fields, self.use_tmdb_name, save_neuron)
+        _link_field_to_neuron(self.entry_fields, self.use_tmdb_name, save_neuron,
+                              self.entry_fields[self.use_tmdb_name].observer)
 
         # moviedb-#251 Center dialog on topmost window of moviedb
 
     def save(self):
         """Save the edited preference values to the config file."""
         tmdb_api_key: str = self.entry_fields[self.api_key_name].textvariable.get()
-        tmdb_do_not_ask_again: bool = self.entry_fields[self.dont_ask_name].textvariable.get() == '1'
+        tmdb_do_not_ask_again: bool = self.entry_fields[self.use_tmdb_name].textvariable.get() == '1'
         self.save_callback(tmdb_api_key, tmdb_do_not_ask_again)
         self.destroy()
         
@@ -452,6 +455,22 @@ class PreferencesGUI:
 def gui_messagebox(parent: ParentType, message: str, detail: str = '', icon: str = 'info'):
     """Present a Tk messagebox."""
     messagebox.showinfo(parent, message, detail=detail, icon=icon)
+
+
+def gui_askyesno(parent: ParentType, message: str, detail: str = '') -> bool:
+    """
+    Present a Tk askyesno dialog.
+    
+    Args:
+        parent:
+        message:
+        detail:
+
+    Returns:
+        True if user clicks 'Yes', False if user clicks 'No'
+    """
+    # moviedb-#247 Test this function
+    return messagebox.askyesno(parent, message, detail=detail)
 
 
 def gui_askopenfilename(parent: ParentType, filetypes: Sequence[Sequence[str]]):

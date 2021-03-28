@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 3/7/21, 7:46 AM by stephen.
+#  Last modified 3/28/21, 8:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -52,30 +52,30 @@ class TestAboutDialog:
 
 class TestPreferences:
     test_tmdb_api_key = 'test_tmdb_api_key'
-    test_tmdb_do_not_ask_again = 'test_tmdb_do_not_ask_again'
+    test_use_tmdb = True
     calls = []
 
     def test_preferences_dialog_instantiates_preferences_gui(self, monkeypatch):
         with self.preferences_context(monkeypatch):
             assert self.calls == [(DummyParent(), self.test_tmdb_api_key,
-                                   self.test_tmdb_do_not_ask_again, handlers._preferences_callback)]
+                                   self.test_use_tmdb, handlers._preferences_callback)]
 
     def test_preferences_callback_updates_config(self, monkeypatch):
         # NB This method uses the config set up of the context manager
         # BUT has no interest in the test instance of PreferencesGUI.
         user_api_key = 'user_api_key'
-        user_dont_ask = False
+        user_use_tmdb = True
         with self.preferences_context(monkeypatch):
-            handlers._preferences_callback(user_api_key, user_dont_ask)
+            handlers._preferences_callback(user_api_key, user_use_tmdb)
             assert handlers.config.app.tmdb_api_key == user_api_key
-            assert handlers.config.app.tmdb_do_not_ask_again == user_dont_ask
+            assert handlers.config.app.use_tmdb == user_use_tmdb
 
     @contextmanager
     def preferences_context(self, monkeypatch):
         hold_app = handlers.config.app
         handlers.config.app = handlers.config.Config('Test program name', 'Test program version')
         handlers.config.app.tmdb_api_key = self.test_tmdb_api_key
-        handlers.config.app.tmdb_do_not_ask_again = self.test_tmdb_do_not_ask_again
+        handlers.config.app.use_tmdb = self.test_use_tmdb
         hold_root = handlers.config.tk_root
         handlers.config.tk_root = DummyParent()
         monkeypatch.setattr(handlers.guiwidgets_2, 'PreferencesGUI',

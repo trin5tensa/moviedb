@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 2/27/21, 7:42 AM by stephen.
+#  Last modified 3/28/21, 8:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -39,6 +39,7 @@ class MainWindow:
         self.parent.option_add('*tearOff', False)
         self.parent.geometry(self.set_geometry())
         self.place_menubar(MenuData().menus)
+        # # moviedb-#256  Shouldn't this be Ctrl-Q?  -NO Ctrl-Q appears to be automatically provided
         self.parent.bind('<Escape>', self.tk_shutdown)
         self.parent.protocol('WM_DELETE_WINDOW', self.tk_shutdown)
 
@@ -99,7 +100,7 @@ class MainWindow:
         self.parent.config(menu=menubar)
         for menu in menus:
             self.place_menu(menubar, menu)
-    
+
     def place_menu(self, menubar: tk.Menu, menu: 'Menu'):
         """Create a menu with its menu items.
 
@@ -109,7 +110,7 @@ class MainWindow:
         """
         # Create a Tk menu for building the Tk menu object.
         cascade = tk.Menu(menubar)
-        
+
         for menu_item_ix, menu_item in enumerate(menu.menu_items):
             # Add a separator
             if isinstance(menu_item, str):
@@ -221,4 +222,8 @@ class MenuData:
                         MenuItem('Add Tag…', handlers.add_tag),
                         MenuItem('Edit Tag…', handlers.edit_tag),
                         MenuItem('Delete Tag…', handlers.edit_tag), ]),
+                Menu('Test', [
+                        MenuItem('Nothing to see here, folks', ),
+                        MenuItem('Nope, no tests today', ),
+                        ]),
                 ]

@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 3/8/21, 7:20 AM by stephen.
+#  Last modified 3/28/21, 8:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -36,7 +36,7 @@ def about_dialog():
 def preferences_dialog():
     """Display the preferences dialog."""
     guiwidgets_2.PreferencesGUI(config.tk_root, config.app.tmdb_api_key,
-                                config.app.tmdb_do_not_ask_again, _preferences_callback)
+                                config.app.use_tmdb, _preferences_callback)
 
 
 def add_movie():
@@ -82,17 +82,17 @@ def import_movies():
                                   detail=exc.args[0], icon='warning')
 
 
-def _preferences_callback(tmdb_api_key: str, tmdb_do_not_ask_again: bool):
+def _preferences_callback(tmdb_api_key: str, use_tmdb: bool):
     """
     Update the config file with the user's changes.
 
     Args:
         tmdb_api_key:
-        tmdb_do_not_ask_again:
+        use_tmdb:
     """
 
     config.app.tmdb_api_key = tmdb_api_key
-    config.app.tmdb_do_not_ask_again = tmdb_do_not_ask_again
+    config.app.use_tmdb = use_tmdb
 
 
 def _add_movie_callback(movie: config.MovieTypedDict, selected_tags: Sequence[str]):
@@ -323,36 +323,41 @@ def _select_tag_callback(old_tag: str):
 
 
 def _search_tmdb(title: str, year: int) -> list[dict[str, Union[str, list[str]]]]:
-    """ Return a list of movies from TMDB.
+    """
+    Return a list of movies from TMDB.
 
     Args:
         title:
         year:
 
     Raises:
-        TMDBAPIKeyException
-        TMDBConnectionTimeout
+        ConfigTMDBAPIKeyNeedsSetting
+        ConfigUserSuppressedAccess
 
     Returns:
         A list of up to twenty movies retrieved from TMDB.
 
     """
-    # DayBreak
-    #   While loop
-    #       api_key == None, do-not_ask == False: Ask user to modify preferences
-    #           -> Message dialog then preferences_dialog.
-    #       api_key == None, do-not_ask == True: log and raise exception
-    #       api_key is not None, do-not_ask == False: Exit while loop
-    #       api_key is not None,  do-not_ask == True: Exit while loop
+    
+    # moviedb-#247 Test this function
 
     try:
-        search_results = tmdb.search_movies(config.app.tmdb_api_key, title, year)
+        tmdb_api_key = config.app.tmdb_api_key
+    except config.ConfigTMDBAPIKeyNeedsSetting:
+        # moviedb-#247 Alert user
+        return []
+
+    try:
+        # moviedb-#247
+        search_results = tmdb.search_movies(config.app.xtmdb_api_key, title, year)
 
     except tmdb.TMDBAPIKeyException:
         # moviedb-#247
-        #   Alert user and direct user to fix in preferences
-        #   If do_not_ask == True set config.app.api_key to None and log what has been done and why
-        #   reraise exception
+        #   Alert user and direct user to fix in preferences.
+        #       ??- By now the user has had his or her chance to do this.
+        #       NO This is the first time we know the key is invalid and the user needs to know that.
+        #   If do_not_ask == True set config.app.api_key to None and log what has been done and why.
+        #   reraise exception.
         pass
 
     except tmdb.TMDBConnectionTimeout:
@@ -361,6 +366,7 @@ def _search_tmdb(title: str, year: int) -> list[dict[str, Union[str, list[str]]]
         #   reraise exception
         pass
 
+    # moviedb-#247
     # moviedb-#246
     #   Make this into a support function
     #   Turn tmdb_data into list suitable for GUI
