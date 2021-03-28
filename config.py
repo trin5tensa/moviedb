@@ -1,7 +1,7 @@
 """Application configuration data """
 
-#  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/22/20, 8:01 AM by stephen.
+#  Copyright ©2021. Stephen Rigden.
+#  Last modified 3/28/21, 8:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -79,10 +79,43 @@ class Config:
     geometry: str = None
 
     # TMDB
-    tmdb_api_key: str = None
-    tmdb_do_not_ask_again: bool = False
+    _tmdb_api_key: str = ''
+    use_tmdb: bool = True
+
+    @property
+    def tmdb_api_key(self):
+        """ Return the tmdb_api_key but raise exceptions for missing key and user suppressed access."""
+        # User wants to use TMDB
+        if self.use_tmdb:
+            # …but the key has not been set so raise exception
+            if self._tmdb_api_key == '':
+                raise ConfigTMDBAPIKeyNeedsSetting
+            # otherwise return the possibly valid key.
+            else:
+                return self._tmdb_api_key
+            
+        # Otherwise the user has declined to use TMDB
+        else:
+            raise ConfigTMDBDoNotUse
+
+    @tmdb_api_key.setter
+    def tmdb_api_key(self, value: str):
+        self._tmdb_api_key = value
 
 
 app: Optional[Config] = None
 tk_root: 'tk.Tk' = None
+# moviedb-#256 gui_environment has no substantive use. Delete?
 gui_environment: 'mainwindow.MainWindow' = None
+
+
+class ConfigException(Exception):
+    """Base exception for config module."""
+
+
+class ConfigTMDBAPIKeyNeedsSetting(ConfigException):
+    """The TMDB key is missing."""
+
+
+class ConfigTMDBDoNotUse(ConfigException):
+    """The user has set use_tmdb to false."""
