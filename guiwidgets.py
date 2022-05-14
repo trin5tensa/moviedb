@@ -4,8 +4,8 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 
-#  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/3/20, 6:54 AM by stephen.
+#  Copyright ©2021. Stephen Rigden.
+#  Last modified 3/5/21, 8:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -27,10 +27,12 @@ from typing import Callable, Dict, List, Literal, Sequence
 import config
 import exception
 import neurons
-from guiwidgets_2 import (EntryField, create_entry_fields, gui_messagebox, focus_set,
-                          MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS, TAG_TREEVIEW_INTERNAL_NAME,
-                          COMMIT_TEXT, DELETE_TEXT, SEARCH_TEXT, CANCEL_TEXT, SELECT_TAGS_TEXT)
+from guiwidgets_2 import (CANCEL_TEXT, COMMIT_TEXT, DELETE_TEXT, MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS,
+                          SEARCH_TEXT, SELECT_TAGS_TEXT, _EntryField,
+                          _create_entry_fields, _focus_set, gui_messagebox, )
 
+
+TAG_TREEVIEW_INTERNAL_NAME = 'tag treeview'
 
 @dataclass
 class MovieGUIBase:
@@ -48,7 +50,7 @@ class MovieGUIBase:
     # All widgets of this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
     # A more convenient data structure for entry fields.
-    entry_fields: Dict[str, 'EntryField'] = field(default_factory=dict, init=False, repr=False)
+    entry_fields: Dict[str, '_EntryField'] = field(default_factory=dict, init=False, repr=False)
     # Observer of treeview selection state
     tag_treeview_observer: neurons.Observer = field(default=neurons.Observer, init=False)
     
@@ -69,7 +71,7 @@ class MovieGUIBase:
         """
 
         # Initialize an internal dictionary to simplify field data management.
-        self.entry_fields = create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
+        self.entry_fields = _create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
 
         body_frame = ttk.Frame(outerframe, padding=(10, 25, 10, 0))
         body_frame.grid(column=0, row=0, sticky='n')
@@ -322,7 +324,7 @@ class EditMovieGUI(CommonButtonbox):
                 initial_selection=self.selected_tags)()
         self.tag_treeview_observer.register(self.commit_button_neuron)
         
-        focus_set(self.entry_fields['notes'].widget)
+        _focus_set(self.entry_fields['notes'].widget)
 
 
 @dataclass
@@ -363,7 +365,7 @@ class SearchMovieGUI(MovieGUIBase):
                 user_callback=self.treeview_callback)()
         self.tag_treeview_observer.register(self.search_button_neuron)
         
-        focus_set(self.entry_fields['title'].widget)
+        _focus_set(self.entry_fields['title'].widget)
 
     def create_body_item(self, body_frame: ttk.Frame, internal_name: str, text: str, row: int):
         """Create a ttk label and ttk entry.
@@ -415,7 +417,7 @@ class SearchMovieGUI(MovieGUIBase):
             row: The tk grid row of the item within the frame's grid.
             width: The tk character width of the entry widget.
         """
-        entry_field = self.entry_fields[internal_name] = EntryField('', '')
+        entry_field = self.entry_fields[internal_name] = _EntryField('', '')
         entry = ttk.Entry(body_frame, textvariable=entry_field.textvariable, width=width)
         entry.grid(column=column, row=row)
         entry_field.widget = entry

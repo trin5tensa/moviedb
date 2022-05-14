@@ -13,7 +13,7 @@ https://github.com/celiao/tmdbsimple
 """
 
 #  Copyright ©2021. Stephen Rigden.
-#  Last modified 1/19/21, 9:07 AM by stephen.
+#  Last modified 3/28/21, 8:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -37,12 +37,13 @@ TIMEOUT = 0.001
 
 def search_movies(tmdb_api_key: str, title_query: str, primary_release_year: int = None,
                   year: int = None, language: str = None, include_adult: bool = False,
-                  region: str = None) -> list[dict]:
+                  region: str = None) -> list[dict[str, Union[str, list[str]]]]:
     """Search for movies.
     
     Args:
         tmdb_api_key:
-        title_query: (required) Pass a text query to search. This value should be URI encoded.
+        title_query: (required) Pass a text query to search. This value should be URI encoded. (See
+            Percent-encoding on Wikipedia: https://en.wikipedia.org/wiki/Percent-encoding)
         year: (optional) A filter to limit the results to a specific year (looking at all release dates).
         primary_release_year: (optional) A filter to limit the results to a specific primary
             release year.
@@ -57,7 +58,7 @@ def search_movies(tmdb_api_key: str, title_query: str, primary_release_year: int
             Unable to connect to TMDB
 
     Returns:
-        Movies with a title that is a superstring of the title_query restricted by the caller's
+        Movies with a title that is a superstring of title_query restricted by the caller's
         filter arguments.
         This function returns the first twenty compliant records.
     """
@@ -211,7 +212,7 @@ def _get_tmdb_directors(tmdb_api_key: str, tmdb_movie_id: str) -> dict[str, list
         directors = [person.get('name') for person in crew if person.get('job') == tmdb_key]
         return {tmdb_key: directors}
 
-
+    
 def _get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict:
     """
     Retrieve the details of a movie using its TMDB id.
@@ -280,50 +281,48 @@ def _get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict:
         raise TMDBConnectionTimeout(msg) from exc
 
 
-def intg_test_search_by_tmdb_id(api_key):
+def _intg_test_search_by_tmdb_id(api_key):
     """Retrieve Seven Samurai."""
     movie = _get_tmdb_movie_info(api_key, '346')
     assert movie['id'] == 346
     assert movie['title'] == 'Seven Samurai'
+    print(f"PASSED: Integration test of intg_test_search_by_tmdb_id.")
 
 
-def intg_test_search_movies(api_key):
+def _intg_test_search_movies(api_key):
+    # Raise invalid API key exception
     try:
-        print("Expected error message: 'API Key error: 401 Client Error'")
+        print("Expected error message: 'API Key error:  Unauthorized for url'")
         search_movies('garbage key', 'Gobble&*()Recook !@#$')
     except TMDBAPIKeyException:
-        pass
+        print(f"PASSED: TMDBAPIKeyException correctly raised.")
 
-    # Raise invalid API exception
+    # Test garbage search string finds no movies
     movies = search_movies(api_key, 'Gobble&*()Recook !@#$')
     assert movies == []
+    print(f"PASSED: Garbage search string correctly returned an empty list.")
 
-    # Get all movies with title containing 'The Bourne'
-    movies = search_movies(api_key, 'The Bourne')
-    ids_retrieved = {movie['id'] for movie in movies}
-    ids_expected = {2501, 2502, 2503, 49040, 324668}
-    diff = ids_expected - ids_retrieved
-    assert diff == set(), f"Expected movie(s) not retrieved, {diff}"
-    
-    # Get all movies with title containing 'The Bourne' and year = 2002
-    movies = search_movies(api_key, 'The Bourne', primary_release_year=2002)
-    ids_retrieved = {movie['id'] for movie in movies}
-    ids_expected = {2501}
-    diff = ids_expected - ids_retrieved
-    assert diff == set(), f"Expected movie(s) not retrieved, {diff}"
+    # Find movies with title matching a substring
+    substring = 'The Postman Always'
+    print(f"\nTitles retrived for {substring=}")
+    movies = search_movies(api_key, substring)
+    for movie in movies:
+        print(f"{movie['id'], movie['title'], movie['release_date'][:4]}")
+    print()
 
 
-def intg_test_get_directors(api_key):
+def _intg_test_get_directors(api_key):
     directors = _get_tmdb_directors(api_key, '2501')
-    assert directors == ['Doug Liman'], f"Unexpected director(s): {directors}"
+    assert directors == {'Director': ['Doug Liman']}
+    print(f"PASSED: intg_test_get_directors found expected director.")
 
 
 def main():
     """Integration tests and usage examples."""
     api_key = input('Enter TMDB API key >>> ')
-    intg_test_search_by_tmdb_id(api_key)
-    intg_test_search_movies(api_key)
-    intg_test_get_directors(api_key)
+    _intg_test_search_by_tmdb_id(api_key)
+    _intg_test_search_movies(api_key)
+    _intg_test_get_directors(api_key)
 
  
 if __name__ == '__main__':

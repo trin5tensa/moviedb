@@ -1,7 +1,7 @@
 """Test module."""
 
-#  Copyright (c) 2020. Stephen Rigden.
-#  Last modified 12/3/20, 6:45 AM by stephen.
+#  Copyright ©2021. Stephen Rigden.
+#  Last modified 2/24/21, 2:31 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -142,7 +142,7 @@ class TestEditMovieGUI:
     
     def test_focus_set_on_title_field(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets, 'focus_set', lambda *args: calls.append(args))
+        monkeypatch.setattr(guiwidgets, '_focus_set', lambda *args: calls.append(args))
         with self.movie_context():
             assert calls == [(TtkEntry(parent=TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
                                                        padding=(10, 25, 10, 0)),
@@ -200,7 +200,7 @@ class TestSearchMovieGUI:
         calls = []
         monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'create_body_item',
                             lambda *args: calls.append(args))
-        monkeypatch.setattr(guiwidgets, 'focus_set', lambda *args: None)
+        monkeypatch.setattr(guiwidgets, '_focus_set', lambda *args: None)
         with self.movie_context() as movie_gui:
             assert calls == [(movie_gui, TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
                                                   padding=(10, 25, 10, 0)), 'title', 'Title', 0),
@@ -222,7 +222,7 @@ class TestSearchMovieGUI:
     
     def test_focus_set_called(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets, 'focus_set', lambda *args: calls.append(True))
+        monkeypatch.setattr(guiwidgets, '_focus_set', lambda *args: calls.append(True))
         with self.movie_context():
             assert calls == [True]
     
@@ -271,7 +271,7 @@ class TestSearchMovieGUI:
         monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'create_entry',
                             lambda *args: calls.append(args))
         monkeypatch.setattr(guiwidgets.SearchMovieGUI, 'create_min_max_body_item', lambda *args: None)
-        monkeypatch.setattr(guiwidgets, 'focus_set', lambda *args: None)
+        monkeypatch.setattr(guiwidgets, '_focus_set', lambda *args: None)
         with self.movie_context() as movie_gui:
             assert calls == [(movie_gui, TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
                                                   padding=(10, 25, 10, 0)), 'title', 1, 0, 36),

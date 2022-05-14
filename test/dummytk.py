@@ -1,7 +1,7 @@
 """Test support module for Tk dummies."""
 
-#  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/3/20, 6:53 AM by stephen.
+#  Copyright ©2021. Stephen Rigden.
+#  Last modified 2/24/21, 2:31 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,7 +23,7 @@ class DummyTk:
     """Test dummy for Tk.
 
     The dummy Tk/Ttk classes need to mimic Tk's parent/child structure as explicit references are
-    missing in the source code."""
+    not required in the source code."""
     children: list = field(default_factory=list, init=False, repr=False, compare=False)
     
     columnconfigure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -42,6 +42,26 @@ class DummyTk:
     
     def bell(self):
         self.bell_calls.append(True)
+
+
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
+@dataclass
+class TkToplevel:
+    """
+    Test dummy for Tk.Toplevel.
+
+    The dummy Tk/Ttk classes need to mimic Tk's parent/child structure as explicit references are
+    missing in the source code.
+    """
+    parent: DummyTk
+    children: list = field(default_factory=list, init=False, repr=False, compare=False)
+    destroy_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+
+    def __post_init__(self):
+        self.parent.children.append(self)
+        
+    def destroy(self):
+        self.destroy_calls.append(True)
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
@@ -158,6 +178,28 @@ class TtkEntry:
     
     def icursor(self, *args):
         self.icursor_calls.append(args)
+
+
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
+@dataclass
+class TtkCheckbutton:
+    """Test dummy for Ttk.Checkbutton.
+
+    The dummy Tk/Ttk classes need to mimic Tk's parent/child structure as explicit references are
+    missing in the source code.
+    """
+    parent: TtkFrame
+    text: str
+    variable: TkStringVar
+    width: int = None
+
+    grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+
+    def __post_init__(self):
+        self.parent.children.append(self)
+
+    def grid(self, **kwargs):
+        self.grid_calls.append(kwargs)
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
