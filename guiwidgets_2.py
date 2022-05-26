@@ -4,8 +4,8 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 
-#  Copyright ©2021. Stephen Rigden.
-#  Last modified 3/28/21, 8:48 AM by stephen.
+#  Copyright (c) 2022. Stephen Rigden.
+#  Last modified 5/26/22, 8:36 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -27,6 +27,7 @@ from typing import Callable, Dict, Iterator, Mapping, Sequence, Tuple, TypeVar
 import config
 import exception
 import neurons
+
 
 MOVIE_FIELD_NAMES = ('title', 'year', 'director', 'minutes', 'notes',)
 MOVIE_FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes',)
@@ -85,17 +86,42 @@ class AddMovieGUI:
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                        command=self.destroy, enabled=True)
         
+        """
+        The current observer implementation is a single 'AND' neuron which controls the commit button. The title
+        and year fields are registered as observed fields. When both contain text the commit button is enabled.
+        
+        moviedb-266 requires observation of the title field for changes and the new contents to be made available.
+        
+        Options:
+        1) Write a non-standard tkinter trace_add which will fire the commit neuron and a new observer which will
+        trigger the TMDB search.
+        2) Create a new neuron which is triggered by a slightly(?) modified tkinter trace_add. That neuron will
+        trigger the TMDB search and the 'AND' neuron which handles the commit button.
+        
+        Current trigger process:
+        A tkinter trace_add is added to the title field's text variable.
+        When the field is changed by the user it calls the observer function created by _create_observer_callback.
+        
+        Replacement process:
+        Create a new general observer.
+        This will sit in between the trace_add call and a notification to the commit button's AndNeuron.
+        The new observer will pass the changed string to its notifees.
+        The notification to the AndNeuron must pass through a function which will convert the text string into a
+        boolean value. This will replicate the functionality currently carried out by the callback created
+        by _create_observer_callback
+        """
+        
         # Link commit neuron to commit button
-        commit_button_enabler = _enable_button_wrapper(commit_button)
+        commit_button_enabler = _enable_button(commit_button)
         commit_neuron = _link_and_neuron_to_button(commit_button_enabler)
         
         # Link commit neuron to title field
-        observer = _notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[0], commit_neuron)
+        observer = _create_observer_callback(self.entry_fields, MOVIE_FIELD_NAMES[0], commit_neuron)
         self.entry_fields[MOVIE_FIELD_NAMES[0]].observer = observer
         _link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[0], commit_neuron, observer)
 
         # Link commit neuron to year field
-        observer = _notify_neuron_wrapper(self.entry_fields, MOVIE_FIELD_NAMES[1], commit_neuron)
+        observer = _create_observer_callback(self.entry_fields, MOVIE_FIELD_NAMES[1], commit_neuron)
         self.entry_fields[MOVIE_FIELD_NAMES[1]].observer = observer
         _link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[1], commit_neuron, observer)
 
@@ -166,10 +192,10 @@ class AddTagGUI:
                        command=self.destroy).focus_set()
         
         # Link commit button to tag field
-        button_enabler = _enable_button_wrapper(commit_button)
+        button_enabler = _enable_button(commit_button)
         neuron = _link_or_neuron_to_button(button_enabler)
         _link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron,
-                              _notify_neuron_wrapper(self.entry_fields, TAG_FIELD_NAMES[0], neuron))
+                              _create_observer_callback(self.entry_fields, TAG_FIELD_NAMES[0], neuron))
         self.entry_fields[TAG_FIELD_NAMES[0]].observer = neuron
 
     def commit(self):
@@ -219,9 +245,9 @@ class SearchTagGUI:
                        command=self.destroy).focus_set()
         
         # Link the search button to the tag field.
-        button_enabler = _enable_button_wrapper(search_button)
+        button_enabler = _enable_button(search_button)
         neuron = _link_or_neuron_to_button(button_enabler)
-        notify_neuron = _notify_neuron_wrapper(self.entry_fields, TAG_FIELD_NAMES[0], neuron)
+        notify_neuron = _create_observer_callback(self.entry_fields, TAG_FIELD_NAMES[0], neuron)
         _link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron, notify_neuron)
         self.entry_fields[TAG_FIELD_NAMES[0]].observer = neuron
 
@@ -281,9 +307,9 @@ class EditTagGUI:
                        command=self.destroy).focus_set()
 
         # Link commit button to tag field
-        button_enabler = _enable_button_wrapper(commit_button)
+        button_enabler = _enable_button(commit_button)
         neuron = _link_or_neuron_to_button(button_enabler)
-        notify_neuron = _notify_neuron_wrapper(self.entry_fields, TAG_FIELD_NAMES[0], neuron)
+        notify_neuron = _create_observer_callback(self.entry_fields, TAG_FIELD_NAMES[0], neuron)
         _link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron, notify_neuron)
         self.entry_fields[TAG_FIELD_NAMES[0]].observer = neuron
 
@@ -423,17 +449,17 @@ class PreferencesGUI:
         #   because user should either provide a key or state that she doesn't want to use TMDB.
         #   This needs a new Neuron sub class and a new _link_xor_neuron_to_button function
         # Link save button to save neuron
-        save_button_enabler = _enable_button_wrapper(save_button)
+        save_button_enabler = _enable_button(save_button)
         save_neuron = _link_or_neuron_to_button(save_button_enabler)
         
         # Link api key field to save neuron
-        self.entry_fields[self.api_key_name].observer = _notify_neuron_wrapper(
+        self.entry_fields[self.api_key_name].observer = _create_observer_callback(
                 self.entry_fields, self.api_key_name, save_neuron)
         _link_field_to_neuron(self.entry_fields, self.api_key_name, save_neuron,
                               self.entry_fields[self.api_key_name].observer)
 
         # Link tmdb don't ask field to save neuron
-        self.entry_fields[self.use_tmdb_name].observer = _notify_neuron_wrapper(
+        self.entry_fields[self.use_tmdb_name].observer = _create_observer_callback(
                 self.entry_fields, self.use_tmdb_name, save_neuron)
         _link_field_to_neuron(self.entry_fields, self.use_tmdb_name, save_neuron,
                               self.entry_fields[self.use_tmdb_name].observer)
@@ -780,7 +806,7 @@ def _create_button(buttonbox: ttk.Frame, text: str, column: int, command: Callab
     return button
 
 
-def _enable_button_wrapper(button: ttk.Button) -> Callable:
+def _enable_button(button: ttk.Button) -> Callable:
     """Create a callback which can enable or disable a button.
 
     Args:
@@ -796,7 +822,7 @@ def _enable_button_wrapper(button: ttk.Button) -> Callable:
         registered notifees will then be called with the argument given to the neuron.
     """
     
-    def enable_button(state: bool):
+    def func(state: bool):
         """Enable or disable the button.
 
         Args:
@@ -807,7 +833,7 @@ def _enable_button_wrapper(button: ttk.Button) -> Callable:
         else:
             button.state(['disabled'])
     
-    return enable_button
+    return func
 
 
 def _focus_set(entry: ttk.Entry):
@@ -859,7 +885,7 @@ def _link_field_to_neuron(entry_fields: dict, name: str, neuron: neurons.Neuron,
     neuron.register_event(name)
 
 
-def _notify_neuron_wrapper(entry_fields: dict, name: str, neuron: neurons.Neuron) -> Callable:
+def _create_observer_callback(entry_fields: dict, name: str, neuron: neurons.Neuron) -> Callable:
     """Create the callback for an observed field.
 
         This will be registered as the 'trace_add' callback for an entry field.
@@ -870,11 +896,11 @@ def _notify_neuron_wrapper(entry_fields: dict, name: str, neuron: neurons.Neuron
         neuron: The neuron which will be notified of the field's state.
 
     Returns:
-        The callback which will be called when the field is changed.
+        object: The callback which will be called when the field is changed.
     """
 
     # noinspection PyUnusedLocal
-    def notify_neuron(*args):
+    def func(*args):
         """Call the neuron when the field changes.
 
         Args:
@@ -884,4 +910,4 @@ def _notify_neuron_wrapper(entry_fields: dict, name: str, neuron: neurons.Neuron
                  != entry_fields[name].original_value)
         neuron(name, state)
     
-    return notify_neuron
+    return func

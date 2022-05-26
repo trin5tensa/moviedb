@@ -1,7 +1,7 @@
 """Test module."""
 
-#  Copyright ©2021. Stephen Rigden.
-#  Last modified 3/28/21, 8:48 AM by stephen.
+#  Copyright (c) 2022. Stephen Rigden.
+#  Last modified 5/26/22, 8:36 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,6 +22,7 @@ import exception
 import guiwidgets_2
 from test.dummytk import (DummyTk, TkStringVar, TkToplevel, TtkButton, TtkCheckbutton, TtkEntry,
                           TtkFrame, TtkLabel, TtkScrollbar, TtkTreeview, )
+
 
 Exc = Type[Optional[exception.DatabaseSearchFoundNothing]]
 
@@ -89,7 +90,7 @@ class TestAddMovieGUI:
     # noinspection DuplicatedCode
     def test_notify_neuron_wrapper_called(self, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets_2, '_notify_neuron_wrapper', lambda *args: calls.append(args))
+        monkeypatch.setattr(guiwidgets_2, '_create_observer_callback', lambda *args: calls.append(args))
         with self.add_movie_gui_context() as add_movie_context:
             # Function is called twice for 'title' and 'year'.
             assert len(calls) == 2
@@ -341,7 +342,7 @@ class TestSearchTagGUI:
     
     def test_enable_button_wrapper_called(self, monkeypatch):
         dummy_enable_button_wrapper_calls = []
-        monkeypatch.setattr(guiwidgets_2, '_enable_button_wrapper',
+        monkeypatch.setattr(guiwidgets_2, '_enable_button',
                             lambda *args: dummy_enable_button_wrapper_calls.append(args))
         with self.search_tag_gui_context() as cm:
             buttonbox = cm.outer_frame.children[1]
@@ -355,7 +356,7 @@ class TestSearchTagGUI:
         def dummy_enable_button_wrapper(*args):
             return dummy_enable_button
     
-        monkeypatch.setattr(guiwidgets_2, '_enable_button_wrapper', dummy_enable_button_wrapper)
+        monkeypatch.setattr(guiwidgets_2, '_enable_button', dummy_enable_button_wrapper)
     
         dummy_link_or_neuron_to_button_calls = []
         monkeypatch.setattr(guiwidgets_2, '_link_or_neuron_to_button',
@@ -375,7 +376,7 @@ class TestSearchTagGUI:
         monkeypatch.setattr(guiwidgets_2, '_link_or_neuron_to_button', dummy_link_or_neuron_to_button)
     
         dummy_notify_neuron_wrapper_calls = []
-        monkeypatch.setattr(guiwidgets_2, '_notify_neuron_wrapper',
+        monkeypatch.setattr(guiwidgets_2, '_create_observer_callback',
                             lambda *args: dummy_notify_neuron_wrapper_calls.append(args))
         monkeypatch.setattr(guiwidgets_2, '_link_field_to_neuron', lambda *args: None)
         with self.search_tag_gui_context() as cm:
@@ -398,7 +399,7 @@ class TestSearchTagGUI:
         def dummy_notify_neuron_wrapper(*args):
             return dummy_notify_neuron
     
-        monkeypatch.setattr(guiwidgets_2, '_notify_neuron_wrapper', dummy_notify_neuron_wrapper)
+        monkeypatch.setattr(guiwidgets_2, '_create_observer_callback', dummy_notify_neuron_wrapper)
     
         dummy_link_field_to_neuron_calls = []
         monkeypatch.setattr(guiwidgets_2, '_link_field_to_neuron',
@@ -1307,7 +1308,7 @@ def test_enable_button_wrapper(patch_tk):
     # noinspection PyTypeChecker
     button = TtkButton(DummyTk(), 'Dummy Button')
     # noinspection PyTypeChecker
-    enable_button = guiwidgets_2._enable_button_wrapper(button)
+    enable_button = guiwidgets_2._enable_button(button)
     enable_button(True)
     assert button.state_calls == [['!disabled']]
 
@@ -1333,7 +1334,7 @@ def test_link_and_neuron_to_button():
 def test_link_field_to_neuron_trace_add_called(patch_tk, dummy_entry_fields):
     name = 'tag'
     neuron = guiwidgets_2.neurons.OrNeuron()
-    notify_neuron = guiwidgets_2._notify_neuron_wrapper(dummy_entry_fields, name, neuron)
+    notify_neuron = guiwidgets_2._create_observer_callback(dummy_entry_fields, name, neuron)
     guiwidgets_2._link_field_to_neuron(dummy_entry_fields, name, neuron, notify_neuron)
     # noinspection PyUnresolvedReferences
     assert dummy_entry_fields['tag'].textvariable.trace_add_calls == [('write', notify_neuron)]
@@ -1344,7 +1345,7 @@ def test_link_field_to_neuron_register_event_called(patch_tk, dummy_entry_fields
     neuron = guiwidgets_2.neurons.OrNeuron()
     notifee = DummyActivateButton()
     neuron.register(notifee)
-    notify_neuron = guiwidgets_2._notify_neuron_wrapper(dummy_entry_fields, name, neuron)
+    notify_neuron = guiwidgets_2._create_observer_callback(dummy_entry_fields, name, neuron)
     guiwidgets_2._link_field_to_neuron(dummy_entry_fields, name, neuron, notify_neuron)
     assert not notifee.state
     notify_neuron()
@@ -1356,7 +1357,7 @@ def test_notify_neuron_wrapper(patch_tk, dummy_entry_fields):
     neuron = guiwidgets_2.neurons.OrNeuron()
     notifee = DummyActivateButton()
     neuron.register(notifee)
-    notify_neuron = guiwidgets_2._notify_neuron_wrapper(dummy_entry_fields, name, neuron)
+    notify_neuron = guiwidgets_2._create_observer_callback(dummy_entry_fields, name, neuron)
     
     # Match tag field contents to original value thus 'activating' the button.
     notify_neuron()
