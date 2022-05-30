@@ -4,8 +4,8 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 
-#  Copyright (c) 2022. Stephen Rigden.
-#  Last modified 5/26/22, 8:36 AM by stephen.
+#  Copyright (c) 2022-2022. Stephen Rigden.
+#  Last modified 5/30/22, 9:00 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,7 +22,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
-from typing import Callable, Dict, Iterator, Mapping, Sequence, Tuple, TypeVar
+from typing import Callable, Dict, Iterable, Iterator, Mapping, Sequence, Tuple, TypeVar
 
 import config
 import exception
@@ -86,44 +86,46 @@ class AddMovieGUI:
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                        command=self.destroy, enabled=True)
         
-        """
-        The current observer implementation is a single 'AND' neuron which controls the commit button. The title
-        and year fields are registered as observed fields. When both contain text the commit button is enabled.
-        
-        moviedb-266 requires observation of the title field for changes and the new contents to be made available.
-        
-        Options:
-        1) Write a non-standard tkinter trace_add which will fire the commit neuron and a new observer which will
-        trigger the TMDB search.
-        2) Create a new neuron which is triggered by a slightly(?) modified tkinter trace_add. That neuron will
-        trigger the TMDB search and the 'AND' neuron which handles the commit button.
-        
-        Current trigger process:
-        A tkinter trace_add is added to the title field's text variable.
-        When the field is changed by the user it calls the observer function created by _create_observer_callback.
-        
-        Replacement process:
-        Create a new general observer.
-        This will sit in between the trace_add call and a notification to the commit button's AndNeuron.
-        The new observer will pass the changed string to its notifees.
-        The notification to the AndNeuron must pass through a function which will convert the text string into a
-        boolean value. This will replicate the functionality currently carried out by the callback created
-        by _create_observer_callback
-        """
-        
         # Link commit neuron to commit button
         commit_button_enabler = _enable_button(commit_button)
         commit_neuron = _link_and_neuron_to_button(commit_button_enabler)
-        
-        # Link commit neuron to title field
-        observer = _create_observer_callback(self.entry_fields, MOVIE_FIELD_NAMES[0], commit_neuron)
-        self.entry_fields[MOVIE_FIELD_NAMES[0]].observer = observer
-        _link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[0], commit_neuron, observer)
 
-        # Link commit neuron to year field
+        # # # Link commit neuron to year field
         observer = _create_observer_callback(self.entry_fields, MOVIE_FIELD_NAMES[1], commit_neuron)
         self.entry_fields[MOVIE_FIELD_NAMES[1]].observer = observer
         _link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[1], commit_neuron, observer)
+
+        # # TODO Remove following old code
+        # Link commit neuron to title field
+        # observer = _create_observer_callback(self.entry_fields, MOVIE_FIELD_NAMES[0], commit_neuron)
+        # self.entry_fields[MOVIE_FIELD_NAMES[0]].observer = observer
+        # _link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[0], commit_neuron, observer)
+        
+        # Link an observer to the title field
+        # TODO Unittest this new code
+        observer = neurons.Observer()
+        self.entry_fields[MOVIE_FIELD_NAMES[0]].observer = observer
+        observer.register(self._call_title_notifees(self.entry_fields, 'title', commit_neuron))
+        # noinspection PyTypeChecker
+        self.entry_fields['title'].textvariable.trace_add('write', observer.notify)
+        
+        # Link observer to commit neuron
+        commit_neuron.register_event(MOVIE_FIELD_NAMES[0])
+        
+    @staticmethod
+    def _call_title_notifees(entry_fields: dict, name: str, commit_neuron: neurons.AndNeuron) -> Callable:
+        # TODO
+        #   This is a stub prototype function
+        # TODO Document this new code
+        # TODO Test this new code
+        def func(*args):
+            # TODO Document this new code
+            # TODO Test this new code
+            text = entry_fields[name].textvariable.get()
+            print(f"text entered by user: '{text}'")
+            # Notify the commit button neuron
+            commit_neuron(name, bool(text))
+        return func
 
     def treeview_callback(self, reselection: Sequence[str]):
         """Update selected tags with the user's changes."""
@@ -499,7 +501,7 @@ def gui_askyesno(parent: ParentType, message: str, detail: str = '') -> bool:
     return messagebox.askyesno(parent, message, detail=detail)
 
 
-def gui_askopenfilename(parent: ParentType, filetypes: Sequence[Sequence[str]]):
+def gui_askopenfilename(parent: ParentType, filetypes: Iterable[tuple[str, str | list[str] | tuple[str, ...]]] | None):
     """Present a Tk askopenfilename."""
     return filedialog.askopenfilename(parent=parent, filetypes=filetypes)
 
@@ -549,6 +551,7 @@ class _MovieTagTreeview:
         # Populate the treeview
         for item in self.items:
             self.treeview.insert('', 'end', item, text=item, tags='tags')
+        # noinspection PyTypeChecker
         self.treeview.selection_add(self.initial_selection)
 
     def selection_callback_wrapper(self, treeview: ttk.Treeview,
@@ -579,9 +582,10 @@ class _MovieTagTreeview:
         """Clear the current selection.
         
         Use Case:
-            When the user enters a new record the input form is reused. The treeview selection
+            When the user enters a record the input form is reused. The treeview selection
             needs to be cleared ready for the next record entry.
         """
+        # noinspection PyArgumentList
         self.treeview.selection_set()
 
 
@@ -590,7 +594,7 @@ class _EntryField:
     """
     A support class for the attributes of a GUI entry field.
 
-    This is typically used for an input form in conjunction with static data using
+    This is typically used for an input form with static data using
     _create_entry_fields and dynamic data using _set_original_value.
     _create_entry_fields creates a dictionary of EntryField objects using lists of internal names and
     label texts. These values are usually derived from static text.
@@ -600,7 +604,7 @@ class _EntryField:
     label_text: str
     original_value: str = ''
     widget: ttk.Entry = None
-    # There is an uninvestigated problem with pytest's monkeypatching of tk.StringVar if
+    # There is an uninvestigated problem with pytest's monkey patching of tk.StringVar if
     #   textvariable is initialized as:
     #   textvariable: tk.StringVar = field(default_factory=tk.StringVar, init=False, repr=False)
     textvariable: tk.StringVar = None
@@ -652,7 +656,7 @@ class _LabelFieldWidget:
         """
         Add a label and a checkbox as the bottom row.
  
-        Checkbutton has a 'command' parameter which is used for callbacks.
+        Checkbutton has a 'command' parameter used for callbacks.
         For consistency with other widgets this method will use the text variable via
         link_field_to_neuron. This link is set up by the caller.
         
@@ -844,7 +848,7 @@ def _focus_set(entry: ttk.Entry):
 
 
 def _link_or_neuron_to_button(change_button_state: Callable) -> neurons.OrNeuron:
-    """Create an "Or' neuron and link it to a button.
+    """Create an 'Or' neuron and link it to a button.
     
     Args:
         change_button_state:
@@ -858,7 +862,7 @@ def _link_or_neuron_to_button(change_button_state: Callable) -> neurons.OrNeuron
 
 
 def _link_and_neuron_to_button(change_button_state: Callable) -> neurons.AndNeuron:
-    """Create an "Or' neuron and link it to a button.
+    """Create an 'Or' neuron and link it to a button.
     
     Args:
         change_button_state:
@@ -898,7 +902,8 @@ def _create_observer_callback(entry_fields: dict, name: str, neuron: neurons.Neu
     Returns:
         object: The callback which will be called when the field is changed.
     """
-
+    # TODO Consider whether this callback is exclusively for the AndNeuron class. If so change the name and docs to 
+    #  reflect that fact.
     # noinspection PyUnusedLocal
     def func(*args):
         """Call the neuron when the field changes.
