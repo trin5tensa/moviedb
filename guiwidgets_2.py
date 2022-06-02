@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 5/30/22, 9:00 AM by stephen.
+#  Last modified 6/2/22, 2:19 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -65,52 +65,44 @@ class AddMovieGUI:
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = _create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
-
+        title = MOVIE_FIELD_NAMES[0]
+        year = MOVIE_FIELD_NAMES[1]
+    
         # Create outer frames to hold fields and buttons.
         self.outer_frame, body_frame, buttonbox = _create_input_form_framing(self.parent)
-
+    
         # Create labels and fields
         label_field = _LabelFieldWidget(body_frame)
         for movie_field_name in MOVIE_FIELD_NAMES:
             label_field.add_entry_row(self.entry_fields[movie_field_name])
-        _focus_set(self.entry_fields[MOVIE_FIELD_NAMES[0]].widget)
-        
+        _focus_set(self.entry_fields[title].widget)
+    
         # Create movie tags treeview
         self.treeview = label_field.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
                                                      callers_callback=self.treeview_callback)
-
+    
         # Populate buttonbox with commit and cancel buttons
         column_num = itertools.count()
         commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
                                        command=self.commit, enabled=False)
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                        command=self.destroy, enabled=True)
-        
+    
         # Link commit neuron to commit button
         commit_button_enabler = _enable_button(commit_button)
-        commit_neuron = _link_and_neuron_to_button(commit_button_enabler)
-
-        # # # Link commit neuron to year field
-        observer = _create_observer_callback(self.entry_fields, MOVIE_FIELD_NAMES[1], commit_neuron)
-        self.entry_fields[MOVIE_FIELD_NAMES[1]].observer = observer
-        _link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[1], commit_neuron, observer)
-
-        # # TODO Remove following old code
-        # Link commit neuron to title field
-        # observer = _create_observer_callback(self.entry_fields, MOVIE_FIELD_NAMES[0], commit_neuron)
-        # self.entry_fields[MOVIE_FIELD_NAMES[0]].observer = observer
-        # _link_field_to_neuron(self.entry_fields, MOVIE_FIELD_NAMES[0], commit_neuron, observer)
-        
-        # Link an observer to the title field
+        commit_neuron = _create_buttons_andneuron(commit_button_enabler)
+    
+        # Link commit neuron to year field
+        observer = _create_the_fields_observer(self.entry_fields, year, commit_neuron)
+        self.entry_fields[year].observer = observer
+        _link_field_to_neuron(self.entry_fields, year, commit_neuron, observer)
+    
+        # Link a new observer to the title field
         # TODO Unittest this new code
         observer = neurons.Observer()
-        self.entry_fields[MOVIE_FIELD_NAMES[0]].observer = observer
-        observer.register(self._call_title_notifees(self.entry_fields, 'title', commit_neuron))
-        # noinspection PyTypeChecker
-        self.entry_fields['title'].textvariable.trace_add('write', observer.notify)
-        
-        # Link observer to commit neuron
-        commit_neuron.register_event(MOVIE_FIELD_NAMES[0])
+        self.entry_fields[title].observer = observer
+        observer.register(self._call_title_notifees(self.entry_fields, title, commit_neuron))
+        _link_field_to_neuron(self.entry_fields, title, commit_neuron, observer.notify)
         
     @staticmethod
     def _call_title_notifees(entry_fields: dict, name: str, commit_neuron: neurons.AndNeuron) -> Callable:
@@ -195,9 +187,9 @@ class AddTagGUI:
         
         # Link commit button to tag field
         button_enabler = _enable_button(commit_button)
-        neuron = _link_or_neuron_to_button(button_enabler)
+        neuron = _create_button_orneuron(button_enabler)
         _link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron,
-                              _create_observer_callback(self.entry_fields, TAG_FIELD_NAMES[0], neuron))
+                              _create_the_fields_observer(self.entry_fields, TAG_FIELD_NAMES[0], neuron))
         self.entry_fields[TAG_FIELD_NAMES[0]].observer = neuron
 
     def commit(self):
@@ -248,8 +240,8 @@ class SearchTagGUI:
         
         # Link the search button to the tag field.
         button_enabler = _enable_button(search_button)
-        neuron = _link_or_neuron_to_button(button_enabler)
-        notify_neuron = _create_observer_callback(self.entry_fields, TAG_FIELD_NAMES[0], neuron)
+        neuron = _create_button_orneuron(button_enabler)
+        notify_neuron = _create_the_fields_observer(self.entry_fields, TAG_FIELD_NAMES[0], neuron)
         _link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron, notify_neuron)
         self.entry_fields[TAG_FIELD_NAMES[0]].observer = neuron
 
@@ -310,8 +302,8 @@ class EditTagGUI:
 
         # Link commit button to tag field
         button_enabler = _enable_button(commit_button)
-        neuron = _link_or_neuron_to_button(button_enabler)
-        notify_neuron = _create_observer_callback(self.entry_fields, TAG_FIELD_NAMES[0], neuron)
+        neuron = _create_button_orneuron(button_enabler)
+        notify_neuron = _create_the_fields_observer(self.entry_fields, TAG_FIELD_NAMES[0], neuron)
         _link_field_to_neuron(self.entry_fields, TAG_FIELD_NAMES[0], neuron, notify_neuron)
         self.entry_fields[TAG_FIELD_NAMES[0]].observer = neuron
 
@@ -452,16 +444,16 @@ class PreferencesGUI:
         #   This needs a new Neuron sub class and a new _link_xor_neuron_to_button function
         # Link save button to save neuron
         save_button_enabler = _enable_button(save_button)
-        save_neuron = _link_or_neuron_to_button(save_button_enabler)
+        save_neuron = _create_button_orneuron(save_button_enabler)
         
         # Link api key field to save neuron
-        self.entry_fields[self.api_key_name].observer = _create_observer_callback(
+        self.entry_fields[self.api_key_name].observer = _create_the_fields_observer(
                 self.entry_fields, self.api_key_name, save_neuron)
         _link_field_to_neuron(self.entry_fields, self.api_key_name, save_neuron,
                               self.entry_fields[self.api_key_name].observer)
 
         # Link tmdb don't ask field to save neuron
-        self.entry_fields[self.use_tmdb_name].observer = _create_observer_callback(
+        self.entry_fields[self.use_tmdb_name].observer = _create_the_fields_observer(
                 self.entry_fields, self.use_tmdb_name, save_neuron)
         _link_field_to_neuron(self.entry_fields, self.use_tmdb_name, save_neuron,
                               self.entry_fields[self.use_tmdb_name].observer)
@@ -847,7 +839,7 @@ def _focus_set(entry: ttk.Entry):
     entry.icursor(tk.END)
 
 
-def _link_or_neuron_to_button(change_button_state: Callable) -> neurons.OrNeuron:
+def _create_button_orneuron(change_button_state: Callable) -> neurons.OrNeuron:
     """Create an 'Or' neuron and link it to a button.
     
     Args:
@@ -861,7 +853,7 @@ def _link_or_neuron_to_button(change_button_state: Callable) -> neurons.OrNeuron
     return neuron
 
 
-def _link_and_neuron_to_button(change_button_state: Callable) -> neurons.AndNeuron:
+def _create_buttons_andneuron(change_button_state: Callable) -> neurons.AndNeuron:
     """Create an 'Or' neuron and link it to a button.
     
     Args:
@@ -889,10 +881,10 @@ def _link_field_to_neuron(entry_fields: dict, name: str, neuron: neurons.Neuron,
     neuron.register_event(name)
 
 
-def _create_observer_callback(entry_fields: dict, name: str, neuron: neurons.Neuron) -> Callable:
-    """Create the callback for an observed field.
+def _create_the_fields_observer(entry_fields: dict, name: str, neuron: neurons.Neuron) -> Callable:
+    """Creates the callback for an observed field.
 
-        This will be registered as the 'trace_add' callback for an entry field.
+        The returned function will ba called whenever the field content is changed by the user.
     
     Args:
         entry_fields: A mapping of the field names to instances of EntryField.
@@ -906,11 +898,12 @@ def _create_observer_callback(entry_fields: dict, name: str, neuron: neurons.Neu
     #  reflect that fact.
     # noinspection PyUnusedLocal
     def func(*args):
-        """Call the neuron when the field changes.
+        """Calls the neuron when the field changes.
 
         Args:
             *args: Not used. Required to match unused arguments from caller.
         """
+        print('\nhello mum')
         state = (entry_fields[name].textvariable.get()
                  != entry_fields[name].original_value)
         neuron(name, state)
