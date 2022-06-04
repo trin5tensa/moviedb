@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 6/4/22, 10:52 AM by stephen.
+#  Last modified 6/4/22, 1:56 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -59,13 +59,14 @@ class AddMovieGUI:
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
     # A more convenient data structure for entry fields.
     entry_fields: Dict[str, '_EntryField'] = field(default_factory=dict, init=False, repr=False)
+    title: str = field(default=None, init=False, repr=False)
     # Treeview for tags.
     treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
     
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = _create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
-        title = MOVIE_FIELD_NAMES[0]
+        self.title = MOVIE_FIELD_NAMES[0]
         year = MOVIE_FIELD_NAMES[1]
     
         # Create outer frames to hold fields and buttons.
@@ -75,7 +76,7 @@ class AddMovieGUI:
         label_field = _LabelFieldWidget(body_frame)
         for movie_field_name in MOVIE_FIELD_NAMES:
             label_field.add_entry_row(self.entry_fields[movie_field_name])
-        _focus_set(self.entry_fields[title].widget)
+        _focus_set(self.entry_fields[self.title].widget)
     
         # Create movie tags treeview
         self.treeview = label_field.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
@@ -99,25 +100,47 @@ class AddMovieGUI:
     
         # Link a new observer to the title field
         observer = neurons.Observer()
-        self.entry_fields[title].observer = observer
-        observer.register(self._call_title_notifees(self.entry_fields, title, commit_neuron))
-        _link_field_to_neuron(self.entry_fields, title, commit_neuron, observer.notify)
+        self.entry_fields[self.title].observer = observer
+        observer.register(self.call_title_notifees(commit_neuron))
+        _link_field_to_neuron(self.entry_fields, self.title, commit_neuron, observer.notify)
         
-    @staticmethod
-    def _call_title_notifees(entry_fields: dict, name: str, commit_neuron: neurons.AndNeuron) -> Callable:
-        # TODO
-        #   This is a stub prototype function
-        # TODO Document this new code
+    def call_title_notifees(self, commit_neuron: neurons.AndNeuron) -> Callable:
+        """
+        This function creates the notifee for the title field observer which will be called whenever
+        the user changes the title.
+        
+        Args:
+            commit_neuron: The neuron which enable and disables the commit button.
+
+        Returns:
+            The notifee function
+        """
         # TODO Test this new code
         # noinspection PyUnusedLocal
         def func(*args):
-            # TODO Document this new code
+            """
+            This function organizes the actions which are required in response to the user's change of the title field.
+            
+            Args:
+                *args: Not used. Required to match unused arguments from caller.
+            """
             # TODO Test this new code
-            text = entry_fields[name].textvariable.get()
-            print(f"text entered by user: '{text}'")
+            text = self.entry_fields[self.title].textvariable.get()
+            
+            # Invoke a database search
+            self.tmdb_search(text)
+            
             # Notify the commit button neuron
-            commit_neuron(name, bool(text))
+            commit_neuron(self.title, bool(text))
         return func
+    
+    @staticmethod
+    def tmdb_search(substring: str):
+        # TODO
+        #  Stub Method
+        #  Document
+        #  Test
+        print(f"text entered by user: '{substring}'")
 
     def treeview_callback(self, reselection: Sequence[str]):
         """Update selected tags with the user's changes."""
@@ -905,7 +928,6 @@ def _create_the_fields_observer(entry_fields: dict, name: str, neuron: neurons.N
         """
         state = (entry_fields[name].textvariable.get()
                  != entry_fields[name].original_value)
-        print(f"\nAndNeuron called with {name=}, {state=}")
         neuron(name, state)
     
     return func

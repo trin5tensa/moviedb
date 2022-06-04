@@ -1,7 +1,7 @@
 """Test support module for Tk dummies."""
 
-#  Copyright (c) 2022. Stephen Rigden.
-#  Last modified 6/4/22, 10:52 AM by stephen.
+#  Copyright (c) 2022-2022. Stephen Rigden.
+#  Last modified 6/4/22, 1:56 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -74,7 +74,6 @@ class TkStringVar:
     
     def trace_add(self, *args):
         _, self.trace_add_callback = args
-        print(f"\nTkStringVar.trace_add_callback={self.trace_add_callback}")
         self.trace_add_calls.append(args)
     
     def set(self, *args):
