@@ -1,7 +1,7 @@
 """Test module."""
 
-#  Copyright ©2021. Stephen Rigden.
-#  Last modified 2/24/21, 2:31 PM by stephen.
+#  Copyright (c) 2022. Stephen Rigden.
+#  Last modified 6/4/22, 10:52 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -144,9 +144,10 @@ class TestEditMovieGUI:
         calls = []
         monkeypatch.setattr(guiwidgets, '_focus_set', lambda *args: calls.append(args))
         with self.movie_context():
+            trace_add_callback = calls[0][0].textvariable.trace_add_callback
             assert calls == [(TtkEntry(parent=TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
                                                        padding=(10, 25, 10, 0)),
-                                       textvariable=TkStringVar(), width=36),)]
+                                       textvariable=TkStringVar(trace_add_callback=trace_add_callback), width=36),)]
     
     def test_focus_set_to_notes(self, patch_tk):
         with self.movie_context() as movie_gui:
@@ -345,9 +346,10 @@ class TestSearchMovieGUI:
     
     def test_create_entry_creates_ttk_entry(self, patch_tk):
         with self.movie_context() as movie_gui:
+            trace_add_callback = movie_gui.entry_fields['title'].widget.textvariable.trace_add_callback
             assert movie_gui.entry_fields['title'].widget == TtkEntry(parent=TtkFrame(
                     parent=TtkFrame(parent=DummyTk(), padding=''), padding=(10, 25, 10, 0)),
-                    textvariable=TkStringVar(), width=36)
+                    textvariable=TkStringVar(trace_add_callback=trace_add_callback), width=36)
     
     def test_create_entry_grids_entry_widget(self, patch_tk):
         with self.movie_context() as movie_gui:

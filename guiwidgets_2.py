@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 6/2/22, 2:19 PM by stephen.
+#  Last modified 6/4/22, 10:52 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -55,7 +55,7 @@ class AddMovieGUI:
     all_tags: Sequence[str]
 
     selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
-    # All widgets of this class will be enclosed in this frame.
+    # All widgets created by this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
     # A more convenient data structure for entry fields.
     entry_fields: Dict[str, '_EntryField'] = field(default_factory=dict, init=False, repr=False)
@@ -98,7 +98,6 @@ class AddMovieGUI:
         _link_field_to_neuron(self.entry_fields, year, commit_neuron, observer)
     
         # Link a new observer to the title field
-        # TODO Unittest this new code
         observer = neurons.Observer()
         self.entry_fields[title].observer = observer
         observer.register(self._call_title_notifees(self.entry_fields, title, commit_neuron))
@@ -110,6 +109,7 @@ class AddMovieGUI:
         #   This is a stub prototype function
         # TODO Document this new code
         # TODO Test this new code
+        # noinspection PyUnusedLocal
         def func(*args):
             # TODO Document this new code
             # TODO Test this new code
@@ -903,9 +903,9 @@ def _create_the_fields_observer(entry_fields: dict, name: str, neuron: neurons.N
         Args:
             *args: Not used. Required to match unused arguments from caller.
         """
-        print('\nhello mum')
         state = (entry_fields[name].textvariable.get()
                  != entry_fields[name].original_value)
+        print(f"\nAndNeuron called with {name=}, {state=}")
         neuron(name, state)
     
     return func

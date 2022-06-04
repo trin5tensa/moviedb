@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 6/2/22, 2:19 PM by stephen.
+#  Last modified 6/4/22, 10:52 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -75,46 +75,44 @@ class TestAddMovieGUI:
                                guiwidgets_2.CANCEL_TEXT,),
                               dict(column=1, command=add_movie_context.destroy, enabled=True))]
     
-    def test_create_buttons_andneuron(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets_2, '_create_buttons_andneuron', lambda *args: calls.append(args))
-        monkeypatch.setattr(guiwidgets_2, '_link_field_to_neuron', lambda *args: None)
+    def test_neuronic_network_enables_and_disables_commit_button(self, monkeypatch):
         with self.add_movie_gui_context() as add_movie_context:
-            state_change = calls[0][0]
-            print(f"\n{state_change=}")
-            buttonbox = add_movie_context.outer_frame.children[1]
+            # Get the fields' callbacks.
+            outer_frame = add_movie_context.outer_frame
+            body_frame = outer_frame.children[0]
+            title = body_frame.children[1]
+            title_callback = title.textvariable.trace_add_callback
+            year = body_frame.children[3]
+            year_callback = year.textvariable.trace_add_callback
+            
+            # Get the commit button.
+            buttonbox = outer_frame.children[1]
             commit_button = buttonbox.children[0]
-            state_change(True)
-            state_change(False)
-            assert commit_button.state_calls == [['disabled'], ['!disabled'], ['disabled']]
+            
+            # Initialize title and year textvariables to ''
+            title.textvariable.set_for_test('')
+            year.textvariable.set_for_test('')
+            
+            # Simulate user entering 'Movie Title' into title field
+            title.textvariable.set_for_test('Movie Title')
+            title_callback()
 
-    # noinspection DuplicatedCode
-    def test_year_observer_callback_called(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets_2, '_create_the_fields_observer', lambda *args: calls.append(args))
-        with self.add_movie_gui_context() as add_movie_context:
-            # Function is called once for 'year'.
-            assert len(calls) == 1
-            assert len(calls[0]) == 3
-            assert calls[0][0] == add_movie_context.entry_fields
-            assert calls[0][1] == guiwidgets_2.MOVIE_FIELD_NAMES[1]
-            assert isinstance(calls[0][2], guiwidgets_2.neurons.AndNeuron)
+            # Simulate user entering '1942' into year field
+            year.textvariable.set_for_test('1942')
+            year_callback()
+            
+            # Simulate user entering '' into title field
+            title.textvariable.set_for_test('')
+            title_callback()
 
-    # noinspection DuplicatedCode
-    def test_title_and_year_fields_linked_to_neuron(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets_2, '_link_field_to_neuron', lambda *args: calls.append(args))
-        with self.add_movie_gui_context() as add_movie_context:
-            # Function is called twice for 'title' and 'year'.
-            assert len(calls) == 2
-            assert len(calls[0]) == len(calls[1]) == 4
-            assert calls[0][0] == calls[1][0] == add_movie_context.entry_fields
-            assert calls[1][1] == guiwidgets_2.MOVIE_FIELD_NAMES[0]
-            assert calls[0][1] == guiwidgets_2.MOVIE_FIELD_NAMES[1]
-            assert isinstance(calls[0][2], guiwidgets_2.neurons.AndNeuron)
-            assert isinstance(calls[1][2], guiwidgets_2.neurons.AndNeuron)
-            assert isinstance(calls[0][3], Callable)
-            assert isinstance(calls[1][3], Callable)
+            # Button state history should be:
+            # disabled - Initial state
+            # disabled - User enters 'Movie Title'
+            # enabled - User enters '1942'
+            # disabled - User enters '' into title field
+            assert commit_button.state_calls == [['disabled'], ['disabled'], ['!disabled'], ['disabled']]
+            
+    # TODO def test_neuronic_network_invokes_tmdb_lookup(self, monkeypatch):
 
     def test_treeview_callback_updates_selected_tags(self):
         with self.add_movie_gui_context() as add_movie_context:
@@ -792,10 +790,13 @@ class TestPreferencesGUI:
             outer_frame = toplevel.children[0]
             body_frame = outer_frame.children[0]
             entry = body_frame.children[1]
+            # trace_add_callback is a unique closure.
+            trace_add_callback = entry.textvariable.trace_add_callback
             # noinspection PyTypeChecker
             assert entry == TtkEntry(parent=TtkFrame(
                     parent=TtkFrame(parent=TkToplevel(parent=DummyTk(),)),
-                    padding=(10, 25, 10, 0)), textvariable=TkStringVar(value='4242'), width=36)
+                    padding=(10, 25, 10, 0)),
+                    textvariable=TkStringVar(trace_add_callback=trace_add_callback), width=36)
 
     def test_add_checkbox_row_called(self, monkeypatch):
         with self.preferences_context() as preferences_gui:
@@ -803,11 +804,13 @@ class TestPreferencesGUI:
             outer_frame = toplevel.children[0]
             body_frame = outer_frame.children[0]
             checkbutton = body_frame.children[2]
+            # trace_add_callback is a unique closure.
+            trace_add_callback = checkbutton.variable.trace_add_callback
             # noinspection PyTypeChecker
             assert checkbutton == TtkCheckbutton(parent=TtkFrame(
                     parent=TtkFrame(parent=TkToplevel(parent=DummyTk(),)),
                     padding=(10, 25, 10, 0)), text=preferences_gui.use_tmdb_text,
-                    variable=TkStringVar(value='4242'), width=36)
+                    variable=TkStringVar(trace_add_callback=trace_add_callback), width=36)
 
     def test_focus_set_called(self, monkeypatch):
         calls = []
