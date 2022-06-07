@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 6/4/22, 1:56 PM by stephen.
+#  Last modified 6/7/22, 8:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -92,7 +92,7 @@ class AddMovieGUI:
         # Link commit neuron to commit button
         commit_button_enabler = _enable_button(commit_button)
         commit_neuron = _create_buttons_andneuron(commit_button_enabler)
-    
+        
         # Link commit neuron to year field
         observer = _create_the_fields_observer(self.entry_fields, year, commit_neuron)
         self.entry_fields[year].observer = observer
@@ -115,7 +115,6 @@ class AddMovieGUI:
         Returns:
             The notifee function
         """
-        # TODO Test this new code
         # noinspection PyUnusedLocal
         def func(*args):
             """
@@ -124,7 +123,6 @@ class AddMovieGUI:
             Args:
                 *args: Not used. Required to match unused arguments from caller.
             """
-            # TODO Test this new code
             text = self.entry_fields[self.title].textvariable.get()
             
             # Invoke a database search
@@ -137,7 +135,6 @@ class AddMovieGUI:
     @staticmethod
     def tmdb_search(substring: str):
         # TODO
-        #  Stub Method
         #  Document
         #  Test
         print(f"text entered by user: '{substring}'")

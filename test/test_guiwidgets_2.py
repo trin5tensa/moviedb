@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 6/4/22, 10:52 AM by stephen.
+#  Last modified 6/7/22, 8:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -75,7 +75,7 @@ class TestAddMovieGUI:
                                guiwidgets_2.CANCEL_TEXT,),
                               dict(column=1, command=add_movie_context.destroy, enabled=True))]
     
-    def test_neuronic_network_enables_and_disables_commit_button(self, monkeypatch):
+    def test_neuronic_network_enables_and_disables_commit_button(self):
         with self.add_movie_gui_context() as add_movie_context:
             # Get the fields' callbacks.
             outer_frame = add_movie_context.outer_frame
@@ -112,7 +112,32 @@ class TestAddMovieGUI:
             # disabled - User enters '' into title field
             assert commit_button.state_calls == [['disabled'], ['disabled'], ['!disabled'], ['disabled']]
             
-    # TODO def test_neuronic_network_invokes_tmdb_lookup(self, monkeypatch):
+    def test_entry_field_dictionary_initialized_with_title_observer(self):
+        with self.add_movie_gui_context() as add_movie_context:
+            assert isinstance(add_movie_context.entry_fields['title'].observer, guiwidgets_2.neurons.Observer)
+            
+    def test_entry_field_dictionary_initialized_with_year_observer(self, monkeypatch):
+        test_return = 'Test return'
+        monkeypatch.setattr(guiwidgets_2, '_create_the_fields_observer', lambda *args: test_return)
+        with self.add_movie_gui_context() as add_movie_context:
+            assert add_movie_context.entry_fields['year'].observer == test_return
+            
+    def test_neuronic_network_invokes_tmdb_lookup(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(guiwidgets_2.AddMovieGUI, 'tmdb_search', lambda *args: calls.append(args))
+        movie_title = 'Movie Title'
+    
+        with self.add_movie_gui_context() as add_movie_context:
+            # Get the fields' callbacks.
+            outer_frame = add_movie_context.outer_frame
+            body_frame = outer_frame.children[0]
+            title = body_frame.children[1]
+            title_callback = title.textvariable.trace_add_callback
+        
+            # Simulate user entering 'Movie Title' into title field
+            title.textvariable.set_for_test(movie_title)
+            title_callback()
+            assert calls[0][1] == movie_title
 
     def test_treeview_callback_updates_selected_tags(self):
         with self.add_movie_gui_context() as add_movie_context:
