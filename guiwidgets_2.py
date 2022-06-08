@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 6/7/22, 8:48 AM by stephen.
+#  Last modified 6/8/22, 8:40 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,6 +18,7 @@ callers.
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
+import queue
 import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
@@ -62,6 +63,8 @@ class AddMovieGUI:
     title: str = field(default=None, init=False, repr=False)
     # Treeview for tags.
     treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
+    
+    tmdb_work_queue: queue.LifoQueue = field(default_factory=queue.LifoQueue, init=False, repr=False)
     
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
