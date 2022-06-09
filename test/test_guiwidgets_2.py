@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 6/7/22, 8:48 AM by stephen.
+#  Last modified 6/9/22, 9:05 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -142,6 +142,20 @@ class TestAddMovieGUI:
     def test_treeview_callback_updates_selected_tags(self):
         with self.add_movie_gui_context() as add_movie_context:
             add_movie_context.treeview_callback(('tag 42',))
+
+    def test_tmdb_consumer_polling_initiated(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(guiwidgets_2.AddMovieGUI, 'tmdb_consumer', lambda *args: calls.append(True))
+        with self.add_movie_gui_context():
+            assert calls == [True], "Consumer work queue polling not started."
+
+    def test_tmdb_consumer_polling_ended(self, monkeypatch):
+        dummy_polling_id = 'dummy polling id'
+        with self.add_movie_gui_context() as add_movie_context:
+            add_movie_context.polling_id = dummy_polling_id
+            add_movie_context.destroy()
+            test_fail_msg = 'TMDB Work queue polling not cancelled'
+            assert add_movie_context.parent.after_cancel_calls == [[(dummy_polling_id,)]], test_fail_msg
 
     def test_moviedb_constraint_failure_displays_message(self, monkeypatch):
         # noinspection PyUnusedLocal

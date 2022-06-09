@@ -1,7 +1,7 @@
 """Test support module for Tk dummies."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 6/4/22, 1:56 PM by stephen.
+#  Last modified 6/9/22, 9:05 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,6 +30,8 @@ class DummyTk:
     rowconfigure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     bind_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     bell_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    after_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    after_cancel_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     
     def columnconfigure(self, *args, **kwargs):
         self.columnconfigure_calls.append((args, kwargs))
@@ -42,6 +44,12 @@ class DummyTk:
     
     def bell(self):
         self.bell_calls.append(True)
+        
+    def after(self, *args):
+        self.after_calls.append([args])
+       
+    def after_cancel(self, *args):
+        self.after_cancel_calls.append([args])
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode

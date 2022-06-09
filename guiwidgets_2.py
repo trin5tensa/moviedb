@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 6/8/22, 8:40 AM by stephen.
+#  Last modified 6/9/22, 9:05 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -64,7 +64,10 @@ class AddMovieGUI:
     # Treeview for tags.
     treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
     
+    # Set up the consumer end of the TMDB producer/consumer pattern
     tmdb_work_queue: queue.LifoQueue = field(default_factory=queue.LifoQueue, init=False, repr=False)
+    polling_timer: int = 250
+    polling_id: str = None
     
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
@@ -107,6 +110,9 @@ class AddMovieGUI:
         observer.register(self.call_title_notifees(commit_neuron))
         _link_field_to_neuron(self.entry_fields, self.title, commit_neuron, observer.notify)
         
+        # Start the tmdb_work_queue polling
+        self.tmdb_consumer()
+        
     def call_title_notifees(self, commit_neuron: neurons.AndNeuron) -> Callable:
         """
         This function creates the notifee for the title field observer which will be called whenever
@@ -121,10 +127,10 @@ class AddMovieGUI:
         # noinspection PyUnusedLocal
         def func(*args):
             """
-            This function organizes the actions which are required in response to the user's change of the title field.
+            This function organizes the actions which respond to the user's changes to the title field.
             
             Args:
-                *args: Not used. Required to match unused arguments from caller.
+                *args: Not used. This is required to match unused arguments from caller.
             """
             text = self.entry_fields[self.title].textvariable.get()
             
@@ -138,9 +144,19 @@ class AddMovieGUI:
     @staticmethod
     def tmdb_search(substring: str):
         # TODO
+        #  Production Code
         #  Document
         #  Test
         print(f"text entered by user: '{substring}'")
+
+    def tmdb_consumer(self):
+        """Consume movies placed in the work queue."""
+        # TODO
+        #  Production Code
+        #  Docs
+        #  Test
+        self.polling_id = self.parent.after(self.polling_timer, self.tmdb_consumer)
+        print(f"TMDB work queue polled.Tkinter event id={self.polling_id}")
 
     def treeview_callback(self, reselection: Sequence[str]):
         """Update selected tags with the user's changes."""
@@ -173,6 +189,7 @@ class AddMovieGUI:
             
     def destroy(self):
         """Destroy all widgets of this class."""
+        self.parent.after_cancel(self.polling_id)
         self.outer_frame.destroy()
 
 
