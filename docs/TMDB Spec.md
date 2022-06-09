@@ -44,6 +44,8 @@ Issue #268 """Consume movies placed in the work queue."""
   - Put a self recall onto Tk/Tcl's event loop with a delay of 250 ms.
   - Save the event queue id for deletion in `guiwidgets_2.destroy`.
   - Add a 'Rescheduled tmdb_consumer called' print statement.
+- Stop polling the work queue.
+  - Cancel the task in Tk/Tcl's event loop which polls the work queue.
 
 #### NEW `guiwidgets_2.AddMovieGUI.tmdb_search`
 Issue #269 """Create TMDB producer events."""
@@ -53,10 +55,6 @@ Issue #269 """Create TMDB producer events."""
     - Add an event to Tk/Tcl's event loop.
     - Call is to `handler.tmdb_io_handler`.
     - Pass the title substring and work queue.
-
-#### MODIFY `guiwidgets_2.AddMovieGUI.destroy`
-- Stop polling the work queue.
-  - Cancel the task in Tk/Tcl's event loop which polls the work queue.
 
 ### Tkinter Production Thread
 
