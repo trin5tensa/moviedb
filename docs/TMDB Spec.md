@@ -8,14 +8,9 @@ This specification outlines the proposed process and assigns functional responsi
 
 ## Basic pattern
 
-
 Not included in this basic pattern:
 - Details of exception handling.
-- Actions to handle user clearance of title field which would lead to an empty search substring.
 - Actions to get API Key.
-- Marshalling of title field arrivals:
-  - Title changes that arrive while user is still typing
-  - Short titles
 - Asynchronous handling of the internet search.
 - Code to allow the user to select and populate the returned TMDB data.
 
@@ -49,12 +44,16 @@ Issue #268 """Consume movies placed in the work queue."""
 
 #### NEW `guiwidgets_2.AddMovieGUI.tmdb_search`
 Issue #269 """Create TMDB producer events."""
-  - Validation
-    - Return without further processing if the title substring is empty.
-  - Call the producer
-    - Add an event to Tk/Tcl's event loop.
-    - Call is to `handler.tmdb_io_handler`.
-    - Pass the title substring and work queue.
+- Create the stub function `handler.tmdb_io_handler`.
+  - Pass this function in the constructor of `guiwidgets_2.AddMovieGUI`.
+- Validation
+  - Return without further processing if the title substring is empty.
+- Introduce a time delay to avoid premature search invocation.
+  - Add an event to Tk/Tcl's event loop.
+  - Place a tkinter delayed event call to `handler.tmdb_io_handler`. The delay is 1s.
+- Call the producer
+  - Delete the delayed event call if a following key press arrives in less than 1s.
+  - Pass the title substring and work queue to `handler.tmdb_io_handler`.
 
 ### Tkinter Production Thread
 
