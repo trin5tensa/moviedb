@@ -2,8 +2,8 @@
 
 This module is the glue between the user's selection of a menu item and the gui."""
 
-#  Copyright (c) 2022. Stephen Rigden.
-#  Last modified 5/23/22, 8:01 AM by stephen.
+#  Copyright (c) 2022-2022. Stephen Rigden.
+#  Last modified 6/11/22, 8:26 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,9 +14,10 @@ This module is the glue between the user's selection of a menu item and the gui.
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+import queue
 from typing import Callable, Sequence
 
+import sqlalchemy.exc
 import sqlalchemy.orm
 
 import config
@@ -41,9 +42,7 @@ def preferences_dialog():
 def add_movie():
     """ Get new movie data from the user and add it to the database. """
     all_tags = database.all_tags()
-    # PyCharm https://youtrack.jetbrains.com/issue/PY-41268
-    # noinspection PyTypeChecker
-    guiwidgets_2.AddMovieGUI(config.tk_root, _add_movie_callback, all_tags)
+    guiwidgets_2.AddMovieGUI(config.tk_root, _add_movie_callback, _tmdb_io_handler, all_tags)
 
 
 def edit_movie():
@@ -123,7 +122,7 @@ def _delete_movie_callback(movie: config.FindMovieTypedDict):
     try:
         database.del_movie(movie)
     
-    except sqlalchemy.orm.exc.NoResultFound:
+    except sqlalchemy.exc.NoResultFound:
         pass
 
 
@@ -213,6 +212,7 @@ def _select_movie_callback(title: str, year: int):
 
     # Get record from database
     movie = database.find_movies(dict(title=title, year=year))[0]
+    # moviedb-#272 'Wrong argument type in _select_movie_callback'
     movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
     # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker
@@ -319,3 +319,11 @@ def _select_tag_callback(old_tag: str):
     delete_callback = _delete_tag_callback_wrapper(old_tag)
     edit_callback = _edit_tag_callback_wrapper(old_tag)
     guiwidgets_2.EditTagGUI(config.tk_root, old_tag, delete_callback, edit_callback)
+
+
+def _tmdb_io_handler(title: str, work_queue: queue.LifoQueue):
+    # moviedb-#269 Stub function
+    #  Code
+    #  Docs
+    #  Tests
+    print(f"IMDB Search for {title} initiated.")

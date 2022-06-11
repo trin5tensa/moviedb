@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 6/9/22, 9:05 AM by stephen.
+#  Last modified 6/11/22, 8:26 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -196,7 +196,7 @@ class TestAddMovieGUI:
         parent = DummyTk()
         tags = ('tag 41', 'tag 42')
         # noinspection PyTypeChecker
-        yield guiwidgets_2.AddMovieGUI(parent, self.dummy_commit_callback, tags)
+        yield guiwidgets_2.AddMovieGUI(parent, self.dummy_commit_callback, self.dummy_tmdb_search_callback, tags)
     
     framing_calls = []
     dummy_body_frame = TtkFrame(DummyTk())
@@ -211,6 +211,9 @@ class TestAddMovieGUI:
     
     def dummy_commit_callback(self, *args):
         self.commit_callback_calls = args
+        
+    def dummy_tmdb_search_callback(self, *args):
+        pass
 
 
 # noinspection DuplicatedCode,PyMissingOrEmptyDocstring

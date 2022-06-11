@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 6/9/22, 9:05 AM by stephen.
+#  Last modified 6/11/22, 8:26 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -50,11 +50,13 @@ class AddMovieGUI:
     add a movie."""
     
     parent: tk.Tk
-    # On commit this callback will be called with a dictionary of fields and user entered values.
+    # When the user clicks the commit button this will be called with a dictionary of fields and user entered values.
     commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
-    # Complete list of tags in database
+    # When the user changes the title field this will ba called with the field's text.
+    tmdb_search_callback: Callable[[str, queue.LifoQueue], None]
+    # This is a complete list of all the tags in the database
     all_tags: Sequence[str]
-
+    
     selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
     # All widgets created by this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
@@ -64,10 +66,13 @@ class AddMovieGUI:
     # Treeview for tags.
     treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
     
-    # Set up the consumer end of the TMDB producer/consumer pattern
+    # These variables are used for the consumer end of the TMDB producer/consumer pattern.
     tmdb_work_queue: queue.LifoQueue = field(default_factory=queue.LifoQueue, init=False, repr=False)
     polling_timer: int = 250
     polling_id: str = None
+    
+    # These variables help to decide if the user has finished entering the title.
+    last_text_id: str = ''
     
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
@@ -112,7 +117,7 @@ class AddMovieGUI:
         
         # Start the tmdb_work_queue polling
         self.tmdb_consumer()
-        
+    
     def call_title_notifees(self, commit_neuron: neurons.AndNeuron) -> Callable:
         """
         This function creates the notifee for the title field observer which will be called whenever
@@ -141,14 +146,19 @@ class AddMovieGUI:
             commit_neuron(self.title, bool(text))
         return func
     
-    @staticmethod
-    def tmdb_search(substring: str):
+    def tmdb_search(self, substring: str):
         # TODO
         #  Production Code
         #  Document
         #  Test
-        print(f"text entered by user: '{substring}'")
+        def completion(text: str):
+            print(f"Whoopee. Got '{text}'")
 
+        print(f"Text entered by user: '{substring}'")
+        if self.last_text_id:
+            self.parent.after_cancel(self.last_text_id)
+        self.last_text_id = self.parent.after(1000, completion, substring)
+    
     def tmdb_consumer(self):
         """Consume movies placed in the work queue."""
         # TODO
@@ -157,11 +167,11 @@ class AddMovieGUI:
         #  Test
         self.polling_id = self.parent.after(self.polling_timer, self.tmdb_consumer)
         print(f"TMDB work queue polled.Tkinter event id={self.polling_id}")
-
+    
     def treeview_callback(self, reselection: Sequence[str]):
         """Update selected tags with the user's changes."""
         self.selected_tags = reselection
-        
+    
     def commit(self):
         """The user clicked the 'Commit' button."""
         return_fields = {internal_name: movie_field.textvariable.get()
@@ -186,7 +196,7 @@ class AddMovieGUI:
         else:
             _clear_input_form_fields(self.entry_fields)
             self.treeview.clear_selection()
-            
+    
     def destroy(self):
         """Destroy all widgets of this class."""
         self.parent.after_cancel(self.polling_id)
