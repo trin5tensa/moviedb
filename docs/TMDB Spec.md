@@ -52,12 +52,11 @@ Issue #269 """Create TMDB producer events."""
   - Add an event to Tk/Tcl's event loop.
   - Place a tkinter delayed event call to `handler.tmdb_io_handler`. The delay is 1s.
 - Call the producer
-  - Delete the delayed event call if a following key press arrives in less than 1s.
   - Pass the title substring and work queue to `handler.tmdb_io_handler`.
 
 ### Tkinter Production Thread
 
-#### NEW `handler.tmdb_io_handler`
+#### NEW `handler._tmdb_io_handler`
 - """Search TMDB for compliant movies."""
   - Try calling `tmdb.tmdb_producer`
   - FOR LATER ADDITION: Handle IMDB exceptions here.

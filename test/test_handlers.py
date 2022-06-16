@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
-#  Copyright ©2021. Stephen Rigden.
-#  Last modified 3/28/21, 8:48 AM by stephen.
+#  Copyright (c) 2022-2022. Stephen Rigden.
+#  Last modified 6/11/22, 8:26 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -95,12 +95,13 @@ class TestAddMovie:
     def test_movie_gui_called(self, monkeypatch):
         monkeypatch.setattr(handlers.database, 'all_tags', lambda *args: self.TAGS)
         monkeypatch.setattr(handlers.guiwidgets_2, 'AddMovieGUI',
-                            lambda parent, commit_callback, all_tags:
-                            self.movie_gui_args.append((parent, commit_callback, all_tags)))
+                            lambda parent, commit_callback, tmdb_search_callback, all_tags:
+                            self.movie_gui_args.append((parent, commit_callback, tmdb_search_callback, all_tags)))
         
         with self.add_movie_context():
             assert self.movie_gui_args == [(DummyParent(),
                                             handlers._add_movie_callback,
+                                            handlers._tmdb_io_handler,
                                             self.TAGS)]
     
     # noinspection PyMissingOrEmptyDocstring

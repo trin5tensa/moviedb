@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 6/9/22, 9:05 AM by stephen.
+#  Last modified 6/16/22, 7:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -138,6 +138,38 @@ class TestAddMovieGUI:
             title.textvariable.set_for_test(movie_title)
             title_callback()
             assert calls[0][1] == movie_title
+            
+    def test_tmdb_search_call_is_registered_in_event_queue(self):
+        expected = 'substring test text'
+        with self.add_movie_gui_context() as add_movie_context:
+            add_movie_context.tmdb_search(expected)
+            event_id = add_movie_context.last_text_event_id
+            try:
+                _, args = add_movie_context.parent.after_calls[event_id]
+            except KeyError:
+                raise KeyError('The TMDB search was not scheduled in the Tkinter event queue.')
+            text, _ = args
+            assert text == expected
+
+    def test_tmdb_search_ignores_empty_title_string(self):
+        title_string = ''
+        with self.add_movie_gui_context() as add_movie_context:
+            add_movie_context.tmdb_search(title_string)
+            assert add_movie_context.last_text_event_id == ''
+
+    def test_tmdb_search_removes_previous_events(self):
+        expected = 'substring test text'
+        short_string = 'substrin'
+        with self.add_movie_gui_context() as add_movie_context:
+            add_movie_context.tmdb_search(short_string)
+            event_id = add_movie_context.last_text_event_id
+            add_movie_context.tmdb_search(expected)
+            try:
+                add_movie_context.parent.after_calls[event_id]
+            except KeyError:
+                pass
+            else:
+                assert False, "An expired event has not been removed from Tkinter's event queue."
 
     def test_treeview_callback_updates_selected_tags(self):
         with self.add_movie_gui_context() as add_movie_context:
@@ -150,12 +182,12 @@ class TestAddMovieGUI:
             assert calls == [True], "Consumer work queue polling not started."
 
     def test_tmdb_consumer_polling_ended(self, monkeypatch):
-        dummy_polling_id = 'dummy polling id'
         with self.add_movie_gui_context() as add_movie_context:
-            add_movie_context.polling_id = dummy_polling_id
+            event_id = list(add_movie_context.parent.after_calls.keys())[0]
+            add_movie_context.search_queue_event_id = event_id
             add_movie_context.destroy()
             test_fail_msg = 'TMDB Work queue polling not cancelled'
-            assert add_movie_context.parent.after_cancel_calls == [[(dummy_polling_id,)]], test_fail_msg
+            assert add_movie_context.parent.after_cancel_calls == [[(event_id,)]], test_fail_msg
 
     def test_moviedb_constraint_failure_displays_message(self, monkeypatch):
         # noinspection PyUnusedLocal
@@ -196,7 +228,7 @@ class TestAddMovieGUI:
         parent = DummyTk()
         tags = ('tag 41', 'tag 42')
         # noinspection PyTypeChecker
-        yield guiwidgets_2.AddMovieGUI(parent, self.dummy_commit_callback, tags)
+        yield guiwidgets_2.AddMovieGUI(parent, self.dummy_commit_callback, self.dummy_tmdb_search_callback, tags)
     
     framing_calls = []
     dummy_body_frame = TtkFrame(DummyTk())
@@ -211,6 +243,9 @@ class TestAddMovieGUI:
     
     def dummy_commit_callback(self, *args):
         self.commit_callback_calls = args
+        
+    def dummy_tmdb_search_callback(self, *args):
+        pass
 
 
 # noinspection DuplicatedCode,PyMissingOrEmptyDocstring
