@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 6/11/22, 8:26 AM by stephen.
+#  Last modified 6/16/22, 7:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -68,11 +68,12 @@ class AddMovieGUI:
     
     # These variables are used for the consumer end of the TMDB producer/consumer pattern.
     tmdb_work_queue: queue.LifoQueue = field(default_factory=queue.LifoQueue, init=False, repr=False)
-    polling_timer: int = 250
-    polling_id: str = None
+    search_queue_timer: int = 250
+    search_queue_event_id: str = None
     
     # These variables help to decide if the user has finished entering the title.
-    last_text_id: str = ''
+    last_text_queue_timer: int = 1000
+    last_text_event_id: str = ''
     
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
@@ -147,17 +148,23 @@ class AddMovieGUI:
         return func
     
     def tmdb_search(self, substring: str):
-        # TODO
-        #  Production Code
-        #  Document
-        #  Test
-        def completion(text: str):
-            print(f"Whoopee. Got '{text}'")
-
-        print(f"Text entered by user: '{substring}'")
-        if self.last_text_id:
-            self.parent.after_cancel(self.last_text_id)
-        self.last_text_id = self.parent.after(1000, completion, substring)
+        """
+        Initiate a TMDB search for matching movies titles when the user has finished typing.
+        
+        Args:
+            substring: The current content of the title field.
+        """
+        # Valid strings for search are > zero length.
+        if substring:
+        
+            # Delete the previous call to tmdb_search_callback if it still in the event queue. It will only be in the
+            # event queue if it is still waiting to be executed.
+            if self.last_text_event_id:
+                self.parent.after_cancel(self.last_text_event_id)
+    
+            # Place a new call to tmdb_search_callback.
+            self.last_text_event_id = self.parent.after(self.last_text_queue_timer, self.tmdb_search_callback,
+                                                        substring, self.tmdb_work_queue)
     
     def tmdb_consumer(self):
         """Consume movies placed in the work queue."""
@@ -165,8 +172,7 @@ class AddMovieGUI:
         #  Production Code
         #  Docs
         #  Test
-        self.polling_id = self.parent.after(self.polling_timer, self.tmdb_consumer)
-        print(f"TMDB work queue polled.Tkinter event id={self.polling_id}")
+        self.search_queue_event_id = self.parent.after(self.search_queue_timer, self.tmdb_consumer)
     
     def treeview_callback(self, reselection: Sequence[str]):
         """Update selected tags with the user's changes."""
@@ -199,7 +205,7 @@ class AddMovieGUI:
     
     def destroy(self):
         """Destroy all widgets of this class."""
-        self.parent.after_cancel(self.polling_id)
+        self.parent.after_cancel(self.search_queue_event_id)
         self.outer_frame.destroy()
 
 
