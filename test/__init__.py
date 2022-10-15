@@ -1,7 +1,7 @@
 """Enable access to test support modules"""
 
-#  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/3/20, 6:53 AM by stephen.
+#  Copyright (c) 2022-2022. Stephen Rigden.
+#  Last modified 10/15/22, 12:37 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -11,4 +11,4 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
