@@ -1,7 +1,7 @@
 """Functional pytests for database module. """
 
-#  Copyright© 2020. Stephen Rigden.
-#  Last modified 6/16/20, 8:07 AM by stephen.
+#  Copyright ©2020. Stephen Rigden.
+#  Last modified 12/5/20, 12:08 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,9 +12,10 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import random
 from contextlib import contextmanager
 from dataclasses import dataclass
-import random
 from typing import Callable, Dict
 
 import pytest
@@ -46,7 +47,9 @@ def session():
 @pytest.fixture(scope='module')
 def hamlet() -> Dict:
     """Provide test data for 'Hamlet'."""
-    return dict(title='Hamlet', director='Branagh', minutes=242, year=1996)
+    return dict(title='Hamlet', director='Branagh', minutes=242, year=1996, tmdb_id=142,
+                original_title='Omlet', release_date=database.datetime.date(1996, 6, 6),
+                synopsis='Father fixation')
 
 
 @pytest.fixture(scope='module')
@@ -123,7 +126,12 @@ def test_add_movie(connection, session, hamlet):
     result = (session.query(database.Movie.title,
                             database.Movie.director,
                             database.Movie.minutes,
-                            database.Movie.year, )
+                            database.Movie.year,
+                            database.Movie.tmdb_id,
+                            database.Movie.original_title,
+                            database.Movie.release_date,
+                            database.Movie.synopsis,
+                            )
               .one())
     assert result == expected
 
@@ -327,7 +335,7 @@ def test_delete_movie_by_title_and_length(loaded_database):
 
 def test_all_tags(loaded_database):
     tags = database.all_tags()
-    assert set(tags) == {'blue', 'yellow', 'green'}
+    assert tags == ['blue', 'green', 'yellow']
 
 
 def test_movie_tags(loaded_database, revanche):

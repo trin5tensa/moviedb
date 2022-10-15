@@ -3,8 +3,8 @@
 This module controls all gui activity
 """
 
-#  Copyright© 2019. Stephen Rigden.
-#  Last modified 12/19/19, 8:15 AM by stephen.
+#  Copyright ©2020. Stephen Rigden.
+#  Last modified 12/22/20, 8:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,8 +24,8 @@ import mainwindow
 
 def run():
     """Run the GUI."""
-    config.app.tk_root = tk.Tk()
-    config.app.tk_root.columnconfigure(0, weight=1)
-    config.app.tk_root.rowconfigure(0, weight=1)
-    config.app.gui_environment = mainwindow.MainWindow(config.app.tk_root)
-    config.app.tk_root.mainloop()
+    config.tk_root = tk.Tk()
+    config.tk_root.columnconfigure(0, weight=1)
+    config.tk_root.rowconfigure(0, weight=1)
+    config.gui_environment = mainwindow.MainWindow(config.tk_root)
+    config.tk_root.mainloop()
