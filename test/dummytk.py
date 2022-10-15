@@ -1,7 +1,7 @@
 """Test support module for Tk dummies."""
 
-#  Copyright ©2021. Stephen Rigden.
-#  Last modified 2/24/21, 2:31 PM by stephen.
+#  Copyright (c) 2022-2022. Stephen Rigden.
+#  Last modified 6/16/22, 7:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,7 +12,7 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+import itertools
 from dataclasses import dataclass, field
 from typing import Callable, Literal, Sequence, Tuple, Union
 
@@ -30,6 +30,11 @@ class DummyTk:
     rowconfigure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     bind_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     bell_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    after_calls: dict = field(default_factory=dict, init=False, repr=False, compare=False)
+    after_cancel_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    
+    # This is used to generate unique event queue ids
+    event_id = itertools.count()
     
     def columnconfigure(self, *args, **kwargs):
         self.columnconfigure_calls.append((args, kwargs))
@@ -42,6 +47,22 @@ class DummyTk:
     
     def bell(self):
         self.bell_calls.append(True)
+        
+    def after(self, *args):
+        event_id = next(self.event_id)
+        # print(f"{next(event_id)}")
+        callback = args[1]
+        # print(f"{callback=}")
+        args2 = args[2:]
+        # print(f"{args2=}")
+        # self.after_calls.append()
+        self.after_calls[event_id] = (callback, args2)
+        return event_id
+       
+    def after_cancel(self, *args):
+        cancel_id, = args
+        del self.after_calls[cancel_id]
+        self.after_cancel_calls.append([args])
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
@@ -70,8 +91,10 @@ class TkStringVar:
     trace_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     value: str = '4242'
+    trace_add_callback: Callable = None
     
     def trace_add(self, *args):
+        _, self.trace_add_callback = args
         self.trace_add_calls.append(args)
     
     def set(self, *args):

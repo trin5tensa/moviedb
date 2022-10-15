@@ -1,7 +1,7 @@
 """Test module."""
 
-#  Copyright (c) 2022. Stephen Rigden.
-#  Last modified 5/26/22, 8:36 AM by stephen.
+#  Copyright (c) 2022-2022. Stephen Rigden.
+#  Last modified 6/16/22, 7:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -75,51 +75,119 @@ class TestAddMovieGUI:
                                guiwidgets_2.CANCEL_TEXT,),
                               dict(column=1, command=add_movie_context.destroy, enabled=True))]
     
-    def test_neuron_linked_to_button(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets_2, '_link_and_neuron_to_button', lambda *args: calls.append(args))
-        monkeypatch.setattr(guiwidgets_2, '_link_field_to_neuron', lambda *args: None)
+    def test_neuronic_network_enables_and_disables_commit_button(self):
         with self.add_movie_gui_context() as add_movie_context:
-            state_change = calls[0][0]
-            buttonbox = add_movie_context.outer_frame.children[1]
+            # Get the fields' callbacks.
+            outer_frame = add_movie_context.outer_frame
+            body_frame = outer_frame.children[0]
+            title = body_frame.children[1]
+            title_callback = title.textvariable.trace_add_callback
+            year = body_frame.children[3]
+            year_callback = year.textvariable.trace_add_callback
+            
+            # Get the commit button.
+            buttonbox = outer_frame.children[1]
             commit_button = buttonbox.children[0]
-            state_change(True)
-            state_change(False)
-            assert commit_button.state_calls == [['disabled'], ['!disabled'], ['disabled']]
+            
+            # Initialize title and year textvariables to ''
+            title.textvariable.set_for_test('')
+            year.textvariable.set_for_test('')
+            
+            # Simulate user entering 'Movie Title' into title field
+            title.textvariable.set_for_test('Movie Title')
+            title_callback()
 
-    # noinspection DuplicatedCode
-    def test_notify_neuron_wrapper_called(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets_2, '_create_observer_callback', lambda *args: calls.append(args))
-        with self.add_movie_gui_context() as add_movie_context:
-            # Function is called twice for 'title' and 'year'.
-            assert len(calls) == 2
-            assert len(calls[0]) == len(calls[1]) == 3
-            assert calls[0][0] == calls[1][0] == add_movie_context.entry_fields
-            assert calls[0][1] == guiwidgets_2.MOVIE_FIELD_NAMES[0]
-            assert calls[1][1] == guiwidgets_2.MOVIE_FIELD_NAMES[1]
-            assert isinstance(calls[0][2], guiwidgets_2.neurons.AndNeuron)
-            assert isinstance(calls[1][2], guiwidgets_2.neurons.AndNeuron)
+            # Simulate user entering '1942' into year field
+            year.textvariable.set_for_test('1942')
+            year_callback()
+            
+            # Simulate user entering '' into title field
+            title.textvariable.set_for_test('')
+            title_callback()
 
-    # noinspection DuplicatedCode
-    def test_title_and_year_fields_linked_to_neuron(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets_2, '_link_field_to_neuron', lambda *args: calls.append(args))
+            # Button state history should be:
+            # disabled - Initial state
+            # disabled - User enters 'Movie Title'
+            # enabled - User enters '1942'
+            # disabled - User enters '' into title field
+            assert commit_button.state_calls == [['disabled'], ['disabled'], ['!disabled'], ['disabled']]
+            
+    def test_entry_field_dictionary_initialized_with_title_observer(self):
         with self.add_movie_gui_context() as add_movie_context:
-            # Function is called twice for 'title' and 'year'.
-            assert len(calls) == 2
-            assert len(calls[0]) == 4
-            assert calls[0][0] == calls[1][0] == add_movie_context.entry_fields
-            assert calls[0][1] == guiwidgets_2.MOVIE_FIELD_NAMES[0]
-            assert calls[1][1] == guiwidgets_2.MOVIE_FIELD_NAMES[1]
-            assert isinstance(calls[0][2], guiwidgets_2.neurons.AndNeuron)
-            assert isinstance(calls[1][2], guiwidgets_2.neurons.AndNeuron)
-            assert isinstance(calls[0][3], Callable)
-            assert isinstance(calls[1][3], Callable)
+            assert isinstance(add_movie_context.entry_fields['title'].observer, guiwidgets_2.neurons.Observer)
+            
+    def test_entry_field_dictionary_initialized_with_year_observer(self, monkeypatch):
+        test_return = 'Test return'
+        monkeypatch.setattr(guiwidgets_2, '_create_the_fields_observer', lambda *args: test_return)
+        with self.add_movie_gui_context() as add_movie_context:
+            assert add_movie_context.entry_fields['year'].observer == test_return
+            
+    def test_neuronic_network_invokes_tmdb_lookup(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(guiwidgets_2.AddMovieGUI, 'tmdb_search', lambda *args: calls.append(args))
+        movie_title = 'Movie Title'
+    
+        with self.add_movie_gui_context() as add_movie_context:
+            # Get the fields' callbacks.
+            outer_frame = add_movie_context.outer_frame
+            body_frame = outer_frame.children[0]
+            title = body_frame.children[1]
+            title_callback = title.textvariable.trace_add_callback
+        
+            # Simulate user entering 'Movie Title' into title field
+            title.textvariable.set_for_test(movie_title)
+            title_callback()
+            assert calls[0][1] == movie_title
+            
+    def test_tmdb_search_call_is_registered_in_event_queue(self):
+        expected = 'substring test text'
+        with self.add_movie_gui_context() as add_movie_context:
+            add_movie_context.tmdb_search(expected)
+            event_id = add_movie_context.last_text_event_id
+            try:
+                _, args = add_movie_context.parent.after_calls[event_id]
+            except KeyError:
+                raise KeyError('The TMDB search was not scheduled in the Tkinter event queue.')
+            text, _ = args
+            assert text == expected
+
+    def test_tmdb_search_ignores_empty_title_string(self):
+        title_string = ''
+        with self.add_movie_gui_context() as add_movie_context:
+            add_movie_context.tmdb_search(title_string)
+            assert add_movie_context.last_text_event_id == ''
+
+    def test_tmdb_search_removes_previous_events(self):
+        expected = 'substring test text'
+        short_string = 'substrin'
+        with self.add_movie_gui_context() as add_movie_context:
+            add_movie_context.tmdb_search(short_string)
+            event_id = add_movie_context.last_text_event_id
+            add_movie_context.tmdb_search(expected)
+            try:
+                add_movie_context.parent.after_calls[event_id]
+            except KeyError:
+                pass
+            else:
+                assert False, "An expired event has not been removed from Tkinter's event queue."
 
     def test_treeview_callback_updates_selected_tags(self):
         with self.add_movie_gui_context() as add_movie_context:
             add_movie_context.treeview_callback(('tag 42',))
+
+    def test_tmdb_consumer_polling_initiated(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(guiwidgets_2.AddMovieGUI, 'tmdb_consumer', lambda *args: calls.append(True))
+        with self.add_movie_gui_context():
+            assert calls == [True], "Consumer work queue polling not started."
+
+    def test_tmdb_consumer_polling_ended(self, monkeypatch):
+        with self.add_movie_gui_context() as add_movie_context:
+            event_id = list(add_movie_context.parent.after_calls.keys())[0]
+            add_movie_context.search_queue_event_id = event_id
+            add_movie_context.destroy()
+            test_fail_msg = 'TMDB Work queue polling not cancelled'
+            assert add_movie_context.parent.after_cancel_calls == [[(event_id,)]], test_fail_msg
 
     def test_moviedb_constraint_failure_displays_message(self, monkeypatch):
         # noinspection PyUnusedLocal
@@ -160,7 +228,7 @@ class TestAddMovieGUI:
         parent = DummyTk()
         tags = ('tag 41', 'tag 42')
         # noinspection PyTypeChecker
-        yield guiwidgets_2.AddMovieGUI(parent, self.dummy_commit_callback, tags)
+        yield guiwidgets_2.AddMovieGUI(parent, self.dummy_commit_callback, self.dummy_tmdb_search_callback, tags)
     
     framing_calls = []
     dummy_body_frame = TtkFrame(DummyTk())
@@ -175,6 +243,9 @@ class TestAddMovieGUI:
     
     def dummy_commit_callback(self, *args):
         self.commit_callback_calls = args
+        
+    def dummy_tmdb_search_callback(self, *args):
+        pass
 
 
 # noinspection DuplicatedCode,PyMissingOrEmptyDocstring
@@ -283,7 +354,7 @@ class TestAddTagGUI:
         monkeypatch.setattr(guiwidgets_2._LabelFieldWidget, 'add_entry_row',
                             lambda *args: self.add_entry_row_calls.append(args))
         monkeypatch.setattr(guiwidgets_2, '_create_button', self.dummy_create_button)
-        monkeypatch.setattr(guiwidgets_2, '_link_or_neuron_to_button',
+        monkeypatch.setattr(guiwidgets_2, '_create_button_orneuron',
                             self.dummy_link_or_neuron_to_button)
         monkeypatch.setattr(guiwidgets_2, '_link_field_to_neuron',
                             lambda *args: self.link_field_to_neuron_calls.append(args))
@@ -359,7 +430,7 @@ class TestSearchTagGUI:
         monkeypatch.setattr(guiwidgets_2, '_enable_button', dummy_enable_button_wrapper)
     
         dummy_link_or_neuron_to_button_calls = []
-        monkeypatch.setattr(guiwidgets_2, '_link_or_neuron_to_button',
+        monkeypatch.setattr(guiwidgets_2, '_create_button_orneuron',
                             lambda *args: dummy_link_or_neuron_to_button_calls.append(args))
     
         monkeypatch.setattr(guiwidgets_2, '_link_field_to_neuron', lambda *args: None)
@@ -373,10 +444,10 @@ class TestSearchTagGUI:
         def dummy_link_or_neuron_to_button(*args):
             return dummy_neuron
     
-        monkeypatch.setattr(guiwidgets_2, '_link_or_neuron_to_button', dummy_link_or_neuron_to_button)
+        monkeypatch.setattr(guiwidgets_2, '_create_button_orneuron', dummy_link_or_neuron_to_button)
     
         dummy_notify_neuron_wrapper_calls = []
-        monkeypatch.setattr(guiwidgets_2, '_create_observer_callback',
+        monkeypatch.setattr(guiwidgets_2, '_create_the_fields_observer',
                             lambda *args: dummy_notify_neuron_wrapper_calls.append(args))
         monkeypatch.setattr(guiwidgets_2, '_link_field_to_neuron', lambda *args: None)
         with self.search_tag_gui_context() as cm:
@@ -391,7 +462,7 @@ class TestSearchTagGUI:
         def dummy_link_or_neuron_to_button(*args):
             return dummy_neuron
     
-        monkeypatch.setattr(guiwidgets_2, '_link_or_neuron_to_button', dummy_link_or_neuron_to_button)
+        monkeypatch.setattr(guiwidgets_2, '_create_button_orneuron', dummy_link_or_neuron_to_button)
     
         dummy_notify_neuron = object()
     
@@ -399,7 +470,7 @@ class TestSearchTagGUI:
         def dummy_notify_neuron_wrapper(*args):
             return dummy_notify_neuron
     
-        monkeypatch.setattr(guiwidgets_2, '_create_observer_callback', dummy_notify_neuron_wrapper)
+        monkeypatch.setattr(guiwidgets_2, '_create_the_fields_observer', dummy_notify_neuron_wrapper)
     
         dummy_link_field_to_neuron_calls = []
         monkeypatch.setattr(guiwidgets_2, '_link_field_to_neuron',
@@ -601,7 +672,7 @@ class TestEditTagGUI:
         monkeypatch.setattr(guiwidgets_2._LabelFieldWidget, 'add_entry_row',
                             lambda *args: self.add_entry_row_calls.append(args))
         monkeypatch.setattr(guiwidgets_2, '_create_button', self.dummy_create_button)
-        monkeypatch.setattr(guiwidgets_2, '_link_or_neuron_to_button',
+        monkeypatch.setattr(guiwidgets_2, '_create_button_orneuron',
                             self.dummy_link_or_neuron_to_button)
         monkeypatch.setattr(guiwidgets_2, '_link_field_to_neuron',
                             lambda *args: self.link_field_to_neuron_calls.append(args))
@@ -793,10 +864,13 @@ class TestPreferencesGUI:
             outer_frame = toplevel.children[0]
             body_frame = outer_frame.children[0]
             entry = body_frame.children[1]
+            # trace_add_callback is a unique closure.
+            trace_add_callback = entry.textvariable.trace_add_callback
             # noinspection PyTypeChecker
             assert entry == TtkEntry(parent=TtkFrame(
                     parent=TtkFrame(parent=TkToplevel(parent=DummyTk(),)),
-                    padding=(10, 25, 10, 0)), textvariable=TkStringVar(value='4242'), width=36)
+                    padding=(10, 25, 10, 0)),
+                    textvariable=TkStringVar(trace_add_callback=trace_add_callback), width=36)
 
     def test_add_checkbox_row_called(self, monkeypatch):
         with self.preferences_context() as preferences_gui:
@@ -804,11 +878,13 @@ class TestPreferencesGUI:
             outer_frame = toplevel.children[0]
             body_frame = outer_frame.children[0]
             checkbutton = body_frame.children[2]
+            # trace_add_callback is a unique closure.
+            trace_add_callback = checkbutton.variable.trace_add_callback
             # noinspection PyTypeChecker
             assert checkbutton == TtkCheckbutton(parent=TtkFrame(
                     parent=TtkFrame(parent=TkToplevel(parent=DummyTk(),)),
                     padding=(10, 25, 10, 0)), text=preferences_gui.use_tmdb_text,
-                    variable=TkStringVar(value='4242'), width=36)
+                    variable=TkStringVar(trace_add_callback=trace_add_callback), width=36)
 
     def test_focus_set_called(self, monkeypatch):
         calls = []
@@ -1317,7 +1393,7 @@ def test_link_or_neuron_to_button():
     # noinspection PyMissingOrEmptyDocstring
     def change_button_state(): pass
     
-    neuron = guiwidgets_2._link_or_neuron_to_button(change_button_state)
+    neuron = guiwidgets_2._create_button_orneuron(change_button_state)
     assert isinstance(neuron, guiwidgets_2.neurons.OrNeuron)
     assert neuron.notifees == [change_button_state]
 
@@ -1326,7 +1402,7 @@ def test_link_and_neuron_to_button():
     # noinspection PyMissingOrEmptyDocstring
     def change_button_state(): pass
     
-    neuron = guiwidgets_2._link_and_neuron_to_button(change_button_state)
+    neuron = guiwidgets_2._create_buttons_andneuron(change_button_state)
     assert isinstance(neuron, guiwidgets_2.neurons.AndNeuron)
     assert neuron.notifees == [change_button_state]
 
@@ -1334,7 +1410,7 @@ def test_link_and_neuron_to_button():
 def test_link_field_to_neuron_trace_add_called(patch_tk, dummy_entry_fields):
     name = 'tag'
     neuron = guiwidgets_2.neurons.OrNeuron()
-    notify_neuron = guiwidgets_2._create_observer_callback(dummy_entry_fields, name, neuron)
+    notify_neuron = guiwidgets_2._create_the_fields_observer(dummy_entry_fields, name, neuron)
     guiwidgets_2._link_field_to_neuron(dummy_entry_fields, name, neuron, notify_neuron)
     # noinspection PyUnresolvedReferences
     assert dummy_entry_fields['tag'].textvariable.trace_add_calls == [('write', notify_neuron)]
@@ -1345,7 +1421,7 @@ def test_link_field_to_neuron_register_event_called(patch_tk, dummy_entry_fields
     neuron = guiwidgets_2.neurons.OrNeuron()
     notifee = DummyActivateButton()
     neuron.register(notifee)
-    notify_neuron = guiwidgets_2._create_observer_callback(dummy_entry_fields, name, neuron)
+    notify_neuron = guiwidgets_2._create_the_fields_observer(dummy_entry_fields, name, neuron)
     guiwidgets_2._link_field_to_neuron(dummy_entry_fields, name, neuron, notify_neuron)
     assert not notifee.state
     notify_neuron()
@@ -1357,7 +1433,7 @@ def test_notify_neuron_wrapper(patch_tk, dummy_entry_fields):
     neuron = guiwidgets_2.neurons.OrNeuron()
     notifee = DummyActivateButton()
     neuron.register(notifee)
-    notify_neuron = guiwidgets_2._create_observer_callback(dummy_entry_fields, name, neuron)
+    notify_neuron = guiwidgets_2._create_the_fields_observer(dummy_entry_fields, name, neuron)
     
     # Match tag field contents to original value thus 'activating' the button.
     notify_neuron()
