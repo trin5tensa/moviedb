@@ -12,8 +12,8 @@ tmdbsimple.py
 https://github.com/celiao/tmdbsimple
 """
 
-#  Copyright ©2021. Stephen Rigden.
-#  Last modified 3/28/21, 8:48 AM by stephen.
+#  Copyright (c) 2022-2022. Stephen Rigden.
+#  Last modified 10/15/22, 12:37 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,7 +23,7 @@ https://github.com/celiao/tmdbsimple
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
 import sys
@@ -31,6 +31,7 @@ from typing import Union
 
 import requests
 import tmdbsimple
+
 
 TIMEOUT = 0.001
 
