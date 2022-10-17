@@ -21,7 +21,6 @@ CONFIG_PICKLE_EXTENSION = '.pickle'
 
 
 tk: 'tk'
-mainwindow: 'mainwindow'
 
 
 class MovieKeyTypedDict(TypedDict):
@@ -70,7 +69,7 @@ class Config:
     A single object of this class is loaded in the application's start_up() function and pickled
     on exit.
     """
-    
+    # TODO Delete this class
     # Program
     name: str
     version: str
@@ -103,10 +102,69 @@ class Config:
         self._tmdb_api_key = value
 
 
+@dataclass
+class CurrentConfig:
+    """The application's configuration data.
+
+    This transient configuration data is created during a single program run and is discarded when the program
+    terminates.
+    """
+    # TODO Test Class
+    tk_root: 'tk.Tk' = None
+
+
+@dataclass
+class PersistentConfig:
+    """The application's configuration data.
+
+    This persistent configuration data is loaded in the application's start_up() function and saved on exit.
+    """
+    # TODO Save and reload this class
+    # TODO Test Class
+    # Program
+    name: str
+    version: str
+
+    # tk.Tk screen geometry
+    geometry: str = None
+
+
+@dataclass
+class SecureConfig:
+    """The application's configuration data.
+
+    This secure configuration data is loaded in the application's start_up() function and saved on exit.
+    """
+    # TODO Securely save and reload this class
+    # TODO Test Class
+    # TMDB
+    _tmdb_api_key: str = ''
+    use_tmdb: bool = True
+
+    @property
+    def tmdb_api_key(self):
+        """ Return the tmdb_api_key but raise exceptions for missing key and user suppressed access."""
+        # User wants to use TMDB
+        if self.use_tmdb:
+            # …but the key has not been set so raise exception
+            if self._tmdb_api_key == '':
+                raise ConfigTMDBAPIKeyNeedsSetting
+            # otherwise return the possibly valid key.
+            else:
+                return self._tmdb_api_key
+    
+        # Otherwise the user has declined to use TMDB
+        else:
+            raise ConfigTMDBDoNotUse
+
+    @tmdb_api_key.setter
+    def tmdb_api_key(self, value: str):
+        self._tmdb_api_key = value
+        
+
+# TODO Delete app and tk_root
 app: Optional[Config] = None
 tk_root: 'tk.Tk' = None
-# moviedb-#256 gui_environment has no substantive use. Delete?
-gui_environment: 'mainwindow.MainWindow' = None
 
 
 class ConfigException(Exception):
