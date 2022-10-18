@@ -14,10 +14,13 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import argparse
+import json
 import logging
 import os
 import pickle
 import sys
+from dataclasses import asdict
+from typing import Any
 
 import config
 import database
@@ -97,6 +100,31 @@ def load_config_file(root_dir: str, program: str):
 
     else:
         config.app = config_data
+        
+    # TODO
+    #  Delete old code
+    #  Update Docs
+    #  Rename to load_config_files
+    #  Test
+    
+    # Load config file
+    json_fn = program + config.CONFIG_JSON_SUFFIX
+    parent_dir, _ = os.path.split(root_dir)
+    config_json_path = os.path.normpath(os.path.join(parent_dir, json_fn))
+    try:
+        with open(config_json_path) as fp:
+            data = json.load(fp)
+            config.persistent = config.PersistentConfig(**data)
+    except FileNotFoundError as exc:
+        msg = (f"The config save file was not found. A new version will be initialized. "
+               f"{exc.strerror}: {exc.filename}")
+        logging.info(msg)
+        
+        # Initialise persistent application data for first use
+        config.persistent = config.PersistentConfig(program, VERSION)
+
+    # TODO Write secure config file code
+    # Load config file
 
 
 def save_config_file():
@@ -106,6 +134,22 @@ def save_config_file():
     parent_dir, _ = os.path.split(root_dir)
     config_pickle_path = os.path.normpath(os.path.join(parent_dir, pickle_fn))
     _save_config_file(config_pickle_path)
+
+    # TODO
+    #  Delete old code
+    #  Update Docs
+    #  Rename to load_config_files
+    #  Test following code
+
+    json_fn = config.persistent.program + config.CONFIG_JSON_SUFFIX
+    parent_dir, _ = os.path.split(root_dir)
+    config_json_path = os.path.normpath(os.path.join(parent_dir, json_fn))
+    _json_dump(config.persistent, config_json_path)
+
+    # TODO
+    #  Write secure config file code
+    #  Evaluate load and save, and persistent and secure for duplicate code that should be in a subroutine?)
+    # Load config file
     
     
 def _save_config_file(fn: str):
@@ -118,9 +162,26 @@ def _save_config_file(fn: str):
     Args:
         fn: Path of pickled config file.
     """
-    
+    # TODO Remove this old code
     with open(fn, 'wb') as f:
         pickle.dump(config.app, f)
+    
+    
+def _json_dump(obj: Any, path: str):
+    """
+    Dump JSON to file.
+    
+    The separation of save_config_file and _save_config_file allows the test module to use a
+    temporary in-memory file location during file operations.
+    
+    Args:
+        obj: Object to be dumped. The dataclasses asdict function must produce JSON serializable data.
+        path: Path of config file.
+    """
+    # TODO Test
+    data = asdict(obj)
+    with open(path, 'w') as fp:
+        json.dump(data, fp)
     
     
 def command_line_args() -> argparse.Namespace:  # pragma: no cover

@@ -16,8 +16,10 @@
 from dataclasses import dataclass
 from typing import Optional, Sequence, TypedDict
 
-
+#TODO Delete CONFIG_PICKLE_EXTENSION
 CONFIG_PICKLE_EXTENSION = '.pickle'
+CONFIG_JSON_SUFFIX = '_config.json'
+SECURE_JSON_SUFFIX = '_cfgs.json'
 
 
 tk: 'tk'
@@ -122,8 +124,8 @@ class PersistentConfig:
     # TODO Save and reload this class
     # TODO Test Class
     # Program
-    name: str
-    version: str
+    program: str
+    program_version: str
 
     # tk.Tk screen geometry
     geometry: str = None
@@ -164,6 +166,9 @@ class SecureConfig:
 
 # TODO Delete app and tk_root
 app: Optional[Config] = None
+current: Optional[CurrentConfig] = None
+persistent: Optional[PersistentConfig] = None
+secure: Optional[SecureConfig] = None
 tk_root: 'tk.Tk' = None
 
 
