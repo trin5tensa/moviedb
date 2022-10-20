@@ -52,14 +52,13 @@ class TestRun:
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def run_gui_context(self):
-        tk_root_hold = gui.config.tk_root
+        tk_root_hold = gui.config.current
         try:
-            gui.config.app = gui.config.Config('test moviedb', 'test version')
-            gui.config.tk_root = None
+            gui.config.current = gui.config.CurrentConfig(tk_root=None)
             gui.run()
-            yield gui.config.tk_root
+            yield gui.config.current.tk_root
         finally:
-            gui.config.tk_root = tk_root_hold
+            gui.config.current = tk_root_hold
 
 
 @dataclass

@@ -96,10 +96,10 @@ def load_config_file(root_dir: str, program: str):
         logging.info(msg)
 
         # Initialize application configuration data for first use.
-        config.app = config.Config(program, VERSION)
+        config.current = config.Config(program, VERSION)
 
     else:
-        config.app = config_data
+        config.current = config_data
         
     # TODO
     #  Delete old code
@@ -115,6 +115,7 @@ def load_config_file(root_dir: str, program: str):
         with open(config_json_path) as fp:
             data = json.load(fp)
             config.persistent = config.PersistentConfig(**data)
+
     except FileNotFoundError as exc:
         msg = (f"The config save file was not found. A new version will be initialized. "
                f"{exc.strerror}: {exc.filename}")
@@ -123,34 +124,25 @@ def load_config_file(root_dir: str, program: str):
         # Initialise persistent application data for first use
         config.persistent = config.PersistentConfig(program, VERSION)
 
-    # TODO Write secure config file code
-    # Load config file
-
 
 def save_config_file():
     """Save persistent metadata."""
-    pickle_fn = config.app.name + config.CONFIG_PICKLE_EXTENSION
-    root_dir, _ = os.path.split(__file__)
-    parent_dir, _ = os.path.split(root_dir)
-    config_pickle_path = os.path.normpath(os.path.join(parent_dir, pickle_fn))
-    _save_config_file(config_pickle_path)
+    # pickle_fn = config.current.program + config.CONFIG_PICKLE_EXTENSION
+    # root_dir, _ = os.path.split(__file__)
+    # parent_dir, _ = os.path.split(root_dir)
+    # config_pickle_path = os.path.normpath(os.path.join(parent_dir, pickle_fn))
+    # _save_config_file(config_pickle_path)
 
     # TODO
     #  Delete old code
     #  Update Docs
     #  Rename to load_config_files
-    #  Test following code
 
     json_fn = config.persistent.program + config.CONFIG_JSON_SUFFIX
-    parent_dir, _ = os.path.split(root_dir)
+    parent_dir, _ = os.path.split(__file__)
     config_json_path = os.path.normpath(os.path.join(parent_dir, json_fn))
     _json_dump(config.persistent, config_json_path)
 
-    # TODO
-    #  Write secure config file code
-    #  Evaluate load and save, and persistent and secure for duplicate code that should be in a subroutine?)
-    # Load config file
-    
     
 def _save_config_file(fn: str):
     """
@@ -164,7 +156,7 @@ def _save_config_file(fn: str):
     """
     # TODO Remove this old code
     with open(fn, 'wb') as f:
-        pickle.dump(config.app, f)
+        pickle.dump(config.current, f)
     
     
 def _json_dump(obj: Any, path: str):

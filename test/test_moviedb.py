@@ -161,8 +161,8 @@ class TestLoadConfigFile:
     
     def test_config_app_updated_with_read_data(self, tmpdir):
         with self.class_context(tmpdir, create_config_file=True):
-            assert moviedb.config.app == moviedb.config.Config(self.TEST_PROGRAM_NAME,
-                                                               self.TEST_VERSION)
+            assert moviedb.config.current == moviedb.config.Config(self.TEST_PROGRAM_NAME,
+                                                                   self.TEST_VERSION)
 
     def test_file_not_found_logged(self, monkeypatch, tmpdir):
         logging_info_calls = []
@@ -176,11 +176,11 @@ class TestLoadConfigFile:
     
     def test_config_app_initialised_for_first_use(self, tmpdir):
         with self.class_context(tmpdir, create_config_file=False):
-            assert moviedb.config.app == moviedb.config.Config(self.TEST_PROGRAM_NAME, moviedb.VERSION)
+            assert moviedb.config.current == moviedb.config.Config(self.TEST_PROGRAM_NAME, moviedb.VERSION)
     
     @contextmanager
     def class_context(self, tmpdir, create_config_file):
-        hold_config_app = moviedb.config.app
+        hold_config_app = moviedb.config.current
         config_pickle_dir = tmpdir.mkdir(self.TEST_PARENT_DIR)
         config_pickle_fn = self.TEST_PROGRAM_NAME + moviedb.config.CONFIG_PICKLE_EXTENSION
         config_pickle_path = moviedb.os.path.normpath(moviedb.os.path.join(
@@ -193,27 +193,29 @@ class TestLoadConfigFile:
                 moviedb.pickle.dump(test_config_file, f)
         
         yield moviedb.load_config_file(root_dir, self.TEST_PROGRAM_NAME)
-        moviedb.config.app = hold_config_app
+        moviedb.config.current = hold_config_app
 
     
 def test_save_config_file(monkeypatch):
-    hold_config_app = moviedb.config.app
-    moviedb.config.app = moviedb.config.Config('test moviedb', 'test version')
+    hold_config_persistent = moviedb.config.persistent
+    moviedb.config.persistent = moviedb.config.PersistentConfig('test moviedb', 'test version')
 
     calls = []
-    monkeypatch.setattr(moviedb, '_save_config_file', lambda *args: calls.append(args))
+    monkeypatch.setattr(moviedb, '_json_dump', lambda *args: calls.append(args))
     moviedb.save_config_file()
     
-    assert calls[0][0][-34:] == 'Movies Project/test moviedb.pickle'
-    moviedb.config.app = hold_config_app
+    assert calls[0][0].program == 'test moviedb'
+    assert calls[0][0].program_version == 'test version'
+    assert calls[0][1][-46:] == 'Movies Project/movies/test moviedb_config.json'
+    moviedb.config.persistent = hold_config_persistent
 
 
 def test__save_config_file(monkeypatch, tmpdir):
     test_parent_dir = 'Test Parent Dir'
     test_program_name = 'test_program_name'
 
-    hold_config_app = moviedb.config.app
-    moviedb.config.app = moviedb.config.Config('test moviedb', 'test version')
+    hold_config_app = moviedb.config.current
+    moviedb.config.current = moviedb.config.Config('test moviedb', 'test version')
 
     pickle_fn = (tmpdir.mkdir(test_parent_dir) /
                  test_program_name + moviedb.config.CONFIG_PICKLE_EXTENSION)
@@ -223,10 +225,10 @@ def test__save_config_file(monkeypatch, tmpdir):
     
     moviedb._save_config_file(pickle_fn)
 
-    assert calls[0][0] == moviedb.config.app
+    assert calls[0][0] == moviedb.config.current
     assert isinstance(calls[0][1], io.BufferedWriter)
     assert calls[0][1].name[-35:] == 'Parent Dir/test_program_name.pickle'
-    moviedb.config.app = hold_config_app
+    moviedb.config.current = hold_config_app
 
 
 @dataclass

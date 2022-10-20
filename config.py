@@ -122,7 +122,6 @@ class PersistentConfig:
     This persistent configuration data is loaded in the application's start_up() function and saved on exit.
     """
     # TODO Save and reload this class
-    # TODO Test Class
     # Program
     program: str
     program_version: str
@@ -130,15 +129,6 @@ class PersistentConfig:
     # tk.Tk screen geometry
     geometry: str = None
 
-
-@dataclass
-class SecureConfig:
-    """The application's configuration data.
-
-    This secure configuration data is loaded in the application's start_up() function and saved on exit.
-    """
-    # TODO Securely save and reload this class
-    # TODO Test Class
     # TMDB
     _tmdb_api_key: str = ''
     use_tmdb: bool = True
@@ -164,12 +154,10 @@ class SecureConfig:
         self._tmdb_api_key = value
         
 
-# TODO Delete app and tk_root
+# TODO Delete app
 app: Optional[Config] = None
 current: Optional[CurrentConfig] = None
 persistent: Optional[PersistentConfig] = None
-secure: Optional[SecureConfig] = None
-tk_root: 'tk.Tk' = None
 
 
 class ConfigException(Exception):
