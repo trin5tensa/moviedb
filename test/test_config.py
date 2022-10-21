@@ -49,7 +49,7 @@ class TestConfig:
     def config_context(self, key: str, use: bool):
         name = 'Test Config'
         version = 'Test.0.dev'
-        configuration = config.Config(name, version)
+        configuration = config.PersistentConfig(name, version)
         configuration._tmdb_api_key = key
         configuration.use_tmdb = use
         yield configuration

@@ -17,9 +17,9 @@ import argparse
 import json
 import logging
 import os
-import pickle
 import sys
 from dataclasses import asdict
+from pathlib import Path
 from typing import Any
 
 import config
@@ -42,16 +42,9 @@ def main():
 
 def start_up():
     """Initialize the program."""
-
-    # Start the logger.
-    root_dir, program_name = os.path.split(__file__)
-    program, _ = program_name.split('.')
-    start_logger(root_dir, program)
-
-    # Load the config.Config pickle file
-    load_config_file(root_dir, program)
-
-    # Open the default database
+    program_path = Path(__file__)
+    start_logger(program_path.cwd(), program_path)
+    load_config_file(program_path.name)
     database.connect_to_database()
 
 
@@ -65,9 +58,9 @@ def close_down():
     logging.shutdown()
 
 
-def start_logger(root_dir: str, program: str):
+def start_logger(root_dir: Path, program: Path):
     """Start the logger."""
-    q_name = os.path.normpath(os.path.join(root_dir, f"{program}.log"))
+    q_name = os.path.normpath(os.path.join(root_dir, f"{program.stem}.log"))
     # noinspection PyArgumentList
     logging.basicConfig(format='{asctime} {levelname:8} {lineno:4d} {module:20} {message}',
                         style='{',
@@ -75,44 +68,12 @@ def start_logger(root_dir: str, program: str):
                         filename=q_name, filemode='w')
 
 
-def load_config_file(root_dir: str, program: str):
-    """
-    Load root_dir/program_name or initialize persistent metadata.
+def load_config_file(program: str):
+    """ Load persistent metadata. """
+    # TODO Test this function
     
-    Args:
-        root_dir:
-        program:
-    """
-    
-    pickle_fn = program + config.CONFIG_PICKLE_EXTENSION
-    parent_dir, _ = os.path.split(root_dir)
-    config_pickle_path = os.path.normpath(os.path.join(parent_dir, pickle_fn))
     try:
-        with open(config_pickle_path, 'rb') as f:
-            config_data = pickle.load(f)
-    except FileNotFoundError as exc:
-        msg = (f"The config save file was not found. A new version will be initialized. "
-               f"{exc.strerror}: {exc.filename}")
-        logging.info(msg)
-
-        # Initialize application configuration data for first use.
-        config.current = config.Config(program, VERSION)
-
-    else:
-        config.current = config_data
-        
-    # TODO
-    #  Delete old code
-    #  Update Docs
-    #  Rename to load_config_files
-    #  Test
-    
-    # Load config file
-    json_fn = program + config.CONFIG_JSON_SUFFIX
-    parent_dir, _ = os.path.split(root_dir)
-    config_json_path = os.path.normpath(os.path.join(parent_dir, json_fn))
-    try:
-        with open(config_json_path) as fp:
+        with open(_json_path()) as fp:
             data = json.load(fp)
             config.persistent = config.PersistentConfig(**data)
 
@@ -127,39 +88,20 @@ def load_config_file(root_dir: str, program: str):
 
 def save_config_file():
     """Save persistent metadata."""
-    # pickle_fn = config.current.program + config.CONFIG_PICKLE_EXTENSION
-    # root_dir, _ = os.path.split(__file__)
-    # parent_dir, _ = os.path.split(root_dir)
-    # config_pickle_path = os.path.normpath(os.path.join(parent_dir, pickle_fn))
-    # _save_config_file(config_pickle_path)
-
-    # TODO
-    #  Delete old code
-    #  Update Docs
-    #  Rename to load_config_files
-
-    json_fn = config.persistent.program + config.CONFIG_JSON_SUFFIX
-    parent_dir, _ = os.path.split(__file__)
-    config_json_path = os.path.normpath(os.path.join(parent_dir, json_fn))
-    _json_dump(config.persistent, config_json_path)
+    # TODO Test this function
+    _json_dump(config.persistent, _json_path())
+    
+    
+def _json_path() -> Path:
+    """ Returns: A path name for the config file. """
+    # TODO Test this function
+    program_path = Path(__file__)
+    json_dir = program_path.parent.parent
+    json_fn = program_path.stem + config.CONFIG_JSON_SUFFIX
+    return json_dir / json_fn
 
     
-def _save_config_file(fn: str):
-    """
-    Pickle and save persistent metadata.
-    
-    The separation of save_config_file and _save_config_file allows the test module to use a
-    temporary in-memory file location during file operations.
-    
-    Args:
-        fn: Path of pickled config file.
-    """
-    # TODO Remove this old code
-    with open(fn, 'wb') as f:
-        pickle.dump(config.current, f)
-    
-    
-def _json_dump(obj: Any, path: str):
+def _json_dump(obj: Any, path: Path):
     """
     Dump JSON to file.
     
@@ -167,10 +109,10 @@ def _json_dump(obj: Any, path: str):
     temporary in-memory file location during file operations.
     
     Args:
-        obj: Object to be dumped. The dataclasses asdict function must produce JSON serializable data.
+        obj: Object to be dumped. The dataclasses.asdict function must produce JSON serializable data.
         path: Path of config file.
     """
-    # TODO Test
+    # TODO Test this function
     data = asdict(obj)
     with open(path, 'w') as fp:
         json.dump(data, fp)

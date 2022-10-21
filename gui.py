@@ -24,7 +24,8 @@ import mainwindow
 
 def run():
     """Run the GUI."""
-    root = config.current.tk_root = tk.Tk()
+    config.current = config.CurrentConfig(tk_root=tk.Tk())
+    root = config.current.tk_root
     root.columnconfigure(0, weight=1)
     root.rowconfigure(0, weight=1)
     mainwindow.MainWindow(root)
