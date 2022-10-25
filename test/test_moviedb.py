@@ -1,7 +1,6 @@
 """Tests for movie database."""
-
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Last modified 10/25/22, 7:28 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,10 +15,12 @@
 import io
 from contextlib import contextmanager, redirect_stdout
 from dataclasses import dataclass
+from functools import partial
 from typing import Tuple
 
 import pytest
 
+import config
 import moviedb
 
 
@@ -69,37 +70,75 @@ class TestStartUp:
     @pytest.fixture()
     def monkeypatch_startup(self, monkeypatch) -> Tuple[list, list, list]:
         logger_calls = []
-        monkeypatch.setattr(moviedb, 'start_logger',
-                            lambda *args: logger_calls.append(args))
+        monkeypatch.setattr(moviedb, 'start_logger', lambda *args: logger_calls.append(args))
         load_config_calls = []
         monkeypatch.setattr(moviedb, 'load_config_file', lambda *args: load_config_calls.append(args))
         connect_calls = []
-        monkeypatch.setattr(moviedb.database, 'connect_to_database',
-                            lambda: connect_calls.append(True))
+        monkeypatch.setattr(moviedb.database, 'connect_to_database', lambda: connect_calls.append(True))
         return logger_calls, load_config_calls, connect_calls
     
     def test_start_logger_called(self, monkeypatch_startup):
-        expected_path = 'movies'
-        expected_filename = 'moviedb'
+        program_path = moviedb.Path(moviedb.__file__)
+        expected_path = program_path.cwd()
+        expected_filename = program_path
         logger_calls, _, _ = monkeypatch_startup
         moviedb.start_up()
         path, filename = logger_calls[0]
-        assert path[-len(expected_path):] == expected_path
+        assert path == expected_path
         assert filename == expected_filename
     
-    def test_config_data_initialized(self, monkeypatch_startup):
-        expected_path = 'movies'
-        expected_filename = 'moviedb'
+    def test_load_config_file(self, monkeypatch_startup):
+        program_path = moviedb.Path(moviedb.__file__)
+        expected_filename = program_path.name
+        
         _, load_config_calls, _ = monkeypatch_startup
         moviedb.start_up()
-        path, filename = load_config_calls[0]
-        assert path[-len(expected_path):] == expected_path
+        filename = load_config_calls[0][0]
         assert filename == expected_filename
     
     def test_start_database_called(self, monkeypatch_startup):
         _, _, connect_calls = monkeypatch_startup
         moviedb.start_up()
         assert connect_calls == [True]
+
+
+class TestLoadConfigFile:
+    program = 'test_program_name'
+    version = 'test version'
+    
+    def test_existing_file_loaded_into_config_persistent(self, monkeypatch):
+        expected = config.PersistentConfig(program=self.program, program_version=self.version)
+        data = moviedb.asdict(expected)
+        with self.fut_runner(self.program, data, monkeypatch):
+            assert config.persistent == expected
+    
+    def test_absent_file_initializes_config_persistent(self, monkeypatch):
+        expected = moviedb.VERSION = 'test first use'
+        data = None
+        with self.fut_runner(self.program, data, monkeypatch, file_not_found=True):
+            assert config.persistent.program_version == expected
+    
+    @contextmanager
+    def fut_runner(self, program, data, monkeypatch, file_not_found=False):
+        if file_not_found:
+            monkeypatch.setattr(moviedb, '_json_load', partial(self.dummy__json_load, program))
+        else:
+            monkeypatch.setattr(moviedb, '_json_load', lambda: data)
+
+        yield moviedb.load_config_file(program)
+    
+    def dummy__json_load(self, *args):
+        raise FileNotFoundError
+
+
+def test_save_config_file(monkeypatch):
+    persistent = moviedb.config.PersistentConfig(program='test_program', program_version='42')
+    path = moviedb._json_path()
+    calls = []
+    monkeypatch.setattr(moviedb, '_json_dump', lambda *args: calls.append(args))
+    moviedb._json_dump(persistent, path)
+    
+    assert calls == [(persistent, path)]
 
 
 def test_save_config_file_called(monkeypatch):
@@ -131,8 +170,8 @@ def test_start_logger_called(monkeypatch):
 
 
 def test_start_logger(monkeypatch):
-    log_root = 'log dir'
-    log_fn = 'filename'
+    log_root = moviedb.Path('log dir')
+    log_fn = moviedb.Path('filename')
     expected = dict(format='{asctime} {levelname:8} {lineno:4d} {module:20} {message}',
                     style='{',
                     level='INFO',
@@ -144,91 +183,59 @@ def test_start_logger(monkeypatch):
     moviedb.start_logger(log_root, log_fn)
     format_args = calls[0]
     assert format_args == expected
-    
-    
-class TestLoadConfigFile:
-    TEST_PARENT_DIR = 'Test Parent Dir'
-    TEST_ROOT_DIR = 'Test Root Dir'
-    TEST_PROGRAM_NAME = 'test_program_name'
-    TEST_VERSION = '42.0.0001'
-    
-    def test_pickle_load_called(self, monkeypatch, tmpdir):
-        pickle_load_calls = []
-        monkeypatch.setattr(moviedb.pickle, 'load', lambda *args: pickle_load_calls.append(args))
-        with self.class_context(tmpdir, create_config_file=True):
-            assert isinstance(pickle_load_calls[0][0], io.BufferedReader)
-            assert pickle_load_calls[0][0].name[-35:] == 'Parent Dir/test_program_name.pickle'
-    
-    def test_config_app_updated_with_read_data(self, tmpdir):
-        with self.class_context(tmpdir, create_config_file=True):
-            assert moviedb.config.app == moviedb.config.Config(self.TEST_PROGRAM_NAME,
-                                                               self.TEST_VERSION)
 
-    def test_file_not_found_logged(self, monkeypatch, tmpdir):
-        logging_info_calls = []
-        monkeypatch.setattr(moviedb.logging, 'info', lambda *args: logging_info_calls.append(args))
-        info_text = "The config save file was not found. A new version will be initialized."
-        path_string = (self.TEST_PARENT_DIR + '/' + self.TEST_PROGRAM_NAME +
-                       moviedb.config.CONFIG_PICKLE_EXTENSION)
-        with self.class_context(tmpdir, create_config_file=False):
-            assert logging_info_calls[0][0][:70] == info_text
-            assert logging_info_calls[0][0][-40:] == path_string
-    
-    def test_config_app_initialised_for_first_use(self, tmpdir):
-        with self.class_context(tmpdir, create_config_file=False):
-            assert moviedb.config.app == moviedb.config.Config(self.TEST_PROGRAM_NAME, moviedb.VERSION)
-    
-    @contextmanager
-    def class_context(self, tmpdir, create_config_file):
-        hold_config_app = moviedb.config.app
-        config_pickle_dir = tmpdir.mkdir(self.TEST_PARENT_DIR)
-        config_pickle_fn = self.TEST_PROGRAM_NAME + moviedb.config.CONFIG_PICKLE_EXTENSION
-        config_pickle_path = moviedb.os.path.normpath(moviedb.os.path.join(
-                config_pickle_dir, config_pickle_fn))
-        root_dir = config_pickle_dir / self.TEST_ROOT_DIR
-        
-        if create_config_file:
-            test_config_file = moviedb.config.Config(self.TEST_PROGRAM_NAME, self.TEST_VERSION)
-            with open(config_pickle_path, 'wb') as f:
-                moviedb.pickle.dump(test_config_file, f)
-        
-        yield moviedb.load_config_file(root_dir, self.TEST_PROGRAM_NAME)
-        moviedb.config.app = hold_config_app
 
-    
-def test_save_config_file(monkeypatch):
-    hold_config_app = moviedb.config.app
-    moviedb.config.app = moviedb.config.Config('test moviedb', 'test version')
-
+def test__json_load(monkeypatch, tmp_path):
+    # Instrument the call to json_load
+    expected_data = 'test json loads data'
     calls = []
-    monkeypatch.setattr(moviedb, '_save_config_file', lambda *args: calls.append(args))
-    moviedb.save_config_file()
     
-    assert calls[0][0][-34:] == 'Movies Project/test moviedb.pickle'
-    moviedb.config.app = hold_config_app
+    def dummy_json_load(*args):
+        calls.append((args, expected_data))
+        
+    # Create a test dummy file in tmp_path
+    fn = tmp_path / 'dummy_file.text'
+    persistent = moviedb.config.PersistentConfig(program='test_program', program_version='42')
+    moviedb._json_dump(moviedb.asdict(persistent), fn)
+
+    # Call json_load
+    monkeypatch.setattr(moviedb.json, 'load', partial(dummy_json_load))
+    monkeypatch.setattr(moviedb, '_json_path', lambda: fn)
+    moviedb._json_load()
+    
+    # Test the calling arguments
+    fp = calls[0][0][0]
+    assert isinstance(fp, io.TextIOWrapper)
+    path = moviedb.Path(fp.name)
+    assert path.name == 'dummy_file.text'
+    
+    # Test the return value
+    data = calls[0][1]
+    assert data is expected_data
 
 
-def test__save_config_file(monkeypatch, tmpdir):
-    test_parent_dir = 'Test Parent Dir'
-    test_program_name = 'test_program_name'
-
-    hold_config_app = moviedb.config.app
-    moviedb.config.app = moviedb.config.Config('test moviedb', 'test version')
-
-    pickle_fn = (tmpdir.mkdir(test_parent_dir) /
-                 test_program_name + moviedb.config.CONFIG_PICKLE_EXTENSION)
-
+def test__json_path():
+    program_name = moviedb.Path(moviedb.__file__).stem
+    suffix = config.CONFIG_JSON_SUFFIX
+    assert moviedb._json_path().name == program_name + suffix
+    
+    
+def test__json_dump(monkeypatch, tmp_path):
+    persistent = moviedb.config.PersistentConfig(program='test_program', program_version='42')
+    json_obj = moviedb.asdict(persistent)
+    path = tmp_path / 'dummy_file.df'
+    
     calls = []
-    monkeypatch.setattr(moviedb.pickle, 'dump', lambda *args: calls.append(args))
+    monkeypatch.setattr(moviedb.json, 'dump', lambda *args: calls.append(args))
+    moviedb._json_dump(json_obj, path)
     
-    moviedb._save_config_file(pickle_fn)
+    assert calls[0][0] == json_obj
+    fp = calls[0][1]
+    assert isinstance(fp, io.TextIOWrapper)
+    path = moviedb.Path(fp.name)
+    assert path.name == 'dummy_file.df'
 
-    assert calls[0][0] == moviedb.config.app
-    assert isinstance(calls[0][1], io.BufferedWriter)
-    assert calls[0][1].name[-35:] == 'Parent Dir/test_program_name.pickle'
-    moviedb.config.app = hold_config_app
-
-
+    
 @dataclass
 class ArgParser:
     """Test dummy for Argument Parser"""

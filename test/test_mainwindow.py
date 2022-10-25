@@ -69,14 +69,14 @@ class TestMainWindowInit:
     # noinspection PyMissingOrEmptyDocstring, PyTypeChecker
     @contextmanager
     def init_context(self):
-        app_hold = mainwindow.config.app
-        mainwindow.config.app = mainwindow.config.Config(TEST_TITLE, TEST_VERSION)
+        persistent_hold = mainwindow.config.persistent
+        mainwindow.config.persistent = mainwindow.config.PersistentConfig(TEST_TITLE, TEST_VERSION)
         self.tk_root = InstrumentedTk()
         self.root_pane = mainwindow.MainWindow(self.tk_root)
         try:
             yield
         finally:
-            mainwindow.config.app = app_hold
+            mainwindow.config.persistent = persistent_hold
     
     # noinspection PyMissingOrEmptyDocstring
     def dummy_place_menubar(self, *args):
@@ -85,7 +85,7 @@ class TestMainWindowInit:
 
 class TestMainWindowGeometry:
     """This suite of geometry tests operate by assuming the user has moved to a machine with a smaller
-    monitor of size 2000x1000. The previous window size is stored in app.geometry. For each test the
+    monitor of size 2000×1000. The previous window size is stored in app.geometry. For each test the
     previous size s varied to exercise the various exception conditions which the target code should
     intercept and correct."""
     root_pane: mainwindow.MainWindow = None
@@ -126,14 +126,14 @@ class TestMainWindowGeometry:
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def geometry_context(self, desired_geometry):
-        app_hold = mainwindow.config.app
-        mainwindow.config.app = mainwindow.config.Config(TEST_TITLE, TEST_VERSION)
-        mainwindow.config.app.geometry = desired_geometry
+        persistent_hold = mainwindow.config.persistent
+        mainwindow.config.persistent = mainwindow.config.PersistentConfig(TEST_TITLE, TEST_VERSION)
+        mainwindow.config.persistent.geometry = desired_geometry
         self.root_pane = mainwindow.MainWindow(mainwindow.tk.Tk())
         try:
             yield self.root_pane.set_geometry()
         finally:
-            mainwindow.config.app = app_hold
+            mainwindow.config.persistent = persistent_hold
     
     def save_log_message(self, msg):
         """Save the arguments to the monkeypatched logging call."""
@@ -216,13 +216,13 @@ class TestMainWindowPlaceMenuBar:
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def menu_context(self):
-        app_hold = mainwindow.config.app
-        mainwindow.config.app = mainwindow.config.Config(TEST_TITLE, TEST_VERSION)
+        persistent_hold = mainwindow.config.persistent
+        mainwindow.config.persistent = mainwindow.config.PersistentConfig(TEST_TITLE, TEST_VERSION)
         self.root_pane = mainwindow.MainWindow(mainwindow.tk.Tk())
         try:
             yield
         finally:
-            mainwindow.config.app = app_hold
+            mainwindow.config.persistent = persistent_hold
     
     def save_log_message(self, msg):
         """Save the arguments to the monkeypatched logging call."""
@@ -234,7 +234,7 @@ class TestMainWindowShutdown:
     
     def test_final_geometry_saved_to_config(self, class_patches):
         with self.shutdown_context():
-            assert mainwindow.config.app.geometry == '42x42+42+42'
+            assert mainwindow.config.persistent.geometry == '42x42+42+42'
     
     def test_destroy_parent_called(self, class_patches):
         with self.shutdown_context():
@@ -250,14 +250,14 @@ class TestMainWindowShutdown:
     # noinspection PyMissingOrEmptyDocstring,PyTypeChecker
     @contextmanager
     def shutdown_context(self):
-        app_hold = mainwindow.config.app
-        mainwindow.config.app = mainwindow.config.Config(TEST_TITLE, TEST_VERSION)
+        persistent_hold = mainwindow.config.persistent
+        mainwindow.config.persistent = mainwindow.config.PersistentConfig(TEST_TITLE, TEST_VERSION)
         self.root_window = mainwindow.MainWindow(InstrumentedTk())
         self.root_window.tk_shutdown()
         try:
             yield
         finally:
-            mainwindow.config.app = app_hold
+            mainwindow.config.persistent = persistent_hold
 
 
 # noinspection PyMissingOrEmptyDocstring

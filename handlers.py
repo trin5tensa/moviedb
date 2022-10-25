@@ -29,54 +29,55 @@ import impexp
 
 
 def about_dialog():
-    """Display the about dialog."""
-    guiwidgets.gui_messagebox(config.tk_root, config.app.name, config.app.version)
+    """Display the 'about' dialog."""
+    guiwidgets.gui_messagebox(config.current.tk_root, config.persistent.program,
+                              config.persistent.program_version)
 
 
 def preferences_dialog():
-    """Display the preferences dialog."""
-    guiwidgets_2.PreferencesGUI(config.tk_root, config.app.tmdb_api_key,
-                                config.app.use_tmdb, _preferences_callback)
+    """Display the 'preferences' dialog."""
+    guiwidgets_2.PreferencesGUI(config.current.tk_root, config.persistent.tmdb_api_key,
+                                config.persistent.use_tmdb, _preferences_callback)
 
 
 def add_movie():
     """ Get new movie data from the user and add it to the database. """
     all_tags = database.all_tags()
-    guiwidgets_2.AddMovieGUI(config.tk_root, _add_movie_callback, _tmdb_io_handler, all_tags)
+    guiwidgets_2.AddMovieGUI(config.current.tk_root, _add_movie_callback, _tmdb_io_handler, all_tags)
 
 
 def edit_movie():
     """ Get search movie data from the user and search for compliant records"""
     all_tags = database.all_tags()
-    guiwidgets.SearchMovieGUI(config.tk_root, _search_movie_callback, all_tags)
+    guiwidgets.SearchMovieGUI(config.current.tk_root, _search_movie_callback, all_tags)
 
 
 def add_tag():
     """Add a new tag to the database."""
     # PyCharm https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker
-    guiwidgets_2.AddTagGUI(config.tk_root, _add_tag_callback)
+    guiwidgets_2.AddTagGUI(config.current.tk_root, _add_tag_callback)
 
 
 # noinspection PyMissingOrEmptyDocstring
 def edit_tag():
     """ Get tag string pattern from the user and search for compliant records."""
-    guiwidgets_2.SearchTagGUI(config.tk_root, _search_tag_callback)
+    guiwidgets_2.SearchTagGUI(config.current.tk_root, _search_tag_callback)
 
 
 def import_movies():
     """Open a csv file and load the contents into the database."""
-    csv_fn = guiwidgets_2.gui_askopenfilename(parent=config.tk_root,
+    csv_fn = guiwidgets_2.gui_askopenfilename(parent=config.current.tk_root,
                                               filetypes=(('Movie import files', '*.csv'),))
     
-    # Exit if the user clicked askopenfilename's cancel button
+    # Exit if the user clicked askopenfilename cancel button
     if csv_fn == '':
         return
     
     try:
         impexp.import_movies(csv_fn)
     except impexp.MoviedbInvalidImportData as exc:
-        guiwidgets.gui_messagebox(config.tk_root, message='Errors were found in the input file.',
+        guiwidgets.gui_messagebox(config.current.tk_root, message='Errors were found in the input file.',
                                   detail=exc.args[0], icon='warning')
 
 
@@ -89,8 +90,8 @@ def _preferences_callback(tmdb_api_key: str, use_tmdb: bool):
         use_tmdb:
     """
 
-    config.app.tmdb_api_key = tmdb_api_key
-    config.app.use_tmdb = use_tmdb
+    config.persistent.tmdb_api_key = tmdb_api_key
+    config.persistent.use_tmdb = use_tmdb
 
 
 def _add_movie_callback(movie: config.MovieTypedDict, selected_tags: Sequence[str]):
@@ -115,7 +116,7 @@ def _delete_movie_callback(movie: config.FindMovieTypedDict):
     Raises:
         sqlalchemy.orm.exc.NoResultFound
             This exception is raised if the record cannot be found. This can happen if the movie was
-            deleted by another process in between the user retrieving a record for deletion and the
+            deleted by another process between the user retrieving a record for deletion and the
             call to actually delete it.
             The exception is silently ignored.
     """
@@ -151,11 +152,11 @@ def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[s
         movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
         # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
         # noinspection PyTypeChecker
-        guiwidgets.EditMovieGUI(config.tk_root, _edit_movie_callback_wrapper(movie_key),
+        guiwidgets.EditMovieGUI(config.current.tk_root, _edit_movie_callback_wrapper(movie_key),
                                 _delete_movie_callback, ['commit', 'delete'],
                                 database.all_tags(), movie)
     else:
-        guiwidgets.SelectMovieGUI(config.tk_root, movies, _select_movie_callback)
+        guiwidgets.SelectMovieGUI(config.current.tk_root, movies, _select_movie_callback)
 
 
 def _edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callable:
@@ -163,14 +164,14 @@ def _edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callabl
     
     Args:
         old_movie: The movie that is to be edited.
-            The record's key values may be altered by the user. THe edit code will delete the old
-            record and add the changed details as a new record.
+            The record's key values may be altered by the user. This function will delete the old
+            record and add a new record.
 
     Returns:
         edit_movie_callback
     """
     def edit_movie_callback(new_movie: config.MovieTypedDict, selected_tags: Sequence[str]):
-        """ Change movie and links in database in accordance with new user supplied data,
+        """ Change movie and links in database with new user supplied data,
     
         Args:
             new_movie: Fields with either original values or values modified by the user.
@@ -194,7 +195,7 @@ def _edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callabl
             
         # Can't add tags because new movie has been deleted.
         except exception.DatabaseSearchFoundNothing:
-            missing_movie_args = (config.tk_root, 'Missing movie',
+            missing_movie_args = (config.current.tk_root, 'Missing movie',
                                   f'The movie {new_movie} is no longer in the database. It may have '
                                   f'been deleted by another process. ')
             guiwidgets.gui_messagebox(*missing_movie_args)
@@ -216,7 +217,7 @@ def _select_movie_callback(title: str, year: int):
     movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
     # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker
-    guiwidgets.EditMovieGUI(config.tk_root, _edit_movie_callback_wrapper(movie_key),
+    guiwidgets.EditMovieGUI(config.current.tk_root, _edit_movie_callback_wrapper(movie_key),
                             _delete_movie_callback, ['commit', 'delete'], database.all_tags(), movie)
 
 
@@ -247,9 +248,9 @@ def _search_tag_callback(tag_pattern: str):
         tag = tags[0]
         delete_callback = _delete_tag_callback_wrapper(tag)
         edit_callback = _edit_tag_callback_wrapper(tag)
-        guiwidgets_2.EditTagGUI(config.tk_root, tag, delete_callback, edit_callback)
+        guiwidgets_2.EditTagGUI(config.current.tk_root, tag, delete_callback, edit_callback)
     else:
-        guiwidgets_2.SelectTagGUI(config.tk_root, _select_tag_callback, tags)
+        guiwidgets_2.SelectTagGUI(config.current.tk_root, _select_tag_callback, tags)
 
 
 def _edit_tag_callback_wrapper(old_tag: str) -> Callable:
@@ -272,7 +273,7 @@ def _edit_tag_callback_wrapper(old_tag: str) -> Callable:
             new_tag:
         """
 
-        missing_tag_args = (config.tk_root, 'Missing tag',
+        missing_tag_args = (config.current.tk_root, 'Missing tag',
                             f'The tag {old_tag} is no longer available. It may have been '
                             f'deleted by another process.')
 
@@ -314,11 +315,11 @@ def _select_tag_callback(old_tag: str):
     """Change the tag column of a record of the Tag table.
 
     If the tag is no longer in the database this function assumes that it has been deleted by
-    another process. A user alert is raised .
+    another process. A user alert is raised.
     """
     delete_callback = _delete_tag_callback_wrapper(old_tag)
     edit_callback = _edit_tag_callback_wrapper(old_tag)
-    guiwidgets_2.EditTagGUI(config.tk_root, old_tag, delete_callback, edit_callback)
+    guiwidgets_2.EditTagGUI(config.current.tk_root, old_tag, delete_callback, edit_callback)
 
 
 def _tmdb_io_handler(title: str, work_queue: queue.LifoQueue):
