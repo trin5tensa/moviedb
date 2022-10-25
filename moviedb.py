@@ -1,7 +1,7 @@
 """Main movie database program"""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Last modified 10/25/22, 7:28 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -69,14 +69,11 @@ def start_logger(root_dir: Path, program: Path):
 
 
 def load_config_file(program: str):
-    """ Load persistent metadata. """
-    # TODO Test this function
+    """ Create the persistent config object. """
     
     try:
-        with open(_json_path()) as fp:
-            data = json.load(fp)
-            config.persistent = config.PersistentConfig(**data)
-
+        data = _json_load()
+        
     except FileNotFoundError as exc:
         msg = (f"The config save file was not found. A new version will be initialized. "
                f"{exc.strerror}: {exc.filename}")
@@ -85,16 +82,28 @@ def load_config_file(program: str):
         # Initialise persistent application data for first use
         config.persistent = config.PersistentConfig(program, VERSION)
 
+    else:
+        config.persistent = config.PersistentConfig(**data)
+
+
+def _json_load() -> dict:
+    """ Load JSON from file.
+    
+    Returns:
+        A dictionary which will be used to create a PersistentConfig object.
+    """
+    with open(_json_path()) as fp:
+        data = json.load(fp)
+    return data
+
 
 def save_config_file():
-    """Save persistent metadata."""
-    # TODO Test this function
-    _json_dump(config.persistent, _json_path())
+    """Save the persistent config object."""
+    _json_dump(asdict(config.persistent), _json_path())
     
     
 def _json_path() -> Path:
     """ Returns: A path name for the config file. """
-    # TODO Test this function
     program_path = Path(__file__)
     json_dir = program_path.parent.parent
     json_fn = program_path.stem + config.CONFIG_JSON_SUFFIX
@@ -103,19 +112,17 @@ def _json_path() -> Path:
     
 def _json_dump(obj: Any, path: Path):
     """
-    Dump JSON to file.
+    Dump json to file.
     
     The separation of save_config_file and _save_config_file allows the test module to use a
     temporary in-memory file location during file operations.
     
     Args:
-        obj: Object to be dumped. The dataclasses.asdict function must produce JSON serializable data.
+        obj: A json formatted string.
         path: Path of config file.
     """
-    # TODO Test this function
-    data = asdict(obj)
     with open(path, 'w') as fp:
-        json.dump(data, fp)
+        json.dump(obj, fp)
     
     
 def command_line_args() -> argparse.Namespace:  # pragma: no cover

@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Last modified 10/25/22, 7:28 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,8 +16,7 @@
 from dataclasses import dataclass
 from typing import Optional, Sequence, TypedDict
 
-#TODO Delete CONFIG_PICKLE_EXTENSION
-CONFIG_PICKLE_EXTENSION = '.pickle'
+
 CONFIG_JSON_SUFFIX = '_config.json'
 
 
@@ -63,46 +62,6 @@ class FindMovieTypedDict(TypedDict, total=False):
     minutes: Sequence[str]
     notes: str
     tags: Sequence[str]
-
-
-# @dataclass
-# class Config:
-    """The applications configuration data.
-
-    A single object of this class is loaded in the application's start_up() function and pickled
-    on exit.
-    """
-#     # TODO Delete this class
-#     # Program
-#     name: str
-#     version: str
-#
-#     # tk.Tk screen geometry
-#     geometry: str = None
-#
-#     # TMDB
-#     _tmdb_api_key: str = ''
-#     use_tmdb: bool = True
-#
-#     @property
-#     def tmdb_api_key(self):
-#         """ Return the tmdb_api_key but raise exceptions for missing key and user suppressed access."""
-#         # User wants to use TMDB
-#         if self.use_tmdb:
-#             # …but the key has not been set so raise exception
-#             if self._tmdb_api_key == '':
-#                 raise ConfigTMDBAPIKeyNeedsSetting
-#             # otherwise return the possibly valid key.
-#             else:
-#                 return self._tmdb_api_key
-#
-#         # Otherwise the user has declined to use TMDB
-#         else:
-#             raise ConfigTMDBDoNotUse
-#
-#     @tmdb_api_key.setter
-#     def tmdb_api_key(self, value: str):
-#         self._tmdb_api_key = value
 
 
 @dataclass
