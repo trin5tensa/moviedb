@@ -26,6 +26,7 @@ import config
 import database
 import gui
 import impexp
+from threadsafe_printer import SafePrinter
 
 
 # Program version.
@@ -36,7 +37,9 @@ def main():
     """Initialize the program, run it, and execute close down activities."""
     start_up()
     logging.info('The program started successfully.')
-    gui.run()
+    with SafePrinter() as safeprint:
+        config.current.safeprint = safeprint
+        gui.run()
     close_down()
 
 
@@ -44,6 +47,7 @@ def start_up():
     """Initialize the program."""
     program_path = Path(__file__)
     start_logger(program_path.cwd(), program_path)
+    config.current = config.CurrentConfig()
     load_config_file(program_path.name)
     database.connect_to_database()
 

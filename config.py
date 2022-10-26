@@ -1,5 +1,4 @@
 """Application configuration data """
-
 #  Copyright (c) 2022-2022. Stephen Rigden.
 #  Last modified 10/25/22, 7:28 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
@@ -13,8 +12,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Optional, Sequence, TypedDict
+from typing import Optional, TypedDict
 
 
 CONFIG_JSON_SUFFIX = '_config.json'
@@ -72,6 +72,7 @@ class CurrentConfig:
     terminates.
     """
     tk_root: 'tk.Tk' = None
+    safeprint: Callable = None
 
 
 @dataclass
