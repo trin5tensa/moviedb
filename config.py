@@ -1,7 +1,6 @@
 """Application configuration data """
-
-#  Copyright ©2021. Stephen Rigden.
-#  Last modified 3/28/21, 8:48 AM by stephen.
+#  Copyright (c) 2022-2022. Stephen Rigden.
+#  Last modified 10/25/22, 7:28 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -11,17 +10,19 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Optional, Sequence, TypedDict
+from typing import Optional, TypedDict
 
 
-CONFIG_PICKLE_EXTENSION = '.pickle'
+CONFIG_JSON_SUFFIX = '_config.json'
 
 
 tk: 'tk'
-mainwindow: 'mainwindow'
+current: Optional['CurrentConfig'] = None
+persistent: Optional['PersistentConfig'] = None
 
 
 class MovieKeyTypedDict(TypedDict):
@@ -64,17 +65,26 @@ class FindMovieTypedDict(TypedDict, total=False):
 
 
 @dataclass
-class Config:
-    """The applications configuration data.
-    
-    A single object of this class is loaded in the application's start_up() function and pickled
-    on exit.
+class CurrentConfig:
+    """The application's configuration data.
+
+    This transient configuration data is created during a single program run and is discarded when the program
+    terminates.
     """
-    
+    tk_root: 'tk.Tk' = None
+    safeprint: Callable = None
+
+
+@dataclass
+class PersistentConfig:
+    """The application's configuration data.
+
+    This persistent configuration data is loaded in the application's start_up() function and saved on exit.
+    """
     # Program
-    name: str
-    version: str
-    
+    program: str
+    program_version: str
+
     # tk.Tk screen geometry
     geometry: str = None
 
@@ -93,7 +103,7 @@ class Config:
             # otherwise return the possibly valid key.
             else:
                 return self._tmdb_api_key
-            
+    
         # Otherwise the user has declined to use TMDB
         else:
             raise ConfigTMDBDoNotUse
@@ -101,13 +111,7 @@ class Config:
     @tmdb_api_key.setter
     def tmdb_api_key(self, value: str):
         self._tmdb_api_key = value
-
-
-app: Optional[Config] = None
-tk_root: 'tk.Tk' = None
-# moviedb-#256 gui_environment has no substantive use. Delete?
-gui_environment: 'mainwindow.MainWindow' = None
-
+        
 
 class ConfigException(Exception):
     """Base exception for config module."""

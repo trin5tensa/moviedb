@@ -1,7 +1,7 @@
 """Main Window."""
 
-#  Copyright ©2021. Stephen Rigden.
-#  Last modified 3/28/21, 8:48 AM by stephen.
+#  Copyright (c) 2022-2022. Stephen Rigden.
+#  Last modified 10/15/22, 12:37 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -11,7 +11,7 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
 import re
@@ -22,6 +22,7 @@ from typing import Callable, List, Sequence, Tuple, Union
 
 import config
 import handlers
+
 
 # The quit item needs special processing.
 QUIT_ITEM = 'Quit'
@@ -35,7 +36,7 @@ class MainWindow:
     tk_kwargs: Mapping = None
     
     def __post_init__(self):
-        self.parent.title(config.app.name)
+        self.parent.title(config.persistent.program)
         self.parent.option_add('*tearOff', False)
         self.parent.geometry(self.set_geometry())
         self.place_menubar(MenuData().menus)
@@ -50,14 +51,14 @@ class MainWindow:
         Returns:
             tkinter geometry string.
         """
-        if not config.app.geometry:
-            config.app.geometry = '900x400+30+30'
+        if not config.persistent.geometry:
+            config.persistent.geometry = '900x400+30+30'
         regex = ("(?P<width>[0-9]+)x"
                  "(?P<height>[0-9]+)"
                  "(?P<horizontal_offset>[+-]?[0-9]+)"
                  "(?P<vertical_offset>[+-]?[0-9]+)")
         regex = re.compile(regex)
-        re_geometry = re.search(regex, config.app.geometry)
+        re_geometry = re.search(regex, config.persistent.geometry)
         width, horizontal_offset = self.validate_desired_geometry(
             re_geometry.group('width'), re_geometry.group('horizontal_offset'),
             self.parent.winfo_screenwidth())
@@ -68,7 +69,7 @@ class MainWindow:
         return geometry
     
     @staticmethod
-    def validate_desired_geometry(length: str, offset: str, available: str) -> Tuple[str, str]:
+    def validate_desired_geometry(length: str, offset: str, available: int) -> Tuple[str, str]:
         """Validate the geometry against the available length or height.
 
         Args:
@@ -118,7 +119,7 @@ class MainWindow:
 
             # Create the program exit item
             elif menu_item.name == QUIT_ITEM:
-                cascade.add_command(label=f"{QUIT_ITEM} {config.app.name.title()}",
+                cascade.add_command(label=f"{QUIT_ITEM} {config.persistent.program.title()}",
                                     command=self.tk_shutdown, state=tk.NORMAL)
 
             # Add a menu item which has a handler
@@ -133,7 +134,7 @@ class MainWindow:
             elif not menu_item.selection_handler:
                 cascade.add_command(label=menu_item.name, state=tk.DISABLED)
 
-            # Unhandled conditions: Not a separator and with a non callable selection_handler.
+            # Unhandled conditions: Not a separator and with a non-callable selection_handler.
             else:
                 msg = (f"The menu item '{menu_item.name=}' is not a separator and does not "
                        f"contain a callable handler.")
@@ -150,8 +151,8 @@ class MainWindow:
         Args:
             *args: Not used. Required for compatibility with caller
         """
-        # Save geometry in config.app for future permanent storage.
-        config.app.geometry = self.parent.winfo_geometry()
+        # Save geometry in config.current for future permanent storage.
+        config.persistent.geometry = self.parent.winfo_geometry()
         # Destroy all widgets and end mainloop.
         self.parent.destroy()
 

@@ -1,7 +1,7 @@
 """Test Module."""
 
-#  Copyright ©2020. Stephen Rigden.
-#  Last modified 12/22/20, 8:01 AM by stephen.
+#  Copyright (c) 2022-2022. Stephen Rigden.
+#  Last modified 10/15/22, 12:37 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -11,7 +11,7 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -25,27 +25,22 @@ class TestRun:
     
     def test_root_window_initialized(self, class_patches):
         with self.run_gui_context() as config_data:
-            _, tk_root = config_data
+            tk_root = config_data
             assert isinstance(tk_root, DummyTk)
     
     def test_parent_column_configured(self, class_patches):
         with self.run_gui_context() as config_data:
-            _, tk_root = config_data
+            tk_root = config_data
             assert tk_root.columnconfigure_calls == [((0,), dict(weight=1)), ]
     
     def test_parent_row_configured(self, class_patches):
         with self.run_gui_context() as config_data:
-            _, tk_root = config_data
+            tk_root = config_data
             assert tk_root.rowconfigure_calls == [((0,), dict(weight=1)), ]
-    
-    def test_root_pane_initialized(self, class_patches):
-        with self.run_gui_context() as config_data:
-            gui_environment, _ = config_data
-            assert isinstance(gui_environment, DummyMainWindow)
     
     def test_mainloop_called(self, class_patches):
         with self.run_gui_context() as config_data:
-            _, tk_root = config_data
+            tk_root = config_data
             assert tk_root.mainloop_called == [True]
     
     # noinspection PyMissingOrEmptyDocstring
@@ -57,16 +52,13 @@ class TestRun:
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def run_gui_context(self):
-        gui_environment_hold = gui.config.gui_environment
-        tk_root_hold = gui.config.tk_root
+        tk_root_hold = gui.config.current
         try:
-            gui.config.app = gui.config.Config('test moviedb', 'test version')
-            gui.config.tk_root = None
+            gui.config.current = gui.config.CurrentConfig(tk_root=None)
             gui.run()
-            yield gui.config.gui_environment, gui.config.tk_root
+            yield gui.config.current.tk_root
         finally:
-            gui.config.gui_environment = gui_environment_hold
-            gui.config.tk_root = tk_root_hold
+            gui.config.current = tk_root_hold
 
 
 @dataclass
