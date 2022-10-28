@@ -1,6 +1,6 @@
 """Tests for movie database."""
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/25/22, 7:28 AM by stephen.
+#  Last modified 10/28/22, 8:36 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -31,26 +31,42 @@ class TestMain:
     def test_start_up_called(self, class_patches, monkeypatch):
         calls = []
         monkeypatch.setattr(moviedb, 'start_up', lambda: calls.append(True))
-        moviedb.main()
-        assert calls == [True]
+        with self.main_context():
+            assert calls == [True]
 
     def test_gui_called(self, class_patches, monkeypatch):
         calls = []
         monkeypatch.setattr(moviedb.gui, 'run', lambda: calls.append(True))
-        moviedb.main()
-        assert calls == [True]
+        with self.main_context():
+            assert calls == [True]
 
     def test_close_down_called(self, class_patches, monkeypatch):
         calls = []
         monkeypatch.setattr(moviedb, 'close_down',
                             lambda: calls.append(True))
-        moviedb.main()
-        assert calls == [True]
+        with self.main_context():
+            assert calls == [True]
 
     def test_logging_info_called(self, class_patches):
         self.info_calls = []
-        moviedb.main()
-        assert self.info_calls == ['The program started successfully.']
+        with self.main_context():
+            assert self.info_calls == ['The program started successfully.']
+            
+    def test_safeprint_initialized(self, class_patches):
+        expected = 'dummy safe printer called.'
+        with self.main_context():
+            assert moviedb.config.current.safeprint == expected
+
+    @contextmanager
+    def main_context(self):
+        hold_current = config.current
+        config.current = config.CurrentConfig()
+        yield moviedb.main()
+        config.current = hold_current
+        
+    @contextmanager
+    def dummy_safe_printer(self):
+        yield 'dummy safe printer called.'
 
     info_calls = []
 
@@ -60,8 +76,8 @@ class TestMain:
         monkeypatch.setattr(moviedb, 'start_up', lambda: None)
         monkeypatch.setattr(moviedb.gui, 'run', lambda: None)
         monkeypatch.setattr(moviedb, 'close_down', lambda: None)
-        monkeypatch.setattr(moviedb.logging, 'info',
-                            lambda msg: self.info_calls.append(msg))
+        monkeypatch.setattr(moviedb.logging, 'info', lambda msg: self.info_calls.append(msg))
+        monkeypatch.setattr(moviedb, 'SafePrinter', self.dummy_safe_printer)
 
 
 class TestStartUp:
