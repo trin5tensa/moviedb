@@ -1,7 +1,7 @@
 """Main movie database program"""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/25/22, 7:28 AM by stephen.
+#  Last modified 10/31/22, 8:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,6 +14,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import argparse
+import concurrent.futures
 import json
 import logging
 import os
@@ -28,7 +29,6 @@ import gui
 import impexp
 from threadsafe_printer import SafePrinter
 
-
 # Program version.
 VERSION = '1.0.0.dev'
 
@@ -39,7 +39,9 @@ def main():
     logging.info('The program started successfully.')
     with SafePrinter() as safeprint:
         config.current.safeprint = safeprint
-        gui.run()
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            config.current.threadpool_executor = executor
+            gui.run()
     close_down()
 
 
@@ -107,7 +109,7 @@ def save_config_file():
     
     
 def _json_path() -> Path:
-    """ Returns: A path name for the config file. """
+    """ Returns: A path name for the config file."""
     program_path = Path(__file__)
     json_dir = program_path.parent.parent
     json_fn = program_path.stem + config.CONFIG_JSON_SUFFIX
