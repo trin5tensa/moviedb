@@ -1,7 +1,7 @@
 """Main movie database program"""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/31/22, 8:14 AM by stephen.
+#  Last modified 11/4/22, 9:55 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -29,6 +29,7 @@ import gui
 import impexp
 from threadsafe_printer import SafePrinter
 
+
 # Program version.
 VERSION = '1.0.0.dev'
 
@@ -40,6 +41,7 @@ def main():
     with SafePrinter() as safeprint:
         config.current.safeprint = safeprint
         with concurrent.futures.ThreadPoolExecutor() as executor:
+            # TODO Tests and docs
             config.current.threadpool_executor = executor
             gui.run()
     close_down()

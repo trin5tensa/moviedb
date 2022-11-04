@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/31/22, 8:14 AM by stephen.
+#  Last modified 11/4/22, 9:55 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -26,7 +26,6 @@ import exception
 import guiwidgets
 import guiwidgets_2
 import impexp
-import tmdb
 
 
 def about_dialog():
@@ -325,17 +324,21 @@ def _select_tag_callback(old_tag: str):
 
 def _tmdb_io_handler(title: str, work_queue: queue.LifoQueue):
     # moviedb-#269 Stub function
-    #  Code
-    #  Docs
-    #  Tests
-    print(f"IMDB Search for {title} initiated.")
-
-    executor = config.current.threadpool_executor
+    # TODO
+    #   Code
+    #   Delete integration test code
+    #   Docs
+    #   Tests
     safeprint = config.current.safeprint
-    fut = executor.submit(tmdb.main)
-    try:
-        result = fut.result()
-    except Exception as exc:
-        safeprint(f'TMDB read generated the exception {exc}')
-    else:
-        safeprint(f'future result={result}')
+    safeprint(f"_tmdb_io_handler: Search for {title} initiated.")
+    
+    # Integration test code
+    # executor = config.current.threadpool_executor
+    # fut = executor.submit(tmdb.main)
+    # try:
+    #     result = fut.result()
+    # except Exception as exc:
+    #     safeprint(f'TMDB read generated an exception. \n{exc}')
+    # else:
+    #     safeprint(f'future result={result}')
+    # safeprint(f'_tmdb_io_handler ending')
