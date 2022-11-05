@@ -1,7 +1,7 @@
 """Main movie database program"""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/4/22, 9:55 AM by stephen.
+#  Last modified 11/5/22, 4:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,7 +25,6 @@ from typing import Any
 
 import config
 import database
-import gui
 import impexp
 from threadsafe_printer import SafePrinter
 
@@ -35,15 +34,14 @@ VERSION = '1.0.0.dev'
 
 
 def main():
-    """Initialize the program, run it, and execute close down activities."""
+    """Initializes the program, runs it, and executes close down actions."""
     start_up()
     logging.info('The program started successfully.')
     with SafePrinter() as safeprint:
         config.current.safeprint = safeprint
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            # TODO Tests and docs
             config.current.threadpool_executor = executor
-            gui.run()
+            # gui.run()
     close_down()
 
 
