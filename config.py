@@ -1,6 +1,6 @@
 """Application configuration data """
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/25/22, 7:28 AM by stephen.
+#  Last modified 10/31/22, 8:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,6 +13,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from collections.abc import Callable, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Optional, TypedDict
 
@@ -73,6 +74,7 @@ class CurrentConfig:
     """
     tk_root: 'tk.Tk' = None
     safeprint: Callable = None
+    threadpool_executor: ThreadPoolExecutor = None
 
 
 @dataclass

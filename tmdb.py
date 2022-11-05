@@ -13,7 +13,7 @@ https://github.com/celiao/tmdbsimple
 """
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Last modified 11/4/22, 9:55 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -143,10 +143,7 @@ class TMDBAPIKeyException(TMDBException):
     
     
 class TMDBMovieIDMissing(TMDBException):
-    """
-    Exception raised if a TMDB movie was not found
-    although it is known to have formerly existed.
-    """
+    """ Exception raised if a TMDB movie was not found although it is known to have formerly existed. """
     
     
 class TMDBNoRecordsFound(TMDBException):
@@ -250,7 +247,11 @@ def _get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict:
         name, origin_country)
         title
     """
-
+    if not tmdb_api_key:
+        msg = 'No API key provided.'
+        logging.error(msg)
+        raise TMDBAPIKeyException(msg)
+    
     tmdbsimple.API_KEY = tmdb_api_key
     movie = tmdbsimple.Movies(tmdb_movie_id)
 
