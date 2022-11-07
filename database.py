@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Last modified 11/7/22, 8:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -36,7 +36,7 @@ from config import FindMovieTypedDict, MovieKeyTypedDict, MovieTypedDict, MovieU
 
 MUYBRIDGE = 1878
 Base = sqlalchemy.ext.declarative.declarative_base()
-database_fn = 'movies.sqlite3'
+database_fn = 'old movies.sqlite3'
 
 movie_tag = Table('movie_tag', Base.metadata,
                   Column('movies_id', ForeignKey('movies.id'), primary_key=True),
