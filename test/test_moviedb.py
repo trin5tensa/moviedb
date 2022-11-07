@@ -1,6 +1,6 @@
 """Tests for movie database."""
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/28/22, 8:36 AM by stephen.
+#  Last modified 11/7/22, 8:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -28,56 +28,63 @@ TEST_FN = 'test_filename.csv'
 
 
 class TestMain:
-    def test_start_up_called(self, class_patches, monkeypatch):
-        calls = []
-        monkeypatch.setattr(moviedb, 'start_up', lambda: calls.append(True))
-        with self.main_context():
-            assert calls == [True]
-
-    def test_gui_called(self, class_patches, monkeypatch):
-        calls = []
-        monkeypatch.setattr(moviedb.gui, 'run', lambda: calls.append(True))
-        with self.main_context():
-            assert calls == [True]
-
-    def test_close_down_called(self, class_patches, monkeypatch):
-        calls = []
-        monkeypatch.setattr(moviedb, 'close_down',
-                            lambda: calls.append(True))
-        with self.main_context():
-            assert calls == [True]
-
-    def test_logging_info_called(self, class_patches):
-        self.info_calls = []
-        with self.main_context():
-            assert self.info_calls == ['The program started successfully.']
-            
-    def test_safeprint_initialized(self, class_patches):
-        expected = 'dummy safe printer called.'
-        with self.main_context():
-            assert moviedb.config.current.safeprint == expected
-
-    @contextmanager
-    def main_context(self):
-        hold_current = config.current
-        config.current = config.CurrentConfig()
-        yield moviedb.main()
-        config.current = hold_current
+    """
+    Given: config.current has been initialized with a new instance of config.CurrentConfig
+    When main() is called
+    Then:
+        start_up() is called.
+        A successful start message is logged.
+        The target of the SafePrinter() context manager is stored in config.current.safeprint.
+        The target of the ThreadPoolExecutor() context manager is stored in config.current.executor.
+        gui.run() is called.
+        close_down() is called.
+    """
+    logging_calls = []
+    func_calls = set()
+    
+    def func_call_helper(self, monkeypatch, func):
+        monkeypatch.setattr(func, lambda: self.func_calls.add(func))
+    
+    @pytest.fixture()
+    def main_patches(self, monkeypatch):
+        """Monkeypatches and instruments all actions within main()."""
+        monkeypatch.setattr('moviedb.config.current', moviedb.config.CurrentConfig())
+        self.func_call_helper(monkeypatch, 'moviedb.start_up')
+        monkeypatch.setattr(moviedb.logging, 'info', lambda msg: self.logging_calls.append(msg))
+        monkeypatch.setattr(moviedb, 'SafePrinter', self.dummy_safe_printer)
+        monkeypatch.setattr(moviedb.concurrent.futures, 'ThreadPoolExecutor', self.dummy_tp_executor)
+        self.func_call_helper(monkeypatch, 'moviedb.gui.run')
+        self.func_call_helper(monkeypatch, 'moviedb.close_down')
+        
+    @pytest.fixture()
+    def main(self, main_patches, monkeypatch):
+        moviedb.main()
         
     @contextmanager
     def dummy_safe_printer(self):
-        yield 'dummy safe printer called.'
+        yield 'dummy safe printer context manager called.'
+        
+    @contextmanager
+    def dummy_tp_executor(self):
+        yield 'dummy threadpool executor context manager called.'
+        
+    def test_start_up_is_called(self, main):
+        assert {'moviedb.start_up'} & self.func_calls == {'moviedb.start_up'}
+        
+    def test_successful_start_message_is_logged(self, main):
+        assert 'The program started successfully.' == self.logging_calls.pop()
+        
+    def test_safeprint_is_stored_in_config(self, main):
+        assert moviedb.config.current.safeprint == 'dummy safe printer context manager called.'
+        
+    def test_tp_executor_is_stored_in_config(self, main):
+        assert moviedb.config.current.threadpool_executor == 'dummy threadpool executor context manager called.'
+        
+    def test_gui_run_is_called(self, main):
+        assert {'moviedb.gui.run'} & self.func_calls == {'moviedb.gui.run'}
 
-    info_calls = []
-
-    # noinspection PyMissingOrEmptyDocstring
-    @pytest.fixture()
-    def class_patches(self, monkeypatch):
-        monkeypatch.setattr(moviedb, 'start_up', lambda: None)
-        monkeypatch.setattr(moviedb.gui, 'run', lambda: None)
-        monkeypatch.setattr(moviedb, 'close_down', lambda: None)
-        monkeypatch.setattr(moviedb.logging, 'info', lambda msg: self.info_calls.append(msg))
-        monkeypatch.setattr(moviedb, 'SafePrinter', self.dummy_safe_printer)
+    def test_close_down_is_called(self, main):
+        assert {'moviedb.close_down'} & self.func_calls == {'moviedb.close_down'}
 
 
 class TestStartUp:
