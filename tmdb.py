@@ -13,7 +13,7 @@ https://github.com/celiao/tmdbsimple
 """
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/4/22, 9:55 AM by stephen.
+#  Last modified 11/9/22, 8:22 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -135,7 +135,7 @@ def get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict[str, Unio
 
 
 class TMDBException(Exception):
-    """Base class for tmdb exceptions."""
+    """Base class for tmdb exceptionsstyu."""
     
     
 class TMDBAPIKeyException(TMDBException):

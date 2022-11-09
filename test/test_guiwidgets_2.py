@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Last modified 11/9/22, 8:22 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -180,14 +180,12 @@ class TestAddMovieGUI:
         monkeypatch.setattr(guiwidgets_2.AddMovieGUI, 'tmdb_consumer', lambda *args: calls.append(True))
         with self.add_movie_gui_context():
             assert calls == [True], "Consumer work queue polling not started."
-
-    def test_tmdb_consumer_polling_ended(self, monkeypatch):
-        with self.add_movie_gui_context() as add_movie_context:
-            event_id = list(add_movie_context.parent.after_calls.keys())[0]
-            add_movie_context.search_queue_event_id = event_id
-            add_movie_context.destroy()
-            test_fail_msg = 'TMDB Work queue polling not cancelled'
-            assert add_movie_context.parent.after_cancel_calls == [[(event_id,)]], test_fail_msg
+            
+    def test_get_work_package_from_queue(self):
+        assert False
+        
+    def test_tmdb_consumer_recalled(self):
+        assert False
 
     def test_moviedb_constraint_failure_displays_message(self, monkeypatch):
         # noinspection PyUnusedLocal
@@ -221,6 +219,14 @@ class TestAddMovieGUI:
         with self.add_movie_gui_context() as add_movie_context:
             add_movie_context.destroy()
             assert add_movie_context.outer_frame.destroy_calls == [True]
+
+    def test_destroy_ends_tmdb_consumer_polling(self, monkeypatch):
+        with self.add_movie_gui_context() as add_movie_context:
+            event_id = list(add_movie_context.parent.after_calls.keys())[0]
+            add_movie_context.search_queue_event_id = event_id
+            add_movie_context.destroy()
+            test_fail_msg = 'TMDB Work queue polling not cancelled'
+            assert add_movie_context.parent.after_cancel_calls == [[(event_id,)]], test_fail_msg
 
     @contextmanager
     def add_movie_gui_context(self):
