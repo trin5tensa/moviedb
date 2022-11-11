@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/4/22, 9:55 AM by stephen.
+#  Last modified 11/11/22, 2:50 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -36,8 +36,12 @@ def about_dialog():
 
 def preferences_dialog():
     """Display the 'preferences' dialog."""
-    guiwidgets_2.PreferencesGUI(config.current.tk_root, config.persistent.tmdb_api_key,
-                                config.persistent.use_tmdb, _preferences_callback)
+    try:
+        display_key = config.persistent.tmdb_api_key
+    except (config.ConfigTMDBAPIKeyNeedsSetting, config.ConfigTMDBDoNotUse):
+        display_key = ''
+    guiwidgets_2.PreferencesGUI(config.current.tk_root, display_key, config.persistent.use_tmdb,
+                                _preferences_callback)
 
 
 def add_movie():
@@ -330,9 +334,20 @@ def _tmdb_io_handler(title: str, work_queue: queue.LifoQueue):
     #   Docs
     #   Tests
     safeprint = config.current.safeprint
-    safeprint(f"_tmdb_io_handler: Search for {title} initiated.")
+    safeprint(f"_tmdb_io_handler started: Searching for {title}.")
     
-    # Integration test code
+    # Get tmdb_api_key
+    try:
+        tmdb_api_key = config.persistent.tmdb_api_key
+    except config.ConfigTMDBDoNotUse:
+        safeprint(f"_tmdb_io_handler ending. User declined TMDB use.")
+        return
+    except config.ConfigTMDBAPIKeyNeedsSetting:
+        preferences_dialog()
+        # Cannot proceed until after preferences dialog has been run by Tk/Tcl.
+        safeprint(f"_tmdb_io_handler ending. User must update tmdb api key preferences.")
+        return
+
     # executor = config.current.threadpool_executor
     # fut = executor.submit(tmdb.main)
     # try:
@@ -342,3 +357,5 @@ def _tmdb_io_handler(title: str, work_queue: queue.LifoQueue):
     # else:
     #     safeprint(f'future result={result}')
     # safeprint(f'_tmdb_io_handler ending')
+
+    safeprint(f"_tmdb_io_handler ending.")
