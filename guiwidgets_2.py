@@ -3,9 +3,8 @@
 This module includes windows for presenting data supplied to it and returning entered data to its
 callers.
 """
-
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Last modified 11/11/22, 8:43 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,7 +15,6 @@ callers.
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 import itertools
 import queue
 import tkinter as tk
@@ -57,19 +55,20 @@ class AddMovieGUI:
     # This is a complete list of all the tags in the database
     all_tags: Sequence[str]
     
-    selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
     # All widgets created by this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
     # A more convenient data structure for entry fields.
     entry_fields: Dict[str, '_EntryField'] = field(default_factory=dict, init=False, repr=False)
     title: str = field(default=None, init=False, repr=False)
+    
     # Treeview for tags.
     treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
+    selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
     
     # These variables are used for the consumer end of the TMDB producer/consumer pattern.
     tmdb_work_queue: queue.LifoQueue = field(default_factory=queue.LifoQueue, init=False, repr=False)
-    search_queue_timer: int = 250
-    search_queue_event_id: str = None
+    work_queue_poll: int = 40
+    recall_id: str = None
     
     # These variables help to decide if the user has finished entering the title.
     last_text_queue_timer: int = 1000
@@ -167,13 +166,28 @@ class AddMovieGUI:
                                                         substring, self.tmdb_work_queue)
     
     def tmdb_consumer(self):
-        """Consume movies placed in the work queue."""
-        # TODO
-        #  Production Code
-        #  Docs
-        #  Test
-        self.search_queue_event_id = self.parent.after(self.search_queue_timer, self.tmdb_consumer)
-    
+        """Consumer of queued records of movies found on the TMDB web site."""
+
+        try:
+            # Tkinter can't wait for the thread blocking `get` method…
+            work_package = self.tmdb_work_queue.get_nowait()
+
+        except queue.Empty:
+            # …so be prepared for an empty queue.
+            pass
+
+        else:
+            # TODO TMDB_II Clear the LifoQueue of older entries
+            
+            # Process a work package.
+            print(f"\n{work_package}")
+            
+            # TODO TMDB_II Display the movie(s).
+
+        finally:
+            # Have tkinter call this function again after the poll interval.
+            self.recall_id = self.parent.after(self.work_queue_poll, self.tmdb_consumer)
+            
     def treeview_callback(self, reselection: Sequence[str]):
         """Update selected tags with the user's changes."""
         self.selected_tags = reselection
@@ -205,7 +219,7 @@ class AddMovieGUI:
     
     def destroy(self):
         """Destroy all widgets of this class."""
-        self.parent.after_cancel(self.search_queue_event_id)
+        self.parent.after_cancel(self.recall_id)
         self.outer_frame.destroy()
 
 
