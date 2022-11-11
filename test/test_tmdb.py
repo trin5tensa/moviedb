@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Last modified 11/11/22, 9:07 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -427,7 +427,7 @@ class DummySearch401(DummySearch):
 
 @dataclass
 class DummySearchUnspecifiedError(DummySearch):
-    """A test dummy for TMDB's Movies class which raises an an unspecified HTTP error ."""
+    """A test dummy for TMDB's Movies class which raises an unspecified HTTP error."""
     def movie(self, query: str = None, **kwargs):
         msg = 'Unspecified error:'
         raise tmdb.requests.exceptions.HTTPError(msg)
