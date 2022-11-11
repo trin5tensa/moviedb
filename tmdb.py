@@ -13,7 +13,7 @@ https://github.com/celiao/tmdbsimple
 """
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/9/22, 8:22 AM by stephen.
+#  Last modified 11/11/22, 9:07 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -37,20 +37,20 @@ TIMEOUT = 0.001
 
 
 def search_movies(tmdb_api_key: str, title_query: str, primary_release_year: int = None,
-                  year: int = None, language: str = None, include_adult: bool = False,
+                  year: int = None, language: str = None, include_adult: bool = True,
                   region: str = None) -> list[dict[str, Union[str, list[str]]]]:
     """Search for movies.
     
     Args:
         tmdb_api_key:
-        title_query: (required) Pass a text query to search. This value should be URI encoded. (See
+        title_query: Pass a text query to search. This value should be URI encoded. (See
             Percent-encoding on Wikipedia: https://en.wikipedia.org/wiki/Percent-encoding)
-        year: (optional) A filter to limit the results to a specific year (looking at all release dates).
-        primary_release_year: (optional) A filter to limit the results to a specific primary
+        year: A filter to limit the results to a specific year.
+        primary_release_year: A filter to limit the results to a specific primary
             release year.
-        language: (optional) ISO 639-1 code.
-        include_adult: (optional) Choose whether to include adult content in the results.
-        region: (optional) Specify a ISO 3166-1 code to filter by region. Must be uppercase.
+        language: ISO 639-1 code.
+        include_adult: Choose whether to include adult content in the results.
+        region: Specify an ISO 3166-1 code to filter by region. Must be uppercase.
 
     Raises:
         TMDBAPIKeyException:
@@ -102,14 +102,14 @@ def get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict[str, Unio
         TMDBAPIKeyException:
             API Key error.
         TMDBMovieIDMissing:
-            A TMDB movie cannot be found although it is known to have formerly existed.
+            A TMDB movie cannot be found, although it is known to have formerly existed.
         TMDBConnectionTimeout:
             Unable to connect to TMDB
 
     Returns:
         A dict representation of the JSON returned from the API. This may include any or none of the
         following keys. The list is partial and does not include keys which are not of interest to
-        this program at the time of writing.
+        this program.
 
         genres (Single item list containing a dictionary with keys: id, name)
         id
@@ -135,23 +135,23 @@ def get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict[str, Unio
 
 
 class TMDBException(Exception):
-    """Base class for tmdb exceptionsstyu."""
+    pass
     
     
 class TMDBAPIKeyException(TMDBException):
-    """Exception raised for problems with the TMDB API Key"""
+    pass
     
     
 class TMDBMovieIDMissing(TMDBException):
-    """ Exception raised if a TMDB movie was not found although it is known to have formerly existed. """
+    pass
     
     
 class TMDBNoRecordsFound(TMDBException):
-    """No compliant records were found."""
+    pass
     
     
 class TMDBConnectionTimeout(TMDBException):
-    """Failed to establish a new connection."""
+    pass
 
 
 def _get_tmdb_directors(tmdb_api_key: str, tmdb_movie_id: str) -> dict[str, list[str]]:
@@ -166,12 +166,12 @@ def _get_tmdb_directors(tmdb_api_key: str, tmdb_movie_id: str) -> dict[str, list
         TMDBAPIKeyException:
             API Key error.
         TMDBMovieIDMissing:
-            A TMDB movie cannot be found although it is known to have formerly existed.
+            A TMDB movie cannot be found, although it is known to have formerly existed.
         TMDBConnectionTimeout:
             Unable to connect to TMDB
 
     Returns:
-        A dictionary item with a key of 'Directors' and a value which is a list of directors.
+        A dictionary item with a key of 'Directors' and a value that is a list of directors.
     """
 
     tmdb_key = 'Director'
@@ -223,14 +223,14 @@ def _get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict:
         TMDBAPIKeyException:
             API Key error.
         TMDBMovieIDMissing:
-            A TMDB movie cannot be found although it is known to have formerly existed.
+            A TMDB movie cannot be found, although it is known to have formerly existed.
         TMDBConnectionTimeout:
             Unable to connect to TMDB
 
     Returns:
         A dict representation of the JSON returned from the API. This may include any or none of the
         following keys. The list is partial and does not include keys which are not of interest to
-        this program at the time of writing.
+        this program.
 
         genres (Single item list containing a dictionary with keys: id, name)
         id
@@ -306,7 +306,7 @@ def _intg_test_search_movies(api_key):
 
     # Find movies with title matching a substring
     substring = 'The Postman Always'
-    print(f"\nTitles retrived for {substring=}")
+    print(f"\nTitles retrieved for {substring=}")
     movies = search_movies(api_key, substring)
     for movie in movies:
         print(f"{movie['id'], movie['title'], movie['release_date'][:4]}")
