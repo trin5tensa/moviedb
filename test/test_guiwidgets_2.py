@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/9/22, 8:22 AM by stephen.
+#  Last modified 11/11/22, 8:43 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -89,7 +89,7 @@ class TestAddMovieGUI:
             buttonbox = outer_frame.children[1]
             commit_button = buttonbox.children[0]
             
-            # Initialize title and year textvariables to ''
+            # Initialize title and year text variables to ''
             title.textvariable.set_for_test('')
             year.textvariable.set_for_test('')
             
@@ -145,7 +145,7 @@ class TestAddMovieGUI:
             add_movie_context.tmdb_search(expected)
             event_id = add_movie_context.last_text_event_id
             try:
-                _, args = add_movie_context.parent.after_calls[event_id]
+                _, _, args = add_movie_context.parent.after_calls[event_id]
             except KeyError:
                 raise KeyError('The TMDB search was not scheduled in the Tkinter event queue.')
             text, _ = args
@@ -181,11 +181,27 @@ class TestAddMovieGUI:
         with self.add_movie_gui_context():
             assert calls == [True], "Consumer work queue polling not started."
             
-    def test_get_work_package_from_queue(self):
-        assert False
-        
+    def test_get_work_package_from_queue(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr('guiwidgets_2.queue.LifoQueue.get_nowait', lambda *args: calls.append((args, True)))
+        with self.add_movie_gui_context() as add_movie:
+            queue = add_movie.tmdb_work_queue
+            assert (calls == queue, True)
+            
+    def test_work_package_printed_to_stdout(self, capsys):
+        with self.add_movie_gui_context() as add_movie:
+            test_work_package = 'test work package'
+            add_movie.tmdb_work_queue.put(test_work_package)
+            add_movie.tmdb_consumer()
+            captured = capsys.readouterr()
+            assert test_work_package in captured.out, f'{test_work_package} was not printed.'
+    
     def test_tmdb_consumer_recalled(self):
-        assert False
+        with self.add_movie_gui_context() as add_movie:
+            k, v = add_movie.parent.after_calls.popitem()
+            delay, callback, args = v
+            assert delay == add_movie.work_queue_poll
+            assert callback == add_movie.tmdb_consumer
 
     def test_moviedb_constraint_failure_displays_message(self, monkeypatch):
         # noinspection PyUnusedLocal
@@ -531,7 +547,6 @@ class TestSearchTagGUI:
         return dummy_search_tag_callback
 
     @contextmanager
-    # def search_tag_gui_context(self, exc: guiwidgets_2.exception.DatabaseSearchFoundNothing = None):
     def search_tag_gui_context(self, exc: Exception = None):
         self.dummy_search_tag_callback_calls = []
         parent = DummyTk()

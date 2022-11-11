@@ -4,7 +4,7 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/9/22, 8:22 AM by stephen.
+#  Last modified 11/11/22, 8:43 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -167,7 +167,6 @@ class AddMovieGUI:
     
     def tmdb_consumer(self):
         """Consumer of queued records of movies found on the TMDB web site."""
-        # TODO Test
 
         try:
             # Tkinter can't wait for the thread blocking `get` method…
@@ -178,12 +177,12 @@ class AddMovieGUI:
             pass
 
         else:
-            # Clear the LifoQueue of older entries
+            # TODO TMDB_II Clear the LifoQueue of older entries
+            
             # Process a work package.
             print(f"\n{work_package}")
-            # TODO TMDB_II: Display movies in a read only list in which individual movies are selectable
-            # label = ttk.Label(mainframe, text=work_package)
-            # label.grid(column=0, row=(next(row_itr)), sticky='w', padx=10)
+            
+            # TODO TMDB_II Display the movie(s).
 
         finally:
             # Have tkinter call this function again after the poll interval.
