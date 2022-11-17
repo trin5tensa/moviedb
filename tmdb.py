@@ -13,7 +13,7 @@ https://github.com/celiao/tmdbsimple
 """
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/11/22, 9:07 AM by stephen.
+#  Last modified 11/17/22, 12:45 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -26,28 +26,33 @@ https://github.com/celiao/tmdbsimple
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+import queue
 import sys
 from typing import Union
 
 import requests
 import tmdbsimple
 
+import config
+
 
 TIMEOUT = 0.001
 
 
-def search_movies(tmdb_api_key: str, title_query: str, primary_release_year: int = None,
-                  year: int = None, language: str = None, include_adult: bool = True,
-                  region: str = None) -> list[dict[str, Union[str, list[str]]]]:
-    """Search for movies.
+def search_movies(tmdb_api_key: str, title_query: str, work_queue: queue.LifoQueue,
+                  primary_release_year: int = None, year: int = None, language: str = None,
+                  include_adult: bool = True, region: str = None
+                  ) -> list[dict[str, Union[str, list[str]]]]:
+    """Search and queue movies as the producer end of the producer and consumer pattern.
     
     Args:
         tmdb_api_key:
-        title_query: Pass a text query to search. This value should be URI encoded. (See
-            Percent-encoding on Wikipedia: https://en.wikipedia.org/wiki/Percent-encoding)
+        title_query: Pass a text query to search. This value should be URI encoded. (See Percent-encoding on
+        Wikipedia: https://en.wikipedia.org/wiki/Percent-encoding)
         year: A filter to limit the results to a specific year.
-        primary_release_year: A filter to limit the results to a specific primary
-            release year.
+        work_queue: A LIFO queue intended to return successive searches by the user so the user has immediate
+        feedback on the effect of improving her search string.
+        primary_release_year: A filter to limit the results to a specific primary release year.
         language: ISO 639-1 code.
         include_adult: Choose whether to include adult content in the results.
         region: Specify an ISO 3166-1 code to filter by region. Must be uppercase.
@@ -63,7 +68,12 @@ def search_movies(tmdb_api_key: str, title_query: str, primary_release_year: int
         filter arguments.
         This function returns the first twenty compliant records.
     """
+    # TODO
+    #   Docs
+    #   Test
     
+    safeprint = config.current.safeprint
+    safeprint(f"search_movies started: Searching for {title_query}")
     tmdbsimple.API_KEY = tmdb_api_key
     search = tmdbsimple.Search()
     
@@ -73,12 +83,13 @@ def search_movies(tmdb_api_key: str, title_query: str, primary_release_year: int
 
     except requests.exceptions.HTTPError as exc:
         if (exc.args[0][:38]) == '401 Client Error: Unauthorized for url':
-            msg = f"API Key error: {exc.args[0][:38]}"
-            logging.error(msg)
+            msg = f"API Key error: {exc.args[0]}"
             raise TMDBAPIKeyException(msg) from exc
 
         else:
-            logging.error(exc)
+            msg = f'TMDB search raised an exception. \n{exc.args=}'
+            safeprint(msg)
+            logging.error(msg)
             raise
     
     except requests.exceptions.ConnectionError as exc:
@@ -87,7 +98,13 @@ def search_movies(tmdb_api_key: str, title_query: str, primary_release_year: int
         raise TMDBConnectionTimeout(msg) from exc
 
     else:
-        return search.results
+        # TODO
+        #   Put result into queue and remove return statement
+        safeprint(f"search_movies ending: Found:\n\n")
+        import pprint
+        pretty = pprint.pformat(search.results)
+        safeprint(f"{pretty}")
+        safeprint(f"\n\n", timestamp=False)
 
 
 def get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict[str, Union[str, list[str]]]:

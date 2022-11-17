@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Last modified 11/17/22, 12:45 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -92,8 +92,19 @@ class TestPreferences:
         finally:
             handlers.config.persistent = hold_persistent
             handlers.config.current = hold_current
-            
-            
+    
+
+class TestGetTmdbGetApiKey:
+    # @contextmanager
+    # def
+    # TODO
+    #   context manager for TMDB fields of config.PersistentConfig.
+    #   test_key_returned
+    #   test_do_not_use_tmdb_raised
+    #   test_key_needs_setting_raised
+    assert False
+
+
 class TestAddMovie:
     TAGS = ['Movie night candidate']
     
