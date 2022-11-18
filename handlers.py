@@ -1,8 +1,8 @@
 """Menu handlers.
 
 This module is the glue between the user's selection of a menu item and the gui."""
-#  Copyright (c) 2022. Stephen Rigden.
-#  Last modified 11/17/22, 12:45 PM by stephen.
+#  Copyright (c) 2022-2022. Stephen Rigden.
+#  Last modified 11/18/22, 9:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -61,26 +61,18 @@ def preferences_dialog():
 def _get_tmdb_api_key() -> Optional[str]:
     # TODO
     #   Docs
-    #   Test
-    safeprint = config.current.safeprint
-    safeprint(f"_get_tmdb_api_key started.")
-    
     try:
         tmdb_api_key = config.persistent.tmdb_api_key
     except config.ConfigTMDBDoNotUse:
-        safeprint(f"_tmdb_io_handler ending. User declined TMDB use.")
         msg = f"User declined TMDB use."
         logging.info(msg)
-        return
-
+        
     # Schedule preferences dialog for Tk/Tcl's event loop
     except config.ConfigTMDBAPIKeyNeedsSetting:
         preferences_dialog()
-        safeprint(f"_tmdb_io_handler ending. User must update tmdb api key preferences.")
-        return
 
-    safeprint(f"_get_tmdb_api_key ending.Found {tmdb_api_key=}")
-    return tmdb_api_key
+    else:
+        return tmdb_api_key
 
 
 def add_movie():

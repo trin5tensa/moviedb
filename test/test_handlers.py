@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/17/22, 12:45 PM by stephen.
+#  Last modified 11/18/22, 9:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +20,6 @@ from typing import Callable, List, Literal, Sequence
 
 import pytest
 
-import config
 import exception
 import handlers
 
@@ -95,14 +94,32 @@ class TestPreferences:
     
 
 class TestGetTmdbGetApiKey:
-    # @contextmanager
-    # def
-    # TODO
-    #   context manager for TMDB fields of config.PersistentConfig.
-    #   test_key_returned
-    #   test_do_not_use_tmdb_raised
-    #   test_key_needs_setting_raised
-    assert False
+    TEST_KEY = 'dummy key'
+    
+    @contextmanager
+    def get_tmdb_key(self, monkeypatch, api_key=TEST_KEY, use_tmdb=True):
+        dummy_persistent_config = handlers.config.PersistentConfig('test_prog', 'test_vers')
+        dummy_persistent_config.use_tmdb = use_tmdb
+        dummy_persistent_config.tmdb_api_key = api_key
+        monkeypatch.setattr(handlers.config, 'persistent', dummy_persistent_config)
+        # noinspection PyProtectedMember
+        yield handlers._get_tmdb_api_key()
+        
+    def test_key_returned(self, monkeypatch):
+        with self.get_tmdb_key(monkeypatch) as ctx:
+            assert ctx == self.TEST_KEY
+            
+    def test_do_not_use_tmdb_logged(self, monkeypatch, caplog):
+        caplog.set_level('DEBUG')
+        with self.get_tmdb_key(monkeypatch, use_tmdb=False):
+            expected = f"User declined TMDB use."
+            assert caplog.messages[0] == expected
+
+    def test_key_needs_setting_calls_preferences_dialog(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(handlers, 'preferences_dialog', lambda: calls.append(True))
+        with self.get_tmdb_key(monkeypatch, api_key=''):
+            assert calls[0]
 
 
 class TestAddMovie:
@@ -260,7 +277,7 @@ class TestAddMovieCallback:
     
     @contextmanager
     def callback_context(self):
-        movie = config.MovieTypedDict(title='Test Title', year=2020)
+        movie = handlers.config.MovieTypedDict(title='Test Title', year=2020)
         tags = ['test 1']
         yield handlers._add_movie_callback(movie, tags)
     
