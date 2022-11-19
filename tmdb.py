@@ -13,7 +13,7 @@ https://github.com/celiao/tmdbsimple
 """
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/17/22, 12:45 PM by stephen.
+#  Last modified 11/19/22, 9:23 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -73,7 +73,12 @@ def search_movies(tmdb_api_key: str, title_query: str, work_queue: queue.LifoQue
     #   Test
     
     safeprint = config.current.safeprint
-    safeprint(f"search_movies started: Searching for {title_query}")
+    safeprint(f"search_movies started 1: Searching for {title_query}")
+    
+    # TODO Remove this temporary block
+    # time.sleep(5)
+    safeprint(f"search_movies started 2: Searching for {title_query}")
+    
     tmdbsimple.API_KEY = tmdb_api_key
     search = tmdbsimple.Search()
     

@@ -1,8 +1,8 @@
 """Menu handlers.
 
 This module is the glue between the user's selection of a menu item and the gui."""
-#  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/19/22, 7:00 AM by stephen.
+#  Copyright (c) 2022. Stephen Rigden.
+#  Last modified 11/19/22, 9:23 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,6 +14,7 @@ This module is the glue between the user's selection of a menu item and the gui.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import concurrent.futures
 import logging
 #  Copyright (c) 2022-2022. Stephen Rigden.
 #  Last modified 11/11/22, 2:50 PM by stephen.
@@ -40,6 +41,20 @@ import guiwidgets
 import guiwidgets_2
 import impexp
 import tmdb
+
+
+#  Copyright (c) 2022-2022. Stephen Rigden.
+#  Last modified 11/19/22, 7:00 AM by stephen.
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 def about_dialog():
@@ -362,20 +377,16 @@ def _select_tag_callback(old_tag: str):
     guiwidgets_2.EditTagGUI(config.current.tk_root, old_tag, delete_callback, edit_callback)
 
 
-def _tmdb_movie_search(tmdb_api_key: str, title: str, work_queue: queue.LifoQueue):
-    # TODO
-    #   Docs
-    #   Tests
-    safeprint = config.current.safeprint
-    safeprint(f"_tmdb_movie_search starting: Searching for {title}.")
+def _future_search_result(fut: concurrent.futures.Future):
+    #   TODO Tests
+    #   TODO Remove safeprints
+    #   TODO Docs
     
-    executor = config.current.threadpool_executor
-    fut = executor.submit(tmdb.search_movies, tmdb_api_key, title, work_queue)
     try:
         fut.result()
-        
+
     except tmdb.TMDBAPIKeyException as exc:
-        safeprint(f'{exc=}')
+        # safeprint(f'{exc=}')
         logging.error(exc)
         msg = 'Invalid API key for TMDB.'
         detail = 'Do you want to set the key?'
@@ -383,16 +394,23 @@ def _tmdb_movie_search(tmdb_api_key: str, title: str, work_queue: queue.LifoQueu
             preferences_dialog()
         else:
             config.persistent.use_tmdb = False
-    
+
     except tmdb.TMDBConnectionTimeout as exc:
         logging.info(exc)
-    
+
     except Exception as exc:
         msg = f'Unexpected exception. \n{exc.args=}'
-        safeprint(msg)
+        # safeprint(msg)
         logging.error(msg)
+        
 
-    safeprint(f"_tmdb_movie_search ending.")
+def _tmdb_movie_search(tmdb_api_key: str, search_string: str, work_queue: queue.LifoQueue):
+    # TODO
+    #   Tests
+    #   Docs
+    executor = config.current.threadpool_executor
+    fut = executor.submit(tmdb.search_movies, tmdb_api_key, search_string, work_queue)
+    fut.add_done_callback(_future_search_result)
 
 
 def _tmdb_io_handler(title: str, work_queue: queue.LifoQueue):

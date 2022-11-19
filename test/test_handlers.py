@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/18/22, 9:15 AM by stephen.
+#  Last modified 11/19/22, 9:23 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -120,6 +120,11 @@ class TestGetTmdbGetApiKey:
         monkeypatch.setattr(handlers, 'preferences_dialog', lambda: calls.append(True))
         with self.get_tmdb_key(monkeypatch, api_key=''):
             assert calls[0]
+
+
+class TestTmdbMovieSearch:
+    # TODO Tests…
+    pass
 
 
 class TestAddMovie:
