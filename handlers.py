@@ -2,7 +2,7 @@
 
 This module is the glue between the user's selection of a menu item and the gui."""
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/18/22, 9:15 AM by stephen.
+#  Last modified 11/19/22, 7:00 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -59,18 +59,23 @@ def preferences_dialog():
 
 
 def _get_tmdb_api_key() -> Optional[str]:
-    # TODO
-    #   Docs
+    """ Retrieve the TMDB API key from preference storage.
+    
+    Handles:
+        config.ConfigTMDBDoNotUse:
+            The exception is logged and None is returned.
+        config.ConfigTMDBAPIKeyNeedsSetting:
+            A call to the preferences dialog is scheduled and None is returned.
+        
+    Returns:
+        The TMDB API key or None if handled exceptions were encountered.
+    """
     try:
         tmdb_api_key = config.persistent.tmdb_api_key
     except config.ConfigTMDBDoNotUse:
-        msg = f"User declined TMDB use."
-        logging.info(msg)
-        
-    # Schedule preferences dialog for Tk/Tcl's event loop
+        logging.info(f'User declined TMDB use.')
     except config.ConfigTMDBAPIKeyNeedsSetting:
         preferences_dialog()
-
     else:
         return tmdb_api_key
 
