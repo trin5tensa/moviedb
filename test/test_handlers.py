@@ -1,6 +1,6 @@
 """Menu handlers test module."""
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/23/22, 8:55 AM by stephen.
+#  Last modified 11/23/22, 3:06 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -123,7 +123,7 @@ class TestGetTmdbGetApiKey:
             assert calls[0]
 
 
-class TestTmdbSearchExceptionHandler:
+class TestTmdbIOExceptionHandler:
     askyesno_calls = None
     preference_dialog_calls = None
     
@@ -186,6 +186,38 @@ class TestTmdbSearchExceptionHandler:
         with self.tmdb_search_exception_callback(mock_fut_unexpected, monkeypatch):
             expected = "Unexpected exception. \nexc.args=('Test unexpected exception',)"
             assert caplog.messages[0] == expected
+
+
+class TestTmdbIOHandler:
+    search_string = 'test search string'
+    work_queue = handlers.queue.LifoQueue()
+
+    @contextmanager
+    def tmdb_io_handler(self, monkeypatch, mock_executor):
+        # Patch config.current
+        dummy_current_config = handlers.config.CurrentConfig()
+        dummy_current_config.threadpool_executor = mock_executor
+        monkeypatch.setattr(handlers.config, 'current', dummy_current_config)
+    
+        # Patch config.persistent
+        dummy_persistent_config = handlers.config.PersistentConfig('test_prog', 'test_vers')
+        dummy_persistent_config.use_tmdb = True
+        dummy_persistent_config.tmdb_api_key = 'test tmdb key'
+        monkeypatch.setattr(handlers.config, 'persistent', dummy_persistent_config)
+
+        # noinspection PyProtectedMember
+        handlers._tmdb_io_handler(self.search_string, self.work_queue)
+        yield
+        
+    def test_submit_called(self, monkeypatch, mock_executor):
+        with self.tmdb_io_handler(monkeypatch, mock_executor):
+            func = handlers.tmdb.search_movies
+            key = handlers.config.persistent._tmdb_api_key
+            assert mock_executor.submit_calls == [(func, key, self.search_string, self.work_queue)]
+
+    def test_callback_set(self, monkeypatch, mock_executor):
+        with self.tmdb_io_handler(monkeypatch, mock_executor):
+            assert mock_executor.fut.add_done_callback_calls == [(handlers._tmdb_search_exception_callback, )]
 
 
 class TestAddMovie:
