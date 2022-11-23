@@ -13,7 +13,7 @@ https://github.com/celiao/tmdbsimple
 """
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/19/22, 9:23 AM by stephen.
+#  Last modified 11/23/22, 8:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -34,6 +34,7 @@ import requests
 import tmdbsimple
 
 import config
+import exception
 
 
 TIMEOUT = 0.001
@@ -73,11 +74,7 @@ def search_movies(tmdb_api_key: str, title_query: str, work_queue: queue.LifoQue
     #   Test
     
     safeprint = config.current.safeprint
-    safeprint(f"search_movies started 1: Searching for {title_query}")
-    
-    # TODO Remove this temporary block
-    # time.sleep(5)
-    safeprint(f"search_movies started 2: Searching for {title_query}")
+    safeprint(f"search_movies started: Searching for {title_query}")
     
     tmdbsimple.API_KEY = tmdb_api_key
     search = tmdbsimple.Search()
@@ -89,7 +86,7 @@ def search_movies(tmdb_api_key: str, title_query: str, work_queue: queue.LifoQue
     except requests.exceptions.HTTPError as exc:
         if (exc.args[0][:38]) == '401 Client Error: Unauthorized for url':
             msg = f"API Key error: {exc.args[0]}"
-            raise TMDBAPIKeyException(msg) from exc
+            raise exception.TMDBAPIKeyException(msg) from exc
 
         else:
             msg = f'TMDB search raised an exception. \n{exc.args=}'
@@ -100,7 +97,7 @@ def search_movies(tmdb_api_key: str, title_query: str, work_queue: queue.LifoQue
     except requests.exceptions.ConnectionError as exc:
         msg = f"Unable to connect to TMDB. \n{exc.args[0].args[0]}"
         logging.info(msg)
-        raise TMDBConnectionTimeout(msg) from exc
+        raise exception.TMDBConnectionTimeout(msg) from exc
 
     else:
         # TODO
@@ -156,26 +153,6 @@ def get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict[str, Unio
     return movie_info
 
 
-class TMDBException(Exception):
-    pass
-    
-    
-class TMDBAPIKeyException(TMDBException):
-    pass
-    
-    
-class TMDBMovieIDMissing(TMDBException):
-    pass
-    
-    
-class TMDBNoRecordsFound(TMDBException):
-    pass
-    
-    
-class TMDBConnectionTimeout(TMDBException):
-    pass
-
-
 def _get_tmdb_directors(tmdb_api_key: str, tmdb_movie_id: str) -> dict[str, list[str]]:
     """
     Retrieve the directors of a movie using its TMDB id.
@@ -209,14 +186,14 @@ def _get_tmdb_directors(tmdb_api_key: str, tmdb_movie_id: str) -> dict[str, list
         if (exc.args[0][:38]) == '401 Client Error: Unauthorized for url':
             msg = f"API Key error: {exc.args[0]}"
             logging.error(msg)
-            raise TMDBAPIKeyException(msg) from exc
+            raise exception.TMDBAPIKeyException(msg) from exc
 
         # Movie not found. Since this movie id originated from TMDB this is unexpected.
         # As of 1/5/2021 the TMDB URL ends with movie/XXX where XXX is the requested tmdb_id code.
         if (exc.args[0][:36]) == '404 Client Error: Not Found for url:':
             msg = f"The TMDB id '{tmdb_movie_id}' was not found on the TMDB site. \n{exc.args[0]}"
             logging.error(msg)
-            raise TMDBMovieIDMissing(msg) from exc
+            raise exception.TMDBMovieIDMissing(msg) from exc
 
         else:
             logging.error(exc)
@@ -225,7 +202,7 @@ def _get_tmdb_directors(tmdb_api_key: str, tmdb_movie_id: str) -> dict[str, list
     except requests.exceptions.ConnectionError as exc:
         msg = f"Unable to connect to TMDB. {exc.args[0].args[0]}"
         logging.info(msg)
-        raise TMDBConnectionTimeout(msg) from exc
+        raise exception.TMDBConnectionTimeout(msg) from exc
 
     else:
         crew = movie_credits['crew']
@@ -272,7 +249,7 @@ def _get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict:
     if not tmdb_api_key:
         msg = 'No API key provided.'
         logging.error(msg)
-        raise TMDBAPIKeyException(msg)
+        raise exception.TMDBAPIKeyException(msg)
     
     tmdbsimple.API_KEY = tmdb_api_key
     movie = tmdbsimple.Movies(tmdb_movie_id)
@@ -286,14 +263,14 @@ def _get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict:
         if (exc.args[0][:38]) == '401 Client Error: Unauthorized for url':
             msg = f"API Key error: {exc.args[0]}"
             logging.error(msg)
-            raise TMDBAPIKeyException(msg) from exc
+            raise exception.TMDBAPIKeyException(msg) from exc
 
         # Movie not found. Since this movie id originated from TMDB this is unexpected.
         # The TMDB URL ends with movie/XXX where XXX is the requested tmdb_id code.
         if (exc.args[0][:36]) == '404 Client Error: Not Found for url:':
             msg = f"The TMDB id '{tmdb_movie_id}' was not found on the TMDB site. \n{exc.args[0]}"
             logging.error(msg)
-            raise TMDBMovieIDMissing(msg) from exc
+            raise exception.TMDBMovieIDMissing(msg) from exc
 
         else:
             logging.error(exc)
@@ -302,7 +279,7 @@ def _get_tmdb_movie_info(tmdb_api_key: str, tmdb_movie_id: str) -> dict:
     except requests.exceptions.ConnectionError as exc:
         msg = f"Unable to connect to TMDB. {exc.args[0].args[0]}"
         logging.info(msg)
-        raise TMDBConnectionTimeout(msg) from exc
+        raise exception.TMDBConnectionTimeout(msg) from exc
 
 
 def _intg_test_search_by_tmdb_id(api_key):
@@ -318,7 +295,7 @@ def _intg_test_search_movies(api_key):
     try:
         print("Expected error message: 'API Key error:  Unauthorized for url'")
         search_movies('garbage key', 'Gobble&*()Recook !@#$')
-    except TMDBAPIKeyException:
+    except exception.TMDBAPIKeyException:
         print(f"PASSED: TMDBAPIKeyException correctly raised.")
 
     # Test garbage search string finds no movies

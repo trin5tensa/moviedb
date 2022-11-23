@@ -1,6 +1,6 @@
 """Test module."""
-#  Copyright (c) 2022. Stephen Rigden.
-#  Last modified 11/17/22, 12:45 PM by stephen.
+#  Copyright (c) 2022-2022. Stephen Rigden.
+#  Last modified 11/23/22, 8:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,21 +19,8 @@ from typing import List
 
 import pytest
 
+import exception
 import tmdb
-
-
-#  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/11/22, 9:07 AM by stephen.
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 CREDITS = dict(crew=[dict(name='Eric Idle', job='Composer'),
@@ -92,7 +79,7 @@ class TestSearchMovies:
     def test_401_raises_TMDBAPIKeyException(self, monkeypatch):
         monkeypatch.setattr(tmdb.tmdbsimple, 'Search', DummySearch401)
         monkeypatch.setattr(tmdb.logging, 'error', lambda *args: None)
-        with pytest.raises(tmdb.TMDBAPIKeyException) as exc:
+        with pytest.raises(exception.TMDBAPIKeyException) as exc:
             with self.get_search_context(self.api_key, self.title_query, monkeypatch):
                 pass
         assert exc.value.args[0] == 'API Key error: 401 Client Error: Unauthorized for url'
@@ -120,7 +107,7 @@ class TestSearchMovies:
         monkeypatch.setattr(tmdb.tmdbsimple, 'Search', DummySearchConnectionError)
         error_args = []
         monkeypatch.setattr(tmdb.logging, 'info', lambda *args: error_args.append(args))
-        with pytest.raises(tmdb.TMDBConnectionTimeout):
+        with pytest.raises(exception.TMDBConnectionTimeout):
             with self.get_search_context(self.api_key, self.title_query, monkeypatch):
                 pass
         assert error_args[0][0] == (f"Unable to connect to TMDB. \n"
@@ -129,7 +116,7 @@ class TestSearchMovies:
     def test_connection_failure_raises_TMDBConnectionTimeout(self, monkeypatch):
         monkeypatch.setattr(tmdb.tmdbsimple, 'Search', DummySearchConnectionError)
         monkeypatch.setattr(tmdb.logging, 'info', lambda *args: None)
-        with pytest.raises(tmdb.TMDBConnectionTimeout) as exc:
+        with pytest.raises(exception.TMDBConnectionTimeout) as exc:
             with self.get_search_context(self.api_key, self.title_query, monkeypatch):
                 pass
         assert 'Max retries exceeded' in exc.value.args[0]
@@ -163,7 +150,7 @@ class TestGetTMDBDirectors:
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMovies401)
         error_args = []
         monkeypatch.setattr(tmdb.logging, 'error', lambda *args: error_args.append(args))
-        with pytest.raises(tmdb.TMDBAPIKeyException):
+        with pytest.raises(exception.TMDBAPIKeyException):
             with self.get_director_context(self.api_key, self.movie_id):
                 pass
         assert error_args[0][0] == 'API Key error: 401 Client Error: Unauthorized for url'
@@ -171,7 +158,7 @@ class TestGetTMDBDirectors:
     def test_401_raises_TMDBAPIKeyException(self, monkeypatch):
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMovies401)
         monkeypatch.setattr(tmdb.logging, 'error', lambda *args: None)
-        with pytest.raises(tmdb.TMDBAPIKeyException) as exc:
+        with pytest.raises(exception.TMDBAPIKeyException) as exc:
             with self.get_director_context(self.api_key, self.movie_id):
                 pass
         assert exc.value.args[0] == 'API Key error: 401 Client Error: Unauthorized for url'
@@ -180,7 +167,7 @@ class TestGetTMDBDirectors:
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMovies404)
         error_args = []
         monkeypatch.setattr(tmdb.logging, 'error', lambda *args: error_args.append(args))
-        with pytest.raises(tmdb.TMDBMovieIDMissing):
+        with pytest.raises(exception.TMDBMovieIDMissing):
             with self.get_director_context(self.api_key, self.movie_id):
                 pass
         assert error_args[0][0] == (f"The TMDB id '42' was not found on the TMDB site. \n"
@@ -189,7 +176,7 @@ class TestGetTMDBDirectors:
     def test_404_raises_TMDBMovieIDMissing(self, monkeypatch):
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMovies404)
         monkeypatch.setattr(tmdb.logging, 'error', lambda *args: None)
-        with pytest.raises(tmdb.TMDBMovieIDMissing) as exc:
+        with pytest.raises(exception.TMDBMovieIDMissing) as exc:
             with self.get_director_context(self.api_key, self.movie_id):
                 pass
         assert exc.value.args[0] == (f"The TMDB id '42' was not found on the TMDB site. \n"
@@ -217,7 +204,7 @@ class TestGetTMDBDirectors:
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMoviesConnectionError)
         error_args = []
         monkeypatch.setattr(tmdb.logging, 'info', lambda *args: error_args.append(args))
-        with pytest.raises(tmdb.TMDBConnectionTimeout):
+        with pytest.raises(exception.TMDBConnectionTimeout):
             with self.get_director_context(self.api_key, self.movie_id):
                 pass
         assert error_args[0][0] == (f"Unable to connect to TMDB. "
@@ -226,7 +213,7 @@ class TestGetTMDBDirectors:
     def test_connection_failure_raises_TMDBConnectionTimeout(self, monkeypatch):
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMoviesConnectionError)
         monkeypatch.setattr(tmdb.logging, 'error', lambda *args: None)
-        with pytest.raises(tmdb.TMDBConnectionTimeout) as exc:
+        with pytest.raises(exception.TMDBConnectionTimeout) as exc:
             with self.get_director_context(self.api_key, self.movie_id):
                 pass
         assert 'Max retries exceeded' in exc.value.args[0]
@@ -257,7 +244,7 @@ class TestGetTMDBMovieInfoPrivate:
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMovies401)
         error_args = []
         monkeypatch.setattr(tmdb.logging, 'error', lambda *args: error_args.append(args))
-        with pytest.raises(tmdb.TMDBAPIKeyException):
+        with pytest.raises(exception.TMDBAPIKeyException):
             with self.get_movie_info_context(self.api_key, self.movie_id):
                 pass
         assert error_args[0][0] == 'API Key error: 401 Client Error: Unauthorized for url'
@@ -265,7 +252,7 @@ class TestGetTMDBMovieInfoPrivate:
     def test_401_raises_TMDBAPIKeyException(self, monkeypatch):
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMovies401)
         monkeypatch.setattr(tmdb.logging, 'error', lambda *args: None)
-        with pytest.raises(tmdb.TMDBAPIKeyException) as exc:
+        with pytest.raises(exception.TMDBAPIKeyException) as exc:
             with self.get_movie_info_context(self.api_key, self.movie_id):
                 pass
         assert exc.value.args[0] == 'API Key error: 401 Client Error: Unauthorized for url'
@@ -274,7 +261,7 @@ class TestGetTMDBMovieInfoPrivate:
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMovies404)
         error_args = []
         monkeypatch.setattr(tmdb.logging, 'error', lambda *args: error_args.append(args))
-        with pytest.raises(tmdb.TMDBMovieIDMissing):
+        with pytest.raises(exception.TMDBMovieIDMissing):
             with self.get_movie_info_context(self.api_key, self.movie_id):
                 pass
         assert error_args[0][0] == (f"The TMDB id '42' was not found on the TMDB site. \n"
@@ -283,7 +270,7 @@ class TestGetTMDBMovieInfoPrivate:
     def test_404_raises_TMDBMovieIDMissing(self, monkeypatch):
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMovies404)
         monkeypatch.setattr(tmdb.logging, 'error', lambda *args: None)
-        with pytest.raises(tmdb.TMDBMovieIDMissing) as exc:
+        with pytest.raises(exception.TMDBMovieIDMissing) as exc:
             with self.get_movie_info_context(self.api_key, self.movie_id):
                 pass
         assert exc.value.args[0] == (f"The TMDB id '42' was not found on the TMDB site. \n"
@@ -311,7 +298,7 @@ class TestGetTMDBMovieInfoPrivate:
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMoviesConnectionError)
         error_args = []
         monkeypatch.setattr(tmdb.logging, 'info', lambda *args: error_args.append(args))
-        with pytest.raises(tmdb.TMDBConnectionTimeout):
+        with pytest.raises(exception.TMDBConnectionTimeout):
             with self.get_movie_info_context(self.api_key, self.movie_id):
                 pass
         assert error_args[0][0] == (f"Unable to connect to TMDB. "
@@ -320,7 +307,7 @@ class TestGetTMDBMovieInfoPrivate:
     def test_connection_failure_raises_TMDBConnectionTimeout(self, monkeypatch):
         monkeypatch.setattr(tmdb.tmdbsimple, 'Movies', DummyMoviesConnectionError)
         monkeypatch.setattr(tmdb.logging, 'error', lambda *args: None)
-        with pytest.raises(tmdb.TMDBConnectionTimeout) as exc:
+        with pytest.raises(exception.TMDBConnectionTimeout) as exc:
             with self.get_movie_info_context(self.api_key, self.movie_id):
                 pass
         assert 'Max retries exceeded' in exc.value.args[0]
