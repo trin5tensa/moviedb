@@ -1,6 +1,6 @@
 """Menu handlers test module."""
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/23/22, 8:37 AM by stephen.
+#  Last modified 11/23/22, 8:55 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -128,7 +128,7 @@ class TestTmdbSearchExceptionHandler:
     preference_dialog_calls = None
     
     @contextmanager
-    def tmdb_search_exception_handler(self, mock_fut, monkeypatch, askyesno=True):
+    def tmdb_search_exception_callback(self, mock_fut, monkeypatch, askyesno=True):
         self.askyesno_calls = []
         self.preference_dialog_calls = []
         
@@ -145,7 +145,7 @@ class TestTmdbSearchExceptionHandler:
         monkeypatch.setattr(handlers.guiwidgets_2, 'gui_askyesno', partial(self.dummy_askyesno, askyesno=askyesno))
         monkeypatch.setattr(handlers, 'preferences_dialog', lambda: self.preference_dialog_calls.append(True))
         # noinspection PyProtectedMember
-        handlers._tmdb_search_exception_handler(mock_fut)
+        handlers._tmdb_search_exception_callback(mock_fut)
         yield
         
     def dummy_askyesno(self, *args, askyesno=True):
@@ -153,37 +153,37 @@ class TestTmdbSearchExceptionHandler:
         return askyesno
     
     def test_future_result_called(self, mock_fut, monkeypatch):
-        with self.tmdb_search_exception_handler(mock_fut, monkeypatch):
+        with self.tmdb_search_exception_callback(mock_fut, monkeypatch):
             assert mock_fut.result_called
     
     def test_invalid_tmdb_api_key_logs_exception(self, mock_fut_bad_key, monkeypatch, caplog):
         caplog.set_level('DEBUG')
-        with self.tmdb_search_exception_handler(mock_fut_bad_key, monkeypatch):
+        with self.tmdb_search_exception_callback(mock_fut_bad_key, monkeypatch):
             expected = 'Test bad key'
             assert caplog.messages[0] == expected
     
     def test_invalid_tmdb_api_key_calls_askyesno_dialog(self, mock_fut_bad_key, monkeypatch):
-        with self.tmdb_search_exception_handler(mock_fut_bad_key, monkeypatch):
+        with self.tmdb_search_exception_callback(mock_fut_bad_key, monkeypatch):
             expected = handlers.config.current.tk_root, 'Invalid API key for TMDB.', 'Do you want to set the key?'
             assert self.askyesno_calls[0] == expected
     
     def test_invalid_tmdb_api_key_calls_preferences_dialog(self, mock_fut_bad_key, monkeypatch):
-        with self.tmdb_search_exception_handler(mock_fut_bad_key, monkeypatch):
+        with self.tmdb_search_exception_callback(mock_fut_bad_key, monkeypatch):
             assert self.preference_dialog_calls[0]
     
     def test_invalid_tmdb_api_key_sets_do_not_use_flag(self, mock_fut_bad_key, monkeypatch):
-        with self.tmdb_search_exception_handler(mock_fut_bad_key, monkeypatch, askyesno=False):
+        with self.tmdb_search_exception_callback(mock_fut_bad_key, monkeypatch, askyesno=False):
             assert not handlers.config.persistent.use_tmdb
     
     def test_tmdb_connection_timeout_logs_exception(self,  mock_fut_timeout, monkeypatch, caplog):
         caplog.set_level('INFO')
-        with self.tmdb_search_exception_handler(mock_fut_timeout, monkeypatch):
+        with self.tmdb_search_exception_callback(mock_fut_timeout, monkeypatch):
             expected = 'Test timeout exception'
             assert caplog.messages[0] == expected
         
     def test_unexpected_exception_logs_exception(self,  mock_fut_unexpected, monkeypatch, caplog):
         caplog.set_level('DEBUG')
-        with self.tmdb_search_exception_handler(mock_fut_unexpected, monkeypatch):
+        with self.tmdb_search_exception_callback(mock_fut_unexpected, monkeypatch):
             expected = "Unexpected exception. \nexc.args=('Test unexpected exception',)"
             assert caplog.messages[0] == expected
 

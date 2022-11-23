@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/23/22, 8:37 AM by stephen.
+#  Last modified 11/23/22, 8:55 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -352,9 +352,12 @@ def _select_tag_callback(old_tag: str):
     guiwidgets_2.EditTagGUI(config.current.tk_root, old_tag, delete_callback, edit_callback)
 
 
-def _tmdb_search_exception_handler(fut: concurrent.futures.Future):
-    #   TODO Docs
+def _tmdb_search_exception_callback(fut: concurrent.futures.Future):
+    """ This handles exceptions encountered while running tmdb.search_movies.
     
+    Args:
+        fut:
+    """
     try:
         fut.result()
 
@@ -385,6 +388,6 @@ def _tmdb_io_handler(search_string: str, work_queue: queue.LifoQueue):
     if tmdb_api_key := _get_tmdb_api_key():
         executor = config.current.threadpool_executor
         fut = executor.submit(tmdb.search_movies, tmdb_api_key, search_string, work_queue)
-        fut.add_done_callback(_tmdb_search_exception_handler)
+        fut.add_done_callback(_tmdb_search_exception_callback)
     
     safeprint(f'_tmdb_io_handler ending')
