@@ -1,7 +1,6 @@
 """Menu handlers test module."""
-
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Last modified 11/23/22, 3:06 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,13 +15,14 @@
 from collections import deque
 from contextlib import contextmanager
 from dataclasses import dataclass
+from functools import partial
 from typing import Callable, List, Literal, Sequence
 
 import pytest
 
-import config
 import exception
 import handlers
+from test.dummytk import DummyTk
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -92,8 +92,134 @@ class TestPreferences:
         finally:
             handlers.config.persistent = hold_persistent
             handlers.config.current = hold_current
+    
+
+class TestGetTmdbGetApiKey:
+    TEST_KEY = 'dummy key'
+    
+    @contextmanager
+    def get_tmdb_key(self, monkeypatch, api_key=TEST_KEY, use_tmdb=True):
+        dummy_persistent_config = handlers.config.PersistentConfig('test_prog', 'test_vers')
+        dummy_persistent_config.use_tmdb = use_tmdb
+        dummy_persistent_config.tmdb_api_key = api_key
+        monkeypatch.setattr(handlers.config, 'persistent', dummy_persistent_config)
+        # noinspection PyProtectedMember
+        yield handlers._get_tmdb_api_key()
+        
+    def test_key_returned(self, monkeypatch):
+        with self.get_tmdb_key(monkeypatch) as ctx:
+            assert ctx == self.TEST_KEY
             
-            
+    def test_do_not_use_tmdb_logged(self, monkeypatch, caplog):
+        caplog.set_level('DEBUG')
+        with self.get_tmdb_key(monkeypatch, use_tmdb=False):
+            expected = f"User declined TMDB use."
+            assert caplog.messages[0] == expected
+
+    def test_key_needs_setting_calls_preferences_dialog(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(handlers, 'preferences_dialog', lambda: calls.append(True))
+        with self.get_tmdb_key(monkeypatch, api_key=''):
+            assert calls[0]
+
+
+class TestTmdbIOExceptionHandler:
+    askyesno_calls = None
+    preference_dialog_calls = None
+    
+    @contextmanager
+    def tmdb_search_exception_callback(self, mock_fut, monkeypatch, askyesno=True):
+        self.askyesno_calls = []
+        self.preference_dialog_calls = []
+        
+        # Patch config.current
+        dummy_current_config = handlers.config.CurrentConfig()
+        dummy_current_config.tk_root = DummyTk
+        monkeypatch.setattr(handlers.config, 'current', dummy_current_config)
+        
+        # Patch config.persistent
+        dummy_persistent_config = handlers.config.PersistentConfig('test_prog', 'test_vers')
+        dummy_persistent_config.use_tmdb = True
+        monkeypatch.setattr(handlers.config, 'persistent', dummy_persistent_config)
+        
+        monkeypatch.setattr(handlers.guiwidgets_2, 'gui_askyesno', partial(self.dummy_askyesno, askyesno=askyesno))
+        monkeypatch.setattr(handlers, 'preferences_dialog', lambda: self.preference_dialog_calls.append(True))
+        # noinspection PyProtectedMember
+        handlers._tmdb_search_exception_callback(mock_fut)
+        yield
+        
+    def dummy_askyesno(self, *args, askyesno=True):
+        self.askyesno_calls.append(args)
+        return askyesno
+    
+    def test_future_result_called(self, mock_fut, monkeypatch):
+        with self.tmdb_search_exception_callback(mock_fut, monkeypatch):
+            assert mock_fut.result_called
+    
+    def test_invalid_tmdb_api_key_logs_exception(self, mock_fut_bad_key, monkeypatch, caplog):
+        caplog.set_level('DEBUG')
+        with self.tmdb_search_exception_callback(mock_fut_bad_key, monkeypatch):
+            expected = 'Test bad key'
+            assert caplog.messages[0] == expected
+    
+    def test_invalid_tmdb_api_key_calls_askyesno_dialog(self, mock_fut_bad_key, monkeypatch):
+        with self.tmdb_search_exception_callback(mock_fut_bad_key, monkeypatch):
+            expected = handlers.config.current.tk_root, 'Invalid API key for TMDB.', 'Do you want to set the key?'
+            assert self.askyesno_calls[0] == expected
+    
+    def test_invalid_tmdb_api_key_calls_preferences_dialog(self, mock_fut_bad_key, monkeypatch):
+        with self.tmdb_search_exception_callback(mock_fut_bad_key, monkeypatch):
+            assert self.preference_dialog_calls[0]
+    
+    def test_invalid_tmdb_api_key_sets_do_not_use_flag(self, mock_fut_bad_key, monkeypatch):
+        with self.tmdb_search_exception_callback(mock_fut_bad_key, monkeypatch, askyesno=False):
+            assert not handlers.config.persistent.use_tmdb
+    
+    def test_tmdb_connection_timeout_logs_exception(self,  mock_fut_timeout, monkeypatch, caplog):
+        caplog.set_level('INFO')
+        with self.tmdb_search_exception_callback(mock_fut_timeout, monkeypatch):
+            expected = 'Test timeout exception'
+            assert caplog.messages[0] == expected
+        
+    def test_unexpected_exception_logs_exception(self,  mock_fut_unexpected, monkeypatch, caplog):
+        caplog.set_level('DEBUG')
+        with self.tmdb_search_exception_callback(mock_fut_unexpected, monkeypatch):
+            expected = "Unexpected exception. \nexc.args=('Test unexpected exception',)"
+            assert caplog.messages[0] == expected
+
+
+class TestTmdbIOHandler:
+    search_string = 'test search string'
+    work_queue = handlers.queue.LifoQueue()
+
+    @contextmanager
+    def tmdb_io_handler(self, monkeypatch, mock_executor):
+        # Patch config.current
+        dummy_current_config = handlers.config.CurrentConfig()
+        dummy_current_config.threadpool_executor = mock_executor
+        monkeypatch.setattr(handlers.config, 'current', dummy_current_config)
+    
+        # Patch config.persistent
+        dummy_persistent_config = handlers.config.PersistentConfig('test_prog', 'test_vers')
+        dummy_persistent_config.use_tmdb = True
+        dummy_persistent_config.tmdb_api_key = 'test tmdb key'
+        monkeypatch.setattr(handlers.config, 'persistent', dummy_persistent_config)
+
+        # noinspection PyProtectedMember
+        handlers._tmdb_io_handler(self.search_string, self.work_queue)
+        yield
+        
+    def test_submit_called(self, monkeypatch, mock_executor):
+        with self.tmdb_io_handler(monkeypatch, mock_executor):
+            func = handlers.tmdb.search_movies
+            key = handlers.config.persistent._tmdb_api_key
+            assert mock_executor.submit_calls == [(func, key, self.search_string, self.work_queue)]
+
+    def test_callback_set(self, monkeypatch, mock_executor):
+        with self.tmdb_io_handler(monkeypatch, mock_executor):
+            assert mock_executor.fut.add_done_callback_calls == [(handlers._tmdb_search_exception_callback, )]
+
+
 class TestAddMovie:
     TAGS = ['Movie night candidate']
     
@@ -249,7 +375,7 @@ class TestAddMovieCallback:
     
     @contextmanager
     def callback_context(self):
-        movie = config.MovieTypedDict(title='Test Title', year=2020)
+        movie = handlers.config.MovieTypedDict(title='Test Title', year=2020)
         tags = ['test 1']
         yield handlers._add_movie_callback(movie, tags)
     

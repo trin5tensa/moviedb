@@ -1,9 +1,8 @@
 """Menu handlers.
 
 This module is the glue between the user's selection of a menu item and the gui."""
-
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/4/22, 9:55 AM by stephen.
+#  Last modified 11/23/22, 3:06 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,8 +13,11 @@ This module is the glue between the user's selection of a menu item and the gui.
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import concurrent.futures
+import logging
 import queue
-from typing import Callable, Sequence
+from typing import Callable, Optional, Sequence
 
 import sqlalchemy.exc
 import sqlalchemy.orm
@@ -26,6 +28,7 @@ import exception
 import guiwidgets
 import guiwidgets_2
 import impexp
+import tmdb
 
 
 def about_dialog():
@@ -36,8 +39,35 @@ def about_dialog():
 
 def preferences_dialog():
     """Display the 'preferences' dialog."""
-    guiwidgets_2.PreferencesGUI(config.current.tk_root, config.persistent.tmdb_api_key,
-                                config.persistent.use_tmdb, _preferences_callback)
+    try:
+        display_key = config.persistent.tmdb_api_key
+    except (config.ConfigTMDBAPIKeyNeedsSetting, config.ConfigTMDBDoNotUse):
+        display_key = ''
+    guiwidgets_2.PreferencesGUI(config.current.tk_root, display_key, config.persistent.use_tmdb,
+                                _preferences_callback)
+
+
+def _get_tmdb_api_key() -> Optional[str]:
+    """
+    Retrieve the TMDB API key from preference storage.
+    
+    Handles:
+        config.ConfigTMDBDoNotUse:
+            The exception is logged and None is returned.
+        config.ConfigTMDBAPIKeyNeedsSetting:
+            A call to the preferences dialog is scheduled and None is returned.
+        
+    Returns:
+        The TMDB API key or None if handled exceptions were encountered.
+    """
+    try:
+        tmdb_api_key = config.persistent.tmdb_api_key
+    except config.ConfigTMDBDoNotUse:
+        logging.info(f'User declined TMDB use.')
+    except config.ConfigTMDBAPIKeyNeedsSetting:
+        preferences_dialog()
+    else:
+        return tmdb_api_key
 
 
 def add_movie():
@@ -322,23 +352,42 @@ def _select_tag_callback(old_tag: str):
     guiwidgets_2.EditTagGUI(config.current.tk_root, old_tag, delete_callback, edit_callback)
 
 
-def _tmdb_io_handler(title: str, work_queue: queue.LifoQueue):
-    # moviedb-#269 Stub function
-    # TODO
-    #   Code
-    #   Delete integration test code
-    #   Docs
-    #   Tests
-    safeprint = config.current.safeprint
-    safeprint(f"_tmdb_io_handler: Search for {title} initiated.")
+def _tmdb_search_exception_callback(fut: concurrent.futures.Future):
+    """
+    This handles exceptions encountered while running tmdb.search_movies.
     
-    # Integration test code
-    # executor = config.current.threadpool_executor
-    # fut = executor.submit(tmdb.main)
-    # try:
-    #     result = fut.result()
-    # except Exception as exc:
-    #     safeprint(f'TMDB read generated an exception. \n{exc}')
-    # else:
-    #     safeprint(f'future result={result}')
-    # safeprint(f'_tmdb_io_handler ending')
+    Args:
+        fut:
+    """
+    try:
+        fut.result()
+
+    except exception.TMDBAPIKeyException as exc:
+        logging.error(exc)
+        msg = 'Invalid API key for TMDB.'
+        detail = 'Do you want to set the key?'
+        if guiwidgets_2.gui_askyesno(config.current.tk_root, msg, detail):
+            preferences_dialog()
+        else:
+            config.persistent.use_tmdb = False
+
+    except exception.TMDBConnectionTimeout as exc:
+        logging.info(exc)
+
+    except Exception as exc:
+        msg = f'Unexpected exception. \n{exc.args=}'
+        logging.error(msg)
+        
+
+def _tmdb_io_handler(search_string: str, work_queue: queue.LifoQueue):
+    """
+    Runs the movie search in a thread from the pool.
+    
+    Args:
+        search_string: The title search string
+        work_queue: A queue where compliant movies can be placed.
+    """
+    if tmdb_api_key := _get_tmdb_api_key():
+        executor = config.current.threadpool_executor
+        fut = executor.submit(tmdb.search_movies, tmdb_api_key, search_string, work_queue)
+        fut.add_done_callback(_tmdb_search_exception_callback)
