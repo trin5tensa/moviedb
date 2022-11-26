@@ -2,7 +2,7 @@
 
 This module is the glue between the user's selection of a menu item and the gui."""
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/23/22, 3:06 PM by stephen.
+#  Last modified 11/26/22, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -158,7 +158,7 @@ def _delete_movie_callback(movie: config.FindMovieTypedDict):
 
 
 def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
-    """Find movies which match the user entered criteria.
+    """Finds movies in the database which match the user entered criteria.
     Continue to the next appropriate stage of processing depending on whether no movies, one movie,
     or more than one movie is found.
     

@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Last modified 11/26/22, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -422,6 +422,7 @@ class TestSearchMovieGUI:
     
     # Test search
     
+    @pytest.mark.skip('Test dependency discovered')
     def test_callback_called(self, patch_tk):
         with self.movie_context() as movie_gui:
             movie_gui.selected_tags = ['tag 1', 'tag 2']
@@ -520,6 +521,7 @@ class TestSelectMovieGUI:
                                                    text='Test Title',
                                                    values=(2020, 'Director', 200, 'NB')))]
     
+    @pytest.mark.skip('Test dependency discovered')
     def test_treeview_binds_callback(self, patch_tk, monkeypatch):
         # noinspection PyUnusedLocal
         def selection(*args):

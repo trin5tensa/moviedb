@@ -1,6 +1,6 @@
 """Test module."""
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/23/22, 8:37 AM by stephen.
+#  Last modified 11/26/22, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -59,14 +59,14 @@ class TestSearchMovies:
         with self.get_search_context(self.api_key, self.title_query, monkeypatch):
             assert tmdb.tmdbsimple.API_KEY == self.api_key
             
-    @pytest.mark.skip
+    @pytest.mark.skip('Rewrite of tmdb.search_movies is underway')
     def test_search_results_returned(self, monkeypatch):
         monkeypatch.setattr(tmdb.tmdbsimple, 'Search', DummySearch)
         with self.get_search_context(self.api_key, self.title_query, monkeypatch) as cm:
             assert tmdb.tmdbsimple.API_KEY == self.api_key
             assert cm == MOVIES
 
-    @pytest.mark.skip
+    @pytest.mark.skip('Rewrite of tmdb.search_movies is underway')
     def test_401_logs_error(self, monkeypatch):
         monkeypatch.setattr(tmdb.tmdbsimple, 'Search', DummySearch401)
         error_args = []
@@ -84,7 +84,7 @@ class TestSearchMovies:
                 pass
         assert exc.value.args[0] == 'API Key error: 401 Client Error: Unauthorized for url'
 
-    @pytest.mark.skip
+    @pytest.mark.skip('Rewrite of tmdb.search_movies is underway')
     def test_unexpected_HTTP_error_logged(self, monkeypatch):
         monkeypatch.setattr(tmdb.tmdbsimple, 'Search', DummySearchUnspecifiedError)
         error_args = []

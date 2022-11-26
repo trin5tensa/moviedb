@@ -1,6 +1,6 @@
 """Menu handlers test module."""
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/23/22, 3:06 PM by stephen.
+#  Last modified 11/26/22, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -60,6 +60,7 @@ class TestPreferences:
     test_use_tmdb = True
     calls = []
 
+    @pytest.mark.skip('Test dependency discovered')
     def test_preferences_dialog_instantiates_preferences_gui(self, monkeypatch):
         with self.preferences_context(monkeypatch):
             assert self.calls == [(DummyParent(), self.test_tmdb_api_key,
@@ -409,11 +410,19 @@ class TestSearchMovieCallback:
             handlers._search_movie_callback(self.criteria, self.tags)
         assert isinstance(exc.value, exception.DatabaseSearchFoundNothing)
     
+    @pytest.mark.skip('Test dependency discovered')
     def test_single_movie_found_calls_instantiate_edit_movie_gui(self, class_setup, monkeypatch):
+        # Sets up an instrumented dummy for database.find_movies().
         movie = dict(title='Test Movie', year='1942')
         monkeypatch.setattr(handlers.database, 'find_movies', self.configure_dummy_find_movies([movie]))
+        # self.criteria['title'] = movie['title']
+        # self.criteria['year'] = movie['year']
+
+        # Sets up a dummy database.all_tags() which returns ['test_tag]
         all_tags = ['test tag']
         monkeypatch.setattr(handlers.database, 'all_tags', lambda: all_tags)
+        
+        # Sets up a dummy guiwidgets.EditMovieGUI
         monkeypatch.setattr(handlers.guiwidgets, 'EditMovieGUI', DummyEditMovieGUI)
         
         with self.class_context():
@@ -474,6 +483,76 @@ class TestSearchMovieCallback:
         finally:
             handlers.config.current = hold_current
             handlers.config.persistent = hold_persistent
+
+
+class TestSearchMovieCallback2:
+    search_title = 'test tsmc'
+    year = '4242'
+    tags = ['tsmc 1', 'tsmc 2']
+    criteria = handlers.config.FindMovieTypedDict(title=search_title, year=[year])
+    search_response: dict[str, list[handlers.database.MovieUpdateDef]] = dict(
+            no_movies=[],
+            one_movie=[handlers.config.MovieUpdateDef(title=search_title, year=int(year))],
+            many_movies=[
+                    handlers.config.MovieUpdateDef(title=search_title+' 1', year=int(year)),
+                    handlers.config.MovieUpdateDef(title=search_title+' 2', year=int(year))],
+            )
+    
+    find_movies_calls = []
+    
+    def dummy_find_movies_calls(self, found: Literal['no_movies', 'one_movie', 'many_movies']) -> Callable:
+        """ Mocks the handler's call to database.find_movies.
+        
+        Args:
+            found:
+
+        Returns:
+            The mock function
+        """
+        self.find_movies_calls = []
+        result = self.search_response[found]
+        
+        def func(*args) -> list[handlers.database.MovieUpdateDef]:
+            self.find_movies_calls.append(args)
+            return result
+        return func
+    
+    @contextmanager
+    def search_movie_callback(self, found, monkeypatch):
+        global dummy_select_movie_gui_instance
+        dummy_select_movie_gui_instance = []
+        
+        monkeypatch.setattr('handlers.database.find_movies', self.dummy_find_movies_calls(found))
+        monkeypatch.setattr(handlers.guiwidgets,'SelectMovieGUI', DummySelectMovieGUI)
+        
+        current = handlers.config.CurrentConfig()
+        current.tk_root = DummyTk()
+        monkeypatch.setattr('handlers.config.current', current)
+        handlers._search_movie_callback(self.criteria, self.tags)
+        yield
+    
+    def test_find_movies_called(self, monkeypatch):
+        try:
+            with self.search_movie_callback('no_movies', monkeypatch):
+                pass
+        except exception.DatabaseSearchFoundNothing:
+            pass
+        finally:
+            assert self.find_movies_calls == [(self.criteria,)]
+    
+    def test_no_movies_found_raises_exception(self, monkeypatch):
+        with pytest.raises(exception.DatabaseSearchFoundNothing):
+            with self.search_movie_callback('no_movies', monkeypatch):
+                pass
+    
+    def test_one_movie_found_calls_edit_movie(self):
+        # TODO
+        assert False
+    
+    def test_multiple_movies_found_instantiates_edit_movie(self, monkeypatch):
+        with self.search_movie_callback('many_movies', monkeypatch):
+            expected = [(DummyTk(), self.search_response['many_movies'], handlers._select_movie_callback)]
+            assert dummy_select_movie_gui_instance == expected
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -867,6 +946,8 @@ class DummyEditMovieGUI:
     movie: handlers.config.MovieUpdateDef
     
     def __post_init__(self):
+        print(f'\n{self.all_tag_names=}')
+        print(f'{self.movie=}')
         dummy_edit_movie_gui_instance.append((self.parent, self.commit_callback, self.delete_callback,
                                               self.buttons_to_show, self.all_tag_names, self.movie))
 
