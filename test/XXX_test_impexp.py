@@ -1,7 +1,7 @@
 """Tests for import module."""
 
 #  Copyright (c) 2020-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Last modified 11/26/22, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
