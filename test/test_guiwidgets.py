@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/26/22, 12:59 PM by stephen.
+#  Last modified 11/28/22, 2:31 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -422,14 +422,14 @@ class TestSearchMovieGUI:
     
     # Test search
     
-    @pytest.mark.skip('Test dependency discovered')
-    def test_callback_called(self, patch_tk):
-        with self.movie_context() as movie_gui:
-            movie_gui.selected_tags = ['tag 1', 'tag 2']
-            movie_gui.search()
-            assert commit_callback_calls == [(dict(director='4242', minutes=['4242', '4242'],
-                                                   notes='4242', title='4242', year=['4242', '4242'], ),
-                                              ['tag 1', 'tag 2'])]
+    # @pytest.mark.skip('Test dependency discovered')
+    # def test_callback_called(self, patch_tk):
+    #     with self.movie_context() as movie_gui:
+    #         movie_gui.selected_tags = ['tag 1', 'tag 2']
+    #         movie_gui.search()
+    #         assert commit_callback_calls == [(dict(director='4242', minutes=['4242', '4242'],
+    #                                                notes='4242', title='4242', year=['4242', '4242'], ),
+    #                                           ['tag 1', 'tag 2'])]
     
     def test_callback_raises_movie_search_found_nothing(self, patch_tk, monkeypatch):
         # noinspection PyUnusedLocal
@@ -521,21 +521,21 @@ class TestSelectMovieGUI:
                                                    text='Test Title',
                                                    values=(2020, 'Director', 200, 'NB')))]
     
-    @pytest.mark.skip('Test dependency discovered')
-    def test_treeview_binds_callback(self, patch_tk, monkeypatch):
-        # noinspection PyUnusedLocal
-        def selection(*args):
-            return ["'\'Hello Mum\', 1954'"]
-        
-        monkeypatch.setattr(TtkTreeview, 'selection', selection)
-        with self.select_movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            bodyframe = outerframe.children[0]
-            treeview = bodyframe.children[0]
-            assert treeview.bind_calls[0][0] == ('<<TreeviewSelect>>',)
-            
-            treeview.bind_calls[0][1]['func']()
-            assert commit_callback_calls[2] == ('Hello Mum', 1954)
+    # @pytest.mark.skip('Test dependency discovered')
+    # def test_treeview_binds_callback(self, patch_tk, monkeypatch):
+    #     # noinspection PyUnusedLocal
+    #     def selection(*args):
+    #         return ["'\'Hello Mum\', 1954'"]
+    #
+    #     monkeypatch.setattr(TtkTreeview, 'selection', selection)
+    #     with self.select_movie_context() as movie_gui:
+    #         outerframe = movie_gui.parent.children[0]
+    #         bodyframe = outerframe.children[0]
+    #         treeview = bodyframe.children[0]
+    #         assert treeview.bind_calls[0][0] == ('<<TreeviewSelect>>',)
+    #
+    #         treeview.bind_calls[0][1]['func']()
+    #         assert commit_callback_calls[2] == ('Hello Mum', 1954)
     
     def test_widget_is_destroyed(self, patch_tk, monkeypatch):
         destroy_called = False
