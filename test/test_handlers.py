@@ -1,6 +1,6 @@
 """Menu handlers test module."""
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/28/22, 8:07 AM by stephen.
+#  Last modified 11/28/22, 8:58 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -60,8 +60,8 @@ class TestPreferences:
     test_use_tmdb = True
     calls = []
 
-    @pytest.mark.skip('Test dependency discovered')
     def test_preferences_dialog_instantiates_preferences_gui(self, monkeypatch):
+        self.calls = []
         with self.preferences_context(monkeypatch):
             assert self.calls == [(DummyParent(), self.test_tmdb_api_key,
                                    self.test_use_tmdb, handlers._preferences_callback)]
