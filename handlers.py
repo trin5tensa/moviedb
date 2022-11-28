@@ -2,7 +2,7 @@
 
 This module is the glue between the user's selection of a menu item and the gui."""
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/26/22, 12:59 PM by stephen.
+#  Last modified 11/28/22, 8:07 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -182,14 +182,14 @@ def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[s
         movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
         # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
         # noinspection PyTypeChecker
-        guiwidgets.EditMovieGUI(config.current.tk_root, _edit_movie_callback_wrapper(movie_key),
+        guiwidgets.EditMovieGUI(config.current.tk_root, _edit_movie_callback(movie_key),
                                 _delete_movie_callback, ['commit', 'delete'],
                                 database.all_tags(), movie)
     else:
         guiwidgets.SelectMovieGUI(config.current.tk_root, movies, _select_movie_callback)
 
 
-def _edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callable:
+def _edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
     """ Crete the edit movie callback
     
     Args:
@@ -200,7 +200,7 @@ def _edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callabl
     Returns:
         edit_movie_callback
     """
-    def edit_movie_callback(new_movie: config.MovieTypedDict, selected_tags: Sequence[str]):
+    def func(new_movie: config.MovieTypedDict, selected_tags: Sequence[str]):
         """ Change movie and links in database with new user supplied data,
     
         Args:
@@ -230,7 +230,7 @@ def _edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callabl
                                   f'been deleted by another process. ')
             guiwidgets.gui_messagebox(*missing_movie_args)
             
-    return edit_movie_callback
+    return func
 
 
 def _select_movie_callback(title: str, year: int):
@@ -247,7 +247,7 @@ def _select_movie_callback(title: str, year: int):
     movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
     # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
     # noinspection PyTypeChecker
-    guiwidgets.EditMovieGUI(config.current.tk_root, _edit_movie_callback_wrapper(movie_key),
+    guiwidgets.EditMovieGUI(config.current.tk_root, _edit_movie_callback(movie_key),
                             _delete_movie_callback, ['commit', 'delete'], database.all_tags(), movie)
 
 
