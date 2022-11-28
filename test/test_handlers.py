@@ -1,6 +1,6 @@
 """Menu handlers test module."""
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/28/22, 8:58 AM by stephen.
+#  Last modified 11/28/22, 3:07 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -171,10 +171,6 @@ class TestTmdbIOExceptionHandler:
     def test_invalid_tmdb_api_key_calls_preferences_dialog(self, mock_fut_bad_key, monkeypatch):
         with self.tmdb_search_exception_callback(mock_fut_bad_key, monkeypatch):
             assert self.preference_dialog_calls[0]
-    
-    def test_invalid_tmdb_api_key_sets_do_not_use_flag(self, mock_fut_bad_key, monkeypatch):
-        with self.tmdb_search_exception_callback(mock_fut_bad_key, monkeypatch, askyesno=False):
-            assert not handlers.config.persistent.use_tmdb
     
     def test_tmdb_connection_timeout_logs_exception(self,  mock_fut_timeout, monkeypatch, caplog):
         caplog.set_level('INFO')

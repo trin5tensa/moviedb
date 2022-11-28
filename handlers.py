@@ -2,7 +2,7 @@
 
 This module is the glue between the user's selection of a menu item and the gui."""
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/28/22, 8:07 AM by stephen.
+#  Last modified 11/28/22, 3:07 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -368,8 +368,6 @@ def _tmdb_search_exception_callback(fut: concurrent.futures.Future):
         detail = 'Do you want to set the key?'
         if guiwidgets_2.gui_askyesno(config.current.tk_root, msg, detail):
             preferences_dialog()
-        else:
-            config.persistent.use_tmdb = False
 
     except exception.TMDBConnectionTimeout as exc:
         logging.info(exc)
