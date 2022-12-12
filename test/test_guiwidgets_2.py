@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/11/22, 8:43 AM by stephen.
+#  Last modified 12/12/22, 12:13 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,7 +22,6 @@ import exception
 import guiwidgets_2
 from test.dummytk import (DummyTk, TkStringVar, TkToplevel, TtkButton, TtkCheckbutton, TtkEntry,
                           TtkFrame, TtkLabel, TtkScrollbar, TtkTreeview, )
-
 
 Exc = Type[Optional[exception.DatabaseSearchFoundNothing]]
 
@@ -187,14 +186,6 @@ class TestAddMovieGUI:
         with self.add_movie_gui_context() as add_movie:
             queue = add_movie.tmdb_work_queue
             assert (calls == queue, True)
-            
-    def test_work_package_printed_to_stdout(self, capsys):
-        with self.add_movie_gui_context() as add_movie:
-            test_work_package = 'test work package'
-            add_movie.tmdb_work_queue.put(test_work_package)
-            add_movie.tmdb_consumer()
-            captured = capsys.readouterr()
-            assert test_work_package in captured.out, f'{test_work_package} was not printed.'
     
     def test_tmdb_consumer_recalled(self):
         with self.add_movie_gui_context() as add_movie:
