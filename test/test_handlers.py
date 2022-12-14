@@ -1,7 +1,6 @@
 """Menu handlers test module."""
-
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Last modified 12/12/22, 12:13 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,13 +15,14 @@
 from collections import deque
 from contextlib import contextmanager
 from dataclasses import dataclass
+from functools import partial
 from typing import Callable, List, Literal, Sequence
 
 import pytest
 
-import config
 import exception
 import handlers
+from test.dummytk import DummyTk
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -61,6 +61,7 @@ class TestPreferences:
     calls = []
 
     def test_preferences_dialog_instantiates_preferences_gui(self, monkeypatch):
+        self.calls = []
         with self.preferences_context(monkeypatch):
             assert self.calls == [(DummyParent(), self.test_tmdb_api_key,
                                    self.test_use_tmdb, handlers._preferences_callback)]
@@ -92,8 +93,129 @@ class TestPreferences:
         finally:
             handlers.config.persistent = hold_persistent
             handlers.config.current = hold_current
+    
+
+class TestGetTmdbGetApiKey:
+    TEST_KEY = 'dummy key'
+    
+    @contextmanager
+    def get_tmdb_key(self, monkeypatch, api_key=TEST_KEY, use_tmdb=True):
+        dummy_persistent_config = handlers.config.PersistentConfig('test_prog', 'test_vers')
+        dummy_persistent_config.use_tmdb = use_tmdb
+        dummy_persistent_config.tmdb_api_key = api_key
+        monkeypatch.setattr(handlers.config, 'persistent', dummy_persistent_config)
+        # noinspection PyProtectedMember
+        yield handlers._get_tmdb_api_key()
+        
+    def test_key_returned(self, monkeypatch):
+        with self.get_tmdb_key(monkeypatch) as ctx:
+            assert ctx == self.TEST_KEY
             
-            
+    def test_do_not_use_tmdb_logged(self, monkeypatch, caplog):
+        caplog.set_level('DEBUG')
+        with self.get_tmdb_key(monkeypatch, use_tmdb=False):
+            expected = f"User declined TMDB use."
+            assert caplog.messages[0] == expected
+
+    def test_key_needs_setting_calls_preferences_dialog(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(handlers, 'preferences_dialog', lambda: calls.append(True))
+        with self.get_tmdb_key(monkeypatch, api_key=''):
+            assert calls[0]
+
+
+class TestTmdbIOExceptionHandler:
+    askyesno_calls = None
+    messagebox_calls = None
+    preference_dialog_calls = None
+    
+    @contextmanager
+    def tmdb_search_exception_callback(self, mock_fut, monkeypatch, askyesno=True):
+        self.askyesno_calls = []
+        self.messagebox_calls = []
+        self.preference_dialog_calls = []
+        
+        # Patch config.current
+        dummy_current_config = handlers.config.CurrentConfig()
+        dummy_current_config.tk_root = DummyTk
+        monkeypatch.setattr(handlers.config, 'current', dummy_current_config)
+        
+        # Patch config.persistent
+        dummy_persistent_config = handlers.config.PersistentConfig('test_prog', 'test_vers')
+        dummy_persistent_config.use_tmdb = True
+        monkeypatch.setattr(handlers.config, 'persistent', dummy_persistent_config)
+        
+        monkeypatch.setattr(handlers.guiwidgets_2, 'gui_askyesno', partial(self.dummy_askyesno, askyesno=askyesno))
+        monkeypatch.setattr(handlers.guiwidgets_2, 'gui_messagebox', partial(self.dummy_messagebox))
+        monkeypatch.setattr(handlers, 'preferences_dialog', lambda: self.preference_dialog_calls.append(True))
+        # noinspection PyProtectedMember
+        handlers._tmdb_search_exception_callback(mock_fut)
+        yield
+        
+    def dummy_askyesno(self, *args, askyesno=True):
+        self.askyesno_calls.append(args)
+        return askyesno
+    
+    def dummy_messagebox(self, *args):
+        self.messagebox_calls.append(args)
+
+    def test_future_result_called(self, mock_fut, monkeypatch):
+        with self.tmdb_search_exception_callback(mock_fut, monkeypatch):
+            assert mock_fut.result_called
+    
+    def test_invalid_tmdb_api_key_logs_exception(self, mock_fut_bad_key, monkeypatch, caplog):
+        caplog.set_level('DEBUG')
+        with self.tmdb_search_exception_callback(mock_fut_bad_key, monkeypatch):
+            expected = 'Test bad key'
+            assert caplog.messages[0] == expected
+    
+    def test_invalid_tmdb_api_key_calls_askyesno_dialog(self, mock_fut_bad_key, monkeypatch):
+        with self.tmdb_search_exception_callback(mock_fut_bad_key, monkeypatch):
+            expected = handlers.config.current.tk_root, 'Invalid API key for TMDB.', 'Do you want to set the key?'
+            assert self.askyesno_calls[0] == expected
+    
+    def test_invalid_tmdb_api_key_calls_preferences_dialog(self, mock_fut_bad_key, monkeypatch):
+        with self.tmdb_search_exception_callback(mock_fut_bad_key, monkeypatch):
+            assert self.preference_dialog_calls[0]
+    
+    def test_tmdb_connection_timeout_calls_message_dialog(self,  mock_fut_timeout, monkeypatch):
+        with self.tmdb_search_exception_callback(mock_fut_timeout, monkeypatch):
+            expected = handlers.config.current.tk_root, 'TMDB database cannot be reached.'
+            assert self.messagebox_calls[0] == expected
+
+
+class TestTmdbIOHandler:
+    search_string = 'test search string'
+    work_queue = handlers.queue.LifoQueue()
+
+    @contextmanager
+    def tmdb_io_handler(self, monkeypatch, mock_executor):
+        # Patch config.current
+        dummy_current_config = handlers.config.CurrentConfig()
+        dummy_current_config.threadpool_executor = mock_executor
+        monkeypatch.setattr(handlers.config, 'current', dummy_current_config)
+    
+        # Patch config.persistent
+        dummy_persistent_config = handlers.config.PersistentConfig('test_prog', 'test_vers')
+        dummy_persistent_config.use_tmdb = True
+        dummy_persistent_config.tmdb_api_key = 'test tmdb key'
+        monkeypatch.setattr(handlers.config, 'persistent', dummy_persistent_config)
+
+        # noinspection PyProtectedMember
+        handlers._tmdb_io_handler(self.search_string, self.work_queue)
+        yield
+        
+    def test_submit_called(self, monkeypatch, mock_executor):
+        with self.tmdb_io_handler(monkeypatch, mock_executor):
+            func = handlers.tmdb.search_tmdb
+            key = handlers.config.persistent._tmdb_api_key
+            assert mock_executor.submit_calls == [(func, key, self.search_string, self.work_queue)]
+
+    def test_callback_set(self, monkeypatch, mock_executor):
+        with self.tmdb_io_handler(monkeypatch, mock_executor):
+            assert mock_executor.fut.add_done_callback_calls == [(handlers._tmdb_search_exception_callback, )]
+
+
 class TestAddMovie:
     TAGS = ['Movie night candidate']
     
@@ -249,7 +371,7 @@ class TestAddMovieCallback:
     
     @contextmanager
     def callback_context(self):
-        movie = config.MovieTypedDict(title='Test Title', year=2020)
+        movie = handlers.config.MovieTypedDict(title='Test Title', year=2020)
         tags = ['test 1']
         yield handlers._add_movie_callback(movie, tags)
     
@@ -267,87 +389,87 @@ class TestAddMovieCallback:
         self.dummy_add_movie_tag_link_calls.append(args)
 
 
-# noinspection PyMissingOrEmptyDocstring
 class TestSearchMovieCallback:
+    search_title = 'test tsmc'
+    year = '4242'
+    tags = ['tsmc 1', 'tsmc 2']
+    movie_key = handlers.config.MovieKeyTypedDict(title=search_title, year=int(year))
+    criteria = handlers.config.FindMovieTypedDict(title=search_title, year=[year])
+    search_response: dict[str, list[handlers.database.MovieUpdateDef]] = dict(
+            no_movies=[],
+            one_movie=[handlers.config.MovieUpdateDef(title=search_title, year=int(year))],
+            many_movies=[
+                    handlers.config.MovieUpdateDef(title=search_title+' 1', year=int(year)),
+                    handlers.config.MovieUpdateDef(title=search_title+' 2', year=int(year))],
+            )
+    find_movies_calls = []
     
-    def test_criteria_correctly_cleaned_up(self, class_setup, monkeypatch):
-        monkeypatch.setattr(handlers.database, 'find_movies', self.configure_dummy_find_movies([]))
-        clean_criteria = dict(title='Pot', year=[2000, 2010], tags=('blue', 'red'))
-        with pytest.raises(exception.DatabaseSearchFoundNothing):
-            handlers._search_movie_callback(self.criteria, self.tags)
-        assert self.dummy_find_movies_calls == [(clean_criteria,)]
-    
-    def test_no_movies_found_raises_exception(self, class_setup, monkeypatch):
-        monkeypatch.setattr(handlers.database, 'find_movies', self.configure_dummy_find_movies([]))
-        with pytest.raises(exception.DatabaseSearchFoundNothing) as exc:
-            handlers._search_movie_callback(self.criteria, self.tags)
-        assert isinstance(exc.value, exception.DatabaseSearchFoundNothing)
-    
-    def test_single_movie_found_calls_instantiate_edit_movie_gui(self, class_setup, monkeypatch):
-        movie = dict(title='Test Movie', year='1942')
-        monkeypatch.setattr(handlers.database, 'find_movies', self.configure_dummy_find_movies([movie]))
-        all_tags = ['test tag']
-        monkeypatch.setattr(handlers.database, 'all_tags', lambda: all_tags)
-        monkeypatch.setattr(handlers.guiwidgets, 'EditMovieGUI', DummyEditMovieGUI)
+    def dummy_find_movies_calls(self, found: Literal['no_movies', 'one_movie', 'many_movies']) -> Callable:
+        """ Mocks the handler's call to database.find_movies.
         
-        with self.class_context():
-            handlers._search_movie_callback(self.criteria, self.tags)
-            expected = (handlers.config.current.tk_root, handlers._edit_movie_callback_wrapper(self.criteria),
-                        handlers._delete_movie_callback, ['commit', 'delete'], all_tags, movie)
-            assert dummy_edit_movie_gui_instance[0][0] == handlers.config.current.tk_root
-            assert expected[1].__name__ == 'edit_movie_callback'
-            assert dummy_edit_movie_gui_instance[0][2:] == (handlers._delete_movie_callback,
-                                                            ['commit', 'delete'], all_tags, movie)
+        Args:
+            found:
 
-    def test_multiple_movies_found_calls_select_movie_gui(self, class_setup, monkeypatch):
-        movie1 = handlers.config.MovieUpdateDef(title='Test Movie 1', year=2042)
-        movie2 = handlers.config.MovieUpdateDef(title='Test Movie 2', year=2042)
-        monkeypatch.setattr(handlers.database, 'find_movies',
-                            self.configure_dummy_find_movies([movie1, movie2]))
-        monkeypatch.setattr(handlers.guiwidgets,
-                            'SelectMovieGUI', DummySelectMovieGUI)
-        with self.class_context():
-            handlers._search_movie_callback(self.criteria, self.tags)
-            expected = handlers.config.current.tk_root, [movie1, movie2], handlers._select_movie_callback
-        assert dummy_select_movie_gui_instance[0] == expected
-    
-    dummy_find_movies_calls = None
-    
-    def configure_dummy_find_movies(self, movies: list = None,
-                                    exception_: exception.DatabaseException = False):
-        def dummy_find_movies(*args):
-            self.dummy_find_movies_calls.append(args)
-            if exception_:
-                raise exception_
-            return movies
+        Returns:
+            The mock function
+        """
+        self.find_movies_calls = []
+        result = self.search_response[found]
         
-        return dummy_find_movies
-    
-    @pytest.fixture
-    def class_setup(self):
-        self.dummy_find_movies_calls = []
-        self.dummy_select_movie_gui_instance = []
-        self.criteria = {internal_names: ''
-                         for internal_names in handlers.guiwidgets.MOVIE_FIELD_NAMES}
-        self.criteria['title'] = 'Pot'
-        self.criteria['year'] = [2000, 2010]
-        self.criteria['director'] = []
-        self.criteria['minutes'] = ['', '']
-        self.criteria['notes'] = ''
-        self.tags = ('blue', 'red')
+        def func(*args) -> list[handlers.database.MovieUpdateDef]:
+            self.find_movies_calls.append(args)
+            return result
+        return func
     
     @contextmanager
-    def class_context(self):
-        hold_persistent = handlers.config.persistent
-        hold_current = handlers.config.current
-        handlers.config.persistent = handlers.config.PersistentConfig(program='Test program name',
-                                                                      program_version='Test program version')
-        handlers.config.current = handlers.config.CurrentConfig(DummyParent())
+    def search_movie_callback(self, found, monkeypatch):
+        global dummy_select_movie_gui_instance
+        global dummy_edit_movie_gui_instance
+        dummy_select_movie_gui_instance = []
+        dummy_edit_movie_gui_instance = []
+        
+        monkeypatch.setattr('handlers.database.find_movies', self.dummy_find_movies_calls(found))
+        monkeypatch.setattr(handlers.guiwidgets, 'SelectMovieGUI', DummySelectMovieGUI)
+        monkeypatch.setattr(handlers.guiwidgets, 'EditMovieGUI', DummyEditMovieGUI)
+        monkeypatch.setattr(handlers.database, 'all_tags', lambda: self.tags)
+        
+        current = handlers.config.CurrentConfig()
+        current.tk_root = DummyTk()
+        monkeypatch.setattr('handlers.config.current', current)
+        handlers._search_movie_callback(self.criteria, self.tags)
+        yield
+    
+    def test_find_movies_called(self, monkeypatch):
+        """Test the call to find_movies and suppress the generated error when none are found."""
         try:
-            yield
+            with self.search_movie_callback('no_movies', monkeypatch):
+                pass
+        except exception.DatabaseSearchFoundNothing:
+            pass
         finally:
-            handlers.config.current = hold_current
-            handlers.config.persistent = hold_persistent
+            assert self.find_movies_calls == [(self.criteria,)]
+    
+    def test_no_movies_found_raises_exception(self, monkeypatch):
+        with pytest.raises(exception.DatabaseSearchFoundNothing):
+            with self.search_movie_callback('no_movies', monkeypatch):
+                pass
+    
+    def test_one_movie_found_calls_edit_movie(self, monkeypatch):
+        with self.search_movie_callback('one_movie', monkeypatch):
+            expected = [(
+                    DummyTk(),
+                    'func',
+                    handlers._delete_movie_callback,
+                    ['commit', 'delete'],
+                    self.tags,
+                    self.movie_key
+                    )]
+            assert dummy_edit_movie_gui_instance == expected
+    
+    def test_multiple_movies_found_instantiates_edit_movie(self, monkeypatch):
+        with self.search_movie_callback('many_movies', monkeypatch):
+            expected = [(DummyTk(), self.search_response['many_movies'], handlers._select_movie_callback)]
+            assert dummy_select_movie_gui_instance == expected
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -368,7 +490,7 @@ class TestEditMovieCallback:
     
     def test_edit_movie_callback_returned(self):
         with self.class_context() as cm:
-            assert cm.__name__ == 'edit_movie_callback'
+            assert cm.__name__ == 'func'
 
     def test_replace_movie_called(self, patches):
         with self.class_context() as cm:
@@ -432,7 +554,7 @@ class TestEditMovieCallback:
     @contextmanager
     def class_context(self):
         old_movie: handlers.config.MovieTypedDict = dict(title='Old Test Title', year=1942)
-        yield handlers._edit_movie_callback_wrapper(old_movie)
+        yield handlers._edit_movie_callback(old_movie)
     
 
 # noinspection PyMissingOrEmptyDocstring
@@ -453,7 +575,7 @@ class TestSelectMovieCallback:
     def test_edit_movie_gui_created(self, class_patches):
         with self.class_context():
             assert dummy_edit_movie_gui_instance[0][0] == DummyParent()
-            assert dummy_edit_movie_gui_instance[0][1].__name__ == 'dummy_edit_movie_callback'
+            assert dummy_edit_movie_gui_instance[0][1] == 'dummy_edit_movie_callback'
             assert dummy_edit_movie_gui_instance[0][2].__name__ == '_delete_movie_callback'
             assert dummy_edit_movie_gui_instance[0][3] == ['commit', 'delete']
             assert dummy_edit_movie_gui_instance[0][4] == ['Test tag 42']
@@ -465,7 +587,7 @@ class TestSelectMovieCallback:
         monkeypatch.setattr(handlers.database, 'find_movies', self.dummy_find_movies)
         monkeypatch.setattr(handlers.database, 'all_tags', lambda: ['Test tag 42'])
         monkeypatch.setattr(handlers.guiwidgets, 'EditMovieGUI', DummyEditMovieGUI)
-        monkeypatch.setattr(handlers, '_edit_movie_callback_wrapper',
+        monkeypatch.setattr(handlers, '_edit_movie_callback',
                             self.dummy_edit_movie_callback_wrapper)
 
     @contextmanager
@@ -741,7 +863,7 @@ class DummyEditMovieGUI:
     movie: handlers.config.MovieUpdateDef
     
     def __post_init__(self):
-        dummy_edit_movie_gui_instance.append((self.parent, self.commit_callback, self.delete_callback,
+        dummy_edit_movie_gui_instance.append((self.parent, self.commit_callback.__name__, self.delete_callback,
                                               self.buttons_to_show, self.all_tag_names, self.movie))
 
 

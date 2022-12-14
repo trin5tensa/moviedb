@@ -1,7 +1,7 @@
 """Test support module for Tk dummies."""
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Last modified 11/11/22, 8:43 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -50,13 +50,10 @@ class DummyTk:
         
     def after(self, *args):
         event_id = next(self.event_id)
-        # print(f"{next(event_id)}")
+        delay = args[0]
         callback = args[1]
-        # print(f"{callback=}")
         args2 = args[2:]
-        # print(f"{args2=}")
-        # self.after_calls.append()
-        self.after_calls[event_id] = (callback, args2)
+        self.after_calls[event_id] = (delay, callback, args2)
         return event_id
        
     def after_cancel(self, *args):
