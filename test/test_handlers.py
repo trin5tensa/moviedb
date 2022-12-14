@@ -1,6 +1,6 @@
 """Menu handlers test module."""
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/28/22, 3:07 PM by stephen.
+#  Last modified 12/12/22, 12:13 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -126,11 +126,13 @@ class TestGetTmdbGetApiKey:
 
 class TestTmdbIOExceptionHandler:
     askyesno_calls = None
+    messagebox_calls = None
     preference_dialog_calls = None
     
     @contextmanager
     def tmdb_search_exception_callback(self, mock_fut, monkeypatch, askyesno=True):
         self.askyesno_calls = []
+        self.messagebox_calls = []
         self.preference_dialog_calls = []
         
         # Patch config.current
@@ -144,6 +146,7 @@ class TestTmdbIOExceptionHandler:
         monkeypatch.setattr(handlers.config, 'persistent', dummy_persistent_config)
         
         monkeypatch.setattr(handlers.guiwidgets_2, 'gui_askyesno', partial(self.dummy_askyesno, askyesno=askyesno))
+        monkeypatch.setattr(handlers.guiwidgets_2, 'gui_messagebox', partial(self.dummy_messagebox))
         monkeypatch.setattr(handlers, 'preferences_dialog', lambda: self.preference_dialog_calls.append(True))
         # noinspection PyProtectedMember
         handlers._tmdb_search_exception_callback(mock_fut)
@@ -153,6 +156,9 @@ class TestTmdbIOExceptionHandler:
         self.askyesno_calls.append(args)
         return askyesno
     
+    def dummy_messagebox(self, *args):
+        self.messagebox_calls.append(args)
+
     def test_future_result_called(self, mock_fut, monkeypatch):
         with self.tmdb_search_exception_callback(mock_fut, monkeypatch):
             assert mock_fut.result_called
@@ -172,17 +178,10 @@ class TestTmdbIOExceptionHandler:
         with self.tmdb_search_exception_callback(mock_fut_bad_key, monkeypatch):
             assert self.preference_dialog_calls[0]
     
-    def test_tmdb_connection_timeout_logs_exception(self,  mock_fut_timeout, monkeypatch, caplog):
-        caplog.set_level('INFO')
+    def test_tmdb_connection_timeout_calls_message_dialog(self,  mock_fut_timeout, monkeypatch):
         with self.tmdb_search_exception_callback(mock_fut_timeout, monkeypatch):
-            expected = 'Test timeout exception'
-            assert caplog.messages[0] == expected
-        
-    def test_unexpected_exception_logs_exception(self,  mock_fut_unexpected, monkeypatch, caplog):
-        caplog.set_level('DEBUG')
-        with self.tmdb_search_exception_callback(mock_fut_unexpected, monkeypatch):
-            expected = "Unexpected exception. \nexc.args=('Test unexpected exception',)"
-            assert caplog.messages[0] == expected
+            expected = handlers.config.current.tk_root, 'TMDB database cannot be reached.'
+            assert self.messagebox_calls[0] == expected
 
 
 class TestTmdbIOHandler:
@@ -208,7 +207,7 @@ class TestTmdbIOHandler:
         
     def test_submit_called(self, monkeypatch, mock_executor):
         with self.tmdb_io_handler(monkeypatch, mock_executor):
-            func = handlers.tmdb.search_movies
+            func = handlers.tmdb.search_tmdb
             key = handlers.config.persistent._tmdb_api_key
             assert mock_executor.submit_calls == [(func, key, self.search_string, self.work_queue)]
 

@@ -2,7 +2,7 @@
 
 This module is the glue between the user's selection of a menu item and the gui."""
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/28/22, 3:07 PM by stephen.
+#  Last modified 12/12/22, 12:13 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -354,7 +354,7 @@ def _select_tag_callback(old_tag: str):
 
 def _tmdb_search_exception_callback(fut: concurrent.futures.Future):
     """
-    This handles exceptions encountered while running tmdb.search_movies.
+    This handles exceptions encountered while running tmdb.search_tmdb and which need user interaction.
     
     Args:
         fut:
@@ -369,15 +369,12 @@ def _tmdb_search_exception_callback(fut: concurrent.futures.Future):
         if guiwidgets_2.gui_askyesno(config.current.tk_root, msg, detail):
             preferences_dialog()
 
-    except exception.TMDBConnectionTimeout as exc:
-        logging.info(exc)
+    except exception.TMDBConnectionTimeout:
+        msg = 'TMDB database cannot be reached.'
+        guiwidgets_2.gui_messagebox(config.current.tk_root, msg)
 
-    except Exception as exc:
-        msg = f'Unexpected exception. \n{exc.args=}'
-        logging.error(msg)
-        
 
-def _tmdb_io_handler(search_string: str, work_queue: queue.LifoQueue):
+def _tmdb_io_handler(search_string: str, work_queue: queue.Queue):
     """
     Runs the movie search in a thread from the pool.
     
@@ -387,5 +384,5 @@ def _tmdb_io_handler(search_string: str, work_queue: queue.LifoQueue):
     """
     if tmdb_api_key := _get_tmdb_api_key():
         executor = config.current.threadpool_executor
-        fut = executor.submit(tmdb.search_movies, tmdb_api_key, search_string, work_queue)
+        fut = executor.submit(tmdb.search_tmdb, tmdb_api_key, search_string, work_queue)
         fut.add_done_callback(_tmdb_search_exception_callback)

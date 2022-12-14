@@ -4,7 +4,7 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/11/22, 8:43 AM by stephen.
+#  Last modified 12/12/22, 12:13 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -26,7 +26,6 @@ from typing import Callable, Dict, Iterable, Iterator, Mapping, Sequence, Tuple,
 import config
 import exception
 import neurons
-
 
 MOVIE_FIELD_NAMES = ('title', 'year', 'director', 'minutes', 'notes',)
 MOVIE_FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes',)
@@ -66,7 +65,7 @@ class AddMovieGUI:
     selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
     
     # These variables are used for the consumer end of the TMDB producer/consumer pattern.
-    tmdb_work_queue: queue.LifoQueue = field(default_factory=queue.LifoQueue, init=False, repr=False)
+    tmdb_work_queue: queue.LifoQueue = field(default_factory=queue.Queue, init=False, repr=False)
     work_queue_poll: int = 40
     recall_id: str = None
     
@@ -177,12 +176,18 @@ class AddMovieGUI:
             pass
 
         else:
-            # TODO TMDB_II Clear the LifoQueue of older entries
-            
             # Process a work package.
-            print(f"\n{work_package}")
-            
-            # TODO TMDB_II Display the movie(s).
+            # Temporary code to display the movies on stdout
+            safeprint = config.current.safeprint
+            safeprint(f"search_tmdb ending: Found:\n\n")
+            for movie in work_package:
+                safeprint(movie['notes'], timestamp=False)
+            safeprint(f"\n", timestamp=False)
+            import pprint
+            pretty = pprint.pformat(work_package)
+            safeprint(f"{pretty}")
+            safeprint(f"\n\n", timestamp=False)
+
 
         finally:
             # Have tkinter call this function again after the poll interval.
