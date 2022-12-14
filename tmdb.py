@@ -12,7 +12,7 @@ tmdbsimple.py
 https://github.com/celiao/tmdbsimple
 """
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 12/12/22, 12:13 PM by stephen.
+#  Last modified 12/14/22, 7:59 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -37,26 +37,25 @@ tmdbsimple.REQUESTS_TIMEOUT = (2, 5)  # seconds for connect and read.
 
 
 def search_tmdb(tmdb_api_key: str, title_query: str, work_queue: queue.Queue) -> None:
-    """Search and queue movies as the producer end of the producer and consumer pattern.
+    """Searches TMDB for movies and puts them into a queue.
+
+    Note: The TMDB interface and the private functions of this module can search for much more than title matches.
+    but for simplicity only title searches are supported.
     
     Args:
         tmdb_api_key:
-        title_query: Pass a text query to search.
-        work_queue: A LIFO queue intended to return successive searches by the user so the user has immediate
-        feedback on the effect of improving her search string.
+        title_query: A text search pattern for movie titles.
+        work_queue: Caller's threadsafe queue for return of compliant movies.
 
     Raises:
-        These internal exceptions allow the handler module to initiate user interactions.
         TMDBAPIKeyException:
-            API Key error.
+            The API key is invalid.
         TMDBConnectionTimeout:
-            Unable to connect to TMDB
+            Connection failure.
     """
-    # todo
-    #   Doc review
     tmdbsimple.API_KEY = tmdb_api_key
     try:
-        movies: list[config.MovieTypedDict] = _retrieve_compliants(title_query)
+        my_movies: list[config.MovieTypedDict] = _retrieve_compliants(title_query)
 
     except requests.exceptions.ConnectionError as exc:
         msg = f"Unable to connect to TMDB. {exc.args[0].args[0]}"
@@ -64,24 +63,31 @@ def search_tmdb(tmdb_api_key: str, title_query: str, work_queue: queue.Queue) ->
         raise exception.TMDBConnectionTimeout(msg) from exc
 
     except requests.exceptions.HTTPError as exc:
-        # Incorrect API key
         if exc.args and (exc.args[0][:38]) == '401 Client Error: Unauthorized for url':
             msg = f"API Key error: {exc.args[0]}"
             logging.error(msg)
             raise exception.TMDBAPIKeyException(msg) from exc
 
         else:
-            _, exc_inst, _ = sys.exc_info()
-            logging.error(repr(exc_inst))
+            _, exc, _ = sys.exc_info()
+            logging.error(repr(exc))
             raise
 
     else:
-        work_queue.put(movies)
+        work_queue.put(my_movies)
 
 
-def _retrieve_compliants(title_query):
-    # todo
-    #   Doc review
+def _retrieve_compliants(title_query: str) -> list[dict]:
+    """Searches TMDB for movies.
+
+    Search TMDB to retrieve movie id keys. Use the key to retrieve detailed movie records.
+
+    Args:
+        title_query: A text search pattern for movie titles.
+
+    Returns:
+        A list of up to 20 movies.
+    """
     compliants = _search_movies(title_query)
 
     movies = []
@@ -92,11 +98,17 @@ def _retrieve_compliants(title_query):
     return movies
 
 
-def _data_conversion(tmdb_movie):
-    # todo
-    #   Doc review
-    # The release_date is YYYY-MM-DD if it's present.
-    if date:=tmdb_movie.get('release_date', ''):
+def _data_conversion(tmdb_movie: dict) -> config.MovieTypedDict:
+    """Converts a TMDB movie mapping into the internal format.
+
+    Args:
+        tmdb_movie: A TMDB movie mapping.
+
+    Returns:
+        A moviedb mapping.
+    """
+    # The release_date is YYYY-MM-DD if present.
+    if date := tmdb_movie.get('release_date', ''):
         year = date[:4]
     else:
         year = ''
@@ -111,26 +123,28 @@ def _data_conversion(tmdb_movie):
     return movie
 
 
-def _search_movies(title_query: str, primary_release_year: int = None,
-                   year: int = None, language: str = None, include_adult: bool = False, region: str = None):
-    """Search and queue movies as the producer end of the producer and consumer pattern.
-    
+def _search_movies(title_query: str, primary_release_year: int = None, year: int = None, language: str = None,
+                   include_adult: bool = False, region: str = None) -> list[dict]:
+    """Searches TMDB for movie id keys.
+
     Args:
-        title_query: Pass a text query to search.
-        year: A filter to limit the results to a specific year.
+        title_query: A text search pattern for movie titles.
         primary_release_year: A filter to limit the results to a specific primary release year.
+        year: A filter to limit the results to a specific year.
         language: ISO 639-1 code.
         include_adult: Choose whether to include adult content in the results.
         region: Specify an ISO 3166-1 code to filter by region. Must be uppercase.
+
+    Returns:
+        A list of compliant TMDB movies.
 
     Raises:
         TMDBAPIKeyException:
             API Key error.
         TMDBConnectionTimeout:
             Unable to connect to TMDB
+
     """
-    # todo
-    #   Doc review
     search = tmdbsimple.Search()
     search.movie(query=title_query, primary_release_year=primary_release_year, year=year,
                  language=language, include_adult=include_adult, region=region)
@@ -139,19 +153,14 @@ def _search_movies(title_query: str, primary_release_year: int = None,
 
 def _get_tmdb_movie_info(tmdb_movie_id: str) -> dict:
     """
-    Retrieve the details of a movie using its TMDB id.
+    Retrieves the details of a movie using its TMDB id.
 
     Args:
-        tmdb_api_key: The TMDB API key
         tmdb_movie_id: The movie's TMDB id.
 
     Raises:
-        TMDBAPIKeyException:
-            API Key error.
         TMDBMovieIDMissing:
             A TMDB movie cannot be found, although it is known to have formerly existed.
-        TMDBConnectionTimeout:
-            Unable to connect to TMDB
 
     Returns:
         A dict representation of the JSON returned from the API. This may include any or none of the
@@ -173,8 +182,6 @@ def _get_tmdb_movie_info(tmdb_movie_id: str) -> dict:
         name, origin_country)
         title
     """
-    # todo
-    #   Doc review
     movie = tmdbsimple.Movies(tmdb_movie_id)
 
     try:
