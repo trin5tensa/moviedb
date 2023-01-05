@@ -2,8 +2,8 @@
 
 Created with Python 3.10
 """
-#  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/14/22, 8:44 AM by stephen.
+#  Copyright (c) 2022-2023. Stephen Rigden.
+#  Last modified 1/5/23, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -27,6 +27,15 @@ from typing import Type
 
 @dataclass
 class SafePrinter(AbstractContextManager):
+    """ A context manager for threadsafe printing.
+
+    Usage:
+        with SafePrinter as safeprint:
+            safeprint(text: str, timestamp: bool, reset: bool)
+
+        timestamp (default = True) will prefix the text with a timestamp and concurrent location.
+        reset (default = False) will zeroise the timer
+    """
     _time_0 = time.perf_counter()
     _print_q = queue.Queue()
     _print_thread: threading.Thread | None = None

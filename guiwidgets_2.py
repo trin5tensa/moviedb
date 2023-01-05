@@ -4,7 +4,7 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/3/23, 9:08 AM by stephen.
+#  Last modified 1/5/23, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -64,6 +64,9 @@ class AddMovieGUI:
     treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
     selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
 
+    # Treeview for IMDB.
+    tmdb_treeview: ttk.Treeview = field(default=None, init=False, repr=False)
+
     # These variables are used for the consumer end of the TMDB producer/consumer pattern.
     tmdb_work_queue: queue.LifoQueue = field(default_factory=queue.Queue, init=False, repr=False)
     work_queue_poll: int = 40
@@ -92,21 +95,19 @@ class AddMovieGUI:
         self.treeview = label_field.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
                                                      callers_callback=self.treeview_callback)
 
-        # # Create a treeview for movies retrieved from tmdb.
-        tmdb_treeview = ttk.Treeview(internet_frame,
+        # Create a treeview for movies retrieved from tmdb.
+        self.tmdb_treeview = ttk.Treeview(internet_frame,
                                      columns=('title', 'year', 'director'),
-                                     show=[],
+                                     show=['headings'],
                                      height=20,
                                      selectmode='none')
-        tmdb_treeview.column('title', width=250, stretch=True)
-        tmdb_treeview.column('year', width=40, stretch=True)
-        tmdb_treeview.column('director', width=100, stretch=True)
-        tmdb_treeview.grid(column=0, row=0, sticky='nsew')
-        for ix in range(20):
-            tmdb_treeview.insert('', 'end', iid=str(ix), values=(
-                'Another Great Movie for All Time',
-                '1234',
-                'Anon Director'))
+        self.tmdb_treeview.column('title', width=300, stretch=True)
+        self.tmdb_treeview.heading('title', text='Title', anchor='w')
+        self.tmdb_treeview.column('year', width=40, stretch=True)
+        self.tmdb_treeview.heading('year', text='Year', anchor='w')
+        self.tmdb_treeview.column('director', width=200, stretch=True)
+        self.tmdb_treeview.heading('director', text='Director', anchor='w')
+        self.tmdb_treeview.grid(column=0, row=0, sticky='nsew')
 
         # Populate buttonbox with commit and cancel buttons.
         column_num = itertools.count()
@@ -190,24 +191,19 @@ class AddMovieGUI:
             work_package = self.tmdb_work_queue.get_nowait()
 
         except queue.Empty:
-            # …so be prepared for an empty queue.
+            # …so an empty queue is not exceptional.
             pass
 
         else:
             # Process a work package.
-            # todo Delete this temporary code which displays the movies on stdout
-            safeprint = config.current.safeprint
-            safeprint(f"search_tmdb ending: Found:\n\n")
-            for movie in work_package:
-                safeprint(movie['notes'], timestamp=False)
-            safeprint(f"\n", timestamp=False)
-            import pprint
-            pretty = pprint.pformat(work_package)
-            safeprint(f"{pretty}")
-            safeprint(f"\n\n", timestamp=False)
+            items = self.tmdb_treeview.get_children()
+            self.tmdb_treeview.delete(*items)
+            for ix, movie in enumerate(work_package):
+                self.tmdb_treeview.insert('', 'end', values=(
+                    movie['title'],
+                    movie['year'],
+                    ', '.join(movie['director'])))
 
-            # todo  New code
-            # self.tmdb_treeview.insert('', 'end', )
 
         finally:
             # Have tkinter call this function again after the poll interval.
@@ -241,6 +237,7 @@ class AddMovieGUI:
         else:
             _clear_input_form_fields(self.entry_fields)
             self.treeview.clear_selection()
+            self.tmdb_treeview.clear_selection()
 
     def destroy(self):
         """Destroy all widgets of this class."""

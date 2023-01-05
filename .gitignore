@@ -9,3 +9,4 @@
 /pytest.ini
 /.idea/sqldialects.xml
 /test/tmdb/.coverage
+/htmlcov/
