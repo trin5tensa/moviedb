@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
-#  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/7/22, 8:01 AM by stephen.
+#  Copyright (c) 2022-2023. Stephen Rigden.
+#  Last modified 1/9/23, 8:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -34,8 +34,17 @@ import exception
 from config import FindMovieTypedDict, MovieKeyTypedDict, MovieTypedDict, MovieUpdateDef
 
 
+class Base:
+    """ See SQLAlchemy docs for why this is required.
+
+    https://docs.sqlalchemy.org/en/20/changelog/migration_20.html#migration-to-2-0-step-six-add-allow-unmapped-to-explicitly-typed-orm-models
+    """
+    __allow_unmapped__ = True
+
+
+Base = sqlalchemy.orm.declarative_base(cls=Base)
 MUYBRIDGE = 1878
-Base = sqlalchemy.ext.declarative.declarative_base()
+# Base = sqlalchemy.ext.declarative.declarative_base()   old sqlalchemy v1.4 code
 database_fn = 'old movies.sqlite3'
 
 movie_tag = Table('movie_tag', Base.metadata,
@@ -56,8 +65,8 @@ def connect_to_database(filename: str = database_fn):
     
     # Create the database connection
     global engine, Session
-    engine = sqlalchemy.create_engine(f"sqlite:///{filename}", echo=False)
-    Session = sessionmaker(bind=engine)
+    engine = sqlalchemy.create_engine(f"sqlite:///{filename}", echo=False, future=True)
+    Session = sessionmaker(bind=engine, future=True)
     Base.metadata.create_all(engine)
     
     # Update metadata

@@ -4,7 +4,7 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/5/23, 8:50 AM by stephen.
+#  Last modified 1/9/23, 8:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -204,7 +204,6 @@ class AddMovieGUI:
                     movie['year'],
                     ', '.join(movie['director'])))
 
-
         finally:
             # Have tkinter call this function again after the poll interval.
             self.recall_id = self.parent.after(self.work_queue_poll, self.tmdb_consumer)
@@ -237,7 +236,8 @@ class AddMovieGUI:
         else:
             _clear_input_form_fields(self.entry_fields)
             self.treeview.clear_selection()
-            self.tmdb_treeview.clear_selection()
+            items = self.tmdb_treeview.get_children()
+            self.tmdb_treeview.delete(*items)
 
     def destroy(self):
         """Destroy all widgets of this class."""

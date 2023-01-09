@@ -1,7 +1,7 @@
 """Test support module for Tk dummies."""
 
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/3/23, 9:08 AM by stephen.
+#  Last modified 1/9/23, 8:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -264,6 +264,7 @@ class TtkTreeview:
     selectmode: Literal['browse', 'extended', 'none'] = field(default='extended')
     show: Literal['tree', 'headings'] = field(default='headings')
     padding: int = field(default=0)
+    items: list[str] = field(default_factory=list, init=False, repr=False, compare=False)
 
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     column_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -303,6 +304,16 @@ class TtkTreeview:
 
     def selection_set(self, *args):
         self.selection_set_calls.append(args)
+
+    def set_mock_children(self, items: list[str]):
+        self.items = items[:]
+
+    def get_children(self):
+        return self.items
+
+    def delete(self, *args):
+        self.items = list(set(self.items) - set(args))
+
 
     @staticmethod
     def selection():

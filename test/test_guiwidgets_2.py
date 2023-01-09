@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/3/23, 9:08 AM by stephen.
+#  Last modified 1/9/23, 8:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,6 +15,7 @@
 
 from contextlib import contextmanager
 from typing import Callable, List, Optional, Tuple, Type
+from unittest.mock import Mock
 
 import pytest
 
@@ -185,13 +186,19 @@ class TestAddMovieGUI:
             assert calls == [True], "Consumer work queue polling not started."
 
     def test_get_work_package_from_queue(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr('guiwidgets_2.queue.LifoQueue.get_nowait', lambda *args: calls.append((args, True)))
+        work_package = [dict(title='Test Work Package',
+                            year='4242',
+                            director=['Dick1', 'Dick2'])]
         with self.add_movie_gui_context() as add_movie:
-            queue = add_movie.tmdb_work_queue
-            assert (calls == queue, True)
+            add_movie.tmdb_work_queue.put(work_package)
+            add_movie.tmdb_treeview.set_mock_children(['1', '2'])
 
-    def test_tmdb_consumer_recalled(self):
+            add_movie.tmdb_consumer()
+
+            expected = [(('', 'end'), {'values': ('Test Work Package', '4242', 'Dick1, Dick2')})]
+            assert add_movie.tmdb_treeview.insert_calls == expected
+
+    def test_tmdb_consumer_rescheduled(self):
         with self.add_movie_gui_context() as add_movie:
             k, v = add_movie.parent.after_calls.popitem()
             delay, callback, args = v
@@ -225,6 +232,21 @@ class TestAddMovieGUI:
         with self.add_movie_gui_context() as add_movie_context:
             add_movie_context.commit()
             assert calls == [dict(message=message, parent=DummyTk())]
+
+    def test_form_clean_up_after_commit(self, monkeypatch, check):
+        mock_clear_fields = Mock()
+        mock_clear_selection = Mock()
+        with self.add_movie_gui_context() as add_movie_context:
+            monkeypatch.setattr(guiwidgets_2, '_clear_input_form_fields', mock_clear_fields)
+            monkeypatch.setattr(add_movie_context.treeview, 'clear_selection', mock_clear_selection)
+            add_movie_context.tmdb_treeview.set_mock_children(['1', '2'])
+            add_movie_context.commit()
+
+            with check:
+                mock_clear_fields.assert_called_once_with(add_movie_context.entry_fields)
+                mock_clear_selection.assert_called_once()
+                assert add_movie_context.tmdb_treeview.get_children() == []
+
 
     def test_destroy_deletes_add_movie_form(self, monkeypatch):
         with self.add_movie_gui_context() as add_movie_context:
@@ -1004,6 +1026,7 @@ class TestPreferencesGUI:
                                           self.dummy_save_callback)
 
 
+# noinspection PyMissingOrEmptyDocstring
 @pytest.mark.usefixtures('patch_tk')
 class TestFocusSet:
 
@@ -1029,6 +1052,7 @@ class TestFocusSet:
         yield entry
 
 
+# noinspection PyMissingOrEmptyDocstring
 @pytest.mark.usefixtures('patch_tk')
 class TestLabelFieldWidget:
 
@@ -1087,35 +1111,30 @@ class TestLabelFieldWidget:
             # noinspection PyUnresolvedReferences
             assert dummy_entry_field.widget.grid_calls == [dict(column=1, row=0)]
 
-    def dummy_callers_callback(self):
-        pass
-
     def test_add_treeview_row_calls_create_label(self, monkeypatch):
         items = ['tag 1', 'tag 2']
         with self.labelfield_context() as labelfield:
             calls = []
             monkeypatch.setattr(guiwidgets_2._LabelFieldWidget, '_create_label',
                                 lambda *args: calls.append(args))
-            labelfield.add_treeview_row(guiwidgets_2.SELECT_TAGS_TEXT, items,
-                                        self.dummy_callers_callback)
+            labelfield.add_treeview_row(guiwidgets_2.SELECT_TAGS_TEXT, items, lambda: None)
             assert calls == [(labelfield, guiwidgets_2.SELECT_TAGS_TEXT, 0)]
 
     # noinspection PyPep8Naming
     def test_add_treeview_row_creates_MovieTagTreeview_object(self, monkeypatch):
         items = ['tag 1', 'tag 2']
+        def dummy_callback(): pass
         with self.labelfield_context() as labelfield:
             calls = []
             monkeypatch.setattr(guiwidgets_2, '_MovieTagTreeview', lambda *args: calls.append(args))
-            labelfield.add_treeview_row(guiwidgets_2.SELECT_TAGS_TEXT, items,
-                                        self.dummy_callers_callback)
-            assert calls == [(labelfield.parent, 0, items, self.dummy_callers_callback)]
+            labelfield.add_treeview_row(guiwidgets_2.SELECT_TAGS_TEXT, items, dummy_callback)
+            assert calls == [(labelfield.parent, 0, items, dummy_callback)]
 
     # noinspection PyPep8Naming
     def test_add_treeview_row_returns_MovieTagTreeview_object(self, monkeypatch):
         items = ['tag 1', 'tag 2']
         with self.labelfield_context() as labelfield:
-            movie_tag_treeview = labelfield.add_treeview_row(guiwidgets_2.SELECT_TAGS_TEXT, items,
-                                                             self.dummy_callers_callback)
+            movie_tag_treeview = labelfield.add_treeview_row(guiwidgets_2.SELECT_TAGS_TEXT, items, lambda: None)
             assert isinstance(movie_tag_treeview, guiwidgets_2._MovieTagTreeview)
 
     def test_create_label_creates_label(self, dummy_entry_field):
