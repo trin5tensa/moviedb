@@ -4,7 +4,7 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/9/23, 8:37 AM by stephen.
+#  Last modified 1/12/23, 2:20 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -70,7 +70,8 @@ class AddMovieGUI:
     # These variables are used for the consumer end of the TMDB producer/consumer pattern.
     tmdb_work_queue: queue.LifoQueue = field(default_factory=queue.Queue, init=False, repr=False)
     work_queue_poll: int = 40
-    recall_id: str = None
+    recall_id: str = field(default=None, init=False, repr=False, compare=False)
+    tmdb_movies: dict[str, dict] = field(default_factory=dict, init=False, repr=False)
 
     # These variables help to decide if the user has finished entering the title.
     last_text_queue_timer: int = 1000
@@ -100,7 +101,7 @@ class AddMovieGUI:
                                      columns=('title', 'year', 'director'),
                                      show=['headings'],
                                      height=20,
-                                     selectmode='none')
+                                     selectmode='browse')
         self.tmdb_treeview.column('title', width=300, stretch=True)
         self.tmdb_treeview.heading('title', text='Title', anchor='w')
         self.tmdb_treeview.column('year', width=40, stretch=True)
@@ -108,6 +109,8 @@ class AddMovieGUI:
         self.tmdb_treeview.column('director', width=200, stretch=True)
         self.tmdb_treeview.heading('director', text='Director', anchor='w')
         self.tmdb_treeview.grid(column=0, row=0, sticky='nsew')
+        self.tmdb_treeview.bind('<<TreeviewSelect>>',
+                                func=self.tmdb_treeview_callback)
 
         # Populate buttonbox with commit and cancel buttons.
         column_num = itertools.count()
@@ -198,11 +201,14 @@ class AddMovieGUI:
             # Process a work package.
             items = self.tmdb_treeview.get_children()
             self.tmdb_treeview.delete(*items)
+            self.tmdb_movies = {}
             for ix, movie in enumerate(work_package):
-                self.tmdb_treeview.insert('', 'end', values=(
+                item_id = self.tmdb_treeview.insert('', 'end', values=(
                     movie['title'],
                     movie['year'],
                     ', '.join(movie['director'])))
+                self.tmdb_movies[item_id] = movie
+
 
         finally:
             # Have tkinter call this function again after the poll interval.
@@ -211,6 +217,11 @@ class AddMovieGUI:
     def treeview_callback(self, reselection: Sequence[str]):
         """Update selected tags with the user's changes."""
         self.selected_tags = reselection
+
+    def tmdb_treeview_callback(self, *args, **kwargs):
+        print(f'Called tmdb_treeview_callback with {args=}, {kwargs=}')
+        item_id, = self.tmdb_treeview.selection()
+        print(f'TMDB Movie:\n {self.tmdb_movies[item_id]=}')
 
     def commit(self):
         """The user clicked the 'Commit' button."""
