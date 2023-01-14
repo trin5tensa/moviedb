@@ -1,8 +1,8 @@
 """Menu handlers.
 
 This module is the glue between the user's selection of a menu item and the gui."""
-#  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 12/12/22, 12:13 PM by stephen.
+#  Copyright (c) 2022-2023. Stephen Rigden.
+#  Last modified 1/14/23, 9:08 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -180,8 +180,6 @@ def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[s
     elif movies_found == 1:
         movie = movies[0]
         movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
-        # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
-        # noinspection PyTypeChecker
         guiwidgets.EditMovieGUI(config.current.tk_root, _edit_movie_callback(movie_key),
                                 _delete_movie_callback, ['commit', 'delete'],
                                 database.all_tags(), movie)
@@ -233,20 +231,19 @@ def _edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
     return func
 
 
-def _select_movie_callback(title: str, year: int):
+def _select_movie_callback(movie_id: config.MovieKeyTypedDict):
     """Edit a movie selected by the user from a list of movies.
     
     Args:
-        title:
-        year:
+        movie_id:
     """
 
     # Get record from database
-    movie = database.find_movies(dict(title=title, year=year))[0]
-    # moviedb-#272 'Wrong argument type in _select_movie_callback'
+    criteria = config.FindMovieTypedDict(title=movie_id['title'], year=[str(movie_id['year'])])
+    movie = database.find_movies(criteria)[0]
+
     movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
-    # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
-    # noinspection PyTypeChecker
+
     guiwidgets.EditMovieGUI(config.current.tk_root, _edit_movie_callback(movie_key),
                             _delete_movie_callback, ['commit', 'delete'], database.all_tags(), movie)
 

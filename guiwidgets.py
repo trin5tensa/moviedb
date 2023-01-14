@@ -4,8 +4,8 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 
-#  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Copyright (c) 2022-2023. Stephen Rigden.
+#  Last modified 1/14/23, 9:08 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +30,6 @@ import neurons
 from guiwidgets_2 import (CANCEL_TEXT, COMMIT_TEXT, DELETE_TEXT, MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS,
                           SEARCH_TEXT, SELECT_TAGS_TEXT, _EntryField,
                           _create_entry_fields, _focus_set, gui_messagebox, )
-
 
 TAG_TREEVIEW_INTERNAL_NAME = 'tag treeview'
 
@@ -477,6 +476,9 @@ class SelectMovieGUI(MovieGUIBase):
     movies: List[config.MovieUpdateDef]
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[str, int], None]
+    # A dictionary to hold the treeview items
+    treeview_items: dict[str: config.MovieKeyTypedDict] = field(default_factory=dict, init=False, repr=False)
+
     
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form."""
@@ -496,14 +498,13 @@ class SelectMovieGUI(MovieGUIBase):
             tree.column(internal_name, width=column_widths[column_ix])
             tree.heading(internal_name, text=MOVIE_FIELD_TEXTS[column_ix])
         
-        # Populate rows with movies
+        # Populate rows with movies and build a lookup dictionary.
         for movie in self.movies:
-            # moviedb-#134 Can iid be improved so unmangling in selection callback is simplified?
-            #   currently tree.selection()[0][1:-1].split(',')
-            tree.insert('', 'end', iid=f"{(title := movie['title'], year := movie['year'])}",
-                        text=title,
-                        values=(year, movie['director'], movie['minutes'], movie['notes']),
-                        tags='title')
+            item_id = tree.insert('', 'end',
+                                  text=movie['title'],
+                                  values=(movie['year'], movie['director'], movie['minutes'], movie['notes']),
+                                  tags='title')
+            self.treeview_items[item_id] = config.MovieKeyTypedDict(title=movie['title'], year=int(movie['year']))
         tree.bind('<<TreeviewSelect>>', func=self.treeview_callback(tree))
     
     def treeview_callback(self, tree: ttk.Treeview):
@@ -522,8 +523,8 @@ class SelectMovieGUI(MovieGUIBase):
             Args:
                 *args: Not used. Needed for compatibility with Tk:Tcl caller.
             """
-            title, year = tree.selection()[0][1:-1].split(',')
-            self.callback(title[1:-1], int(year))
+            item_id, = tree.selection()
+            self.callback(self.treeview_items[item_id])
             self.destroy()
 
         return selection_callback
