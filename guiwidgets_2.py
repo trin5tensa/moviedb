@@ -4,7 +4,7 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/12/23, 2:20 PM by stephen.
+#  Last modified 1/14/23, 6:39 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -203,12 +203,12 @@ class AddMovieGUI:
             self.tmdb_treeview.delete(*items)
             self.tmdb_movies = {}
             for ix, movie in enumerate(work_package):
+                movie['director'] = ', '.join(movie['director'])
                 item_id = self.tmdb_treeview.insert('', 'end', values=(
                     movie['title'],
                     movie['year'],
-                    ', '.join(movie['director'])))
+                    movie['director']))
                 self.tmdb_movies[item_id] = movie
-
 
         finally:
             # Have tkinter call this function again after the poll interval.
@@ -219,9 +219,14 @@ class AddMovieGUI:
         self.selected_tags = reselection
 
     def tmdb_treeview_callback(self, *args, **kwargs):
-        print(f'Called tmdb_treeview_callback with {args=}, {kwargs=}')
-        item_id, = self.tmdb_treeview.selection()
-        print(f'TMDB Movie:\n {self.tmdb_movies[item_id]=}')
+        if self.tmdb_treeview.selection():
+            item_id = self.tmdb_treeview.selection()[0]
+        else:
+            return
+
+        for k, v in self.tmdb_movies[item_id].items():
+            self.entry_fields[k].textvariable.set(v)
+
 
     def commit(self):
         """The user clicked the 'Commit' button."""
