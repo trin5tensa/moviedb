@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/14/23, 9:08 AM by stephen.
+#  Last modified 1/17/23, 2:19 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -197,8 +197,8 @@ class CommonButtonbox(MovieGUIBase):
     # If the user clicks the delete button this callback will be called.
     delete_callback: Callable[[config.MovieKeyTypedDict], None]
     
-    # The caller shall specify the buttons which are to be shown in the buttonbox with thw exception
-    # of the cancel button which will always be provided.
+    # The caller shall specify the buttons which are to be shown in the buttonbox except for
+    # the cancel button which will always be provided.
     buttons_to_show: List[Literal['commit', 'delete']]
     
     # AND Neuron controlling enabled state of Commit button
@@ -292,7 +292,7 @@ class EditMovieGUI(CommonButtonbox):
     # noinspection DuplicatedCode
     def create_body(self, outerframe: ttk.Frame):
         """Create a standard entry form body but with fields initialized with values from the record
-        which is being edited.
+        being edited.
         
         Args:
             outerframe:
@@ -472,43 +472,43 @@ class SelectMovieGUI(MovieGUIBase):
         Any proposed refactoring should consider abandoning these classes and using the newer
         composed classes of guiwidgets_2 as a model for future development.
     """
-    # A generator of compliant movie records.
+    # Movie records retrieved from the database.
     movies: List[config.MovieUpdateDef]
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[str, int], None]
-    # A dictionary to hold the treeview items
+    # Attributes for managing the treeview
+    treeview: ttk.Treeview = field(default=None, init=False, repr=False)
     treeview_items: dict[str: config.MovieKeyTypedDict] = field(default_factory=dict, init=False, repr=False)
-
     
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form."""
         body_frame = super().create_body(outerframe)
         
         # Create and grid treeview
-        tree = ttk.Treeview(body_frame,
+        self.treeview = ttk.Treeview(body_frame,
                             columns=MOVIE_FIELD_NAMES[1:],
                             height=25, selectmode='browse')
-        tree.grid(column=0, row=0, sticky='w')
+        self.treeview.grid(column=0, row=0, sticky='w')
         
         # Set up column widths and titles
         column_widths = (350, 50, 100, 50, 350)
         for column_ix, internal_name in enumerate(MOVIE_FIELD_NAMES):
             if column_ix == 0:
                 internal_name = '#0'
-            tree.column(internal_name, width=column_widths[column_ix])
-            tree.heading(internal_name, text=MOVIE_FIELD_TEXTS[column_ix])
+            self.treeview.column(internal_name, width=column_widths[column_ix])
+            self.treeview.heading(internal_name, text=MOVIE_FIELD_TEXTS[column_ix])
         
         # Populate rows with movies and build a lookup dictionary.
         for movie in self.movies:
-            item_id = tree.insert('', 'end',
-                                  text=movie['title'],
-                                  values=(movie['year'], movie['director'], movie['minutes'], movie['notes']),
-                                  tags='title')
+            # todo Is tags argument used for anything in this code?
+            item_id = self.treeview.insert('', 'end', text=movie['title'],
+                                           values=(movie['year'], movie['director'], movie['minutes'],
+                                                   movie['notes']), tags='title')
             self.treeview_items[item_id] = config.MovieKeyTypedDict(title=movie['title'], year=int(movie['year']))
-        tree.bind('<<TreeviewSelect>>', func=self.treeview_callback(tree))
+        self.treeview.bind('<<TreeviewSelect>>', func=self.treeview_callback(self.treeview))
     
     def treeview_callback(self, tree: ttk.Treeview):
-        """Create a callback which will be called whenever the user selection is changed.
+        """Create a callback which will be called when the user makes a selection.
 
         Args:
             tree:
@@ -517,7 +517,7 @@ class SelectMovieGUI(MovieGUIBase):
         """
         
         # noinspection PyUnusedLocal
-        def selection_callback(*args):
+        def func(*args):
             """Save the newly changed user selection.
 
             Args:
@@ -527,7 +527,7 @@ class SelectMovieGUI(MovieGUIBase):
             self.callback(self.treeview_items[item_id])
             self.destroy()
 
-        return selection_callback
+        return func
 
     def create_buttonbox(self, outerframe: ttk.Frame):
         """Create the buttons."""
@@ -558,7 +558,7 @@ class MovieTreeview:
     user_callback: Callable[[Sequence[str]], None]
     
     # Items to be selected on opening.
-    initial_selection: Sequence[str] = field(default_factory=list)
+    initial_selection: List[str] = field(default_factory=list)
     observer: neurons.Observer = field(default_factory=neurons.Observer, init=False)
 
     # noinspection DuplicatedCode

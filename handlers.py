@@ -2,7 +2,7 @@
 
 This module is the glue between the user's selection of a menu item and the gui."""
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/14/23, 9:08 AM by stephen.
+#  Last modified 1/17/23, 2:19 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -237,13 +237,12 @@ def _select_movie_callback(movie_id: config.MovieKeyTypedDict):
     Args:
         movie_id:
     """
-
-    # Get record from database
+    # Get one movie from the database
     criteria = config.FindMovieTypedDict(title=movie_id['title'], year=[str(movie_id['year'])])
     movie = database.find_movies(criteria)[0]
 
+    # Display the movie in the edit movie form.
     movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
-
     guiwidgets.EditMovieGUI(config.current.tk_root, _edit_movie_callback(movie_key),
                             _delete_movie_callback, ['commit', 'delete'], database.all_tags(), movie)
 

@@ -1,7 +1,7 @@
 """Test support module for Tk dummies."""
 
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/9/23, 8:37 AM by stephen.
+#  Last modified 1/17/23, 2:19 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -265,6 +265,7 @@ class TtkTreeview:
     show: Literal['tree', 'headings'] = field(default='headings')
     padding: int = field(default=0)
     items: list[str] = field(default_factory=list, init=False, repr=False, compare=False)
+    selected: tuple[str, ...] = field(default_factory=tuple, init=False, repr=False, compare=False)
 
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     column_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -289,6 +290,7 @@ class TtkTreeview:
 
     def insert(self, *args, **kwargs):
         self.insert_calls.append((args, kwargs))
+        return 'I001'
 
     def bind(self, *args, **kwargs):
         self.bind_calls.append((args, kwargs))
@@ -299,10 +301,12 @@ class TtkTreeview:
     def configure(self, **kwargs):
         self.configure_calls.append(kwargs)
 
-    def selection_add(self, *args):
+    def selection_add(self, *args: str):
+        self.selected = tuple(itertools.chain(self.selected, args))
         self.selection_add_calls.append(args)
 
-    def selection_set(self, *args):
+    def selection_set(self, *args: str):
+        self.selected = args
         self.selection_set_calls.append(args)
 
     def set_mock_children(self, items: list[str]):
@@ -314,10 +318,9 @@ class TtkTreeview:
     def delete(self, *args):
         self.items = list(set(self.items) - set(args))
 
-
-    @staticmethod
-    def selection():
-        return ['test tag', 'ignored tag']
+    def selection(self):
+        return self.selected
+        # return ['test tag', 'ignored tag']
 
 
 # noinspection PyMissingOrEmptyDocstring
