@@ -1,8 +1,8 @@
 """Menu handlers.
 
 This module is the glue between the user's selection of a menu item and the gui."""
-#  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 12/12/22, 12:13 PM by stephen.
+#  Copyright (c) 2022-2023. Stephen Rigden.
+#  Last modified 1/18/23, 10:10 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -41,6 +41,7 @@ def preferences_dialog():
     """Display the 'preferences' dialog."""
     try:
         display_key = config.persistent.tmdb_api_key
+    # todo test this branch
     except (config.ConfigTMDBAPIKeyNeedsSetting, config.ConfigTMDBDoNotUse):
         display_key = ''
     guiwidgets_2.PreferencesGUI(config.current.tk_root, display_key, config.persistent.use_tmdb,
@@ -142,18 +143,14 @@ def _delete_movie_callback(movie: config.FindMovieTypedDict):
     
     Args:
         movie:
-        
-    Raises:
-        sqlalchemy.orm.exc.NoResultFound
-            This exception is raised if the record cannot be found. This can happen if the movie was
-            deleted by another process between the user retrieving a record for deletion and the
-            call to actually delete it.
-            The exception is silently ignored.
     """
     try:
         database.del_movie(movie)
-    
+
+    # todo test this branch
     except sqlalchemy.exc.NoResultFound:
+        # This can happen if the movie was deleted by another process between the user retrieving a record for
+        # deletion and the call to actually delete it.
         pass
 
 
@@ -180,8 +177,6 @@ def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[s
     elif movies_found == 1:
         movie = movies[0]
         movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
-        # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
-        # noinspection PyTypeChecker
         guiwidgets.EditMovieGUI(config.current.tk_root, _edit_movie_callback(movie_key),
                                 _delete_movie_callback, ['commit', 'delete'],
                                 database.all_tags(), movie)
@@ -233,20 +228,18 @@ def _edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
     return func
 
 
-def _select_movie_callback(title: str, year: int):
+def _select_movie_callback(movie_id: config.MovieKeyTypedDict):
     """Edit a movie selected by the user from a list of movies.
     
     Args:
-        title:
-        year:
+        movie_id:
     """
+    # Get one movie from the database
+    criteria = config.FindMovieTypedDict(title=movie_id['title'], year=[str(movie_id['year'])])
+    movie = database.find_movies(criteria)[0]
 
-    # Get record from database
-    movie = database.find_movies(dict(title=title, year=year))[0]
-    # moviedb-#272 'Wrong argument type in _select_movie_callback'
+    # Display the movie in the edit movie form.
     movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
-    # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
-    # noinspection PyTypeChecker
     guiwidgets.EditMovieGUI(config.current.tk_root, _edit_movie_callback(movie_key),
                             _delete_movie_callback, ['commit', 'delete'], database.all_tags(), movie)
 
@@ -366,6 +359,7 @@ def _tmdb_search_exception_callback(fut: concurrent.futures.Future):
         logging.error(exc)
         msg = 'Invalid API key for TMDB.'
         detail = 'Do you want to set the key?'
+        # todo test this branch
         if guiwidgets_2.gui_askyesno(config.current.tk_root, msg, detail):
             preferences_dialog()
 
@@ -382,6 +376,7 @@ def _tmdb_io_handler(search_string: str, work_queue: queue.Queue):
         search_string: The title search string
         work_queue: A queue where compliant movies can be placed.
     """
+    # todo test this function
     if tmdb_api_key := _get_tmdb_api_key():
         executor = config.current.threadpool_executor
         fut = executor.submit(tmdb.search_tmdb, tmdb_api_key, search_string, work_queue)

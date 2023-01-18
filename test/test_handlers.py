@@ -1,6 +1,6 @@
 """Menu handlers test module."""
-#  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 12/12/22, 12:13 PM by stephen.
+#  Copyright (c) 2022-2023. Stephen Rigden.
+#  Last modified 1/18/23, 10:10 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,6 +20,7 @@ from typing import Callable, List, Literal, Sequence
 
 import pytest
 
+import config
 import exception
 import handlers
 from test.dummytk import DummyTk
@@ -55,6 +56,7 @@ class TestAboutDialog:
         self.messagebox_calls.append(args)
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestPreferences:
     test_tmdb_api_key = 'test_tmdb_api_key'
     test_use_tmdb = True
@@ -95,6 +97,7 @@ class TestPreferences:
             handlers.config.current = hold_current
     
 
+# noinspection PyMissingOrEmptyDocstring
 class TestGetTmdbGetApiKey:
     TEST_KEY = 'dummy key'
     
@@ -124,6 +127,7 @@ class TestGetTmdbGetApiKey:
             assert calls[0]
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestTmdbIOExceptionHandler:
     askyesno_calls = None
     messagebox_calls = None
@@ -184,6 +188,7 @@ class TestTmdbIOExceptionHandler:
             assert self.messagebox_calls[0] == expected
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestTmdbIOHandler:
     search_string = 'test search string'
     work_queue = handlers.queue.LifoQueue()
@@ -389,6 +394,7 @@ class TestAddMovieCallback:
         self.dummy_add_movie_tag_link_calls.append(args)
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestSearchMovieCallback:
     search_title = 'test tsmc'
     year = '4242'
@@ -567,19 +573,19 @@ class TestSelectMovieCallback:
     dummy_find_movies_calls = []
     dummy_edit_movie_callback_wrapper_calls = []
 
-    def test_find_movies_called(self, class_patches):
+    def test_find_movies_called(self, class_patches, check):
         with self.class_context():
-            assert self.dummy_find_movies_calls[0][0] == dict(title=self.TITLE, year=self.YEAR)
-            assert self.dummy_find_movies_calls[0][0] == self.MOVIE
+            with check:
+                assert self.dummy_find_movies_calls[0][0] == dict(title=self.TITLE, year=[str(self.YEAR)])
 
-    def test_edit_movie_gui_created(self, class_patches):
+    def test_edit_movie_gui_created(self, class_patches, check):
         with self.class_context():
-            assert dummy_edit_movie_gui_instance[0][0] == DummyParent()
-            assert dummy_edit_movie_gui_instance[0][1] == 'dummy_edit_movie_callback'
-            assert dummy_edit_movie_gui_instance[0][2].__name__ == '_delete_movie_callback'
-            assert dummy_edit_movie_gui_instance[0][3] == ['commit', 'delete']
-            assert dummy_edit_movie_gui_instance[0][4] == ['Test tag 42']
-            assert dummy_edit_movie_gui_instance[0][5] == self.MOVIE
+            with check:
+                assert dummy_edit_movie_gui_instance[0][0] == DummyParent()
+                assert dummy_edit_movie_gui_instance[0][1] == 'dummy_edit_movie_callback'
+                assert dummy_edit_movie_gui_instance[0][2].__name__ == '_delete_movie_callback'
+                assert dummy_edit_movie_gui_instance[0][3] == ['commit', 'delete']
+                assert dummy_edit_movie_gui_instance[0][4] == ['Test tag 42']
 
     @pytest.fixture
     def class_patches(self, monkeypatch):
@@ -599,8 +605,9 @@ class TestSelectMovieCallback:
         
         handlers.config.persistent = handlers.config.PersistentConfig('Test program name', 'Test program version')
         handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
+        movie_key = config.MovieKeyTypedDict(title=self.TITLE, year=self.YEAR)
         try:
-            yield handlers._select_movie_callback(self.TITLE, self.YEAR)
+            yield handlers._select_movie_callback(movie_key)
         finally:
             handlers.config.persistent = hold_persistent
             handlers.config.current = hold_current
@@ -617,7 +624,8 @@ class TestSelectMovieCallback:
         return dummy_edit_movie_callback
 
 
-class TestAddTag:
+# noinspection PyMissingOrEmptyDocstring
+class TestTags:
     
     def test_add_tag(self, monkeypatch):
         tag_gui_args = []
@@ -627,51 +635,31 @@ class TestAddTag:
         
         tk_parent = DummyParent()
         add_tag_callback = handlers._add_tag_callback
-        with self.add_tag_context():
+        with self.tag_func_context(handlers.add_tag):
             assert tag_gui_args == [(tk_parent, add_tag_callback)]
-    
-    # noinspection PyMissingOrEmptyDocstring
-    @contextmanager
-    def add_tag_context(self):
-        hold_persistent = handlers.config.persistent
-        hold_current = handlers.config.current
-        
-        handlers.config.persistent = handlers.config.PersistentConfig(program='Test program name',
-                                                                      program_version='Test program version')
-        handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
-        try:
-            yield handlers.add_tag()
-        finally:
-            handlers.config.persistent = hold_persistent
-            handlers.config.current = hold_current
 
-
-class TestEditTag:
-    
     def test_edit_tag(self, monkeypatch):
         edit_tag_args = []
         monkeypatch.setattr(handlers.guiwidgets_2, 'SearchTagGUI',
                             lambda *args: edit_tag_args.append(args))
-        
+
         tk_parent = DummyParent()
         search_tag_callback = handlers._search_tag_callback
-        with self.search_tag_context():
+        with self.tag_func_context(handlers.edit_tag):
             assert edit_tag_args == [(tk_parent, search_tag_callback)]
-    
-    # noinspection PyMissingOrEmptyDocstring
+
     @contextmanager
-    def search_tag_context(self):
+    def tag_func_context(self, tag_func):
         hold_persistent = handlers.config.persistent
         hold_current = handlers.config.current
-    
+
         handlers.config.persistent = handlers.config.PersistentConfig(program='Test program name',
                                                                       program_version='Test program version')
         handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
-    
-        # handlers.config.current = handlers.config.Config('Test program name', 'Test program version')
-        # handlers.config.current.tk_root = DummyParent()
+
         try:
-            yield handlers.edit_tag()
+            yield tag_func()
+
         finally:
             handlers.config.persistent = hold_persistent
             handlers.config.current = hold_current

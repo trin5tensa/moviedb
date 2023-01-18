@@ -1,7 +1,6 @@
 """Test module."""
-
-#  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/28/22, 2:31 PM by stephen.
+#  Copyright (c) 2022-2023. Stephen Rigden.
+#  Last modified 1/18/23, 10:10 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,9 +12,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import itertools
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Callable, Sequence
+from typing import Callable, Sequence, Generator
 
 import pytest
 
@@ -59,7 +59,7 @@ class TestEditMovieGUI:
         with self.movie_context() as movie_gui:
             expected = dict(title='Test Movie', year=2050, director='Test Director', minutes=142,
                             notes='Test note')
-            # The code initializes some textvariable values to a non space value (in [0]). This test
+            # The code initializes some textvariable values to a non-space value (in [0]). This test
             # requires the latest and final entry (in [-1])
             original_values = {
                     field_name: movie_gui.entry_fields[field_name].textvariable.set_calls[-1][0]
@@ -251,15 +251,22 @@ class TestSearchMovieGUI:
     
     # Test create body item
     
-    def test_body_item_ttk_label_called(self, patch_tk):
+    def test_labels_called(self, patch_tk, check):
         with self.movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            body_frame = outerframe.children[0]
-            first_label = body_frame.children[0]
-            assert first_label == TtkLabel(parent=TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
-                                                           padding=(10, 25, 10, 0)),
-                                           text='Title', padding='')
-    
+            with check:
+                outerframe = movie_gui.parent.children[0]
+                body_frame = outerframe.children[0]
+
+                first_label = body_frame.children[0]
+                assert first_label == TtkLabel(parent=TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
+                                                               padding=(10, 25, 10, 0)),
+                                               text='Title', padding='')
+
+                year_label = body_frame.children[2]
+                assert year_label == TtkLabel(parent=TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
+                                                              padding=(10, 25, 10, 0)),
+                                              text='Year (min, max)', padding='')
+
     def test_body_item_ttk_label_gridded(self, patch_tk):
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
@@ -282,15 +289,6 @@ class TestSearchMovieGUI:
                                                   padding=(10, 25, 10, 0)), 'notes', 1, 4, 36), ]
     
     # Test create min-max body item
-    
-    def test_min_max_body_item_ttk_label_called(self, patch_tk):
-        with self.movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            body_frame = outerframe.children[0]
-            year_label = body_frame.children[2]
-            assert year_label == TtkLabel(parent=TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
-                                                          padding=(10, 25, 10, 0)),
-                                          text='Year (min, max)', padding='')
     
     def test_min_max_body_item_ttk_label_gridded(self, patch_tk):
         with self.movie_context() as movie_gui:
@@ -462,140 +460,6 @@ class TestSearchMovieGUI:
         yield guiwidgets.SearchMovieGUI(DummyTk(), dummy_commit_callback, tags)
 
 
-# noinspection PyMissingOrEmptyDocstring
-class TestSelectMovieGUI:
-    
-    # Test Basic Initialization
-    
-    def test_parent_initialized(self, patch_tk):
-        with self.select_movie_context() as movie_gui:
-            assert movie_gui.parent == DummyTk()
-            assert isinstance(movie_gui.callback, Callable)
-    
-    # Test Create Body
-    
-    def test_treeview_called(self, patch_tk):
-        with self.select_movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            bodyframe = outerframe.children[0]
-            treeview = bodyframe.children[0]
-            assert treeview == TtkTreeview(parent=TtkFrame(parent=TtkFrame(
-                    parent=DummyTk(), padding=''), padding=(10, 25, 10, 0)),
-                    columns=('year', 'director', 'minutes', 'notes'), height=25, selectmode='browse')
-    
-    def test_treeview_gridded(self, patch_tk):
-        with self.select_movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            bodyframe = outerframe.children[0]
-            treeview = bodyframe.children[0]
-            assert treeview.grid_calls == [dict(column=0, row=0, sticky='w')]
-    
-    def test_treeview_column_widths_set(self, patch_tk):
-        with self.select_movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            bodyframe = outerframe.children[0]
-            treeview = bodyframe.children[0]
-            assert treeview.column_calls == [(('#0',), dict(width=350)), (('year',), dict(width=50)),
-                                             (('director',), dict(width=100)),
-                                             (('minutes',), dict(width=50)),
-                                             (('notes',), dict(width=350)), ]
-    
-    def test_treeview_column_headings_set(self, patch_tk):
-        with self.select_movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            bodyframe = outerframe.children[0]
-            treeview = bodyframe.children[0]
-            assert treeview.heading_calls == [(('#0',), dict(text='Title')),
-                                              (('year',), dict(text='Year')),
-                                              (('director',), dict(text='Director')),
-                                              (('minutes',), dict(text='Length (minutes)')),
-                                              (('notes',), dict(text='Notes')), ]
-    
-    def test_treeview_movies_inserted(self, patch_tk):
-        with self.select_movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            bodyframe = outerframe.children[0]
-            treeview = bodyframe.children[0]
-            assert treeview.insert_calls == [(('', 'end'),
-                                              dict(iid="('Test Title', 2020)", tags='title',
-                                                   text='Test Title',
-                                                   values=(2020, 'Director', 200, 'NB')))]
-    
-    # @pytest.mark.skip('Test dependency discovered')
-    # def test_treeview_binds_callback(self, patch_tk, monkeypatch):
-    #     # noinspection PyUnusedLocal
-    #     def selection(*args):
-    #         return ["'\'Hello Mum\', 1954'"]
-    #
-    #     monkeypatch.setattr(TtkTreeview, 'selection', selection)
-    #     with self.select_movie_context() as movie_gui:
-    #         outerframe = movie_gui.parent.children[0]
-    #         bodyframe = outerframe.children[0]
-    #         treeview = bodyframe.children[0]
-    #         assert treeview.bind_calls[0][0] == ('<<TreeviewSelect>>',)
-    #
-    #         treeview.bind_calls[0][1]['func']()
-    #         assert commit_callback_calls[2] == ('Hello Mum', 1954)
-    
-    def test_widget_is_destroyed(self, patch_tk, monkeypatch):
-        destroy_called = False
-        
-        # noinspection PyUnusedLocal
-        def mock_destroy(*args):
-            nonlocal destroy_called
-            destroy_called = True
-        
-        # noinspection PyUnusedLocal
-        def selection(*args):
-            return ["'Hello Mum, 1954'"]
-        
-        monkeypatch.setattr(TtkTreeview, 'selection', selection)
-        monkeypatch.setattr(guiwidgets.SelectMovieGUI, 'destroy', mock_destroy)
-        with self.select_movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            bodyframe = outerframe.children[0]
-            treeview = bodyframe.children[0]
-            _, kwargs = treeview.bind_calls[0]
-            treeview.bind_calls[0][1]['func']()
-            assert destroy_called
-    
-    # Test create buttonbox
-    
-    def test_buttonbox_created(self, patch_tk):
-        with self.select_movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            buttonbox = outerframe.children[1]
-            assert buttonbox == TtkFrame(parent=outerframe, padding=(5, 5, 10, 10))
-    
-    def test_buttonbox_gridded(self, patch_tk):
-        with self.select_movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            buttonbox = outerframe.children[1]
-            assert buttonbox.grid_calls[0] == dict(column=0, row=1, sticky='e')
-    
-    def test_cancel_button_created(self, patch_tk, monkeypatch):
-        create_cancel_button_calls = []
-        monkeypatch.setattr(guiwidgets.MovieGUIBase, 'create_cancel_button',
-                            lambda *args, **kwargs: create_cancel_button_calls.append((args, kwargs)))
-        with self.select_movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            buttonbox = outerframe.children[1]
-            assert create_cancel_button_calls[0][0][1] == buttonbox
-            assert create_cancel_button_calls[0][1] == dict(column=0)
-    
-    # Class Support Methods
-    
-    @staticmethod
-    def fake_movie_generator():
-        yield dict(title='Test Title', year=2020, director='Director', minutes=200, notes='NB')
-    
-    # noinspection PyMissingOrEmptyDocstring
-    @contextmanager
-    def select_movie_context(self):
-        # noinspection PyTypeChecker
-        yield guiwidgets.SelectMovieGUI(DummyTk(), self.fake_movie_generator(), dummy_commit_callback)
-
-
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TtkTreeview:
@@ -606,6 +470,7 @@ class TtkTreeview:
     
     show: str = field(default='tree headings')
     padding: int = field(default=0)
+    item_id: Generator = itertools.count(1)
     
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     column_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -630,6 +495,7 @@ class TtkTreeview:
     
     def insert(self, *args, **kwargs):
         self.insert_calls.append((args, kwargs))
+        return f'I{next(self.item_id):03}'
     
     def bind(self, *args, **kwargs):
         self.bind_calls.append((args, kwargs))

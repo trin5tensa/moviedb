@@ -1,7 +1,6 @@
 """Test module."""
-
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/9/23, 8:37 AM by stephen.
+#  Last modified 1/18/23, 10:10 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,12 +18,13 @@ from unittest.mock import Mock
 
 import pytest
 
-import exception
+# import exception
+import guiwidgets
 import guiwidgets_2
 from test.dummytk import (DummyTk, TkStringVar, TkToplevel, TtkButton, TtkCheckbutton, TtkEntry,
                           TtkFrame, TtkLabel, TtkScrollbar, TtkTreeview, )
 
-Exc = Type[Optional[exception.DatabaseSearchFoundNothing]]
+Exc = Type[Optional[guiwidgets_2.exception.DatabaseSearchFoundNothing]]
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -208,7 +208,7 @@ class TestAddMovieGUI:
     def test_moviedb_constraint_failure_displays_message(self, monkeypatch):
         # noinspection PyUnusedLocal
         def dummy_commit(*args):
-            raise exception.MovieDBConstraintFailure
+            raise guiwidgets_2.exception.MovieDBConstraintFailure
 
         monkeypatch.setattr(self, 'dummy_commit_callback', dummy_commit)
         calls = []
@@ -224,7 +224,7 @@ class TestAddMovieGUI:
 
         # noinspection PyUnusedLocal
         def dummy_commit(*args):
-            raise exception.MovieYearConstraintFailure(message)
+            raise guiwidgets_2.exception.MovieYearConstraintFailure(message)
 
         monkeypatch.setattr(self, 'dummy_commit_callback', dummy_commit)
         calls = []
@@ -233,7 +233,7 @@ class TestAddMovieGUI:
             add_movie_context.commit()
             assert calls == [dict(message=message, parent=DummyTk())]
 
-    def test_form_clean_up_after_commit(self, monkeypatch, check):
+    def test_form_clean_up_after_commit(self, monkeypatch):
         mock_clear_fields = Mock()
         mock_clear_selection = Mock()
         with self.add_movie_gui_context() as add_movie_context:
@@ -241,11 +241,9 @@ class TestAddMovieGUI:
             monkeypatch.setattr(add_movie_context.treeview, 'clear_selection', mock_clear_selection)
             add_movie_context.tmdb_treeview.set_mock_children(['1', '2'])
             add_movie_context.commit()
-
-            with check:
-                mock_clear_fields.assert_called_once_with(add_movie_context.entry_fields)
-                mock_clear_selection.assert_called_once()
-                assert add_movie_context.tmdb_treeview.get_children() == []
+            mock_clear_fields.assert_called_once_with(add_movie_context.entry_fields)
+            mock_clear_selection.assert_called_once()
+            assert add_movie_context.tmdb_treeview.get_children() == []
 
 
     def test_destroy_deletes_add_movie_form(self, monkeypatch):
@@ -285,6 +283,31 @@ class TestAddMovieGUI:
 
     def dummy_tmdb_search_callback(self, *args):
         pass
+
+
+# noinspection PyMissingOrEmptyDocstring
+@pytest.mark.usefixtures('patch_tk')
+class TestSelectMovieGUI:
+    handlers_callback = Mock()
+    movies = [guiwidgets.config.MovieUpdateDef(title='Select Movie Test TItle', year=4242,
+                                    director='test director', minutes=42, notes='test notes')]
+
+    def test_selected_movie_becomes_argument_for_callback(self):
+        with self.select_movie() as cm:
+            args, kwargs = cm.treeview.bind_calls[0]
+            treeview_callback = kwargs['func']
+            cm.treeview.selection_set('I001')
+            treeview_callback()
+
+            expected = {k: v for k, v in self.movies[0].items()
+                        if k in {'title', 'year'}}
+            self.handlers_callback.assert_called_once_with(expected)
+
+    @contextmanager
+    def select_movie(self):
+        # noinspection PyTypeChecker
+        gui = guiwidgets.SelectMovieGUI(DummyTk(), self.movies, self.handlers_callback)
+        yield gui
 
 
 # noinspection DuplicatedCode,PyMissingOrEmptyDocstring
@@ -534,7 +557,7 @@ class TestSearchTagGUI:
         monkeypatch.setattr(guiwidgets_2, 'gui_messagebox',
                             lambda *args: dummy_gui_messagebox_calls.append(args))
 
-        exc: Exc = exception.DatabaseSearchFoundNothing
+        exc: Exc = guiwidgets_2.exception.DatabaseSearchFoundNothing
         with self.search_tag_gui_context(exc) as cm:
             cm.search()
             assert dummy_gui_messagebox_calls == [(cm.parent, message, detail)]
@@ -810,6 +833,7 @@ class TestSelectTagGUI:
     def test_select_tag_callback_called(self, select_tag_fixtures, monkeypatch):
         with self.select_gui_context() as cm:
             tree = cm.outer_frame.children[0].children[0]
+            tree.selection_set('test tag', 'ignored tag')
             selection_callback = cm.selection_callback_wrapper(tree)
             selection_callback()
             assert self.select_tag_callback_calls == [('test tag',)]
@@ -821,6 +845,7 @@ class TestSelectTagGUI:
                             lambda *args: destroy_calls.append(True))
         with self.select_gui_context() as cm:
             tree = cm.outer_frame.children[0].children[0]
+            tree.selection_set('test tag', 'ignored tag')
             selection_callback = cm.selection_callback_wrapper(tree)
             selection_callback()
             assert destroy_calls == [True, ]
@@ -930,31 +955,19 @@ class TestPreferencesGUI:
         with self.preferences_context() as preferences_gui:
             assert calls == [(preferences_gui.entry_fields[preferences_gui.api_key_name].widget,), ]
 
-    def test_save_button_created(self, monkeypatch):
+    def test_buttons_created(self, monkeypatch, check):
         with self.preferences_context() as preferences_gui:
             toplevel = preferences_gui.parent.children[0]
             outer_frame = toplevel.children[0]
             buttonbox_frame = outer_frame.children[1]
-            save_button = buttonbox_frame.children[0]
-            assert isinstance(save_button, TtkButton)
-            # noinspection PyTypeChecker
-            assert save_button.parent == TtkFrame(TtkFrame(TkToplevel(DummyTk())),
-                                                  padding=(5, 5, 10, 10))
-            assert save_button.text == guiwidgets_2.SAVE_TEXT
-            assert isinstance(save_button.command, Callable)
 
-    def test_cancel_button_created(self, monkeypatch):
-        with self.preferences_context() as preferences_gui:
-            toplevel = preferences_gui.parent.children[0]
-            outer_frame = toplevel.children[0]
-            buttonbox_frame = outer_frame.children[1]
-            cancel_button = buttonbox_frame.children[1]
-            assert isinstance(cancel_button, TtkButton)
-            # noinspection PyTypeChecker
-            assert cancel_button.parent == TtkFrame(TtkFrame(TkToplevel(DummyTk())),
-                                                    padding=(5, 5, 10, 10))
-            assert cancel_button.text == guiwidgets_2.CANCEL_TEXT
-            assert isinstance(cancel_button.command, Callable)
+            for ix, text in [(0, guiwidgets_2.SAVE_TEXT), (1, guiwidgets_2.CANCEL_TEXT),]:
+                button = buttonbox_frame.children[ix]
+                check.is_instance(button, TtkButton)
+                # noinspection PyTypeChecker
+                check.equal(button.parent, TtkFrame(TtkFrame(TkToplevel(DummyTk())), padding=(5, 5, 10, 10)))
+                check.equal(button.text, text)
+                check.is_instance(button.command, Callable)
 
     def test_neurons(self, monkeypatch):
         with self.preferences_context() as preferences_gui:
@@ -1047,6 +1060,7 @@ class TestFocusSet:
 
     @contextmanager
     def focus_set_context(self):
+        # noinspection PyTypeChecker
         entry = guiwidgets_2.ttk.Entry(DummyTk())
         guiwidgets_2._focus_set(entry)
         yield entry
@@ -1238,10 +1252,11 @@ class TestMovieTagTreeview:
     def test_callback_called_with_current_user_selection(self):
         tree = TtkTreeview(TtkFrame(DummyTk()))
         calls = []
+        tree.selection_set('test tag', 'ignored tag')
         with self.movie_tag_treeview_context() as cm:
             selection_callback = cm.selection_callback_wrapper(tree, lambda *args: calls.append(args))
             selection_callback()
-            assert calls == [(['test tag', 'ignored tag'],)]
+            assert calls == [(('test tag', 'ignored tag'),)]
 
     def test_observer_notify_called_with_changed_selection(self, monkeypatch):
         tree = TtkTreeview(TtkFrame(DummyTk()))
@@ -1256,11 +1271,12 @@ class TestMovieTagTreeview:
     def test_observer_notify_called_with_unchanged_selection(self, monkeypatch):
         tree = TtkTreeview(TtkFrame(DummyTk()))
         calls = []
+        tree.selection_set('test tag', 'ignored tag')
         with self.movie_tag_treeview_context() as cm:
             monkeypatch.setattr(cm.observer, 'notify',
                                 lambda *args: calls.append(args))
             selection_callback = cm.selection_callback_wrapper(tree, lambda *args: None)
-            cm.initial_selection = ['test tag', 'ignored tag']
+            cm.initial_selection = ('test tag', 'ignored tag')
             selection_callback()
             assert calls == [(False,)]
 
@@ -1272,6 +1288,7 @@ class TestMovieTagTreeview:
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def movie_tag_treeview_context(self):
+        # noinspection PyTypeChecker
         body_frame = guiwidgets_2.ttk.Frame(DummyTk())
         row = 5
         items = ['tag 1', 'tag 2']
