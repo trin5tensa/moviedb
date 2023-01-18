@@ -2,7 +2,7 @@
 
 This module is the glue between the user's selection of a menu item and the gui."""
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/17/23, 2:19 PM by stephen.
+#  Last modified 1/18/23, 10:10 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -41,6 +41,7 @@ def preferences_dialog():
     """Display the 'preferences' dialog."""
     try:
         display_key = config.persistent.tmdb_api_key
+    # todo test this branch
     except (config.ConfigTMDBAPIKeyNeedsSetting, config.ConfigTMDBDoNotUse):
         display_key = ''
     guiwidgets_2.PreferencesGUI(config.current.tk_root, display_key, config.persistent.use_tmdb,
@@ -142,18 +143,14 @@ def _delete_movie_callback(movie: config.FindMovieTypedDict):
     
     Args:
         movie:
-        
-    Raises:
-        sqlalchemy.orm.exc.NoResultFound
-            This exception is raised if the record cannot be found. This can happen if the movie was
-            deleted by another process between the user retrieving a record for deletion and the
-            call to actually delete it.
-            The exception is silently ignored.
     """
     try:
         database.del_movie(movie)
-    
+
+    # todo test this branch
     except sqlalchemy.exc.NoResultFound:
+        # This can happen if the movie was deleted by another process between the user retrieving a record for
+        # deletion and the call to actually delete it.
         pass
 
 
@@ -362,6 +359,7 @@ def _tmdb_search_exception_callback(fut: concurrent.futures.Future):
         logging.error(exc)
         msg = 'Invalid API key for TMDB.'
         detail = 'Do you want to set the key?'
+        # todo test this branch
         if guiwidgets_2.gui_askyesno(config.current.tk_root, msg, detail):
             preferences_dialog()
 
@@ -378,6 +376,7 @@ def _tmdb_io_handler(search_string: str, work_queue: queue.Queue):
         search_string: The title search string
         work_queue: A queue where compliant movies can be placed.
     """
+    # todo test this function
     if tmdb_api_key := _get_tmdb_api_key():
         executor = config.current.threadpool_executor
         fut = executor.submit(tmdb.search_tmdb, tmdb_api_key, search_string, work_queue)

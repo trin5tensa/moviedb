@@ -1,6 +1,6 @@
 """Test module."""
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/17/23, 2:19 PM by stephen.
+#  Last modified 1/18/23, 10:10 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -251,15 +251,22 @@ class TestSearchMovieGUI:
     
     # Test create body item
     
-    def test_body_item_ttk_label_called(self, patch_tk):
+    def test_labels_called(self, patch_tk, check):
         with self.movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            body_frame = outerframe.children[0]
-            first_label = body_frame.children[0]
-            assert first_label == TtkLabel(parent=TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
-                                                           padding=(10, 25, 10, 0)),
-                                           text='Title', padding='')
-    
+            with check:
+                outerframe = movie_gui.parent.children[0]
+                body_frame = outerframe.children[0]
+
+                first_label = body_frame.children[0]
+                assert first_label == TtkLabel(parent=TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
+                                                               padding=(10, 25, 10, 0)),
+                                               text='Title', padding='')
+
+                year_label = body_frame.children[2]
+                assert year_label == TtkLabel(parent=TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
+                                                              padding=(10, 25, 10, 0)),
+                                              text='Year (min, max)', padding='')
+
     def test_body_item_ttk_label_gridded(self, patch_tk):
         with self.movie_context() as movie_gui:
             outerframe = movie_gui.parent.children[0]
@@ -282,15 +289,6 @@ class TestSearchMovieGUI:
                                                   padding=(10, 25, 10, 0)), 'notes', 1, 4, 36), ]
     
     # Test create min-max body item
-    
-    def test_min_max_body_item_ttk_label_called(self, patch_tk):
-        with self.movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            body_frame = outerframe.children[0]
-            year_label = body_frame.children[2]
-            assert year_label == TtkLabel(parent=TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
-                                                          padding=(10, 25, 10, 0)),
-                                          text='Year (min, max)', padding='')
     
     def test_min_max_body_item_ttk_label_gridded(self, patch_tk):
         with self.movie_context() as movie_gui:

@@ -1,6 +1,6 @@
 """Test module."""
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/17/23, 2:19 PM by stephen.
+#  Last modified 1/18/23, 10:10 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -233,7 +233,7 @@ class TestAddMovieGUI:
             add_movie_context.commit()
             assert calls == [dict(message=message, parent=DummyTk())]
 
-    def test_form_clean_up_after_commit(self, monkeypatch, check):
+    def test_form_clean_up_after_commit(self, monkeypatch):
         mock_clear_fields = Mock()
         mock_clear_selection = Mock()
         with self.add_movie_gui_context() as add_movie_context:
@@ -241,11 +241,9 @@ class TestAddMovieGUI:
             monkeypatch.setattr(add_movie_context.treeview, 'clear_selection', mock_clear_selection)
             add_movie_context.tmdb_treeview.set_mock_children(['1', '2'])
             add_movie_context.commit()
-
-            with check:
-                mock_clear_fields.assert_called_once_with(add_movie_context.entry_fields)
-                mock_clear_selection.assert_called_once()
-                assert add_movie_context.tmdb_treeview.get_children() == []
+            mock_clear_fields.assert_called_once_with(add_movie_context.entry_fields)
+            mock_clear_selection.assert_called_once()
+            assert add_movie_context.tmdb_treeview.get_children() == []
 
 
     def test_destroy_deletes_add_movie_form(self, monkeypatch):
@@ -957,31 +955,19 @@ class TestPreferencesGUI:
         with self.preferences_context() as preferences_gui:
             assert calls == [(preferences_gui.entry_fields[preferences_gui.api_key_name].widget,), ]
 
-    def test_save_button_created(self, monkeypatch):
+    def test_buttons_created(self, monkeypatch, check):
         with self.preferences_context() as preferences_gui:
             toplevel = preferences_gui.parent.children[0]
             outer_frame = toplevel.children[0]
             buttonbox_frame = outer_frame.children[1]
-            save_button = buttonbox_frame.children[0]
-            assert isinstance(save_button, TtkButton)
-            # noinspection PyTypeChecker
-            assert save_button.parent == TtkFrame(TtkFrame(TkToplevel(DummyTk())),
-                                                  padding=(5, 5, 10, 10))
-            assert save_button.text == guiwidgets_2.SAVE_TEXT
-            assert isinstance(save_button.command, Callable)
 
-    def test_cancel_button_created(self, monkeypatch):
-        with self.preferences_context() as preferences_gui:
-            toplevel = preferences_gui.parent.children[0]
-            outer_frame = toplevel.children[0]
-            buttonbox_frame = outer_frame.children[1]
-            cancel_button = buttonbox_frame.children[1]
-            assert isinstance(cancel_button, TtkButton)
-            # noinspection PyTypeChecker
-            assert cancel_button.parent == TtkFrame(TtkFrame(TkToplevel(DummyTk())),
-                                                    padding=(5, 5, 10, 10))
-            assert cancel_button.text == guiwidgets_2.CANCEL_TEXT
-            assert isinstance(cancel_button.command, Callable)
+            for ix, text in [(0, guiwidgets_2.SAVE_TEXT), (1, guiwidgets_2.CANCEL_TEXT),]:
+                button = buttonbox_frame.children[ix]
+                check.is_instance(button, TtkButton)
+                # noinspection PyTypeChecker
+                check.equal(button.parent, TtkFrame(TtkFrame(TkToplevel(DummyTk())), padding=(5, 5, 10, 10)))
+                check.equal(button.text, text)
+                check.is_instance(button.command, Callable)
 
     def test_neurons(self, monkeypatch):
         with self.preferences_context() as preferences_gui:
@@ -1074,6 +1060,7 @@ class TestFocusSet:
 
     @contextmanager
     def focus_set_context(self):
+        # noinspection PyTypeChecker
         entry = guiwidgets_2.ttk.Entry(DummyTk())
         guiwidgets_2._focus_set(entry)
         yield entry
@@ -1301,6 +1288,7 @@ class TestMovieTagTreeview:
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def movie_tag_treeview_context(self):
+        # noinspection PyTypeChecker
         body_frame = guiwidgets_2.ttk.Frame(DummyTk())
         row = 5
         items = ['tag 1', 'tag 2']
