@@ -6,8 +6,8 @@
 /old movies.sqlite3
 /movies 2.sqlite3
 /identifier.sqlite
-/pytest.ini
 /.idea/sqldialects.xml
 /test/tmdb/.coverage
 /htmlcov/
 /.coverage
+/movie_database.sqlite3

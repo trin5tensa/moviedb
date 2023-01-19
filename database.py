@@ -44,8 +44,7 @@ class Base:
 
 Base = sqlalchemy.orm.declarative_base(cls=Base)
 MUYBRIDGE = 1878
-# Base = sqlalchemy.ext.declarative.declarative_base()   old sqlalchemy v1.4 code
-database_fn = 'old movies.sqlite3'
+database_fn = 'movie_database.sqlite3'
 
 movie_tag = Table('movie_tag', Base.metadata,
                   Column('movies_id', ForeignKey('movies.id'), primary_key=True),

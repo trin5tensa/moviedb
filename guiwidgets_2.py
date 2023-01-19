@@ -85,15 +85,18 @@ class AddMovieGUI:
 
         # Create frames to hold fields and buttons.
         self.outer_frame, body_frame, buttonbox, internet_frame = self.framing(self.parent)
+        input_zone = _LabelFieldWidget(body_frame)
 
-        # Create labels and fields.
-        label_field = _LabelFieldWidget(body_frame)
-        for movie_field_name in MOVIE_FIELD_NAMES:
-            label_field.add_entry_row(self.entry_fields[movie_field_name])
+        # Create labels and entry widgets.
+        for movie_field_name in MOVIE_FIELD_NAMES[:-1]:
+            input_zone.add_entry_row(self.entry_fields[movie_field_name])
         _focus_set(self.entry_fields[self.title].widget)
 
-        # Create a treeview for movie tags.
-        self.treeview = label_field.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
+        # Create label and text widget.
+        input_zone.add_text_row(self.entry_fields[MOVIE_FIELD_NAMES[-1]])
+
+        # Create a label and treeview for movie tags.
+        self.treeview = input_zone.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
                                                      callers_callback=self.treeview_callback)
 
         # Create a treeview for movies retrieved from tmdb.
@@ -220,7 +223,7 @@ class AddMovieGUI:
 
     def tmdb_treeview_callback(self, *args, **kwargs):
         # todo docs
-        # todo test this method
+        # todo test this method if not covered
         if self.tmdb_treeview.selection():
             item_id = self.tmdb_treeview.selection()[0]
         else:
@@ -228,7 +231,6 @@ class AddMovieGUI:
 
         for k, v in self.tmdb_movies[item_id].items():
             self.entry_fields[k].textvariable.set(v)
-
 
     def commit(self):
         """The user clicked the 'Commit' button."""
@@ -782,17 +784,29 @@ class _LabelFieldWidget:
 
     def add_entry_row(self, entry_field: _EntryField):
         """
-        Add a label and an entry as the bottom row.
+        Add label and entry widgets as the bottom row.
         
         Args:
             entry_field:
         """
         row_ix = next(self.row)
         self._create_label(entry_field.label_text, row_ix)
-        # todo add multiline to notes field.
         entry_field.widget = ttk.Entry(self.parent, textvariable=entry_field.textvariable,
                                        width=self.col_1_width)
         entry_field.widget.grid(column=1, row=row_ix)
+
+    def add_text_row(self, text_field: _EntryField):
+        """
+        Add label and text widgets as the bottom row.
+
+        Args:
+            text_field:
+        """
+        # todo test this method if not covered
+        row_ix = next(self.row)
+        self._create_label(text_field.label_text, row_ix)
+        text_field.widget = tk.Text(self.parent, width=47, height=10)
+        text_field.widget.grid(column=1, row=row_ix)
 
     def add_checkbox_row(self, entry_field: _EntryField):
         """
