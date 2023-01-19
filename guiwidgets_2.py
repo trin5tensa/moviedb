@@ -4,7 +4,7 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/18/23, 10:10 AM by stephen.
+#  Last modified 1/19/23, 7:42 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -789,6 +789,7 @@ class _LabelFieldWidget:
         """
         row_ix = next(self.row)
         self._create_label(entry_field.label_text, row_ix)
+        # todo add multiline to notes field
         entry_field.widget = ttk.Entry(self.parent, textvariable=entry_field.textvariable,
                                        width=self.col_1_width)
         entry_field.widget.grid(column=1, row=row_ix)
