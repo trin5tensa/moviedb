@@ -27,11 +27,12 @@ import config
 import exception
 import neurons
 
-MOVIE_FIELD_NAMES = ('title', 'year', 'director', 'minutes', 'notes',)
-MOVIE_FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes',)
+MOVIE_FIELD_NAMES = ('title', 'year', 'director', 'minutes', 'notes')
+MOVIE_FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes')
+# todo move TAG_FIELD_... to MOVIE_FIELD_...
 TAG_FIELD_NAMES = ('tag',)
 TAG_FIELD_TEXTS = ('Tag',)
-SELECT_TAGS_TEXT = 'Select tags'
+SELECT_TAGS_TEXT = 'Tags'
 SEARCH_TEXT = 'Search'
 COMMIT_TEXT = 'Commit'
 SAVE_TEXT = 'Save'
@@ -45,7 +46,7 @@ ParentType = TypeVar('ParentType', tk.Tk, tk.Toplevel, ttk.Frame)
 class AddMovieGUI:
     """Create and manage a Tk input form which allows a user to supply the data needed to
     add a movie."""
-
+    # todo rewrite tests for this class
     parent: tk.Tk
     # When the user clicks the commit button this will be called with a dictionary of fields and user entered values.
     commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
@@ -59,6 +60,9 @@ class AddMovieGUI:
     # A more convenient data structure for entry fields.
     entry_fields: Dict[str, '_EntryField'] = field(default_factory=dict, init=False, repr=False)
     title: str = field(default=None, init=False, repr=False)
+
+    # Notes field
+    notes_widget: tk.Text = None
 
     # Treeview for tags.
     treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
@@ -80,12 +84,13 @@ class AddMovieGUI:
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = _create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
+        # todo after this MOVIE_FIELD_... should not appear anywhere - that's what self.entry fields is for
         self.title = MOVIE_FIELD_NAMES[0]
         year = MOVIE_FIELD_NAMES[1]
 
         # Create frames to hold fields and buttons.
         self.outer_frame, body_frame, buttonbox, internet_frame = self.framing(self.parent)
-        input_zone = _LabelFieldWidget(body_frame)
+        input_zone = _InputZone(body_frame)
 
         # Create labels and entry widgets.
         for movie_field_name in MOVIE_FIELD_NAMES[:-1]:
@@ -93,7 +98,8 @@ class AddMovieGUI:
         _focus_set(self.entry_fields[self.title].widget)
 
         # Create label and text widget.
-        input_zone.add_text_row(self.entry_fields[MOVIE_FIELD_NAMES[-1]])
+        self.notes_widget = input_zone.add_text_row(MOVIE_FIELD_TEXTS[-1])
+        self.notes_widget.tag_configure('font_tag', font='TkTextFont')
 
         # Create a label and treeview for movie tags.
         self.treeview = input_zone.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
@@ -230,12 +236,17 @@ class AddMovieGUI:
             return
 
         for k, v in self.tmdb_movies[item_id].items():
-            self.entry_fields[k].textvariable.set(v)
+            if k == MOVIE_FIELD_NAMES[-1]:
+                self.notes_widget.delete('1.0', 'end')
+                self.notes_widget.insert('1.0', v, ('font_tag',))
+            else:
+                self.entry_fields[k].textvariable.set(v)
 
     def commit(self):
         """The user clicked the 'Commit' button."""
         return_fields = {internal_name: movie_field.textvariable.get()
                          for internal_name, movie_field in self.entry_fields.items()}
+        return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get('1.0', 'end')
 
         # Commit and exit
         try:
@@ -255,6 +266,7 @@ class AddMovieGUI:
         # Clear fields ready for next entry.
         else:
             _clear_input_form_fields(self.entry_fields)
+            self.notes_widget.delete('1.0', 'end')
             self.treeview.clear_selection()
             items = self.tmdb_treeview.get_children()
             self.tmdb_treeview.delete(*items)
@@ -325,7 +337,7 @@ class AddTagGUI:
         self.outer_frame, body_frame, buttonbox = _create_input_form_framing(self.parent)
 
         # Create label and field
-        label_field = _LabelFieldWidget(body_frame)
+        label_field = _InputZone(body_frame)
         for movie_field_name in TAG_FIELD_NAMES:
             label_field.add_entry_row(self.entry_fields[movie_field_name])
 
@@ -378,7 +390,7 @@ class SearchTagGUI:
         self.outer_frame, body_frame, buttonbox = _create_input_form_framing(self.parent)
 
         # Create the field label and field entry widgets.
-        label_field = _LabelFieldWidget(body_frame)
+        label_field = _InputZone(body_frame)
         for movie_field_name in TAG_FIELD_NAMES:
             label_field.add_entry_row(self.entry_fields[movie_field_name])
 
@@ -439,7 +451,7 @@ class EditTagGUI:
         self.outer_frame, body_frame, buttonbox = _create_input_form_framing(self.parent)
 
         # Create field label and field entry widgets.
-        label_field = _LabelFieldWidget(body_frame)
+        label_field = _InputZone(body_frame)
         for movie_field_name in TAG_FIELD_NAMES:
             label_field.add_entry_row(self.entry_fields[movie_field_name])
 
@@ -577,7 +589,7 @@ class PreferencesGUI:
         _set_original_value(self.entry_fields, original_values)
 
         # Create labels and fields
-        label_field = _LabelFieldWidget(body_frame)
+        label_field = _InputZone(body_frame)
         label_field.add_entry_row(self.entry_fields[self.api_key_name])
         label_field.add_checkbox_row(self.entry_fields[self.use_tmdb_name])
         _focus_set(self.entry_fields[self.api_key_name].widget)
@@ -659,7 +671,7 @@ class _MovieTagTreeview:
     """
 
     # The frame which contains the treeview.
-    body_frame: ttk.Frame
+    parent: ttk.Frame
     # The tk grid row of the label and treeview within the frame's grid.
     row: int
     # A list of all the items which will be displayed in the treeview.
@@ -674,22 +686,19 @@ class _MovieTagTreeview:
 
     # noinspection DuplicatedCode
     def __post_init__(self):
-        # Create a frame for the treeview and its scrollbar
-        treeview_frame = ttk.Frame(self.body_frame, padding=5)
-        treeview_frame.grid(column=1, row=self.row, sticky='w')
-
         # Create the treeview
-        self.treeview = ttk.Treeview(treeview_frame, columns=('tags',), height=10, selectmode='extended',
+        self.treeview = ttk.Treeview(self.parent, columns=('tags',), height=7, selectmode='extended',
                                      show='tree', padding=5)
-        self.treeview.grid(column=0, row=0, sticky='w')
-        self.treeview.column('tags', width=100)
+        self.treeview.grid(column=1, row=self.row, sticky='e')
+        self.treeview.column('tags', width=127)
         self.treeview.bind('<<TreeviewSelect>>',
                            func=self.selection_callback_wrapper(self.treeview, self.callers_callback))
 
         # Create the scrollbar
-        scrollbar = ttk.Scrollbar(treeview_frame, orient=tk.VERTICAL, command=self.treeview.yview)
-        scrollbar.grid(column=1, row=0)
+        scrollbar = ttk.Scrollbar(self.parent, orient='vertical', command=self.treeview.yview)
+        # self.treeview['yscrollcommand'] = scrollbar.set
         self.treeview.configure(yscrollcommand=scrollbar.set)
+        scrollbar.grid(column=2, row=self.row, sticky='ns')
 
         # Populate the treeview
         for item in self.items:
@@ -753,6 +762,7 @@ class _EntryField:
     textvariable: tk.StringVar = None
     # The observer attribute is *not* needed for normal operation. If initialized when the observer is
     # first created it will permit external testing of the chain of neurons.
+    # todo check that simplified test strategy still needs this observer
     observer: Callable = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
@@ -761,12 +771,12 @@ class _EntryField:
 
 
 @dataclass
-class _LabelFieldWidget:
-    """
-    Create a two column frame for labels and widgets. Call specific methods such as add_entry_row
-    to add specific widgets.
-    """
+class _InputZone:
+    """Configure the parent frame with two columns to contain labels and widgets for user input.
 
+    Widgets are added by calling the various methods `add_<widget>_row`, for example, add_entry_row. Each call will
+    grid the row as the last row in the zone and will align the labels and the widget.
+    """
     parent: tk.Frame
     row: Iterator = field(default=None, init=False, repr=False)
 
@@ -781,6 +791,8 @@ class _LabelFieldWidget:
         self.parent.columnconfigure(0, weight=1, minsize=self.col_0_width)
         # Create a column for the fields.
         self.parent.columnconfigure(1, weight=1)
+        # Create a column for scrollbars.
+        self.parent.columnconfigure(2, weight=1)
 
     def add_entry_row(self, entry_field: _EntryField):
         """
@@ -795,18 +807,26 @@ class _LabelFieldWidget:
                                        width=self.col_1_width)
         entry_field.widget.grid(column=1, row=row_ix)
 
-    def add_text_row(self, text_field: _EntryField):
+    def add_text_row(self, label_text: str) -> tk.Text:
         """
         Add label and text widgets as the bottom row.
 
         Args:
-            text_field:
+            label_text:
+
+        Returns:
+            text widget
         """
         # todo test this method if not covered
         row_ix = next(self.row)
-        self._create_label(text_field.label_text, row_ix)
-        text_field.widget = tk.Text(self.parent, width=47, height=10)
-        text_field.widget.grid(column=1, row=row_ix)
+        self._create_label(label_text, row_ix)
+        widget = tk.Text(self.parent, width=45, height=8, wrap='word', padx=10, pady=10)
+        widget.grid(column=1, row=row_ix, sticky='e')
+
+        scrollbar = ttk.Scrollbar(self.parent, orient='vertical', command=widget.yview)
+        widget['yscrollcommand'] = scrollbar.set
+        scrollbar.grid(column=2, row=row_ix, sticky='ns')
+        return widget
 
     def add_checkbox_row(self, entry_field: _EntryField):
         """
@@ -833,7 +853,6 @@ class _LabelFieldWidget:
             items: A list of all the items which will be displayed in the treeview.
             callers_callback: Caller's callback for notification of reselection.
         """
-
         row_ix = next(self.row)
         self._create_label(label_text, row_ix)
         return _MovieTagTreeview(self.parent, row_ix, items, callers_callback)
@@ -847,7 +866,7 @@ class _LabelFieldWidget:
         """
 
         label = ttk.Label(self.parent, text=text)
-        label.grid(column=0, row=row_ix, sticky='e', padx=5)
+        label.grid(column=0, row=row_ix, sticky='ne', padx=5)
 
 
 def _create_entry_fields(internal_names: Sequence[str], label_texts: Sequence[str]
