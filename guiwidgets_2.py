@@ -4,7 +4,7 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/19/23, 8:56 AM by stephen.
+#  Last modified 1/28/23, 8:30 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -78,8 +78,11 @@ class AddMovieGUI:
     tmdb_movies: dict[str, dict] = field(default_factory=dict, init=False, repr=False)
 
     # These variables help to decide if the user has finished entering the title.
-    last_text_queue_timer: int = 1000
+    last_text_queue_timer: int = 500
     last_text_event_id: str = ''
+
+    # Local variables exposed for testing
+    commit_neuron: neurons.AndNeuron = None
 
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
@@ -130,18 +133,18 @@ class AddMovieGUI:
 
         # Link commit neuron to commit button.
         commit_button_enabler = _enable_button(commit_button)
-        commit_neuron = _create_buttons_andneuron(commit_button_enabler)
+        self.commit_neuron = _create_buttons_andneuron(commit_button_enabler)
 
         # Link commit neuron to year field.
-        observer = _create_the_fields_observer(self.entry_fields, year, commit_neuron)
+        observer = _create_the_fields_observer(self.entry_fields, year, self.commit_neuron)
         self.entry_fields[year].observer = observer
-        _link_field_to_neuron(self.entry_fields, year, commit_neuron, observer)
+        _link_field_to_neuron(self.entry_fields, year, self.commit_neuron, observer)
 
         # Link a new observer to the title field.
         observer = neurons.Observer()
         self.entry_fields[self.title].observer = observer
-        observer.register(self.call_title_notifees(commit_neuron))
-        _link_field_to_neuron(self.entry_fields, self.title, commit_neuron, observer.notify)
+        observer.register(self.call_title_notifees(self.commit_neuron))
+        _link_field_to_neuron(self.entry_fields, self.title, self.commit_neuron, observer.notify)
 
         # Start the tmdb_work_queue polling
         self.tmdb_consumer()
@@ -236,9 +239,12 @@ class AddMovieGUI:
             return
 
         for k, v in self.tmdb_movies[item_id].items():
+            # Update tkinter text widget(s).
             if k == MOVIE_FIELD_NAMES[-1]:
                 self.notes_widget.delete('1.0', 'end')
                 self.notes_widget.insert('1.0', v, ('font_tag',))
+
+            # Update tkinter entry widgets.
             else:
                 self.entry_fields[k].textvariable.set(v)
 
@@ -696,7 +702,6 @@ class _MovieTagTreeview:
 
         # Create the scrollbar
         scrollbar = ttk.Scrollbar(self.parent, orient='vertical', command=self.treeview.yview)
-        # self.treeview['yscrollcommand'] = scrollbar.set
         self.treeview.configure(yscrollcommand=scrollbar.set)
         scrollbar.grid(column=2, row=self.row, sticky='ns')
 
@@ -777,7 +782,7 @@ class _InputZone:
     Widgets are added by calling the various methods `add_<widget>_row`, for example, add_entry_row. Each call will
     grid the row as the last row in the zone and will align the labels and the widget.
     """
-    parent: tk.Frame
+    parent: ParentType
     row: Iterator = field(default=None, init=False, repr=False)
 
     col_0_width: int = 30
@@ -824,7 +829,7 @@ class _InputZone:
         widget.grid(column=1, row=row_ix, sticky='e')
 
         scrollbar = ttk.Scrollbar(self.parent, orient='vertical', command=widget.yview)
-        widget['yscrollcommand'] = scrollbar.set
+        widget.configure(yscrollcommand=scrollbar.set)
         scrollbar.grid(column=2, row=row_ix, sticky='ns')
         return widget
 

@@ -1,7 +1,7 @@
 """Test support module for Tk dummies."""
 
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/17/23, 2:19 PM by stephen.
+#  Last modified 1/28/23, 8:30 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -84,6 +84,28 @@ class TkToplevel:
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
+@dataclass
+class TkText:
+    parent: 'TtkFrame'
+    width: str
+    height: str
+    wrap: str
+    padx: str
+    pady: str
+    yview: str = None
+    yscrollcommand: Callable = None
+
+    def grid(self, *args, **kwargs):
+        ...
+
+    def configure(self, *args, **kwargs):
+        ...
+
+    def tag_configure(self, *args, **kwargs):
+        ...
+
+
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class TkStringVar:
     trace_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)

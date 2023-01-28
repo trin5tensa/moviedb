@@ -1,6 +1,6 @@
 """Test module."""
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/18/23, 10:10 AM by stephen.
+#  Last modified 1/28/23, 8:30 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -1180,74 +1180,55 @@ class TestLabelFieldWidget:
 
 @pytest.mark.usefixtures('patch_tk')
 class TestMovieTagTreeview:
-    def test_treeview_frame_created(self):
-        with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            assert treeview_frame == TtkFrame(parent=TtkFrame(parent=DummyTk()), padding=5)
-
-    def test_treeview_frame_gridded(self):
-        with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            assert treeview_frame.grid_calls == [dict(column=1, row=cm.row, sticky='w')]
-
     def test_treeview_created(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview = treeview_frame.children[0]
-            assert treeview == TtkTreeview(parent=TtkFrame(parent=TtkFrame(parent=DummyTk()), padding=5),
-                                           columns=('tags',), height=10, show='tree', padding=5)
+            treeview = cm.parent.children[0]
+            assert treeview == TtkTreeview(parent=TtkFrame(parent=DummyTk()),
+                                           columns=('tags',), height=7, show='tree', padding=5)
 
     def test_treeview_gridded(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview = treeview_frame.children[0]
-            assert treeview.grid_calls == [dict(column=0, row=0, sticky='w')]
+            treeview = cm.parent.children[0]
+            assert treeview.grid_calls == [dict(column=1, row=5, sticky='e')]
 
     def test_treeview_column_width_set(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview = treeview_frame.children[0]
-            assert treeview.column_calls == [(('tags',), dict(width=100))]
+            treeview = cm.parent.children[0]
+            assert treeview.column_calls == [(('tags',), dict(width=127))]
 
     def test_treeview_bind_called(self, monkeypatch):
         calls = []
         monkeypatch.setattr(guiwidgets_2._MovieTagTreeview, 'selection_callback_wrapper',
                             lambda *args: calls.append(args))
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview = treeview_frame.children[0]
+            treeview = cm.parent.children[0]
             assert treeview.bind_calls[0][0] == ('<<TreeviewSelect>>',)
             assert calls == [(cm, cm.treeview, cm.callers_callback)]
 
     def test_scrollbar_created(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview, scrollbar = treeview_frame.children
-            assert scrollbar == TtkScrollbar(treeview_frame, 'vertical', treeview.yview)
+            treeview, scrollbar = cm.parent.children
+            assert scrollbar == TtkScrollbar(cm.parent, 'vertical', treeview.yview)
 
     def test_scrollbar_gridded(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            _, scrollbar = treeview_frame.children
-            assert scrollbar.grid_calls == [dict(column=1, row=0)]
+            _, scrollbar = cm.parent.children
+            assert scrollbar.grid_calls == [dict(column=2, row=5, sticky='ns')]
 
     def test_treeview_configured_with_scrollbar(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview, scrollbar = treeview_frame.children
+            treeview, scrollbar = cm.parent.children
             assert treeview.configure_calls == [dict(yscrollcommand=scrollbar.set)]
 
     def test_treeview_populated_with_items(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview = treeview_frame.children[0]
+            treeview, scrollbar = cm.parent.children
             assert treeview.insert_calls == [(('', 'end', 'tag 1'), dict(text='tag 1', tags='tags')),
                                              (('', 'end', 'tag 2'), dict(text='tag 2', tags='tags'))]
 
     def test_set_initial_selection(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview = treeview_frame.children[0]
+            treeview, scrollbar = cm.parent.children
             assert treeview.selection_add_calls == [(cm.initial_selection,)]
 
     def test_callback_called_with_current_user_selection(self):
@@ -1290,11 +1271,11 @@ class TestMovieTagTreeview:
     @contextmanager
     def movie_tag_treeview_context(self):
         # noinspection PyTypeChecker
-        body_frame = guiwidgets_2.ttk.Frame(DummyTk())
+        parent = guiwidgets_2.ttk.Frame(DummyTk())
         row = 5
         items = ['tag 1', 'tag 2']
         initial_selection = ['tag 1', ]
-        yield guiwidgets_2._MovieTagTreeview(body_frame, row, items, lambda *args: None,
+        yield guiwidgets_2._MovieTagTreeview(parent, row, items, lambda *args: None,
                                              initial_selection)
 
 
