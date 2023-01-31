@@ -1,7 +1,7 @@
 """Test support module for Tk dummies."""
 
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/28/23, 8:30 AM by stephen.
+#  Last modified 1/31/23, 1:31 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -94,6 +94,7 @@ class TkText:
     pady: str
     yview: str = None
     yscrollcommand: Callable = None
+    text: str = ''
 
     def grid(self, *args, **kwargs):
         ...
@@ -103,6 +104,15 @@ class TkText:
 
     def tag_configure(self, *args, **kwargs):
         ...
+
+    def delete(self, start: str, end: str):
+        self.text = ''
+
+    def insert(self, pos: str, text: str, tags: tuple[str]):
+        self.text = text
+
+    def get(self, *args):
+        return self.text
 
 
 # noinspection PyMissingOrEmptyDocstring

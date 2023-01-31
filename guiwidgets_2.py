@@ -4,7 +4,7 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/28/23, 8:30 AM by stephen.
+#  Last modified 1/31/23, 1:31 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -83,6 +83,7 @@ class AddMovieGUI:
 
     # Local variables exposed for testing
     commit_neuron: neurons.AndNeuron = None
+    return_fields: dict = None
 
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
@@ -199,8 +200,11 @@ class AddMovieGUI:
                                                         substring, self.tmdb_work_queue)
 
     def tmdb_consumer(self):
-        """Consumer of queued records of movies found on the TMDB website."""
+        """Consumer of queued records of movies found on the TMDB website.
 
+        Movies arriving in the work queue are placed into a treeview. Complete movie details are stored in a dict for
+        later retrieval if the user selects a treeview entry.
+        """
         try:
             # Tkinter can't wait for the thread blocking `get` method…
             work_package = self.tmdb_work_queue.get_nowait()
@@ -231,7 +235,6 @@ class AddMovieGUI:
         self.selected_tags = reselection
 
     def tmdb_treeview_callback(self, *args, **kwargs):
-        # todo docs
         # todo test this method if not covered
         if self.tmdb_treeview.selection():
             item_id = self.tmdb_treeview.selection()[0]
@@ -250,13 +253,13 @@ class AddMovieGUI:
 
     def commit(self):
         """The user clicked the 'Commit' button."""
-        return_fields = {internal_name: movie_field.textvariable.get()
+        self.return_fields = {internal_name: movie_field.textvariable.get()
                          for internal_name, movie_field in self.entry_fields.items()}
-        return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get('1.0', 'end')
+        self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get('1.0', 'end')
 
         # Commit and exit
         try:
-            self.commit_callback(return_fields, self.selected_tags)
+            self.commit_callback(self.return_fields, self.selected_tags)
 
         # Alert user to title and year constraint failure.
         except exception.MovieDBConstraintFailure:
