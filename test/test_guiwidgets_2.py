@@ -27,6 +27,7 @@ from test.dummytk import (DummyTk, TkStringVar, TkToplevel, TtkButton, TtkCheckb
 Exc = Type[Optional[guiwidgets_2.exception.DatabaseSearchFoundNothing]]
 
 
+# todo Remove these broken and obsolete tests
 # noinspection PyMissingOrEmptyDocstring
 @pytest.mark.usefixtures('patch_tk')
 @pytest.mark.skip

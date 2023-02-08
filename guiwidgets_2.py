@@ -64,11 +64,9 @@ class AddMovieGUI:
     # Notes field
     notes_widget: tk.Text = None
 
-    # Treeview for tags.
+    # Treeviews for tags and TMDB
     treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
-    selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
-
-    # Treeview for IMDB.
+    selected_tags: tuple[str] = field(default_factory=tuple, init=False, repr=False)
     tmdb_treeview: ttk.Treeview = field(default=None, init=False, repr=False)
 
     # These variables are used for the consumer end of the TMDB producer/consumer pattern.
@@ -82,6 +80,7 @@ class AddMovieGUI:
     last_text_event_id: str = ''
 
     # Local variables exposed for testing
+
     commit_neuron: neurons.AndNeuron = None
     return_fields: dict = None
 
@@ -165,15 +164,16 @@ class AddMovieGUI:
         # noinspection PyUnusedLocal
         def func(*args):
             """
-            This function organizes the actions which respond to the user's changes to the title field.
+            This function responds to a change in the title field.
             
             Args:
-                *args: Not used. This is required to match unused arguments from caller.
+                *args: Not used. This is required to match unused arguments from the caller.
             """
             text = self.entry_fields[self.title].textvariable.get()
 
-            # Invoke a database search
-            self.tmdb_search(text)
+            # Invoke a TMDB search
+            if text:
+                self.tmdb_search(text)
 
             # Notify the commit button neuron
             commit_neuron(self.title, bool(text))
@@ -187,23 +187,20 @@ class AddMovieGUI:
         Args:
             substring: The current content of the title field.
         """
-        # Valid strings for search are > zero length.
-        if substring:
+        # Delete the previous call to tmdb_search_callback if it still in the event queue. It will only be in the
+        # event queue if it is still waiting to be executed.
+        if self.last_text_event_id:
+            self.parent.after_cancel(self.last_text_event_id)
 
-            # Delete the previous call to tmdb_search_callback if it still in the event queue. It will only be in the
-            # event queue if it is still waiting to be executed.
-            if self.last_text_event_id:
-                self.parent.after_cancel(self.last_text_event_id)
-
-            # Place a new call to tmdb_search_callback.
-            self.last_text_event_id = self.parent.after(self.last_text_queue_timer, self.tmdb_search_callback,
-                                                        substring, self.tmdb_work_queue)
+        # Place a new call to tmdb_search_callback.
+        self.last_text_event_id = self.parent.after(self.last_text_queue_timer, self.tmdb_search_callback,
+                                                    substring, self.tmdb_work_queue)
 
     def tmdb_consumer(self):
         """Consumer of queued records of movies found on the TMDB website.
 
         Movies arriving in the work queue are placed into a treeview. Complete movie details are stored in a dict for
-        later retrieval if the user selects a treeview entry.
+        later retrieval should the user select a treeview entry.
         """
         try:
             # Tkinter can't wait for the thread blocking `get` method…
@@ -218,7 +215,7 @@ class AddMovieGUI:
             items = self.tmdb_treeview.get_children()
             self.tmdb_treeview.delete(*items)
             self.tmdb_movies = {}
-            for ix, movie in enumerate(work_package):
+            for movie in work_package:
                 movie['director'] = ', '.join(movie['director'])
                 item_id = self.tmdb_treeview.insert('', 'end', values=(
                     movie['title'],
@@ -232,10 +229,11 @@ class AddMovieGUI:
 
     def treeview_callback(self, reselection: Sequence[str]):
         """Update selected tags with the user's changes."""
+        # todo test this method
         self.selected_tags = reselection
 
     def tmdb_treeview_callback(self, *args, **kwargs):
-        # todo test this method if not covered
+        # todo test this method
         if self.tmdb_treeview.selection():
             item_id = self.tmdb_treeview.selection()[0]
         else:
@@ -263,11 +261,10 @@ class AddMovieGUI:
 
         # Alert user to title and year constraint failure.
         except exception.MovieDBConstraintFailure:
-            msg = 'Database constraint failure.'
-            detail = 'A movie with this title and year is already present in the database.'
-            messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
+            exc = exception.MovieDBConstraintFailure
+            messagebox.showinfo(parent=self.parent, message=exc.msg, detail=exc.detail)
 
-        # Alert user to invalid year.
+        # Alert user to invalid year (not YYYY within range).
         except exception.MovieYearConstraintFailure as exc:
             msg = exc.args[0]
             messagebox.showinfo(parent=self.parent, message=msg)
@@ -282,6 +279,7 @@ class AddMovieGUI:
 
     def destroy(self):
         """Destroy all widgets of this class."""
+        # todo test this method
         self.parent.after_cancel(self.recall_id)
         self.outer_frame.destroy()
 

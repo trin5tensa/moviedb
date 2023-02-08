@@ -17,8 +17,7 @@ internal implementation of widgets.
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from contextlib import contextmanager
-from unittest.mock import Mock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -44,19 +43,20 @@ class TestAddMovieGUI:
 
     def test_tmdb_search(self, check):
         """Confirm that a change to the title field makes a delayed call to tmdb_search_callback."""
-        # todo Can typing.Protocol fix the dummytk typing problem?
         cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, lambda: None, self.tags)
         search_string = 'tmdb search substring'
         cut.entry_fields[cut.title].textvariable.set_for_test(search_string)
+        cut.parent.after_calls = {}
+        cut.parent.after_cancel_calls = []
 
         typing_callback = cut.call_title_notifees(cut.commit_neuron)
         typing_callback()
 
         #The search call was placed on the mock event loop from which it must be retrieved for interrogation…
-        _, call = cut.parent.after_calls.popitem()
+        call = [v for v in cut.parent.after_calls.values()][0]
         check.equal(len(call), 3, 'Wrong number of arguments in call to self.parent.after.')
         delay, tmdb_search_callback, args = call
-        check.equal(len(args), 2, 'Wrong number of arguments in call to self.paren t.after.')
+        check.equal(len(args), 2, 'Wrong number of arguments in call to self.parent.after.')
         text, queue_ = args
 
         check.between(delay, 99, 1001, 'Timing rate is outside the expected range of values. (last_text_queue_timer)')
@@ -64,10 +64,15 @@ class TestAddMovieGUI:
         check.equal(text, search_string, 'Search string should be the contents of the title textvariable.')
         check.equal(queue_, cut.tmdb_work_queue, 'The work queue should be self.tmdb_work_queue.')
 
+        # Call the search method directly a second time to remove the event from the event queue.
+        cut.tmdb_search('garbage')
+        event_id = int(cut.last_text_event_id) - 1
+        check.equal(cut.parent.after_cancel_calls, [[(event_id, )]])
+
     def test_retrieve_movie_from_tmdb_results_queue(self, check):
         """ Confirm that:
         Movies found in AddMovieGUI's queue are moved to the treeview and to tmdb_movies.
-        A call to tmdb_consumer is replaced on the mock tkinter event loop.
+        The polling call to tmdb_consumer is replaced on the mock tkinter event loop.
         """
         cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, lambda: None, self.tags)
         cut.tmdb_work_queue.put(self.test_movies)
@@ -91,9 +96,9 @@ class TestAddMovieGUI:
         check.equal(consumer_func, cut.tmdb_consumer)
         check.equal(args, (), 'cut.tmdb_consumer should have no arguments.')
 
-    def test_move_user_selection_to_input_form(self, check):
+    def test_commit_a_movie(self, check):
         """Confirm that the input form is populated by a user selection from the list of movies."""
-        callback = Mock()
+        callback = MagicMock()
         cut = guiwidgets_2.AddMovieGUI(DummyTk(), callback, lambda: None, self.tags)
         for k, v in cut.entry_fields.items():
             if k == guiwidgets_2.MOVIE_FIELD_NAMES[-1]:
@@ -105,6 +110,33 @@ class TestAddMovieGUI:
         cut.commit()
 
         callback.assert_called_once_with(cut.return_fields, ())
+
+    def test_invalid_key_exception_alerts_user(self, monkeypatch):
+        """Confirm an invalid title and year combination presents an alert."""
+        parent = DummyTk()
+        exc = guiwidgets_2.exception.MovieDBConstraintFailure
+        callback = MagicMock(side_effect=exc, name='mock commit callback')
+        messagebox = MagicMock(name='mock messagebox')
+        monkeypatch.setattr('guiwidgets_2.messagebox', messagebox)
+
+        cut = guiwidgets_2.AddMovieGUI(parent, callback, lambda: None, self.tags)
+        cut.commit()
+
+        messagebox.showinfo.assert_called_once_with(parent=parent, message=exc.msg, detail=exc.detail)
+
+    def test_invalid_movie_year_exception_alerts_user(self, monkeypatch):
+        """Confirm an invalid year presents an alert."""
+        parent = DummyTk()
+        exc = guiwidgets_2.exception.MovieYearConstraintFailure
+        exc.args = ('test arg 1', 'test arg 2')
+        callback = MagicMock(side_effect=exc, name='mock commit callback')
+        messagebox = MagicMock(name='mock messagebox')
+        monkeypatch.setattr('guiwidgets_2.messagebox', messagebox)
+
+        cut = guiwidgets_2.AddMovieGUI(parent, callback, lambda: None, self.tags)
+        cut.commit()
+
+        messagebox.showinfo.assert_called_once_with(parent=parent, message=exc.args[0])
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
