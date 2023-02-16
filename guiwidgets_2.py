@@ -106,14 +106,14 @@ class AddMovieGUI:
 
         # Create a label and treeview for movie tags.
         self.treeview = input_zone.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
-                                                     callers_callback=self.treeview_callback)
+                                                    callers_callback=self.treeview_callback)
 
         # Create a treeview for movies retrieved from tmdb.
         self.tmdb_treeview = ttk.Treeview(internet_frame,
-                                     columns=('title', 'year', 'director'),
-                                     show=['headings'],
-                                     height=20,
-                                     selectmode='browse')
+                                          columns=('title', 'year', 'director'),
+                                          show=['headings'],
+                                          height=20,
+                                          selectmode='browse')
         self.tmdb_treeview.column('title', width=300, stretch=True)
         self.tmdb_treeview.heading('title', text='Title', anchor='w')
         self.tmdb_treeview.column('year', width=40, stretch=True)
@@ -230,10 +230,12 @@ class AddMovieGUI:
     def treeview_callback(self, reselection: Sequence[str]):
         """Update selected tags with the user's changes."""
         # todo test this method
-        self.selected_tags = reselection
+        self.selected_tags = tuple(reselection)
 
+    # noinspection PyUnusedLocal
     def tmdb_treeview_callback(self, *args, **kwargs):
         # todo test this method
+        # todo write docs
         if self.tmdb_treeview.selection():
             item_id = self.tmdb_treeview.selection()[0]
         else:
@@ -252,7 +254,7 @@ class AddMovieGUI:
     def commit(self):
         """The user clicked the 'Commit' button."""
         self.return_fields = {internal_name: movie_field.textvariable.get()
-                         for internal_name, movie_field in self.entry_fields.items()}
+                              for internal_name, movie_field in self.entry_fields.items()}
         self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get('1.0', 'end')
 
         # Commit and exit
