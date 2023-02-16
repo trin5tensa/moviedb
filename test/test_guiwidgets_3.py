@@ -52,7 +52,7 @@ class TestAddMovieGUI:
         typing_callback = cut.call_title_notifees(cut.commit_neuron)
         typing_callback()
 
-        #The search call was placed on the mock event loop from which it must be retrieved for interrogation…
+        # The search call was placed on the mock event loop from which it must be retrieved for interrogation…
         call = [v for v in cut.parent.after_calls.values()][0]
         check.equal(len(call), 3, 'Wrong number of arguments in call to self.parent.after.')
         delay, tmdb_search_callback, args = call

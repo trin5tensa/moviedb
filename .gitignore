@@ -11,3 +11,6 @@
 /htmlcov/
 /.coverage
 /movie_database.sqlite3
+/venv_3_11/
+/docs/
+/.idea/dictionaries 2

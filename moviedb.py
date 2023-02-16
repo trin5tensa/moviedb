@@ -150,7 +150,7 @@ def command_line_args() -> argparse.Namespace:  # pragma: no cover
     return parser.parse_args()
 
 
-def command():
+def command():  # pragma nocover
     """Run the program.
     
     Command line parse and dispatch.
