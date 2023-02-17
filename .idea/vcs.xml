@@ -15,7 +15,11 @@
         </IssueNavigationLink>
         <IssueNavigationLink>
           <option name="issueRegexp" value="([a-z]*) #([0-9]+)" />
-          <option name="linkRegexp" value="https://github.com/trin5tensa/moviedb/issues/311" />
+          <option name="linkRegexp" value="https://github.com/trin5tensa/$1/issues/$2" />
+        </IssueNavigationLink>
+        <IssueNavigationLink>
+          <option name="issueRegexp" value="([a-z]*)-([0-9]+)" />
+          <option name="linkRegexp" value="https://github.com/trin5tensa/$1/issues/$2" />
         </IssueNavigationLink>
       </list>
     </option>

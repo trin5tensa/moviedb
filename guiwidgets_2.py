@@ -489,6 +489,7 @@ class EditTagGUI:
         
         Get the user's confirmation of deletion with a dialog window. Either exit the method or call
         the registered deletion callback."""
+        # todo test this function
         if messagebox.askyesno(message=f"Do you want to delete tag '{self.tag}'?",
                                icon='question', default='no', parent=self.parent):
             self.delete_tag_callback()
@@ -727,7 +728,7 @@ class _MovieTagTreeview:
 
         # noinspection PyUnusedLocal
         def selection_callback(*args):
-            """Notify MovieTreeview's caller and observer's notifees.
+            """Notify Movie Treeview's caller and observer's notifees.
 
             Args:
                 *args: Not used. Needed for compatibility with Tk:Tcl caller.
@@ -987,7 +988,7 @@ def _create_button(buttonbox: ttk.Frame, text: str, column: int, command: Callab
     """
     button = ttk.Button(buttonbox, text=text, command=command)
     button.grid(column=column, row=0)
-    button.bind('<Return>', lambda event, b=button: b.invoke())
+    button.bind('<Return>', lambda event, b=button: b.invoke())  # pragma nocover
     if not enabled:
         button.state(['disabled'])
     return button

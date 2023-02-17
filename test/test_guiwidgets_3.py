@@ -30,10 +30,12 @@ from test.dummytk import (DummyTk, TkStringVar, TkToplevel, TkText, TtkButton, T
 @pytest.mark.usefixtures('patch_tk')
 class TestAddMovieGUI:
     """ Test AddMovieGUI for:
-    Partial completion of the movie title initiates an Internet search for matching movies.
-    Matching movies are retrieved from AddMovieGUI's queue.
-    The input form is populated by a user selection from the list of movies.
-    Sending data for database commitment when the commit method is called.
+            Initiation of an Internet search for matching movies whenever the user stops typing,
+            Retrieval of search results from AddMovieGUI's queue.Queue,
+            Display of the movies,
+            Database commitment of the input data,
+            Closure of the input form.
+
     All external calls and user GUI interactions will be mocked or simulated.
     """
     tags = ('tag 41', 'tag 42')
@@ -49,8 +51,8 @@ class TestAddMovieGUI:
         cut.parent.after_calls = {}
         cut.parent.after_cancel_calls = []
 
-        typing_callback = cut.call_title_notifees(cut.commit_neuron)
-        typing_callback()
+        search_callback = cut.call_title_notifees(cut.commit_neuron)
+        search_callback()
 
         # The search call was placed on the mock event loop from which it must be retrieved for interrogation…
         call = [v for v in cut.parent.after_calls.values()][0]
@@ -82,7 +84,7 @@ class TestAddMovieGUI:
 
         check.is_false(cut.tmdb_treeview.items, 'Old items not cleared from treeview.')
         args, kwargs = cut.tmdb_treeview.insert_calls[0]
-        check.equal(args, ('', 'end'), 'Unexpected treeview arguments for id and position.' )
+        check.equal(args, ('', 'end'), 'Unexpected treeview arguments for id and position.')
 
         check.equal(kwargs, {'values': (self.test_movies[0]['title'], self.test_movies[0]['year'],
                                         self.test_movies[0]['director'],)}, '')
@@ -137,6 +139,22 @@ class TestAddMovieGUI:
         cut.commit()
 
         messagebox.showinfo.assert_called_once_with(parent=parent, message=exc.args[0])
+
+    def test_destroy(self, check):
+        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, lambda: None, self.tags)
+        cut.outer_frame.destroy_calls = []
+        cut.parent.after_cancel_calls = []
+        event_id = [[tuple(cut.parent.after_calls.keys())]]
+
+        cut.destroy()
+
+        check.equal(cut.parent.after_cancel_calls, event_id,
+                    'An expected call to cease polling of queue.Queue was not made.')
+        if len(cut.outer_frame.destroy_calls) != 1:
+            check.equal(len(cut.outer_frame.destroy_calls), 1,
+                        'An expected call to the destroy method was not made.')
+        else:
+            check.is_true(cut.outer_frame.destroy_calls[0])
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
