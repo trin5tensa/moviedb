@@ -96,6 +96,9 @@ class TkText:
     yscrollcommand: Callable = None
     text: str = ''
 
+    delete_calls = []
+    insert_calls = []
+
     def grid(self, *args, **kwargs):
         ...
 
@@ -106,9 +109,11 @@ class TkText:
         ...
 
     def delete(self, start: str, end: str):
+        self.delete_calls.append((start, end))
         self.text = ''
 
     def insert(self, pos: str, text: str, tags: tuple[str]):
+        self.insert_calls.append((pos, text, tags))
         self.text = text
 
     def get(self, *args):
@@ -296,8 +301,8 @@ class TtkTreeview:
     selectmode: Literal['browse', 'extended', 'none'] = field(default='extended')
     show: Literal['tree', 'headings'] = field(default='headings')
     padding: int = field(default=0)
-    items: list[str] = field(default_factory=list, init=False, repr=False, compare=False)
-    selected: tuple[str, ...] = field(default_factory=tuple, init=False, repr=False, compare=False)
+    items: list = field(default_factory=list, init=False, repr=False, compare=False)
+    selected: tuple = field(default_factory=tuple, init=False, repr=False, compare=False)
 
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     column_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -337,9 +342,12 @@ class TtkTreeview:
         self.selected = tuple(itertools.chain(self.selected, args))
         self.selection_add_calls.append(args)
 
-    def selection_set(self, *args: str):
+    def selection_set(self, *args: tuple):
         self.selected = args
         self.selection_set_calls.append(args)
+
+    def selection(self):
+        return self.selected
 
     def set_mock_children(self, items: list[str]):
         self.items = items[:]
@@ -349,10 +357,6 @@ class TtkTreeview:
 
     def delete(self, *args):
         self.items = list(set(self.items) - set(args))
-
-    def selection(self):
-        return self.selected
-        # return ['test tag', 'ignored tag']
 
 
 # noinspection PyMissingOrEmptyDocstring

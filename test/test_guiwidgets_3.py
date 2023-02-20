@@ -140,6 +140,44 @@ class TestAddMovieGUI:
 
         messagebox.showinfo.assert_called_once_with(parent=parent, message=exc.args[0])
 
+    def test_tags_treeview_callback(self):
+        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, lambda: None, self.tags)
+        selection = ('tag1', 'tag2')
+        cut.tags_treeview_callback(selection)
+        assert cut.selected_tags == selection
+
+    def test_tmdb_treeview_callback(self, check):
+        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, lambda: None, self.tags)
+        item_id = 'I001'
+        cut.tmdb_movies = {item_id: self.test_movies[0]}
+        cut.notes_widget.insert_calls = []
+        cut.notes_widget.delete_calls = []
+        cut.tmdb_treeview.selection_set(item_id, )
+        entry_keys = list(cut.entry_fields.keys())[:-1]
+        for k in entry_keys:
+            cut.entry_fields[k].textvariable.set_calls = []
+
+        cut.tmdb_treeview_callback()
+
+        check.equal(cut.notes_widget.insert_calls, [('1.0', self.test_movies[0]['notes'], ('font_tag', ))])
+        check.equal(cut.notes_widget.delete_calls, [('1.0', 'end')])
+        for k in entry_keys:
+            check.equal(cut.entry_fields[k].textvariable.set_calls[0][0],
+                        self.test_movies[0][k])
+
+    def test_tmdb_treeview_deselection(self, check):
+        """The user has deselected the chosen movie so test that the input form fields have *not* been altered."""
+        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, lambda: None, self.tags)
+        cut.tmdb_treeview.selection_set()
+        entry_keys = list(cut.entry_fields.keys())[:-1]
+        for k in entry_keys:
+            cut.entry_fields[k].textvariable.set_calls = []
+
+        cut.tmdb_treeview_callback()
+
+        for k in entry_keys:
+            check.equal(cut.entry_fields[k].textvariable.set_calls, [])
+
     def test_destroy(self, check):
         cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, lambda: None, self.tags)
         cut.outer_frame.destroy_calls = []

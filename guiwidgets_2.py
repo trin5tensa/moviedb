@@ -1,10 +1,9 @@
 """GUI Windows.
 
-This module includes windows for presenting data supplied to it and returning entered data to its
-callers.
+This module includes windows for presenting data and returning entered data to its callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/31/23, 1:31 PM by stephen.
+#  Last modified 2/18/23, 8:04 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -65,7 +64,7 @@ class AddMovieGUI:
     notes_widget: tk.Text = None
 
     # Treeviews for tags and TMDB
-    treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
+    tags_treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
     selected_tags: tuple[str] = field(default_factory=tuple, init=False, repr=False)
     tmdb_treeview: ttk.Treeview = field(default=None, init=False, repr=False)
 
@@ -105,8 +104,8 @@ class AddMovieGUI:
         self.notes_widget.tag_configure('font_tag', font='TkTextFont')
 
         # Create a label and treeview for movie tags.
-        self.treeview = input_zone.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
-                                                    callers_callback=self.treeview_callback)
+        self.tags_treeview = input_zone.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
+                                                    callers_callback=self.tags_treeview_callback)
 
         # Create a treeview for movies retrieved from tmdb.
         self.tmdb_treeview = ttk.Treeview(internet_frame,
@@ -172,8 +171,7 @@ class AddMovieGUI:
             text = self.entry_fields[self.title].textvariable.get()
 
             # Invoke a TMDB search
-            if text:
-                self.tmdb_search(text)
+            self.tmdb_search(text)
 
             # Notify the commit button neuron
             commit_neuron(self.title, bool(text))
@@ -189,12 +187,13 @@ class AddMovieGUI:
         """
         # Delete the previous call to tmdb_search_callback if it still in the event queue. It will only be in the
         # event queue if it is still waiting to be executed.
-        if self.last_text_event_id:
-            self.parent.after_cancel(self.last_text_event_id)
+        if substring:  # pragma no branch
+            if self.last_text_event_id:
+                self.parent.after_cancel(self.last_text_event_id)
 
-        # Place a new call to tmdb_search_callback.
-        self.last_text_event_id = self.parent.after(self.last_text_queue_timer, self.tmdb_search_callback,
-                                                    substring, self.tmdb_work_queue)
+            # Place a new call to tmdb_search_callback.
+            self.last_text_event_id = self.parent.after(self.last_text_queue_timer, self.tmdb_search_callback,
+                                                        substring, self.tmdb_work_queue)
 
     def tmdb_consumer(self):
         """Consumer of queued records of movies found on the TMDB website.
@@ -227,17 +226,20 @@ class AddMovieGUI:
             # Have tkinter call this function again after the poll interval.
             self.recall_id = self.parent.after(self.work_queue_poll, self.tmdb_consumer)
 
-    def treeview_callback(self, reselection: Sequence[str]):
-        """Update selected tags with the user's changes."""
-        # todo test this method
+    def tags_treeview_callback(self, reselection: Sequence[str]):
+        """ Update selected tags with the user's changes.
+
+        Args:
+            reselection: The user's current tag selection
+        """
         self.selected_tags = tuple(reselection)
 
     # noinspection PyUnusedLocal
     def tmdb_treeview_callback(self, *args, **kwargs):
-        # todo test this method
         # todo write docs
         if self.tmdb_treeview.selection():
             item_id = self.tmdb_treeview.selection()[0]
+        # User deselected prior selection.
         else:
             return
 
@@ -275,7 +277,7 @@ class AddMovieGUI:
         else:
             _clear_input_form_fields(self.entry_fields)
             self.notes_widget.delete('1.0', 'end')
-            self.treeview.clear_selection()
+            self.tags_treeview.clear_selection()
             items = self.tmdb_treeview.get_children()
             self.tmdb_treeview.delete(*items)
 
