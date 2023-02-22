@@ -1,6 +1,6 @@
 """Test module."""
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/18/23, 10:10 AM by stephen.
+#  Last modified 1/28/23, 8:30 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,271 +18,12 @@ from unittest.mock import Mock
 
 import pytest
 
-# import exception
 import guiwidgets
 import guiwidgets_2
 from test.dummytk import (DummyTk, TkStringVar, TkToplevel, TtkButton, TtkCheckbutton, TtkEntry,
                           TtkFrame, TtkLabel, TtkScrollbar, TtkTreeview, )
 
 Exc = Type[Optional[guiwidgets_2.exception.DatabaseSearchFoundNothing]]
-
-
-# noinspection PyMissingOrEmptyDocstring
-@pytest.mark.usefixtures('patch_tk')
-class TestAddMovieGUI:
-    def test_create_input_form_fields(self, monkeypatch):
-        add_entry_row_calls = []
-        monkeypatch.setattr(guiwidgets_2._LabelFieldWidget, 'add_entry_row',
-                            lambda *args: add_entry_row_calls.append(args))
-        monkeypatch.setattr(guiwidgets_2, '_create_input_form_framing', self.dummy_create_framing)
-        monkeypatch.setattr(guiwidgets_2, '_focus_set', lambda *args: None)
-        with self.add_movie_gui_context():
-            field_texts = tuple(label[1].label_text for label in add_entry_row_calls)
-            assert field_texts == guiwidgets_2.MOVIE_FIELD_TEXTS
-
-    def test_focus_set_called_for_title_field(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets_2, '_focus_set', lambda *args: calls.append(args))
-        with self.add_movie_gui_context() as add_movie_context:
-            assert calls == [(add_movie_context.entry_fields['title'].widget,)]
-
-    def test_add_treeview_row_called(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets_2._LabelFieldWidget, 'add_treeview_row',
-                            lambda *args, **kwargs: calls.append((args, kwargs)))
-        with self.add_movie_gui_context() as add_movie_context:
-            assert len(calls) == 1
-            assert len(calls[0]) == 2
-            assert isinstance(calls[0][0][0], guiwidgets_2._LabelFieldWidget)
-            assert calls[0][1]['items'] == ('tag 41', 'tag 42')
-            assert calls[0][1]['callers_callback'] == add_movie_context.treeview_callback
-
-    def test_create_buttons(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets_2, '_create_button',
-                            lambda *args, **kwargs: calls.append((args, kwargs)))
-        with self.add_movie_gui_context() as add_movie_context:
-            assert calls == [((TtkFrame(parent=TtkFrame(parent=TtkFrame(parent=DummyTk(),
-                                                                        padding=10),
-                                                        padding=10),
-                                        padding=(5, 5, 10, 10)),
-                               guiwidgets_2.COMMIT_TEXT),
-                              dict(column=0, command=add_movie_context.commit, enabled=False)),
-
-                             ((TtkFrame(parent=TtkFrame(parent=TtkFrame(parent=DummyTk(),
-                                                                        padding=10),
-                                                        padding=10),
-                                        padding=(5, 5, 10, 10)),
-                               guiwidgets_2.CANCEL_TEXT),
-                              dict(column=1, command=add_movie_context.destroy, enabled=True))
-                             ]
-
-    def test_neuronic_network_enables_and_disables_commit_button(self):
-        with self.add_movie_gui_context() as add_movie_context:
-            # Get the fields' callbacks.
-            outer_frame = add_movie_context.outer_frame
-            input_zone = outer_frame.children[0]
-            body_frame = input_zone.children[0]
-            title = body_frame.children[1]
-            title_callback = title.textvariable.trace_add_callback
-            year = body_frame.children[3]
-            year_callback = year.textvariable.trace_add_callback
-
-            # Get the commit button.
-            buttonbox = input_zone.children[1]
-            commit_button = buttonbox.children[0]
-
-            # Initialize title and year text variables to ''
-            title.textvariable.set_for_test('')
-            year.textvariable.set_for_test('')
-
-            # Simulate user entering 'Movie Title' into title field
-            title.textvariable.set_for_test('Movie Title')
-            title_callback()
-
-            # Simulate user entering '1942' into year field
-            year.textvariable.set_for_test('1942')
-            year_callback()
-
-            # Simulate user entering '' into title field
-            title.textvariable.set_for_test('')
-            title_callback()
-
-            # Button state history should be:
-                # disabled - Initial state
-                # disabled - User enters 'Movie Title'
-                # enabled - User enters '1942'
-                # disabled - User enters '' into title field
-            assert commit_button.state_calls == [['disabled'], ['disabled'], ['!disabled'], ['disabled']]
-
-    def test_entry_field_dictionary_initialized_with_title_observer(self):
-        with self.add_movie_gui_context() as add_movie_context:
-            assert isinstance(add_movie_context.entry_fields['title'].observer, guiwidgets_2.neurons.Observer)
-
-    def test_entry_field_dictionary_initialized_with_year_observer(self, monkeypatch):
-        test_return = 'Test return'
-        monkeypatch.setattr(guiwidgets_2, '_create_the_fields_observer', lambda *args: test_return)
-        with self.add_movie_gui_context() as add_movie_context:
-            assert add_movie_context.entry_fields['year'].observer == test_return
-
-    def test_neuronic_network_invokes_tmdb_lookup(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets_2.AddMovieGUI, 'tmdb_search', lambda *args: calls.append(args))
-        movie_title = 'Movie Title'
-
-        with self.add_movie_gui_context() as add_movie_context:
-            # Get the fields' callbacks.
-            outer_frame = add_movie_context.outer_frame
-            input_zone = outer_frame.children[0]
-            body_frame = input_zone.children[0]
-            title = body_frame.children[1]
-            title_callback = title.textvariable.trace_add_callback
-
-            # Simulate user entering 'Movie Title' into title field
-            title.textvariable.set_for_test(movie_title)
-            title_callback()
-            assert calls[0][1] == movie_title
-
-    def test_tmdb_search_call_is_registered_in_event_queue(self):
-        expected = 'substring test text'
-        with self.add_movie_gui_context() as add_movie_context:
-            add_movie_context.tmdb_search(expected)
-            event_id = add_movie_context.last_text_event_id
-            try:
-                _, _, args = add_movie_context.parent.after_calls[event_id]
-            except KeyError:
-                raise KeyError('The TMDB search was not scheduled in the Tkinter event queue.')
-            text, _ = args
-            assert text == expected
-
-    def test_tmdb_search_ignores_empty_title_string(self):
-        title_string = ''
-        with self.add_movie_gui_context() as add_movie_context:
-            add_movie_context.tmdb_search(title_string)
-            assert add_movie_context.last_text_event_id == ''
-
-    def test_tmdb_search_removes_previous_events(self):
-        expected = 'substring test text'
-        short_string = 'substrin'
-        with self.add_movie_gui_context() as add_movie_context:
-            add_movie_context.tmdb_search(short_string)
-            event_id = add_movie_context.last_text_event_id
-            add_movie_context.tmdb_search(expected)
-            try:
-                add_movie_context.parent.after_calls[event_id]
-            except KeyError:
-                pass
-            else:
-                assert False, "An expired event has not been removed from Tkinter's event queue."
-
-    def test_treeview_callback_updates_selected_tags(self):
-        with self.add_movie_gui_context() as add_movie_context:
-            add_movie_context.treeview_callback(('tag 42',))
-
-    def test_tmdb_consumer_polling_initiated(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets_2.AddMovieGUI, 'tmdb_consumer', lambda *args: calls.append(True))
-        with self.add_movie_gui_context():
-            assert calls == [True], "Consumer work queue polling not started."
-
-    def test_get_work_package_from_queue(self, monkeypatch):
-        work_package = [dict(title='Test Work Package',
-                            year='4242',
-                            director=['Dick1', 'Dick2'])]
-        with self.add_movie_gui_context() as add_movie:
-            add_movie.tmdb_work_queue.put(work_package)
-            add_movie.tmdb_treeview.set_mock_children(['1', '2'])
-
-            add_movie.tmdb_consumer()
-
-            expected = [(('', 'end'), {'values': ('Test Work Package', '4242', 'Dick1, Dick2')})]
-            assert add_movie.tmdb_treeview.insert_calls == expected
-
-    def test_tmdb_consumer_rescheduled(self):
-        with self.add_movie_gui_context() as add_movie:
-            k, v = add_movie.parent.after_calls.popitem()
-            delay, callback, args = v
-            assert delay == add_movie.work_queue_poll
-            assert callback == add_movie.tmdb_consumer
-
-    def test_moviedb_constraint_failure_displays_message(self, monkeypatch):
-        # noinspection PyUnusedLocal
-        def dummy_commit(*args):
-            raise guiwidgets_2.exception.MovieDBConstraintFailure
-
-        monkeypatch.setattr(self, 'dummy_commit_callback', dummy_commit)
-        calls = []
-        monkeypatch.setattr(guiwidgets_2.messagebox, 'showinfo', lambda **kwargs: calls.append(kwargs))
-        with self.add_movie_gui_context() as add_movie_context:
-            add_movie_context.commit()
-            assert calls == [{'detail': 'A movie with this title and year is already present '
-                                        'in the database.',
-                              'message': 'Database constraint failure.', 'parent': DummyTk()}]
-
-    def test_movie_year_constraint_failure_displays_message(self, monkeypatch):
-        message = "Invalid year '42'"
-
-        # noinspection PyUnusedLocal
-        def dummy_commit(*args):
-            raise guiwidgets_2.exception.MovieYearConstraintFailure(message)
-
-        monkeypatch.setattr(self, 'dummy_commit_callback', dummy_commit)
-        calls = []
-        monkeypatch.setattr(guiwidgets_2.messagebox, 'showinfo', lambda **kwargs: calls.append(kwargs))
-        with self.add_movie_gui_context() as add_movie_context:
-            add_movie_context.commit()
-            assert calls == [dict(message=message, parent=DummyTk())]
-
-    def test_form_clean_up_after_commit(self, monkeypatch):
-        mock_clear_fields = Mock()
-        mock_clear_selection = Mock()
-        with self.add_movie_gui_context() as add_movie_context:
-            monkeypatch.setattr(guiwidgets_2, '_clear_input_form_fields', mock_clear_fields)
-            monkeypatch.setattr(add_movie_context.treeview, 'clear_selection', mock_clear_selection)
-            add_movie_context.tmdb_treeview.set_mock_children(['1', '2'])
-            add_movie_context.commit()
-            mock_clear_fields.assert_called_once_with(add_movie_context.entry_fields)
-            mock_clear_selection.assert_called_once()
-            assert add_movie_context.tmdb_treeview.get_children() == []
-
-
-    def test_destroy_deletes_add_movie_form(self, monkeypatch):
-        with self.add_movie_gui_context() as add_movie_context:
-            add_movie_context.destroy()
-            assert add_movie_context.outer_frame.destroy_calls == [True]
-
-    def test_destroy_ends_tmdb_consumer_polling(self, monkeypatch):
-        with self.add_movie_gui_context() as add_movie_context:
-            event_id = list(add_movie_context.parent.after_calls.keys())[0]
-            add_movie_context.search_queue_event_id = event_id
-            add_movie_context.destroy()
-            test_fail_msg = 'TMDB Work queue polling not cancelled'
-            assert add_movie_context.parent.after_cancel_calls == [[(event_id,)]], test_fail_msg
-
-    @contextmanager
-    def add_movie_gui_context(self):
-        """Yield an AddMovieGUI object for testing."""
-        parent = DummyTk()
-        tags = ('tag 41', 'tag 42')
-        # noinspection PyTypeChecker
-        yield guiwidgets_2.AddMovieGUI(parent, self.dummy_commit_callback, self.dummy_tmdb_search_callback, tags)
-
-    framing_calls = []
-    dummy_body_frame = TtkFrame(DummyTk())
-
-    def dummy_create_framing(self, parent) -> Tuple[TtkFrame, TtkFrame, TtkFrame]:
-        dummy_outer_frame = TtkFrame(DummyTk())
-        dummy_buttonbox = TtkFrame(DummyTk())
-        self.framing_calls.append(parent)
-        return dummy_outer_frame, self.dummy_body_frame, dummy_buttonbox
-
-    commit_callback_calls = None
-
-    def dummy_commit_callback(self, *args):
-        self.commit_callback_calls = args
-
-    def dummy_tmdb_search_callback(self, *args):
-        pass
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -413,7 +154,7 @@ class TestAddTagGUI:
 
         monkeypatch.setattr(guiwidgets_2, '_create_input_form_framing',
                             self.dummy_create_input_form_framing)
-        monkeypatch.setattr(guiwidgets_2._LabelFieldWidget, 'add_entry_row',
+        monkeypatch.setattr(guiwidgets_2._InputZone, 'add_entry_row',
                             lambda *args: self.add_entry_row_calls.append(args))
         monkeypatch.setattr(guiwidgets_2, '_create_button', self.dummy_create_button)
         monkeypatch.setattr(guiwidgets_2, '_create_button_orneuron',
@@ -450,7 +191,7 @@ class TestSearchTagGUI:
 
     def test_add_entry_row_called(self, monkeypatch):
         add_entry_row_calls = []
-        monkeypatch.setattr(guiwidgets_2._LabelFieldWidget, 'add_entry_row',
+        monkeypatch.setattr(guiwidgets_2._InputZone, 'add_entry_row',
                             lambda *args: add_entry_row_calls.append(args))
         with self.search_tag_gui_context():
             assert add_entry_row_calls[0][1].label_text == 'Tag'
@@ -730,7 +471,7 @@ class TestEditTagGUI:
 
         monkeypatch.setattr(guiwidgets_2, '_create_input_form_framing',
                             self.dummy_create_input_form_framing)
-        monkeypatch.setattr(guiwidgets_2._LabelFieldWidget, 'add_entry_row',
+        monkeypatch.setattr(guiwidgets_2._InputZone, 'add_entry_row',
                             lambda *args: self.add_entry_row_calls.append(args))
         monkeypatch.setattr(guiwidgets_2, '_create_button', self.dummy_create_button)
         monkeypatch.setattr(guiwidgets_2, '_create_button_orneuron',
@@ -1090,7 +831,7 @@ class TestLabelFieldWidget:
 
     def test_add_entry_row_calls_create_label(self, dummy_entry_field, monkeypatch):
         create_label_calls = []
-        monkeypatch.setattr(guiwidgets_2._LabelFieldWidget, '_create_label',
+        monkeypatch.setattr(guiwidgets_2._InputZone, '_create_label',
                             lambda *args: create_label_calls.append(args))
         with self.labelfield_context() as labelfield:
             labelfield.add_entry_row(dummy_entry_field)
@@ -1117,7 +858,7 @@ class TestLabelFieldWidget:
             assert dummy_entry_field.widget == TtkCheckbutton(
                 parent=TtkFrame(parent=DummyTk()), text=dummy_entry_field.label_text,
                 variable=dummy_entry_field.textvariable,
-                width=guiwidgets_2._LabelFieldWidget.col_1_width)
+                width=guiwidgets_2._InputZone.col_1_width)
 
     def test_add_entry_row_grids_checkbutton(self, dummy_entry_field):
         with self.labelfield_context() as labelfield:
@@ -1129,7 +870,7 @@ class TestLabelFieldWidget:
         items = ['tag 1', 'tag 2']
         with self.labelfield_context() as labelfield:
             calls = []
-            monkeypatch.setattr(guiwidgets_2._LabelFieldWidget, '_create_label',
+            monkeypatch.setattr(guiwidgets_2._InputZone, '_create_label',
                                 lambda *args: calls.append(args))
             labelfield.add_treeview_row(guiwidgets_2.SELECT_TAGS_TEXT, items, lambda: None)
             assert calls == [(labelfield, guiwidgets_2.SELECT_TAGS_TEXT, 0)]
@@ -1164,13 +905,13 @@ class TestLabelFieldWidget:
         with self.labelfield_context() as labelfield:
             labelfield._create_label(dummy_entry_field, row)
             assert labelfield.parent.children[0].grid_calls == [{'column': 0, 'row': row,
-                                                                 'sticky': 'e', 'padx': 5, }]
+                                                                 'sticky': 'ne', 'padx': 5, }]
 
     @contextmanager
     def labelfield_context(self):
         parent_frame = TtkFrame(DummyTk())
         # noinspection PyTypeChecker
-        yield guiwidgets_2._LabelFieldWidget(parent_frame)
+        yield guiwidgets_2._InputZone(parent_frame)
 
     @pytest.fixture()
     def dummy_entry_field(self):
@@ -1179,74 +920,55 @@ class TestLabelFieldWidget:
 
 @pytest.mark.usefixtures('patch_tk')
 class TestMovieTagTreeview:
-    def test_treeview_frame_created(self):
-        with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            assert treeview_frame == TtkFrame(parent=TtkFrame(parent=DummyTk()), padding=5)
-
-    def test_treeview_frame_gridded(self):
-        with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            assert treeview_frame.grid_calls == [dict(column=1, row=cm.row, sticky='w')]
-
     def test_treeview_created(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview = treeview_frame.children[0]
-            assert treeview == TtkTreeview(parent=TtkFrame(parent=TtkFrame(parent=DummyTk()), padding=5),
-                                           columns=('tags',), height=10, show='tree', padding=5)
+            treeview = cm.parent.children[0]
+            assert treeview == TtkTreeview(parent=TtkFrame(parent=DummyTk()),
+                                           columns=('tags',), height=7, show='tree', padding=5)
 
     def test_treeview_gridded(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview = treeview_frame.children[0]
-            assert treeview.grid_calls == [dict(column=0, row=0, sticky='w')]
+            treeview = cm.parent.children[0]
+            assert treeview.grid_calls == [dict(column=1, row=5, sticky='e')]
 
     def test_treeview_column_width_set(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview = treeview_frame.children[0]
-            assert treeview.column_calls == [(('tags',), dict(width=100))]
+            treeview = cm.parent.children[0]
+            assert treeview.column_calls == [(('tags',), dict(width=127))]
 
     def test_treeview_bind_called(self, monkeypatch):
         calls = []
         monkeypatch.setattr(guiwidgets_2._MovieTagTreeview, 'selection_callback_wrapper',
                             lambda *args: calls.append(args))
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview = treeview_frame.children[0]
+            treeview = cm.parent.children[0]
             assert treeview.bind_calls[0][0] == ('<<TreeviewSelect>>',)
             assert calls == [(cm, cm.treeview, cm.callers_callback)]
 
     def test_scrollbar_created(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview, scrollbar = treeview_frame.children
-            assert scrollbar == TtkScrollbar(treeview_frame, 'vertical', treeview.yview)
+            treeview, scrollbar = cm.parent.children
+            assert scrollbar == TtkScrollbar(cm.parent, 'vertical', treeview.yview)
 
     def test_scrollbar_gridded(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            _, scrollbar = treeview_frame.children
-            assert scrollbar.grid_calls == [dict(column=1, row=0)]
+            _, scrollbar = cm.parent.children
+            assert scrollbar.grid_calls == [dict(column=2, row=5, sticky='ns')]
 
     def test_treeview_configured_with_scrollbar(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview, scrollbar = treeview_frame.children
+            treeview, scrollbar = cm.parent.children
             assert treeview.configure_calls == [dict(yscrollcommand=scrollbar.set)]
 
     def test_treeview_populated_with_items(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview = treeview_frame.children[0]
+            treeview, scrollbar = cm.parent.children
             assert treeview.insert_calls == [(('', 'end', 'tag 1'), dict(text='tag 1', tags='tags')),
                                              (('', 'end', 'tag 2'), dict(text='tag 2', tags='tags'))]
 
     def test_set_initial_selection(self):
         with self.movie_tag_treeview_context() as cm:
-            treeview_frame = cm.body_frame.children[0]
-            treeview = treeview_frame.children[0]
+            treeview, scrollbar = cm.parent.children
             assert treeview.selection_add_calls == [(cm.initial_selection,)]
 
     def test_callback_called_with_current_user_selection(self):
@@ -1289,11 +1011,11 @@ class TestMovieTagTreeview:
     @contextmanager
     def movie_tag_treeview_context(self):
         # noinspection PyTypeChecker
-        body_frame = guiwidgets_2.ttk.Frame(DummyTk())
+        parent = guiwidgets_2.ttk.Frame(DummyTk())
         row = 5
         items = ['tag 1', 'tag 2']
         initial_selection = ['tag 1', ]
-        yield guiwidgets_2._MovieTagTreeview(body_frame, row, items, lambda *args: None,
+        yield guiwidgets_2._MovieTagTreeview(parent, row, items, lambda *args: None,
                                              initial_selection)
 
 

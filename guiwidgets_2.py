@@ -1,10 +1,9 @@
 """GUI Windows.
 
-This module includes windows for presenting data supplied to it and returning entered data to its
-callers.
+This module includes windows for presenting data and returning entered data to its callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/18/23, 10:10 AM by stephen.
+#  Last modified 2/18/23, 8:04 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -27,11 +26,11 @@ import config
 import exception
 import neurons
 
-MOVIE_FIELD_NAMES = ('title', 'year', 'director', 'minutes', 'notes',)
-MOVIE_FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes',)
+MOVIE_FIELD_NAMES = ('title', 'year', 'director', 'minutes', 'notes')
+MOVIE_FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes')
 TAG_FIELD_NAMES = ('tag',)
 TAG_FIELD_TEXTS = ('Tag',)
-SELECT_TAGS_TEXT = 'Select tags'
+SELECT_TAGS_TEXT = 'Tags'
 SEARCH_TEXT = 'Search'
 COMMIT_TEXT = 'Commit'
 SAVE_TEXT = 'Save'
@@ -45,7 +44,6 @@ ParentType = TypeVar('ParentType', tk.Tk, tk.Toplevel, ttk.Frame)
 class AddMovieGUI:
     """Create and manage a Tk input form which allows a user to supply the data needed to
     add a movie."""
-
     parent: tk.Tk
     # When the user clicks the commit button this will be called with a dictionary of fields and user entered values.
     commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
@@ -60,11 +58,12 @@ class AddMovieGUI:
     entry_fields: Dict[str, '_EntryField'] = field(default_factory=dict, init=False, repr=False)
     title: str = field(default=None, init=False, repr=False)
 
-    # Treeview for tags.
-    treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
-    selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
+    # Notes field
+    notes_widget: tk.Text = None
 
-    # Treeview for IMDB.
+    # Treeviews for tags and TMDB
+    tags_treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
+    selected_tags: tuple[str] = field(default_factory=tuple, init=False, repr=False)
     tmdb_treeview: ttk.Treeview = field(default=None, init=False, repr=False)
 
     # These variables are used for the consumer end of the TMDB producer/consumer pattern.
@@ -74,8 +73,13 @@ class AddMovieGUI:
     tmdb_movies: dict[str, dict] = field(default_factory=dict, init=False, repr=False)
 
     # These variables help to decide if the user has finished entering the title.
-    last_text_queue_timer: int = 1000
+    last_text_queue_timer: int = 500
     last_text_event_id: str = ''
+
+    # Local variables exposed for testing
+
+    commit_neuron: neurons.AndNeuron = None
+    return_fields: dict = None
 
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
@@ -85,23 +89,27 @@ class AddMovieGUI:
 
         # Create frames to hold fields and buttons.
         self.outer_frame, body_frame, buttonbox, internet_frame = self.framing(self.parent)
+        input_zone = _InputZone(body_frame)
 
-        # Create labels and fields.
-        label_field = _LabelFieldWidget(body_frame)
-        for movie_field_name in MOVIE_FIELD_NAMES:
-            label_field.add_entry_row(self.entry_fields[movie_field_name])
+        # Create labels and entry widgets.
+        for movie_field_name in MOVIE_FIELD_NAMES[:-1]:
+            input_zone.add_entry_row(self.entry_fields[movie_field_name])
         _focus_set(self.entry_fields[self.title].widget)
 
-        # Create a treeview for movie tags.
-        self.treeview = label_field.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
-                                                     callers_callback=self.treeview_callback)
+        # Create label and text widget.
+        self.notes_widget = input_zone.add_text_row(MOVIE_FIELD_TEXTS[-1])
+        self.notes_widget.tag_configure('font_tag', font='TkTextFont')
+
+        # Create a label and treeview for movie tags.
+        self.tags_treeview = input_zone.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
+                                                         callers_callback=self.tags_treeview_callback)
 
         # Create a treeview for movies retrieved from tmdb.
         self.tmdb_treeview = ttk.Treeview(internet_frame,
-                                     columns=('title', 'year', 'director'),
-                                     show=['headings'],
-                                     height=20,
-                                     selectmode='browse')
+                                          columns=('title', 'year', 'director'),
+                                          show=['headings'],
+                                          height=20,
+                                          selectmode='browse')
         self.tmdb_treeview.column('title', width=300, stretch=True)
         self.tmdb_treeview.heading('title', text='Title', anchor='w')
         self.tmdb_treeview.column('year', width=40, stretch=True)
@@ -121,18 +129,18 @@ class AddMovieGUI:
 
         # Link commit neuron to commit button.
         commit_button_enabler = _enable_button(commit_button)
-        commit_neuron = _create_buttons_andneuron(commit_button_enabler)
+        self.commit_neuron = _create_buttons_andneuron(commit_button_enabler)
 
         # Link commit neuron to year field.
-        observer = _create_the_fields_observer(self.entry_fields, year, commit_neuron)
+        observer = _create_the_fields_observer(self.entry_fields, year, self.commit_neuron)
         self.entry_fields[year].observer = observer
-        _link_field_to_neuron(self.entry_fields, year, commit_neuron, observer)
+        _link_field_to_neuron(self.entry_fields, year, self.commit_neuron, observer)
 
         # Link a new observer to the title field.
         observer = neurons.Observer()
         self.entry_fields[self.title].observer = observer
-        observer.register(self.call_title_notifees(commit_neuron))
-        _link_field_to_neuron(self.entry_fields, self.title, commit_neuron, observer.notify)
+        observer.register(self.call_title_notifees(self.commit_neuron))
+        _link_field_to_neuron(self.entry_fields, self.title, self.commit_neuron, observer.notify)
 
         # Start the tmdb_work_queue polling
         self.tmdb_consumer()
@@ -152,14 +160,14 @@ class AddMovieGUI:
         # noinspection PyUnusedLocal
         def func(*args):
             """
-            This function organizes the actions which respond to the user's changes to the title field.
+            This function responds to a change in the title field.
             
             Args:
-                *args: Not used. This is required to match unused arguments from caller.
+                *args: Not used. This is required to match unused arguments from the caller.
             """
             text = self.entry_fields[self.title].textvariable.get()
 
-            # Invoke a database search
+            # Invoke a TMDB search
             self.tmdb_search(text)
 
             # Notify the commit button neuron
@@ -174,11 +182,9 @@ class AddMovieGUI:
         Args:
             substring: The current content of the title field.
         """
-        # Valid strings for search are > zero length.
-        if substring:
-
-            # Delete the previous call to tmdb_search_callback if it still in the event queue. It will only be in the
-            # event queue if it is still waiting to be executed.
+        # Delete the previous call to tmdb_search_callback if it still in the event queue. It will only be in the
+        # event queue if it is still waiting to be executed.
+        if substring:  # pragma no branch
             if self.last_text_event_id:
                 self.parent.after_cancel(self.last_text_event_id)
 
@@ -187,8 +193,11 @@ class AddMovieGUI:
                                                         substring, self.tmdb_work_queue)
 
     def tmdb_consumer(self):
-        """Consumer of queued records of movies found on the TMDB website."""
+        """Consumer of queued records of movies found on the TMDB website.
 
+        Movies arriving in the work queue are placed into a treeview. Complete movie details are stored in a dict for
+        later retrieval should the user select a treeview entry.
+        """
         try:
             # Tkinter can't wait for the thread blocking `get` method…
             work_package = self.tmdb_work_queue.get_nowait()
@@ -202,7 +211,7 @@ class AddMovieGUI:
             items = self.tmdb_treeview.get_children()
             self.tmdb_treeview.delete(*items)
             self.tmdb_movies = {}
-            for ix, movie in enumerate(work_package):
+            for movie in work_package:
                 movie['director'] = ', '.join(movie['director'])
                 item_id = self.tmdb_treeview.insert('', 'end', values=(
                     movie['title'],
@@ -214,38 +223,54 @@ class AddMovieGUI:
             # Have tkinter call this function again after the poll interval.
             self.recall_id = self.parent.after(self.work_queue_poll, self.tmdb_consumer)
 
-    def treeview_callback(self, reselection: Sequence[str]):
-        """Update selected tags with the user's changes."""
-        self.selected_tags = reselection
+    def tags_treeview_callback(self, reselection: Sequence[str]):
+        """ Update selected tags with the user's changes.
 
+        Args:
+            reselection: The user's current tag selection
+        """
+        self.selected_tags = tuple(reselection)
+
+    # noinspection PyUnusedLocal
     def tmdb_treeview_callback(self, *args, **kwargs):
-        # todo docs
-        # todo test this method
+        """ Populate the input form with data from the selected TMDB movie.
+
+        Args:
+            *args: Not used but may be provided by caller.
+            **kwargs: Not used but may be provided by caller.
+        """
         if self.tmdb_treeview.selection():
             item_id = self.tmdb_treeview.selection()[0]
+        # User deselected prior selection.
         else:
             return
 
         for k, v in self.tmdb_movies[item_id].items():
-            self.entry_fields[k].textvariable.set(v)
+            # Update tkinter text widget(s).
+            if k == MOVIE_FIELD_NAMES[-1]:
+                self.notes_widget.delete('1.0', 'end')
+                self.notes_widget.insert('1.0', v, ('font_tag',))
 
+            # Update tkinter entry widgets.
+            else:
+                self.entry_fields[k].textvariable.set(v)
 
     def commit(self):
         """The user clicked the 'Commit' button."""
-        return_fields = {internal_name: movie_field.textvariable.get()
-                         for internal_name, movie_field in self.entry_fields.items()}
+        self.return_fields = {internal_name: movie_field.textvariable.get()
+                              for internal_name, movie_field in self.entry_fields.items()}
+        self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get('1.0', 'end')
 
         # Commit and exit
         try:
-            self.commit_callback(return_fields, self.selected_tags)
+            self.commit_callback(self.return_fields, self.selected_tags)
 
         # Alert user to title and year constraint failure.
         except exception.MovieDBConstraintFailure:
-            msg = 'Database constraint failure.'
-            detail = 'A movie with this title and year is already present in the database.'
-            messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
+            exc = exception.MovieDBConstraintFailure
+            messagebox.showinfo(parent=self.parent, message=exc.msg, detail=exc.detail)
 
-        # Alert user to invalid year.
+        # Alert user to invalid year (not YYYY within range).
         except exception.MovieYearConstraintFailure as exc:
             msg = exc.args[0]
             messagebox.showinfo(parent=self.parent, message=msg)
@@ -253,7 +278,8 @@ class AddMovieGUI:
         # Clear fields ready for next entry.
         else:
             _clear_input_form_fields(self.entry_fields)
-            self.treeview.clear_selection()
+            self.notes_widget.delete('1.0', 'end')
+            self.tags_treeview.clear_selection()
             items = self.tmdb_treeview.get_children()
             self.tmdb_treeview.delete(*items)
 
@@ -323,7 +349,7 @@ class AddTagGUI:
         self.outer_frame, body_frame, buttonbox = _create_input_form_framing(self.parent)
 
         # Create label and field
-        label_field = _LabelFieldWidget(body_frame)
+        label_field = _InputZone(body_frame)
         for movie_field_name in TAG_FIELD_NAMES:
             label_field.add_entry_row(self.entry_fields[movie_field_name])
 
@@ -376,7 +402,7 @@ class SearchTagGUI:
         self.outer_frame, body_frame, buttonbox = _create_input_form_framing(self.parent)
 
         # Create the field label and field entry widgets.
-        label_field = _LabelFieldWidget(body_frame)
+        label_field = _InputZone(body_frame)
         for movie_field_name in TAG_FIELD_NAMES:
             label_field.add_entry_row(self.entry_fields[movie_field_name])
 
@@ -437,7 +463,7 @@ class EditTagGUI:
         self.outer_frame, body_frame, buttonbox = _create_input_form_framing(self.parent)
 
         # Create field label and field entry widgets.
-        label_field = _LabelFieldWidget(body_frame)
+        label_field = _InputZone(body_frame)
         for movie_field_name in TAG_FIELD_NAMES:
             label_field.add_entry_row(self.entry_fields[movie_field_name])
 
@@ -575,7 +601,7 @@ class PreferencesGUI:
         _set_original_value(self.entry_fields, original_values)
 
         # Create labels and fields
-        label_field = _LabelFieldWidget(body_frame)
+        label_field = _InputZone(body_frame)
         label_field.add_entry_row(self.entry_fields[self.api_key_name])
         label_field.add_checkbox_row(self.entry_fields[self.use_tmdb_name])
         _focus_set(self.entry_fields[self.api_key_name].widget)
@@ -587,10 +613,6 @@ class PreferencesGUI:
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                        command=self.destroy, enabled=True)
 
-        # moviedb-#257 Create an XORNeuron
-        #   Neuron linking tmdb_api_key and use_tmdb should be an XorNeuron.
-        #   because user should either provide a key or state that she doesn't want to use TMDB.
-        #   This needs a new Neuron sub class and a new _link_xor_neuron_to_button function
         # Link save button to save neuron
         save_button_enabler = _enable_button(save_button)
         save_neuron = _create_button_orneuron(save_button_enabler)
@@ -606,8 +628,6 @@ class PreferencesGUI:
             self.entry_fields, self.use_tmdb_name, save_neuron)
         _link_field_to_neuron(self.entry_fields, self.use_tmdb_name, save_neuron,
                               self.entry_fields[self.use_tmdb_name].observer)
-
-        # moviedb-#251 Center dialog on topmost window of moviedb
 
     def save(self):
         """Save the edited preference values to the config file."""
@@ -638,7 +658,6 @@ def gui_askyesno(parent: ParentType, message: str, detail: str = '') -> bool:
     Returns:
         True if user clicks 'Yes', False if user clicks 'No'
     """
-    # moviedb-#247 Test this function
     return messagebox.askyesno(parent, message, detail=detail)
 
 
@@ -657,7 +676,7 @@ class _MovieTagTreeview:
     """
 
     # The frame which contains the treeview.
-    body_frame: ttk.Frame
+    parent: ttk.Frame
     # The tk grid row of the label and treeview within the frame's grid.
     row: int
     # A list of all the items which will be displayed in the treeview.
@@ -672,22 +691,18 @@ class _MovieTagTreeview:
 
     # noinspection DuplicatedCode
     def __post_init__(self):
-        # Create a frame for the treeview and its scrollbar
-        treeview_frame = ttk.Frame(self.body_frame, padding=5)
-        treeview_frame.grid(column=1, row=self.row, sticky='w')
-
         # Create the treeview
-        self.treeview = ttk.Treeview(treeview_frame, columns=('tags',), height=10, selectmode='extended',
+        self.treeview = ttk.Treeview(self.parent, columns=('tags',), height=7, selectmode='extended',
                                      show='tree', padding=5)
-        self.treeview.grid(column=0, row=0, sticky='w')
-        self.treeview.column('tags', width=100)
+        self.treeview.grid(column=1, row=self.row, sticky='e')
+        self.treeview.column('tags', width=127)
         self.treeview.bind('<<TreeviewSelect>>',
                            func=self.selection_callback_wrapper(self.treeview, self.callers_callback))
 
         # Create the scrollbar
-        scrollbar = ttk.Scrollbar(treeview_frame, orient=tk.VERTICAL, command=self.treeview.yview)
-        scrollbar.grid(column=1, row=0)
+        scrollbar = ttk.Scrollbar(self.parent, orient='vertical', command=self.treeview.yview)
         self.treeview.configure(yscrollcommand=scrollbar.set)
+        scrollbar.grid(column=2, row=self.row, sticky='ns')
 
         # Populate the treeview
         for item in self.items:
@@ -708,7 +723,7 @@ class _MovieTagTreeview:
 
         # noinspection PyUnusedLocal
         def selection_callback(*args):
-            """Notify MovieTreeview's caller and observer's notifees.
+            """Notify Movie Treeview's caller and observer's notifees.
 
             Args:
                 *args: Not used. Needed for compatibility with Tk:Tcl caller.
@@ -749,8 +764,6 @@ class _EntryField:
     #   textvariable is initialized as:
     #   textvariable: tk.StringVar = field(default_factory=tk.StringVar, init=False, repr=False)
     textvariable: tk.StringVar = None
-    # The observer attribute is *not* needed for normal operation. If initialized when the observer is
-    # first created it will permit external testing of the chain of neurons.
     observer: Callable = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
@@ -759,13 +772,13 @@ class _EntryField:
 
 
 @dataclass
-class _LabelFieldWidget:
-    """
-    Create a two column frame for labels and widgets. Call specific methods such as add_entry_row
-    to add specific widgets.
-    """
+class _InputZone:
+    """Configure the parent frame with two columns to contain labels and widgets for user input.
 
-    parent: tk.Frame
+    Widgets are added by calling the various methods `add_<widget>_row`, for example, add_entry_row. Each call will
+    grid the row as the last row in the zone and will align the labels and the widget.
+    """
+    parent: ParentType
     row: Iterator = field(default=None, init=False, repr=False)
 
     col_0_width: int = 30
@@ -779,10 +792,12 @@ class _LabelFieldWidget:
         self.parent.columnconfigure(0, weight=1, minsize=self.col_0_width)
         # Create a column for the fields.
         self.parent.columnconfigure(1, weight=1)
+        # Create a column for scrollbars.
+        self.parent.columnconfigure(2, weight=1)
 
     def add_entry_row(self, entry_field: _EntryField):
         """
-        Add a label and an entry as the bottom row.
+        Add label and entry widgets as the bottom row.
         
         Args:
             entry_field:
@@ -792,6 +807,26 @@ class _LabelFieldWidget:
         entry_field.widget = ttk.Entry(self.parent, textvariable=entry_field.textvariable,
                                        width=self.col_1_width)
         entry_field.widget.grid(column=1, row=row_ix)
+
+    def add_text_row(self, label_text: str) -> tk.Text:
+        """
+        Add label and text widgets as the bottom row.
+
+        Args:
+            label_text:
+
+        Returns:
+            text widget
+        """
+        row_ix = next(self.row)
+        self._create_label(label_text, row_ix)
+        widget = tk.Text(self.parent, width=45, height=8, wrap='word', padx=10, pady=10)
+        widget.grid(column=1, row=row_ix, sticky='e')
+
+        scrollbar = ttk.Scrollbar(self.parent, orient='vertical', command=widget.yview)
+        widget.configure(yscrollcommand=scrollbar.set)
+        scrollbar.grid(column=2, row=row_ix, sticky='ns')
+        return widget
 
     def add_checkbox_row(self, entry_field: _EntryField):
         """
@@ -818,7 +853,6 @@ class _LabelFieldWidget:
             items: A list of all the items which will be displayed in the treeview.
             callers_callback: Caller's callback for notification of reselection.
         """
-
         row_ix = next(self.row)
         self._create_label(label_text, row_ix)
         return _MovieTagTreeview(self.parent, row_ix, items, callers_callback)
@@ -832,7 +866,7 @@ class _LabelFieldWidget:
         """
 
         label = ttk.Label(self.parent, text=text)
-        label.grid(column=0, row=row_ix, sticky='e', padx=5)
+        label.grid(column=0, row=row_ix, sticky='ne', padx=5)
 
 
 def _create_entry_fields(internal_names: Sequence[str], label_texts: Sequence[str]
@@ -945,7 +979,7 @@ def _create_button(buttonbox: ttk.Frame, text: str, column: int, command: Callab
     """
     button = ttk.Button(buttonbox, text=text, command=command)
     button.grid(column=column, row=0)
-    button.bind('<Return>', lambda event, b=button: b.invoke())
+    button.bind('<Return>', lambda event, b=button: b.invoke())  # pragma nocover
     if not enabled:
         button.state(['disabled'])
     return button
@@ -1044,8 +1078,6 @@ def _create_the_fields_observer(entry_fields: dict, name: str, neuron: neurons.N
         object: The callback which will be called when the field is changed.
     """
 
-    # TODO Consider whether this callback is exclusively for the AndNeuron class. If so change the name and docs to
-    #  reflect that fact.
     # noinspection PyUnusedLocal
     def func(*args):
         """Calls the neuron when the field changes.
@@ -1053,8 +1085,7 @@ def _create_the_fields_observer(entry_fields: dict, name: str, neuron: neurons.N
         Args:
             *args: Not used. Required to match unused arguments from caller.
         """
-        state = (entry_fields[name].textvariable.get()
-                 != entry_fields[name].original_value)
+        state = (entry_fields[name].textvariable.get() != entry_fields[name].original_value)
         neuron(name, state)
 
     return func

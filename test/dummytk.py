@@ -1,7 +1,7 @@
 """Test support module for Tk dummies."""
 
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/17/23, 2:19 PM by stephen.
+#  Last modified 1/31/23, 1:31 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -84,6 +84,43 @@ class TkToplevel:
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
+@dataclass
+class TkText:
+    parent: 'TtkFrame'
+    width: str
+    height: str
+    wrap: str
+    padx: str
+    pady: str
+    yview: str = None
+    yscrollcommand: Callable = None
+    text: str = ''
+
+    delete_calls = []
+    insert_calls = []
+
+    def grid(self, *args, **kwargs):
+        ...
+
+    def configure(self, *args, **kwargs):
+        ...
+
+    def tag_configure(self, *args, **kwargs):
+        ...
+
+    def delete(self, start: str, end: str):
+        self.delete_calls.append((start, end))
+        self.text = ''
+
+    def insert(self, pos: str, text: str, tags: tuple[str]):
+        self.insert_calls.append((pos, text, tags))
+        self.text = text
+
+    def get(self, *args):
+        return self.text
+
+
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class TkStringVar:
     trace_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -264,8 +301,8 @@ class TtkTreeview:
     selectmode: Literal['browse', 'extended', 'none'] = field(default='extended')
     show: Literal['tree', 'headings'] = field(default='headings')
     padding: int = field(default=0)
-    items: list[str] = field(default_factory=list, init=False, repr=False, compare=False)
-    selected: tuple[str, ...] = field(default_factory=tuple, init=False, repr=False, compare=False)
+    items: list = field(default_factory=list, init=False, repr=False, compare=False)
+    selected: tuple = field(default_factory=tuple, init=False, repr=False, compare=False)
 
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     column_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -305,9 +342,12 @@ class TtkTreeview:
         self.selected = tuple(itertools.chain(self.selected, args))
         self.selection_add_calls.append(args)
 
-    def selection_set(self, *args: str):
+    def selection_set(self, *args: tuple):
         self.selected = args
         self.selection_set_calls.append(args)
+
+    def selection(self):
+        return self.selected
 
     def set_mock_children(self, items: list[str]):
         self.items = items[:]
@@ -317,10 +357,6 @@ class TtkTreeview:
 
     def delete(self, *args):
         self.items = list(set(self.items) - set(args))
-
-    def selection(self):
-        return self.selected
-        # return ['test tag', 'ignored tag']
 
 
 # noinspection PyMissingOrEmptyDocstring

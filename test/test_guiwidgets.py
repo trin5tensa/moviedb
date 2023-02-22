@@ -1,6 +1,6 @@
 """Test module."""
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/18/23, 10:10 AM by stephen.
+#  Last modified 1/28/23, 8:30 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -235,7 +235,7 @@ class TestSearchMovieGUI:
                                                                    padding=''), padding=(10, 25, 10, 0))
             assert treeview_call[0][3] == 5
             assert treeview_call[0][4] == 0
-            assert treeview_call[0][5] == 'Select tags'
+            assert treeview_call[0][5] == 'Tags'
             assert treeview_call[0][6] == ('test tag 1', 'test tag 2')
             assert treeview_call[0][7]('test signal') == 'test signal'
     

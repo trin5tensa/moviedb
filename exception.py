@@ -25,6 +25,8 @@ class DatabaseException(MovieDBException):
 
 class MovieDBConstraintFailure(DatabaseException):
     """Exception raised for title and year constraint violation."""
+    msg = 'Database constraint failure.'
+    detail = 'A movie with this title and year is already present in the database.'
 
 
 class MovieYearConstraintFailure(DatabaseException):

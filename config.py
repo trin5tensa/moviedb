@@ -1,6 +1,6 @@
 """Application configuration data """
-#  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/31/22, 8:14 AM by stephen.
+#  Copyright (c) 2022-2023. Stephen Rigden.
+#  Last modified 1/28/23, 8:30 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -34,7 +34,7 @@ class MovieKeyTypedDict(TypedDict):
 
 class MovieTypedDict(MovieKeyTypedDict, total=False):
     """Optional fields for a movie."""
-    director: str
+    director: str | list[str]
     minutes: int
     notes: str
 
