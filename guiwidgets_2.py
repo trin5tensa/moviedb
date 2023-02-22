@@ -28,7 +28,6 @@ import neurons
 
 MOVIE_FIELD_NAMES = ('title', 'year', 'director', 'minutes', 'notes')
 MOVIE_FIELD_TEXTS = ('Title', 'Year', 'Director', 'Length (minutes)', 'Notes')
-# todo move TAG_FIELD_... to MOVIE_FIELD_...
 TAG_FIELD_NAMES = ('tag',)
 TAG_FIELD_TEXTS = ('Tag',)
 SELECT_TAGS_TEXT = 'Tags'
@@ -45,7 +44,6 @@ ParentType = TypeVar('ParentType', tk.Tk, tk.Toplevel, ttk.Frame)
 class AddMovieGUI:
     """Create and manage a Tk input form which allows a user to supply the data needed to
     add a movie."""
-    # todo rewrite tests for this class
     parent: tk.Tk
     # When the user clicks the commit button this will be called with a dictionary of fields and user entered values.
     commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
@@ -86,7 +84,6 @@ class AddMovieGUI:
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = _create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
-        # todo after this MOVIE_FIELD_... should not appear anywhere - that's what self.entry fields is for
         self.title = MOVIE_FIELD_NAMES[0]
         year = MOVIE_FIELD_NAMES[1]
 
@@ -105,7 +102,7 @@ class AddMovieGUI:
 
         # Create a label and treeview for movie tags.
         self.tags_treeview = input_zone.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
-                                                    callers_callback=self.tags_treeview_callback)
+                                                         callers_callback=self.tags_treeview_callback)
 
         # Create a treeview for movies retrieved from tmdb.
         self.tmdb_treeview = ttk.Treeview(internet_frame,
@@ -236,7 +233,12 @@ class AddMovieGUI:
 
     # noinspection PyUnusedLocal
     def tmdb_treeview_callback(self, *args, **kwargs):
-        # todo write docs
+        """ Populate the input form with data from the selected TMDB movie.
+
+        Args:
+            *args: Not used but may be provided by caller.
+            **kwargs: Not used but may be provided by caller.
+        """
         if self.tmdb_treeview.selection():
             item_id = self.tmdb_treeview.selection()[0]
         # User deselected prior selection.
@@ -283,7 +285,6 @@ class AddMovieGUI:
 
     def destroy(self):
         """Destroy all widgets of this class."""
-        # todo test this method
         self.parent.after_cancel(self.recall_id)
         self.outer_frame.destroy()
 
@@ -491,7 +492,6 @@ class EditTagGUI:
         
         Get the user's confirmation of deletion with a dialog window. Either exit the method or call
         the registered deletion callback."""
-        # todo test this function
         if messagebox.askyesno(message=f"Do you want to delete tag '{self.tag}'?",
                                icon='question', default='no', parent=self.parent):
             self.delete_tag_callback()
@@ -613,10 +613,6 @@ class PreferencesGUI:
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                        command=self.destroy, enabled=True)
 
-        # moviedb-#257 Create an XORNeuron
-        #   Neuron linking tmdb_api_key and use_tmdb should be an XorNeuron.
-        #   because user should either provide a key or state that she doesn't want to use TMDB.
-        #   This needs a new Neuron sub class and a new _link_xor_neuron_to_button function
         # Link save button to save neuron
         save_button_enabler = _enable_button(save_button)
         save_neuron = _create_button_orneuron(save_button_enabler)
@@ -632,8 +628,6 @@ class PreferencesGUI:
             self.entry_fields, self.use_tmdb_name, save_neuron)
         _link_field_to_neuron(self.entry_fields, self.use_tmdb_name, save_neuron,
                               self.entry_fields[self.use_tmdb_name].observer)
-
-        # moviedb-#251 Center dialog on topmost window of moviedb
 
     def save(self):
         """Save the edited preference values to the config file."""
@@ -664,7 +658,6 @@ def gui_askyesno(parent: ParentType, message: str, detail: str = '') -> bool:
     Returns:
         True if user clicks 'Yes', False if user clicks 'No'
     """
-    # moviedb-#247 Test this function
     return messagebox.askyesno(parent, message, detail=detail)
 
 
@@ -771,9 +764,6 @@ class _EntryField:
     #   textvariable is initialized as:
     #   textvariable: tk.StringVar = field(default_factory=tk.StringVar, init=False, repr=False)
     textvariable: tk.StringVar = None
-    # The observer attribute is *not* needed for normal operation. If initialized when the observer is
-    # first created it will permit external testing of the chain of neurons.
-    # todo check that simplified test strategy still needs this observer
     observer: Callable = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
@@ -828,7 +818,6 @@ class _InputZone:
         Returns:
             text widget
         """
-        # todo test this method if not covered
         row_ix = next(self.row)
         self._create_label(label_text, row_ix)
         widget = tk.Text(self.parent, width=45, height=8, wrap='word', padx=10, pady=10)
@@ -1089,8 +1078,6 @@ def _create_the_fields_observer(entry_fields: dict, name: str, neuron: neurons.N
         object: The callback which will be called when the field is changed.
     """
 
-    # TODO Consider whether this callback is exclusively for the AndNeuron class. If so change the name and docs to
-    #  reflect that fact.
     # noinspection PyUnusedLocal
     def func(*args):
         """Calls the neuron when the field changes.
@@ -1098,8 +1085,7 @@ def _create_the_fields_observer(entry_fields: dict, name: str, neuron: neurons.N
         Args:
             *args: Not used. Required to match unused arguments from caller.
         """
-        state = (entry_fields[name].textvariable.get()
-                 != entry_fields[name].original_value)
+        state = (entry_fields[name].textvariable.get() != entry_fields[name].original_value)
         neuron(name, state)
 
     return func

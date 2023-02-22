@@ -1,4 +1,3 @@
-/.idea/csv-plugin.xml
 /.idea/dataSources.xml
 /moviedb.log
 /movies.sqlite3
@@ -13,4 +12,4 @@
 /movie_database.sqlite3
 /venv_3_11/
 /docs/
-/.idea/dictionaries 2
+/Database Exports/

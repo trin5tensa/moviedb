@@ -41,7 +41,6 @@ def preferences_dialog():
     """Display the 'preferences' dialog."""
     try:
         display_key = config.persistent.tmdb_api_key
-    # todo test this branch
     except (config.ConfigTMDBAPIKeyNeedsSetting, config.ConfigTMDBDoNotUse):
         display_key = ''
     guiwidgets_2.PreferencesGUI(config.current.tk_root, display_key, config.persistent.use_tmdb,
@@ -85,8 +84,6 @@ def edit_movie():
 
 def add_tag():
     """Add a new tag to the database."""
-    # PyCharm https://youtrack.jetbrains.com/issue/PY-41268
-    # noinspection PyTypeChecker
     guiwidgets_2.AddTagGUI(config.current.tk_root, _add_tag_callback)
 
 
@@ -147,7 +144,6 @@ def _delete_movie_callback(movie: config.FindMovieTypedDict):
     try:
         database.del_movie(movie)
 
-    # todo test this branch
     except sqlalchemy.exc.NoResultFound:
         # This can happen if the movie was deleted by another process between the user retrieving a record for
         # deletion and the call to actually delete it.
@@ -359,7 +355,6 @@ def _tmdb_search_exception_callback(fut: concurrent.futures.Future):
         logging.error(exc)
         msg = 'Invalid API key for TMDB.'
         detail = 'Do you want to set the key?'
-        # todo test this branch
         if guiwidgets_2.gui_askyesno(config.current.tk_root, msg, detail):
             preferences_dialog()
 
@@ -376,7 +371,6 @@ def _tmdb_io_handler(search_string: str, work_queue: queue.Queue):
         search_string: The title search string
         work_queue: A queue where compliant movies can be placed.
     """
-    # todo test this function
     if tmdb_api_key := _get_tmdb_api_key():
         executor = config.current.threadpool_executor
         fut = executor.submit(tmdb.search_tmdb, tmdb_api_key, search_string, work_queue)

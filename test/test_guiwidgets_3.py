@@ -27,6 +27,7 @@ from test.dummytk import (DummyTk, TkStringVar, TkToplevel, TkText, TtkButton, T
                           TtkFrame, TtkLabel, TtkScrollbar, TtkTreeview, )
 
 
+# noinspection PyTypeChecker,PyUnresolvedReferences
 @pytest.mark.usefixtures('patch_tk')
 class TestAddMovieGUI:
     """ Test AddMovieGUI for:
@@ -105,8 +106,10 @@ class TestAddMovieGUI:
         for k, v in cut.entry_fields.items():
             if k == guiwidgets_2.MOVIE_FIELD_NAMES[-1]:
                 cut.notes_widget.delete('1.0', 'end')
+                # noinspection PyTypedDict
                 cut.notes_widget.insert('1.0', self.test_movies[0][k], '')
             else:
+                # noinspection PyTypedDict
                 v.textvariable.set_for_test(self.test_movies[0][k])
 
         cut.commit()
@@ -162,12 +165,14 @@ class TestAddMovieGUI:
         check.equal(cut.notes_widget.insert_calls, [('1.0', self.test_movies[0]['notes'], ('font_tag', ))])
         check.equal(cut.notes_widget.delete_calls, [('1.0', 'end')])
         for k in entry_keys:
+            # noinspection PyTypedDict
             check.equal(cut.entry_fields[k].textvariable.set_calls[0][0],
                         self.test_movies[0][k])
 
     def test_tmdb_treeview_deselection(self, check):
         """The user has deselected the chosen movie so test that the input form fields have *not* been altered."""
         cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, lambda: None, self.tags)
+        # noinspection PyArgumentList
         cut.tmdb_treeview.selection_set()
         entry_keys = list(cut.entry_fields.keys())[:-1]
         for k in entry_keys:
