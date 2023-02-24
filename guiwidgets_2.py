@@ -45,12 +45,12 @@ class AddMovieGUI:
     """Create and manage a Tk input form which allows a user to supply the data needed to
     add a movie."""
     parent: tk.Tk
-    # When the user clicks the commit button this will be called with a dictionary of fields and user entered values.
-    commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
-    # When the user changes the title field this will ba called with the field's text.
-    tmdb_search_callback: Callable[[str, queue.LifoQueue], None]
     # This is a complete list of all the tags in the database
     all_tags: Sequence[str]
+    # When the user changes the title field this will ba called with the field's text.
+    tmdb_search_callback: Callable[[str, queue.LifoQueue], None]
+    # When the user clicks the commit button this will be called with a dictionary of fields and user entered values.
+    database_commit: Callable[[config.MovieTypedDict, Sequence[str]], None] = field(kw_only=True)
 
     # All widgets created by this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
@@ -263,7 +263,7 @@ class AddMovieGUI:
 
         # Commit and exit
         try:
-            self.commit_callback(self.return_fields, self.selected_tags)
+            self.database_commit(self.return_fields, self.selected_tags)
 
         # Alert user to title and year constraint failure.
         except exception.MovieDBConstraintFailure:

@@ -223,20 +223,20 @@ class TestTmdbIOHandler:
 
 class TestAddMovie:
     TAGS = ['Movie night candidate']
-    
     movie_gui_args = []
     
     def test_movie_gui_called(self, monkeypatch):
         monkeypatch.setattr(handlers.database, 'all_tags', lambda *args: self.TAGS)
         monkeypatch.setattr(handlers.guiwidgets_2, 'AddMovieGUI',
-                            lambda parent, commit_callback, tmdb_search_callback, all_tags:
-                            self.movie_gui_args.append((parent, commit_callback, tmdb_search_callback, all_tags)))
+                            lambda parent, all_tags, tmdb_search_callback, database_commit:
+                            self.movie_gui_args.append((parent, all_tags, tmdb_search_callback,
+                                                        database_commit)))
         
         with self.add_movie_context():
-            assert self.movie_gui_args == [(DummyParent(),
-                                            handlers._add_movie_callback,
+            assert self.movie_gui_args == [(DummyParent(), self.TAGS,
                                             handlers._tmdb_io_handler,
-                                            self.TAGS)]
+                                            handlers._add_movie_callback,
+                                            )]
     
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
