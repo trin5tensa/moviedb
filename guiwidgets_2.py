@@ -294,7 +294,7 @@ class AddMovieGUI(BaseMovieGUI):
         _create_button(self.buttonbox, CANCEL_TEXT, column=next(self.button_num),
                        command=self.destroy, enabled=True)
 
-        # Link commit neuron to commit button.
+        # Link commit neuron to commit button....
         commit_button_enabler = _enable_button(commit_button)
         self.commit_neuron = _create_buttons_andneuron(commit_button_enabler)
 
