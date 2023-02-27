@@ -59,7 +59,7 @@ class BaseMovieGUI:
 
     # Buttons
     buttonbox: ttk.Frame = field(default=None, init=False, repr=False)
-    button_num: Iterable = field(default_factory=itertools.count, init=False, repr=False)
+    button_num: Iterator = field(default_factory=itertools.count, init=False, repr=False)
 
     # Treeviews for tags and TMDB
     tags_treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
@@ -117,10 +117,6 @@ class BaseMovieGUI:
         self.tmdb_treeview.grid(column=0, row=0, sticky='nsew')
         self.tmdb_treeview.bind('<<TreeviewSelect>>',
                                 func=self.tmdb_treeview_callback)
-
-        # Populate buttonbox.
-        _create_button(self.buttonbox, CANCEL_TEXT, column=next(self.button_num),
-                       command=self.destroy, enabled=True)
 
         # Start the tmdb_work_queue polling
         self.tmdb_consumer()
@@ -295,6 +291,8 @@ class AddMovieGUI(BaseMovieGUI):
         # Populate buttonbox.
         commit_button = _create_button(self.buttonbox, COMMIT_TEXT, column=next(self.button_num),
                                        command=self.commit, enabled=False)
+        _create_button(self.buttonbox, CANCEL_TEXT, column=next(self.button_num),
+                       command=self.destroy, enabled=True)
 
         # Link commit neuron to commit button.
         commit_button_enabler = _enable_button(commit_button)
