@@ -73,7 +73,7 @@ def _get_tmdb_api_key() -> Optional[str]:
 def add_movie():
     """ Get new movie data from the user and add it to the database. """
     all_tags = database.all_tags()
-    guiwidgets_2.AddMovieGUI(config.current.tk_root, _add_movie_callback, _tmdb_io_handler, all_tags)
+    guiwidgets_2.MovieGUI(config.current.tk_root, _tmdb_io_handler, all_tags, _add_movie_callback, )
 
 
 def edit_movie():

@@ -41,16 +41,16 @@ ParentType = TypeVar('ParentType', tk.Tk, tk.Toplevel, ttk.Frame)
 
 
 @dataclass
-class AddMovieGUI:
+class MovieGUI:
     """Create and manage a Tk input form which allows a user to supply the data needed to
     add a movie."""
     parent: tk.Tk
-    # When the user clicks the commit button this will be called with a dictionary of fields and user entered values.
-    commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
     # When the user changes the title field this will ba called with the field's text.
     tmdb_search_callback: Callable[[str, queue.LifoQueue], None]
     # This is a complete list of all the tags in the database
     all_tags: Sequence[str]
+    # When the user clicks the commit button this will be called with a dictionary of fields and user entered values.
+    commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
 
     # All widgets created by this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
