@@ -20,7 +20,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
-from typing import Callable, Dict, Iterable, Iterator, Mapping, Sequence, Tuple, TypeVar
+from typing import Callable, Dict, Iterable, Iterator, Mapping, Sequence, Tuple, TypeVar, Optional
 
 import config
 import exception
@@ -49,8 +49,10 @@ class MovieGUI:
     tmdb_search_callback: Callable[[str, queue.LifoQueue], None]
     # This is a complete list of all the tags in the database
     all_tags: Sequence[str]
-    # When the user clicks the commit button this will be called with a dictionary of fields and user entered values.
+    # This will be called when the user clicks the commit button.
     commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
+    # This will be called when the user clicks the optional delete button.
+    delete_callback: Optional[Callable[[config.FindMovieTypedDict], None]] = field(default=None, kw_only=True)
 
     # All widgets created by this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
