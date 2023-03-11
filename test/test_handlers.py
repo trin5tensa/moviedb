@@ -17,6 +17,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial
 from typing import Callable, List, Literal, Sequence
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -227,14 +228,13 @@ class TestAddMovie:
     
     def test_movie_gui_called(self, monkeypatch):
         monkeypatch.setattr(handlers.database, 'all_tags', lambda *args: self.TAGS)
-        monkeypatch.setattr(handlers.guiwidgets_2, 'MovieGUI',
-                            lambda parent, tmdb_search_callback, all_tags, commit_callback:
-                            self.movie_gui_args.append((parent, tmdb_search_callback, all_tags, commit_callback)))
-        
+        mock_gui = MagicMock()
+        monkeypatch.setattr(handlers.guiwidgets_2, 'MovieGUI', mock_gui)
+
         with self.add_movie_context():
-            assert self.movie_gui_args == [(DummyParent(), handlers._tmdb_io_handler, self.TAGS,
-                                            handlers._add_movie_callback)]
-    
+            mock_gui.assert_called_once_with(DummyParent(), handlers._tmdb_io_handler, self.TAGS,
+                                             add_movie_callback=handlers._add_movie_callback)
+
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def add_movie_context(self):

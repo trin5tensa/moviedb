@@ -19,8 +19,9 @@ import queue
 import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
+from enum import Enum, auto
 from tkinter import filedialog, messagebox
-from typing import Callable, Dict, Iterable, Iterator, Mapping, Sequence, Tuple, TypeVar, Optional
+from typing import Callable, Dict, Iterable, Iterator, Mapping, Sequence, Tuple, TypeVar, Optional, Literal
 
 import config
 import exception
@@ -37,22 +38,31 @@ SAVE_TEXT = 'Save'
 DELETE_TEXT = 'Delete'
 CANCEL_TEXT = 'Cancel'
 
+MOVIE_GUI_MODE = Literal['add', 'edit']
 ParentType = TypeVar('ParentType', tk.Tk, tk.Toplevel, ttk.Frame)
 
 
 @dataclass
 class MovieGUI:
-    """Create and manage a Tk input form which allows a user to supply the data needed to
-    add a movie."""
+    """ Create and manage a Tk input form for movies.
+
+    The form operates in two modes - Add and Edit. The mode is determined from the supplied callbacks. Add mode
+    gets an add movie callback and edit mode gets both an edit movie callback and a delete movie callback.
+    """
     parent: tk.Tk
     # When the user changes the title field this will ba called with the field's text.
     tmdb_search_callback: Callable[[str, queue.LifoQueue], None]
     # This is a complete list of all the tags in the database
     all_tags: Sequence[str]
-    # This will be called when the user clicks the commit button.
-    commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
-    # This will be called when the user clicks the optional delete button.
-    delete_callback: Optional[Callable[[config.FindMovieTypedDict], None]] = field(default=None, kw_only=True)
+
+    # Add mode callback. Provide either add mode callbacks or edit mode callbacks.
+    add_movie_callback: Callable[[config.MovieTypedDict, Sequence[str]], None] = field(default=None, kw_only=True)
+
+    # Edit mode callbacks. Provide either add mode callbacks or edit mode callbacks.
+    edit_movie_callback: Optional[Callable[[config.FindMovieTypedDict], None]] = field(default=None, kw_only=True)
+    delete_movie_callback: Optional[Callable[[config.FindMovieTypedDict], None]] = field(default=None, kw_only=True)
+
+    mode: Optional[MOVIE_GUI_MODE] = None
 
     # All widgets created by this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
@@ -61,7 +71,7 @@ class MovieGUI:
     title: str = field(default=None, init=False, repr=False)
 
     # Notes field
-    notes_widget: tk.Text = None
+    notes_widget: tk.Text =  field(default=None, init=False, repr=False)
 
     # Treeviews for tags and TMDB
     tags_treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
@@ -70,19 +80,30 @@ class MovieGUI:
 
     # These variables are used for the consumer end of the TMDB producer/consumer pattern.
     tmdb_work_queue: queue.LifoQueue = field(default_factory=queue.Queue, init=False, repr=False)
-    work_queue_poll: int = 40
+    work_queue_poll: int = field(default=40, init=False, repr=False)
     recall_id: str = field(default=None, init=False, repr=False, compare=False)
     tmdb_movies: dict[str, dict] = field(default_factory=dict, init=False, repr=False)
 
     # These variables help to decide if the user has finished entering the title.
-    last_text_queue_timer: int = 500
-    last_text_event_id: str = ''
+    last_text_queue_timer: int = field(default=500, init=False, repr=False)
+    last_text_event_id: str = field(default='', init=False, repr=False)
 
     # Local variables exposed for testing
-    commit_neuron: neurons.AndNeuron = None
-    return_fields: dict = None
+    commit_neuron: neurons.AndNeuron = field(default=None, init=False, repr=False)
+    return_fields: dict = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
+        # Validate callbacks. The mode affects buttons and callbacks.
+        match (isinstance(self.add_movie_callback, Callable),
+               isinstance(self.edit_movie_callback, Callable),
+               isinstance(self.delete_movie_callback, Callable)):
+            case True, False, False:
+                self.mode = 'add'
+            case False, True, True:
+                self.mode = 'edit'
+            case _:
+                raise ValueError('Invalid callback arguments. Should be cb_1 or (cb_2 and cb_3)')
+
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = _create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
         self.title = MOVIE_FIELD_NAMES[0]
@@ -122,6 +143,7 @@ class MovieGUI:
                                 func=self.tmdb_treeview_callback)
 
         # Populate buttonbox with commit and cancel buttons.
+        # todo Add delete button
         column_num = itertools.count()
         commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
                                        command=self.commit, enabled=False)
@@ -258,13 +280,18 @@ class MovieGUI:
 
     def commit(self):
         """The user clicked the 'Commit' button."""
+        # todo call new_movie or edit_movie
+        self.commit_new_movie()
+
+    def commit_new_movie(self):
+        """Commit a new movie to the database."""
         self.return_fields = {internal_name: movie_field.textvariable.get()
                               for internal_name, movie_field in self.entry_fields.items()}
         self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get('1.0', 'end')
 
         # Commit and exit
         try:
-            self.commit_callback(self.return_fields, self.selected_tags)
+            self.add_movie_callback(self.return_fields, self.selected_tags)
 
         # Alert user to title and year constraint failure.
         except exception.MovieDBConstraintFailure:
@@ -283,6 +310,10 @@ class MovieGUI:
             self.tags_treeview.clear_selection()
             items = self.tmdb_treeview.get_children()
             self.tmdb_treeview.delete(*items)
+
+    # todo Add edit movie method
+
+    # todo Add delete movie method
 
     def destroy(self):
         """Destroy all widgets of this class."""

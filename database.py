@@ -100,20 +100,29 @@ def add_movie(movie: MovieTypedDict):
             session.add(movie)
             
     except sqlalchemy.exc.IntegrityError as exc:
-        # The combination of title and year matches a record already in the database.
-        if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
-            msg = exc.orig.args[0]
-            logging.error(msg)
-            raise exception.MovieDBConstraintFailure(msg) from exc
-        
-        # The year is not in the valid range.
-        if exc.orig.args[0] == 'CHECK constraint failed: movies':
-            msg = f"Invalid year '{exc.params[3]}'."
-            logging.error(msg)
-            raise exception.MovieYearConstraintFailure(msg) from exc
-        
-        else:
-            raise
+        integrity_error(exc)
+
+
+def integrity_error(exc: sqlalchemy.exc.IntegrityError):
+    """ Log expected errors and raise meainingful errors.
+
+    Args:
+        exc:
+    """
+    # The combination of title and year matches a record already in the database.
+    if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
+        msg = exc.orig.args[0]
+        logging.error(msg)
+        raise exception.MovieDBConstraintFailure(msg) from exc
+
+    # The year is not in the valid range.
+    if exc.orig.args[0] == 'CHECK constraint failed: movies':
+        msg = f"Invalid year '{exc.params[3]}'."
+        logging.error(msg)
+        raise exception.MovieYearConstraintFailure(msg) from exc
+
+    else:
+        raise
 
 
 def find_movies(criteria: FindMovieTypedDict) -> List[MovieUpdateDef]:
@@ -187,12 +196,7 @@ def replace_movie(old_movie: MovieKeyTypedDict, new_movie: MovieTypedDict):
                 setattr(movie, k, v)
             
     except sqlalchemy.exc.IntegrityError as exc:
-        if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
-            msg = exc.orig.args[0]
-            logging.error(msg)
-            raise exception.MovieDBConstraintFailure(msg) from exc
-        else:
-            raise
+        integrity_error(exc)
 
 
 def del_movie(title_year: FindMovieTypedDict):
