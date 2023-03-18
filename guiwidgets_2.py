@@ -19,7 +19,6 @@ import queue
 import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
-from enum import Enum, auto
 from tkinter import filedialog, messagebox
 from typing import Callable, Dict, Iterable, Iterator, Mapping, Sequence, Tuple, TypeVar, Optional, Literal
 
@@ -55,14 +54,15 @@ class MovieGUI:
     # This is a complete list of all the tags in the database
     all_tags: Sequence[str]
 
-    # Add mode callback. Provide either add mode callbacks or edit mode callbacks.
+    # Add mode argument. Provide either add mode argument or edit mode arguments.
     add_movie_callback: Callable[[config.MovieTypedDict, Sequence[str]], None] = field(default=None, kw_only=True)
 
-    # Edit mode callbacks. Provide either add mode callbacks or edit mode callbacks.
+    # Edit mode arguments. Provide either add mode argument or edit mode arguments.
+    old_movie: config.MovieUpdateDef = field(default=None, kw_only=True)
     edit_movie_callback: Optional[Callable[[config.FindMovieTypedDict], None]] = field(default=None, kw_only=True)
     delete_movie_callback: Optional[Callable[[config.FindMovieTypedDict], None]] = field(default=None, kw_only=True)
 
-    mode: Optional[MOVIE_GUI_MODE] = None
+    mode: MOVIE_GUI_MODE = field(default=None, init=False, repr=False)
 
     # All widgets created by this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
@@ -93,18 +93,22 @@ class MovieGUI:
     return_fields: dict = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
-        # Validate callbacks. The mode affects buttons and callbacks.
+        # Validate modal invariants.
         match (isinstance(self.add_movie_callback, Callable),
+               bool(self.old_movie),
                isinstance(self.edit_movie_callback, Callable),
                isinstance(self.delete_movie_callback, Callable)):
-            case True, False, False:
+            case True, False, False, False:
                 self.mode = 'add'
-            case False, True, True:
+            case False, True, True, True:
                 self.mode = 'edit'
+                import pprint
+                pprint.pprint(self.old_movie)
             case _:
-                raise ValueError('Invalid callback arguments. Should be cb_1 or (cb_2 and cb_3)')
+                raise ValueError('Incorrect modal invariants.')
 
         # Initialize an internal dictionary to simplify field data management.
+        # todo Display old_movie fields
         self.entry_fields = _create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
         self.title = MOVIE_FIELD_NAMES[0]
         year = MOVIE_FIELD_NAMES[1]
@@ -143,10 +147,12 @@ class MovieGUI:
                                 func=self.tmdb_treeview_callback)
 
         # Populate buttonbox with commit and cancel buttons.
-        # todo Add delete button
         column_num = itertools.count()
         commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
                                        command=self.commit, enabled=False)
+        if self.mode == 'edit':
+            _create_button(buttonbox, DELETE_TEXT, column=next(column_num),
+                           command=self.delete_movie, enabled=True)
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                        command=self.destroy, enabled=True)
 
@@ -280,8 +286,13 @@ class MovieGUI:
 
     def commit(self):
         """The user clicked the 'Commit' button."""
-        # todo call new_movie or edit_movie
-        self.commit_new_movie()
+        match self.mode:
+            case 'add':
+                self.commit_new_movie()
+            case 'edit':
+                self.edit_movie()
+            case _:
+                raise ValueError('Illegal program state.')
 
     def commit_new_movie(self):
         """Commit a new movie to the database."""
@@ -311,9 +322,17 @@ class MovieGUI:
             items = self.tmdb_treeview.get_children()
             self.tmdb_treeview.delete(*items)
 
-    # todo Add edit movie method
+    def edit_movie(self):
+        # todo Add edit movie method
+        print('\nedit_movie called.')
+        self.destroy()
+        ...
 
-    # todo Add delete movie method
+    def delete_movie(self):
+        # todo Add delete movie method
+        print('\ndelete_movie called.')
+        self.destroy()
+        ...
 
     def destroy(self):
         """Destroy all widgets of this class."""

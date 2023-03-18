@@ -14,7 +14,7 @@
 
 from collections import deque
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import partial
 from typing import Callable, List, Literal, Sequence
 from unittest.mock import MagicMock
@@ -433,7 +433,7 @@ class TestSearchMovieCallback:
         
         monkeypatch.setattr('handlers.database.find_movies', self.dummy_find_movies_calls(found))
         monkeypatch.setattr(handlers.guiwidgets, 'SelectMovieGUI', DummySelectMovieGUI)
-        monkeypatch.setattr(handlers.guiwidgets, 'EditMovieGUI', DummyEditMovieGUI)
+        monkeypatch.setattr(handlers.guiwidgets_2, 'MovieGUI', DummyMovieGUI)
         monkeypatch.setattr(handlers.database, 'all_tags', lambda: self.tags)
         
         current = handlers.config.CurrentConfig()
@@ -460,15 +460,16 @@ class TestSearchMovieCallback:
     def test_one_movie_found_calls_edit_movie(self, monkeypatch):
         with self.search_movie_callback('one_movie', monkeypatch):
             expected = [(
-                    DummyTk(),
-                    'func',
-                    handlers._delete_movie_callback,
-                    ['commit', 'delete'],
-                    self.tags,
-                    self.movie_key
-                    )]
+                DummyTk(),
+                handlers._tmdb_io_handler,
+                self.tags,
+                None,
+                self.movie_key,
+                '_edit_movie_callback.<locals>.func',
+                handlers._delete_movie_callback,
+            )]
             assert dummy_edit_movie_gui_instance == expected
-    
+
     def test_multiple_movies_found_instantiates_edit_movie(self, monkeypatch):
         with self.search_movie_callback('many_movies', monkeypatch):
             expected = [(DummyTk(), self.search_response['many_movies'], handlers._select_movie_callback)]
@@ -559,67 +560,6 @@ class TestEditMovieCallback:
         old_movie: handlers.config.MovieTypedDict = dict(title='Old Test Title', year=1942)
         yield handlers._edit_movie_callback(old_movie)
     
-
-# noinspection PyMissingOrEmptyDocstring
-class TestSelectMovieCallback:
-    TITLE = 'Test Title'
-    YEAR = 2042
-    MOVIE = handlers.config.MovieUpdateDef(title=TITLE, year=YEAR)
-    MOVIES = [MOVIE]
-
-    dummy_find_movies_calls = []
-    dummy_edit_movie_callback_wrapper_calls = []
-
-    def test_find_movies_called(self, class_patches, check):
-        with self.class_context():
-            with check:
-                assert self.dummy_find_movies_calls[0][0] == dict(title=self.TITLE, year=[str(self.YEAR)])
-
-    def test_edit_movie_gui_created(self, class_patches, check):
-        with self.class_context():
-            with check:
-                assert dummy_edit_movie_gui_instance[0][0] == DummyParent()
-                assert dummy_edit_movie_gui_instance[0][1] == 'dummy_edit_movie_callback'
-                assert dummy_edit_movie_gui_instance[0][2].__name__ == '_delete_movie_callback'
-                assert dummy_edit_movie_gui_instance[0][3] == ['commit', 'delete']
-                assert dummy_edit_movie_gui_instance[0][4] == ['Test tag 42']
-
-    @pytest.fixture
-    def class_patches(self, monkeypatch):
-        self.dummy_find_movies_calls = []
-        monkeypatch.setattr(handlers.database, 'find_movies', self.dummy_find_movies)
-        monkeypatch.setattr(handlers.database, 'all_tags', lambda: ['Test tag 42'])
-        monkeypatch.setattr(handlers.guiwidgets, 'EditMovieGUI', DummyEditMovieGUI)
-        monkeypatch.setattr(handlers, '_edit_movie_callback',
-                            self.dummy_edit_movie_callback_wrapper)
-
-    @contextmanager
-    def class_context(self):
-        global dummy_edit_movie_gui_instance
-        dummy_edit_movie_gui_instance = []
-        hold_persistent = handlers.config.persistent
-        hold_current = handlers.config.current
-        
-        handlers.config.persistent = handlers.config.PersistentConfig('Test program name', 'Test program version')
-        handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
-        movie_key = config.MovieKeyTypedDict(title=self.TITLE, year=self.YEAR)
-        try:
-            yield handlers._select_movie_callback(movie_key)
-        finally:
-            handlers.config.persistent = hold_persistent
-            handlers.config.current = hold_current
-
-    def dummy_find_movies(self, *args):
-        self.dummy_find_movies_calls.append(args)
-        return self.MOVIES
-
-    # noinspection PyUnusedLocal
-    @staticmethod
-    def dummy_edit_movie_callback_wrapper(old_movie: handlers.config.MovieKeyTypedDict) -> Callable:
-        def dummy_edit_movie_callback():
-            pass
-        return dummy_edit_movie_callback
-
 
 # noinspection PyMissingOrEmptyDocstring
 class TestTags:
@@ -839,17 +779,24 @@ dummy_edit_movie_gui_instance = []
 
 # noinspection PyMissingOrEmptyDocstring
 @dataclass
-class DummyEditMovieGUI:
+class DummyMovieGUI:
     parent: DummyParent
-    commit_callback: Callable[[handlers.config.MovieUpdateDef, Sequence[str]], None]
-    delete_callback: Callable[..., None]
-    buttons_to_show: List[Literal['commit', 'delete']]
-    all_tag_names: Sequence[str]
-    movie: handlers.config.MovieUpdateDef
-    
+    tmdb_search_callback: Callable
+    all_tags: Sequence[str]
+    add_movie_callback: Callable = field(default=None, kw_only=True)
+    old_movie: config.MovieUpdateDef = field(default=None, kw_only=True)
+    edit_movie_callback: Callable = field(default=None, kw_only=True)
+    delete_movie_callback: Callable = field(default=None, kw_only=True)
+
     def __post_init__(self):
-        dummy_edit_movie_gui_instance.append((self.parent, self.commit_callback.__name__, self.delete_callback,
-                                              self.buttons_to_show, self.all_tag_names, self.movie))
+        dummy_edit_movie_gui_instance.append((self.parent,
+                                              self.tmdb_search_callback,
+                                              self.all_tags,
+                                              self.add_movie_callback,
+                                              self.old_movie,
+                                              self.edit_movie_callback.__qualname__,
+                                              self.delete_movie_callback,
+                                              ))
 
 
 dummy_select_movie_gui_instance = []

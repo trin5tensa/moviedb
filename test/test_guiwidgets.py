@@ -422,9 +422,9 @@ class TestSearchMovieGUI:
     
     # @pytest.mark.skip('Test dependency discovered')
     # def test_callback_called(self, patch_tk):
-    #     with self.movie_context() as movie_gui:
-    #         movie_gui.selected_tags = ['tag 1', 'tag 2']
-    #         movie_gui.search()
+    #     with self.movie_context() as something:
+    #         something.selected_tags = ['tag 1', 'tag 2']
+    #         something.search()
     #         assert commit_callback_calls == [(dict(director='4242', minutes=['4242', '4242'],
     #                                                notes='4242', title='4242', year=['4242', '4242'], ),
     #                                           ['tag 1', 'tag 2'])]
