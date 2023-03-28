@@ -112,6 +112,9 @@ class MovieGUI:
         self.entry_fields = _create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
         self.title = MOVIE_FIELD_NAMES[0]
         year = MOVIE_FIELD_NAMES[1]
+        if self.mode == 'edit':
+            for k in self.entry_fields.keys():
+                self.entry_fields[k].original_value = self.old_movie[k]
 
         # Create frames to hold fields and buttons.
         self.outer_frame, body_frame, buttonbox, internet_frame = self.framing(self.parent)
@@ -123,12 +126,13 @@ class MovieGUI:
         _focus_set(self.entry_fields[self.title].widget)
 
         # Create label and text widget.
-        self.notes_widget = input_zone.add_text_row(MOVIE_FIELD_TEXTS[-1])
-        self.notes_widget.tag_configure('font_tag', font='TkTextFont')
+        self.notes_widget = input_zone.add_text_row(self.entry_fields[MOVIE_FIELD_NAMES[-1]])
 
         # Create a label and treeview for movie tags.
         self.tags_treeview = input_zone.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
                                                          callers_callback=self.tags_treeview_callback)
+        if self.mode == 'edit':
+            self.tags_treeview.selection_set(self.old_movie['tags'])
 
         # Create a treeview for movies retrieved from tmdb.
         self.tmdb_treeview = ttk.Treeview(internet_frame,
@@ -795,6 +799,14 @@ class _MovieTagTreeview:
         # noinspection PyArgumentList
         self.treeview.selection_set()
 
+    def selection_set(self, new_selection: Sequence[str]):
+        """ Change the current selection.
+
+        Args:
+            new_selection:
+        """
+        self.treeview.selection_set(list(new_selection))
+
 
 @dataclass
 class _EntryField:
@@ -858,21 +870,24 @@ class _InputZone:
         entry_field.widget = ttk.Entry(self.parent, textvariable=entry_field.textvariable,
                                        width=self.col_1_width)
         entry_field.widget.grid(column=1, row=row_ix)
+        entry_field.textvariable.set(entry_field.original_value)
 
-    def add_text_row(self, label_text: str) -> tk.Text:
+    def add_text_row(self,  entry_field: _EntryField) -> tk.Text:
         """
         Add label and text widgets as the bottom row.
 
         Args:
-            label_text:
+            entry_field:
 
         Returns:
             text widget
         """
         row_ix = next(self.row)
-        self._create_label(label_text, row_ix)
+        self._create_label(entry_field.label_text, row_ix)
         widget = tk.Text(self.parent, width=45, height=8, wrap='word', padx=10, pady=10)
         widget.grid(column=1, row=row_ix, sticky='e')
+        widget.tag_configure('font_tag', font='TkTextFont')
+        widget.insert('1.0', entry_field.original_value, ('font_tag',))
 
         scrollbar = ttk.Scrollbar(self.parent, orient='vertical', command=widget.yview)
         widget.configure(yscrollcommand=scrollbar.set)
@@ -920,7 +935,7 @@ class _InputZone:
         label.grid(column=0, row=row_ix, sticky='ne', padx=5)
 
 
-def _create_entry_fields(internal_names: Sequence[str], label_texts: Sequence[str]
+def _create_entry_fields(internal_names: Sequence[str], label_texts: Sequence[str],
                          ) -> Dict[str, _EntryField]:
     """
     Create an internal dictionary to simplify field data management. See usage note in the
