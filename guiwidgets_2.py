@@ -108,7 +108,6 @@ class MovieGUI:
                 raise ValueError('Incorrect modal invariants.')
 
         # Initialize an internal dictionary to simplify field data management.
-        # todo Display old_movie fields
         self.entry_fields = _create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
         self.title = MOVIE_FIELD_NAMES[0]
         year = MOVIE_FIELD_NAMES[1]
@@ -150,30 +149,37 @@ class MovieGUI:
         self.tmdb_treeview.bind('<<TreeviewSelect>>',
                                 func=self.tmdb_treeview_callback)
 
-        # Populate buttonbox with commit and cancel buttons.
+        # Populate buttonbox with buttons.
         column_num = itertools.count()
-        commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
-                                       command=self.commit, enabled=False)
-        if self.mode == 'edit':
-            _create_button(buttonbox, DELETE_TEXT, column=next(column_num),
-                           command=self.delete_movie, enabled=True)
+        match self.mode:
+            case 'add':
+                commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
+                                               command=self.commit_new_movie, enabled=False)
+
+                # Link commit neuron to commit button.
+                commit_button_enabler = _enable_button(commit_button)
+                self.commit_neuron = _create_buttons_andneuron(commit_button_enabler)
+
+                # Link commit neuron to year field.
+                observer = _create_the_fields_observer(self.entry_fields, year, self.commit_neuron)
+                self.entry_fields[year].observer = observer
+                _link_field_to_neuron(self.entry_fields, year, self.commit_neuron, observer)
+
+                # Link a new observer to the title field.
+                observer = neurons.Observer()
+                self.entry_fields[self.title].observer = observer
+                observer.register(self.call_title_notifees(self.commit_neuron))
+                _link_field_to_neuron(self.entry_fields, self.title, self.commit_neuron, observer.notify)
+
+            case 'edit':
+                _create_button(buttonbox, COMMIT_TEXT, column=next(column_num), command=self.edit_movie)
+                _create_button(buttonbox, DELETE_TEXT, column=next(column_num), command=self.delete_movie)
+
+            case _:
+                raise ValueError('Illegal program state.')
+
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                        command=self.destroy, enabled=True)
-
-        # Link commit neuron to commit button.
-        commit_button_enabler = _enable_button(commit_button)
-        self.commit_neuron = _create_buttons_andneuron(commit_button_enabler)
-
-        # Link commit neuron to year field.
-        observer = _create_the_fields_observer(self.entry_fields, year, self.commit_neuron)
-        self.entry_fields[year].observer = observer
-        _link_field_to_neuron(self.entry_fields, year, self.commit_neuron, observer)
-
-        # Link a new observer to the title field.
-        observer = neurons.Observer()
-        self.entry_fields[self.title].observer = observer
-        observer.register(self.call_title_notifees(self.commit_neuron))
-        _link_field_to_neuron(self.entry_fields, self.title, self.commit_neuron, observer.notify)
 
         # Start the tmdb_work_queue polling
         self.tmdb_consumer()
@@ -288,16 +294,6 @@ class MovieGUI:
             else:
                 self.entry_fields[k].textvariable.set(v)
 
-    def commit(self):
-        """The user clicked the 'Commit' button."""
-        match self.mode:
-            case 'add':
-                self.commit_new_movie()
-            case 'edit':
-                self.edit_movie()
-            case _:
-                raise ValueError('Illegal program state.')
-
     def commit_new_movie(self):
         """Commit a new movie to the database."""
         self.return_fields = {internal_name: movie_field.textvariable.get()
@@ -330,13 +326,15 @@ class MovieGUI:
         # todo Add edit movie method
         print('\nedit_movie called.')
         self.destroy()
-        ...
 
     def delete_movie(self):
-        # todo Add delete movie method
-        print('\ndelete_movie called.')
-        self.destroy()
-        ...
+        """The user clicked the 'Delete' button. """
+        if messagebox.askyesno(message='Do you want to delete this movie?',
+                               icon='question', default='no', parent=self.parent):
+            movie = config.FindMovieTypedDict(title=self.entry_fields['title'].original_value,
+                                              year=[self.entry_fields['year'].original_value])
+            self.delete_movie_callback(movie)
+            self.destroy()
 
     def destroy(self):
         """Destroy all widgets of this class."""
@@ -1103,7 +1101,7 @@ def _create_button_orneuron(change_button_state: Callable) -> neurons.OrNeuron:
 
 
 def _create_buttons_andneuron(change_button_state: Callable) -> neurons.AndNeuron:
-    """Create an 'Or' neuron and link it to a button.
+    """Create an 'And' neuron and link it to a button.
     
     Args:
         change_button_state:

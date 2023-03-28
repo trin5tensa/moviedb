@@ -112,7 +112,7 @@ class TestMovieGUI:
                 # noinspection PyTypedDict
                 v.textvariable.set_for_test(self.test_movies[0][k])
 
-        cut.commit()
+        cut.commit_new_movie()
 
         callback.assert_called_once_with(cut.return_fields, ())
 
@@ -125,7 +125,7 @@ class TestMovieGUI:
         monkeypatch.setattr('guiwidgets_2.messagebox', messagebox)
 
         cut = guiwidgets_2.MovieGUI(parent, lambda: None, self.tags, add_movie_callback=callback)
-        cut.commit()
+        cut.commit_new_movie()
 
         messagebox.showinfo.assert_called_once_with(parent=parent, message=exc.msg, detail=exc.detail)
 
@@ -139,7 +139,7 @@ class TestMovieGUI:
         monkeypatch.setattr('guiwidgets_2.messagebox', messagebox)
 
         cut = guiwidgets_2.MovieGUI(parent, lambda: None, self.tags, add_movie_callback=callback)
-        cut.commit()
+        cut.commit_new_movie()
 
         messagebox.showinfo.assert_called_once_with(parent=parent, message=exc.args[0])
 
