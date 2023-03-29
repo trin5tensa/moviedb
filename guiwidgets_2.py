@@ -300,7 +300,6 @@ class MovieGUI:
                               for internal_name, movie_field in self.entry_fields.items()}
         self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get('1.0', 'end')
 
-        # Commit and exit
         try:
             self.add_movie_callback(self.return_fields, self.selected_tags)
 
@@ -323,9 +322,27 @@ class MovieGUI:
             self.tmdb_treeview.delete(*items)
 
     def edit_movie(self):
-        # todo Add edit movie method
+        """Commit an edited movie to the database."""
         print('\nedit_movie called.')
-        self.destroy()
+        self.return_fields = {internal_name: movie_field.textvariable.get()
+                              for internal_name, movie_field in self.entry_fields.items()}
+        self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get('1.0', 'end')
+
+        try:
+            self.edit_movie_callback(self.return_fields, self.selected_tags)
+
+        # Alert user to title and year constraint failure.
+        except exception.MovieDBConstraintFailure:
+            exc = exception.MovieDBConstraintFailure
+            messagebox.showinfo(parent=self.parent, message=exc.msg, detail=exc.detail)
+
+        # Alert user to invalid year (not YYYY within range).
+        except exception.MovieYearConstraintFailure as exc:
+            msg = exc.args[0]
+            messagebox.showinfo(parent=self.parent, message=msg)
+
+        else:
+            self.destroy()
 
     def delete_movie(self):
         """The user clicked the 'Delete' button. """
