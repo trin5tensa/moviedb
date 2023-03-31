@@ -174,15 +174,6 @@ def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[s
         movie = movies[0]
         movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
 
-        # todo delete old code
-        # guiwidgets.EditMovieGUI(config.current.tk_root,
-        #                         _edit_movie_callback(movie_key),
-        #                         _delete_movie_callback,
-        #                         ['commit', 'delete'],
-        #                         database.all_tags(),
-        #                         movie
-        #                         )
-
         guiwidgets_2.MovieGUI(config.current.tk_root,
                               _tmdb_io_handler,
                               database.all_tags(),
@@ -192,6 +183,7 @@ def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[s
                               )
 
     else:
+        # noinspection PyTypeChecker
         guiwidgets.SelectMovieGUI(config.current.tk_root, movies, _select_movie_callback)
 
 

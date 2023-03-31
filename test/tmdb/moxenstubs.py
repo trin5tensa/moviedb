@@ -36,6 +36,7 @@ TEST_MOVIE_NOT_FOUND_LOG_MSG: Final = (f"The TMDB id '42' was not found on the T
                                        f"{TEST_MOVIE_NOT_FOUND_EXC_ARGS}")
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class DummyTMDBSearch:
     results: list = field(default_factory=list, init=False, repr=False)
@@ -44,12 +45,14 @@ class DummyTMDBSearch:
         self.results = [dict(id=TMDB_MOVIE_ID)]
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class DummyTMDBTimeoutError(DummyTMDBSearch):
     def movie(self, **kwargs):
         raise tmdb.requests.exceptions.ConnectionError(DummyExcArgs(TEST_TIMEOUT_EXC_ARGS))
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class DummyExcArgs:
     exc: str
@@ -59,12 +62,14 @@ class DummyExcArgs:
         self.args = [self.exc]
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class DummyTMDBKeyError(DummyTMDBSearch):
     def movie(self, **kwargs):
         raise tmdb.requests.exceptions.HTTPError(TEST_BAD_KEY_EXC_ARGS)
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class DummyTMDBMovies:
     movie_id: str
@@ -81,13 +86,14 @@ class DummyTMDBMovies:
             release_date=TEST_RELEASE_DATE,
             runtime=TEST_RUNTIME,
             overview=TEST_NOTES
-        )
+            )
 
     @staticmethod
     def credits():
         return dict(crew=[dict(name=TEST_DIRECTOR, job='Director')])
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class DummyTMDBBlankDateMovie(DummyTMDBMovies):
     def info(self, **kwargs):
@@ -96,15 +102,17 @@ class DummyTMDBBlankDateMovie(DummyTMDBMovies):
             release_date=TEST_BLANK_RELEASE_DATE,
             runtime=TEST_RUNTIME,
             overview=TEST_NOTES
-        )
+            )
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class DummyTMDBMissingMovie(DummyTMDBMovies):
     def info(self, **kwargs):
         raise tmdb.requests.exceptions.HTTPError(TEST_MOVIE_NOT_FOUND_EXC_ARGS)
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class DummyUnexpectedHTTPError(DummyTMDBMovies):
     def info(self, **kwargs):

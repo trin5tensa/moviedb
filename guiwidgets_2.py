@@ -43,11 +43,12 @@ ParentType = TypeVar('ParentType', tk.Tk, tk.Toplevel, ttk.Frame)
 
 @dataclass
 class MovieGUI:
+    # noinspection GrazieInspection
     """ Create and manage a Tk input form for movies.
 
-    The form operates in two modes - Add and Edit. The mode is determined from the supplied callbacks. Add mode
-    gets an add movie callback and edit mode gets both an edit movie callback and a delete movie callback.
-    """
+        The form operates in two modes - Add and Edit. The mode is determined from the supplied callbacks. Add mode
+        gets an add movie callback and edit mode gets both an edit movie callback and a "delete movie" callback.
+        """
     parent: tk.Tk
     # When the user changes the title field this will ba called with the field's text.
     tmdb_search_callback: Callable[[str, queue.LifoQueue], None]
@@ -71,7 +72,7 @@ class MovieGUI:
     title: str = field(default=None, init=False, repr=False)
 
     # Notes field
-    notes_widget: tk.Text =  field(default=None, init=False, repr=False)
+    notes_widget: tk.Text = field(default=None, init=False, repr=False)
 
     # Treeviews for tags and TMDB
     tags_treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
@@ -102,8 +103,6 @@ class MovieGUI:
                 self.mode = 'add'
             case False, True, True, True:
                 self.mode = 'edit'
-                import pprint
-                pprint.pprint(self.old_movie)
             case _:
                 raise ValueError('Incorrect modal invariants.')
 
@@ -113,6 +112,7 @@ class MovieGUI:
         year = MOVIE_FIELD_NAMES[1]
         if self.mode == 'edit':
             for k in self.entry_fields.keys():
+                # noinspection PyTypedDict
                 self.entry_fields[k].original_value = self.old_movie[k]
 
         # Create frames to hold fields and buttons.
@@ -323,12 +323,12 @@ class MovieGUI:
 
     def edit_movie(self):
         """Commit an edited movie to the database."""
-        print('\nedit_movie called.')
         self.return_fields = {internal_name: movie_field.textvariable.get()
                               for internal_name, movie_field in self.entry_fields.items()}
         self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get('1.0', 'end')
 
         try:
+            # noinspection PyArgumentList
             self.edit_movie_callback(self.return_fields, self.selected_tags)
 
         # Alert user to title and year constraint failure.

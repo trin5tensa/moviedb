@@ -45,22 +45,27 @@ class MovieSearchInvalidCount(DatabaseException):
     """Exception raised when count is not a positive integer."""
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TMDBException(Exception):
     pass
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TMDBAPIKeyException(TMDBException):
     pass
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TMDBMovieIDMissing(TMDBException):
     pass
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TMDBNoRecordsFound(TMDBException):
     pass
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TMDBConnectionTimeout(TMDBException):
     pass
 

@@ -40,8 +40,6 @@ class MainWindow:
         self.parent.option_add('*tearOff', False)
         self.parent.geometry(self.set_geometry())
         self.place_menubar(MenuData().menus)
-        # # moviedb-#256  Shouldn't this be Ctrl-Q?  -NO Ctrl-Q appears to be automatically provided
-        self.parent.bind('<Escape>', self.tk_shutdown)
         self.parent.protocol('WM_DELETE_WINDOW', self.tk_shutdown)
 
     def set_geometry(self) -> str:
@@ -194,10 +192,6 @@ class MenuData:
         
         Menu separators: Use '-' or any other character of type str.
         """
-
-        # moviedb-#249 Apple menu guidelines
-        #   See TKDocs Platform Menus | macOS
-        #   https://tkdocs.com/tutorial/menus.html
         self.menus = [
                 Menu('Moviedb', [
                         MenuItem('About…', handlers.about_dialog),

@@ -13,7 +13,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import io
-from contextlib import contextmanager, redirect_stdout
+from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial
 from typing import Tuple
@@ -23,10 +23,10 @@ import pytest
 import config
 import moviedb
 
-
 TEST_FN = 'test_filename.csv'
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestMain:
     """
     Given: config.current has been initialized with a new instance of config.CurrentConfig
@@ -125,6 +125,7 @@ class TestStartUp:
         assert connect_calls == [True]
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestLoadConfigFile:
     program = 'test_program_name'
     version = 'test version'
@@ -212,7 +213,8 @@ def test__json_load(monkeypatch, tmp_path):
     # Instrument the call to json_load
     expected_data = 'test json loads data'
     calls = []
-    
+
+    # noinspection PyMissingOrEmptyDocstring
     def dummy_json_load(*args):
         calls.append((args, expected_data))
         

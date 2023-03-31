@@ -51,11 +51,13 @@ def mock_fut_unexpected():
     return _MockFuture(Exception('Test unexpected exception'))
 
 
+# noinspection PyMissingOrEmptyDocstring
 @pytest.fixture()
 def mock_executor():
     return _MockThreadPoolExecutor()
 
 
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class _MockFuture:
     """An instrumented mock of a Future class."""
@@ -73,6 +75,7 @@ class _MockFuture:
         self.add_done_callback_calls.append(args)
     
     
+# noinspection PyMissingOrEmptyDocstring
 @dataclass
 class _MockThreadPoolExecutor:
     """An instrumented mock of a ThreadPoolExecutor class."""

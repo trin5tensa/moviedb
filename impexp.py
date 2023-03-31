@@ -21,6 +21,7 @@ import database
 import utilities
 
 
+# noinspection GrazieInspection
 def import_movies(fn: str):
     """Import a csv file into the database.
 
@@ -97,8 +98,9 @@ def import_movies(fn: str):
 
 class MoviedbInvalidImportData(Exception):
     """Exception raised for bad import file data."""
-    
-    
+
+
+# noinspection GrazieInspection
 def create_reject_file(fn: str, header_row: List[str]) -> Callable:
     """Return a reject file writer.
     

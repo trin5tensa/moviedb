@@ -132,7 +132,7 @@ def test_invalid_row_values(path, monkeypatch):
                 f'ValueError: {error_msg}\n'
                 'Hamlet,1996,1\n')
 
-    # noinspection PyUnusedLocal
+    # noinspection PyUnusedLocal, DuplicatedCode
     def mock_add_movie(movie: dict):
         """Force add_movie call to raise ValueError."""
         raise ValueError(error_msg)
@@ -154,7 +154,7 @@ def test_create_reject_file(path, monkeypatch):
                 f"ValueError: {error_msg}\n"
                 "Revanche,2008,122,Oscar nominated\n")
 
-    # noinspection PyUnusedLocal
+    # noinspection PyUnusedLocal, DuplicatedCode
     def mock_add_movie(movie: dict):
         """Force add_movie call to raise ValueError."""
         raise ValueError(error_msg)

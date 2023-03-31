@@ -119,7 +119,7 @@ def _data_conversion(tmdb_movie: dict) -> config.MovieTypedDict:
         director=tmdb_movie.get('directors', ''),
         minutes=tmdb_movie.get('runtime', ''),
         notes=tmdb_movie.get('overview', ''),
-    )
+        )
     return movie
 
 
