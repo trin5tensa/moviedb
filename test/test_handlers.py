@@ -228,7 +228,7 @@ class TestAddMovie:
     def test_movie_gui_called(self, monkeypatch):
         monkeypatch.setattr(handlers.database, 'all_tags', lambda *args: self.TAGS)
         mock_gui = MagicMock()
-        monkeypatch.setattr(handlers.guiwidgets_2, 'MovieGUI', mock_gui)
+        monkeypatch.setattr(handlers.guiwidgets_2, 'AddMovieGUI', mock_gui)
 
         with self.add_movie_context():
             mock_gui.assert_called_once_with(DummyParent(), handlers._tmdb_io_handler, self.TAGS,
@@ -433,7 +433,7 @@ class TestSearchMovieCallback:
 
         monkeypatch.setattr('handlers.database.find_movies', self.dummy_find_movies_calls(found))
         monkeypatch.setattr(handlers.guiwidgets, 'SelectMovieGUI', DummySelectMovieGUI)
-        monkeypatch.setattr(handlers.guiwidgets_2, 'MovieGUI', DummyMovieGUI)
+        monkeypatch.setattr(handlers.guiwidgets_2, 'EditMovieGUI', DummyMovieGUI)
         monkeypatch.setattr(handlers.database, 'all_tags', lambda: self.tags)
 
         current = handlers.config.CurrentConfig()

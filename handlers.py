@@ -73,7 +73,7 @@ def _get_tmdb_api_key() -> Optional[str]:
 def add_movie():
     """ Get new movie data from the user and add it to the database. """
     all_tags = database.all_tags()
-    guiwidgets_2.MovieGUI(config.current.tk_root, _tmdb_io_handler, all_tags, add_movie_callback=_add_movie_callback)
+    guiwidgets_2.AddMovieGUI(config.current.tk_root, _tmdb_io_handler, all_tags, add_movie_callback=_add_movie_callback)
 
 
 def edit_movie():
@@ -174,13 +174,13 @@ def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[s
         movie = movies[0]
         movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
 
-        guiwidgets_2.MovieGUI(config.current.tk_root,
-                              _tmdb_io_handler,
-                              database.all_tags(),
-                              old_movie=movie,
-                              edit_movie_callback=_edit_movie_callback(movie_key),
-                              delete_movie_callback=_delete_movie_callback
-                              )
+        guiwidgets_2.EditMovieGUI(config.current.tk_root,
+                                  _tmdb_io_handler,
+                                  database.all_tags(),
+                                  old_movie=movie,
+                                  edit_movie_callback=_edit_movie_callback(movie_key),
+                                  delete_movie_callback=_delete_movie_callback
+                                )
 
     else:
         # noinspection PyTypeChecker
@@ -243,7 +243,7 @@ def _select_movie_callback(movie_id: config.MovieKeyTypedDict):
 
     # Display the movie in the edit movie form.
     movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
-    guiwidgets_2.MovieGUI(config.current.tk_root, _tmdb_io_handler, database.all_tags(), old_movie=movie,
+    guiwidgets_2.EditMovieGUI(config.current.tk_root, _tmdb_io_handler, database.all_tags(), old_movie=movie,
                           edit_movie_callback=_edit_movie_callback(movie_key),
                           delete_movie_callback=_delete_movie_callback,)
 

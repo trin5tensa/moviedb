@@ -20,7 +20,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
-from typing import Callable, Dict, Iterable, Iterator, Mapping, Sequence, Tuple, TypeVar, Optional, Literal
+from typing import Callable, Dict, Iterable, Iterator, Mapping, Sequence, Tuple, TypeVar, Literal
 
 import config
 import exception
@@ -50,20 +50,9 @@ class MovieGUI:
         gets an add movie callback and edit mode gets both an edit movie callback and a "delete movie" callback.
         """
     parent: tk.Tk
-    # When the user changes the title field this will ba called with the field's text.
     tmdb_search_callback: Callable[[str, queue.LifoQueue], None]
-    # This is a complete list of all the tags in the database
+    # This is a complete list of the tags in the database
     all_tags: Sequence[str]
-
-    # Add mode argument. Provide either add mode argument or edit mode arguments.
-    add_movie_callback: Callable[[config.MovieTypedDict, Sequence[str]], None] = field(default=None, kw_only=True)
-
-    # Edit mode arguments. Provide either add mode argument or edit mode arguments.
-    old_movie: config.MovieUpdateDef = field(default=None, kw_only=True)
-    edit_movie_callback: Optional[Callable[[config.FindMovieTypedDict], None]] = field(default=None, kw_only=True)
-    delete_movie_callback: Optional[Callable[[config.FindMovieTypedDict], None]] = field(default=None, kw_only=True)
-
-    mode: MOVIE_GUI_MODE = field(default=None, init=False, repr=False)
 
     # All widgets created by this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
@@ -94,26 +83,10 @@ class MovieGUI:
     return_fields: dict = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
-        # Validate modal invariants.
-        match (isinstance(self.add_movie_callback, Callable),
-               bool(self.old_movie),
-               isinstance(self.edit_movie_callback, Callable),
-               isinstance(self.delete_movie_callback, Callable)):
-            case True, False, False, False:
-                self.mode = 'add'
-            case False, True, True, True:
-                self.mode = 'edit'
-            case _:
-                raise ValueError('Incorrect modal invariants.')
-
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = _create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
         self.title = MOVIE_FIELD_NAMES[0]
-        year = MOVIE_FIELD_NAMES[1]
-        if self.mode == 'edit':
-            for k in self.entry_fields.keys():
-                # noinspection PyTypedDict
-                self.entry_fields[k].original_value = self.old_movie[k]
+        self.original_values()
 
         # Create frames to hold fields and buttons.
         self.outer_frame, body_frame, buttonbox, internet_frame = self.framing(self.parent)
@@ -130,8 +103,7 @@ class MovieGUI:
         # Create a label and treeview for movie tags.
         self.tags_treeview = input_zone.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
                                                          callers_callback=self.tags_treeview_callback)
-        if self.mode == 'edit':
-            self.tags_treeview.selection_set(self.old_movie['tags'])
+        self.set_initial_tag_selection()
 
         # Create a treeview for movies retrieved from tmdb.
         self.tmdb_treeview = ttk.Treeview(internet_frame,
@@ -151,38 +123,30 @@ class MovieGUI:
 
         # Populate buttonbox with buttons.
         column_num = itertools.count()
-        match self.mode:
-            case 'add':
-                commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
-                                               command=self.commit_new_movie, enabled=False)
-
-                # Link commit neuron to commit button.
-                commit_button_enabler = _enable_button(commit_button)
-                self.commit_neuron = _create_buttons_andneuron(commit_button_enabler)
-
-                # Link commit neuron to year field.
-                observer = _create_the_fields_observer(self.entry_fields, year, self.commit_neuron)
-                self.entry_fields[year].observer = observer
-                _link_field_to_neuron(self.entry_fields, year, self.commit_neuron, observer)
-
-                # Link a new observer to the title field.
-                observer = neurons.Observer()
-                self.entry_fields[self.title].observer = observer
-                observer.register(self.call_title_notifees(self.commit_neuron))
-                _link_field_to_neuron(self.entry_fields, self.title, self.commit_neuron, observer.notify)
-
-            case 'edit':
-                _create_button(buttonbox, COMMIT_TEXT, column=next(column_num), command=self.edit_movie)
-                _create_button(buttonbox, DELETE_TEXT, column=next(column_num), command=self.delete_movie)
-
-            case _:
-                raise ValueError('Illegal program state.')
-
+        self.create_buttons(buttonbox, column_num)
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                        command=self.destroy, enabled=True)
 
         # Start the tmdb_work_queue polling
         self.tmdb_consumer()
+
+    def original_values(self):
+        """ Initialize the original field values. """
+        for k in self.entry_fields.keys():
+            self.entry_fields[k].original_value = ''
+
+    def set_initial_tag_selection(self):
+        """ Override this method to set the movie tag selection """
+        pass
+
+    def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
+        """ Create buttons within the buttonbox.
+
+        Args:
+            buttonbox:
+            column_num:
+        """
+        raise NotImplementedError
 
     def call_title_notifees(self, commit_neuron: neurons.AndNeuron) -> Callable:
         """
@@ -294,65 +258,6 @@ class MovieGUI:
             else:
                 self.entry_fields[k].textvariable.set(v)
 
-    def commit_new_movie(self):
-        """Commit a new movie to the database."""
-        self.return_fields = {internal_name: movie_field.textvariable.get()
-                              for internal_name, movie_field in self.entry_fields.items()}
-        self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get('1.0', 'end')
-
-        try:
-            self.add_movie_callback(self.return_fields, self.selected_tags)
-
-        # Alert user to title and year constraint failure.
-        except exception.MovieDBConstraintFailure:
-            exc = exception.MovieDBConstraintFailure
-            messagebox.showinfo(parent=self.parent, message=exc.msg, detail=exc.detail)
-
-        # Alert user to invalid year (not YYYY within range).
-        except exception.MovieYearConstraintFailure as exc:
-            msg = exc.args[0]
-            messagebox.showinfo(parent=self.parent, message=msg)
-
-        # Clear fields ready for next entry.
-        else:
-            _clear_input_form_fields(self.entry_fields)
-            self.notes_widget.delete('1.0', 'end')
-            self.tags_treeview.clear_selection()
-            items = self.tmdb_treeview.get_children()
-            self.tmdb_treeview.delete(*items)
-
-    def edit_movie(self):
-        """Commit an edited movie to the database."""
-        self.return_fields = {internal_name: movie_field.textvariable.get()
-                              for internal_name, movie_field in self.entry_fields.items()}
-        self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get('1.0', 'end')
-
-        try:
-            # noinspection PyArgumentList
-            self.edit_movie_callback(self.return_fields, self.selected_tags)
-
-        # Alert user to title and year constraint failure.
-        except exception.MovieDBConstraintFailure:
-            exc = exception.MovieDBConstraintFailure
-            messagebox.showinfo(parent=self.parent, message=exc.msg, detail=exc.detail)
-
-        # Alert user to invalid year (not YYYY within range).
-        except exception.MovieYearConstraintFailure as exc:
-            msg = exc.args[0]
-            messagebox.showinfo(parent=self.parent, message=msg)
-
-        else:
-            self.destroy()
-
-    def delete_movie(self):
-        """The user clicked the 'Delete' button. """
-        if messagebox.askyesno(message='Do you want to delete this movie?',
-                               icon='question', default='no', parent=self.parent):
-            movie = config.FindMovieTypedDict(title=self.entry_fields['title'].original_value,
-                                              year=[self.entry_fields['year'].original_value])
-            self.delete_movie_callback(movie)
-            self.destroy()
-
     def destroy(self):
         """Destroy all widgets of this class."""
         self.parent.after_cancel(self.recall_id)
@@ -396,6 +301,111 @@ class MovieGUI:
         buttonbox.grid(column=0, row=1, sticky='ne')
 
         return outer_frame, input_form, buttonbox, internet_zone
+
+
+@dataclass
+class AddMovieGUI(MovieGUI):
+    add_movie_callback: Callable[[config.MovieTypedDict, Sequence[str]], None] = field(default=None, kw_only=True)
+
+    def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
+        commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
+                                       command=self.commit, enabled=False)
+
+        # Link commit neuron to commit button.
+        commit_button_enabler = _enable_button(commit_button)
+        self.commit_neuron = _create_buttons_andneuron(commit_button_enabler)
+
+        # Link commit neuron to year field.
+        year = MOVIE_FIELD_NAMES[1]
+        observer = _create_the_fields_observer(self.entry_fields, year, self.commit_neuron)
+        self.entry_fields[year].observer = observer
+        _link_field_to_neuron(self.entry_fields, year, self.commit_neuron, observer)
+
+        # Link a new observer to the title field.
+        observer = neurons.Observer()
+        self.entry_fields[self.title].observer = observer
+        observer.register(self.call_title_notifees(self.commit_neuron))
+        _link_field_to_neuron(self.entry_fields, self.title, self.commit_neuron, observer.notify)
+
+    def commit(self):
+        """Commit a new movie to the database."""
+        self.return_fields = {internal_name: movie_field.textvariable.get()
+                              for internal_name, movie_field in self.entry_fields.items()}
+        self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get('1.0', 'end')
+
+        try:
+            self.add_movie_callback(self.return_fields, self.selected_tags)
+
+        # Alert user to title and year constraint failure.
+        except exception.MovieDBConstraintFailure:
+            exc = exception.MovieDBConstraintFailure
+            messagebox.showinfo(parent=self.parent, message=exc.msg, detail=exc.detail)
+
+        # Alert user to invalid year (not YYYY within range).
+        except exception.MovieYearConstraintFailure as exc:
+            msg = exc.args[0]
+            messagebox.showinfo(parent=self.parent, message=msg)
+
+        # Clear fields ready for next entry.
+        else:
+            _clear_input_form_fields(self.entry_fields)
+            self.notes_widget.delete('1.0', 'end')
+            self.tags_treeview.clear_selection()
+            items = self.tmdb_treeview.get_children()
+            self.tmdb_treeview.delete(*items)
+
+
+@dataclass
+class EditMovieGUI(MovieGUI):
+    old_movie: config.MovieUpdateDef = field(default=None, kw_only=True)
+    edit_movie_callback: Callable[[config.FindMovieTypedDict], None] = field(default=None, kw_only=True)
+    delete_movie_callback: Callable[[config.FindMovieTypedDict], None] = field(default=None, kw_only=True)
+
+    def original_values(self):
+        """ Initialize the original field values. """
+        for k in self.entry_fields.keys():
+            # noinspection PyTypedDict
+            self.entry_fields[k].original_value = self.old_movie[k]
+
+    def set_initial_tag_selection(self):
+        """ Set the movie tag selection. """
+        self.tags_treeview.selection_set(self.old_movie['tags'])
+
+    def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
+        _create_button(buttonbox, COMMIT_TEXT, column=next(column_num), command=self.commit)
+        _create_button(buttonbox, DELETE_TEXT, column=next(column_num), command=self.delete)
+
+    def commit(self):
+        """Commit an edited movie to the database."""
+        self.return_fields = {internal_name: movie_field.textvariable.get()
+                              for internal_name, movie_field in self.entry_fields.items()}
+        self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get('1.0', 'end')
+
+        try:
+            # noinspection PyArgumentList
+            self.edit_movie_callback(self.return_fields, self.selected_tags)
+
+        # Alert user to title and year constraint failure.
+        except exception.MovieDBConstraintFailure:
+            exc = exception.MovieDBConstraintFailure
+            messagebox.showinfo(parent=self.parent, message=exc.msg, detail=exc.detail)
+
+        # Alert user to invalid year (not YYYY within range).
+        except exception.MovieYearConstraintFailure as exc:
+            msg = exc.args[0]
+            messagebox.showinfo(parent=self.parent, message=msg)
+
+        else:
+            self.destroy()
+
+    def delete(self):
+        """The user clicked the 'Delete' button. """
+        if messagebox.askyesno(message='Do you want to delete this movie?',
+                               icon='question', default='no', parent=self.parent):
+            movie = config.FindMovieTypedDict(title=self.entry_fields['title'].original_value,
+                                              year=[self.entry_fields['year'].original_value])
+            self.delete_movie_callback(movie)
+            self.destroy()
 
 
 @dataclass

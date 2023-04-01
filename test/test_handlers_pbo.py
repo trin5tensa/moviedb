@@ -43,7 +43,7 @@ class TestSelectMovieCallback:
     @pytest.fixture()
     def movie_gui(self, monkeypatch):
         movie_gui = MagicMock()
-        monkeypatch.setattr('handlers.guiwidgets_2.MovieGUI', movie_gui)
+        monkeypatch.setattr('handlers.guiwidgets_2.EditMovieGUI', movie_gui)
         return movie_gui
 
     @pytest.fixture()
