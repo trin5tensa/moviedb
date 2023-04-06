@@ -57,47 +57,6 @@ class TestAboutDialog:
 
 
 # noinspection PyMissingOrEmptyDocstring
-class TestPreferences:
-    test_tmdb_api_key = 'test_tmdb_api_key'
-    test_use_tmdb = True
-    calls = []
-
-    def test_preferences_dialog_instantiates_preferences_gui(self, monkeypatch):
-        self.calls = []
-        with self.preferences_context(monkeypatch):
-            assert self.calls == [(DummyParent(), self.test_tmdb_api_key,
-                                   self.test_use_tmdb, handlers._preferences_callback)]
-
-    def test_preferences_callback_updates_config(self, monkeypatch):
-        # NB This method uses the config set up of the context manager
-        # BUT has no interest in the test instance of PreferencesGUI.
-        user_api_key = 'user_api_key'
-        user_use_tmdb = True
-        with self.preferences_context(monkeypatch):
-            handlers._preferences_callback(user_api_key, user_use_tmdb)
-            assert handlers.config.persistent.tmdb_api_key == user_api_key
-            assert handlers.config.persistent.use_tmdb == user_use_tmdb
-
-    @contextmanager
-    def preferences_context(self, monkeypatch):
-        hold_persistent = handlers.config.persistent
-        hold_current = handlers.config.current
-
-        handlers.config.persistent = handlers.config.PersistentConfig('Test program name', 'Test program version')
-        handlers.config.persistent.tmdb_api_key = self.test_tmdb_api_key
-        handlers.config.persistent.use_tmdb = self.test_use_tmdb
-
-        handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
-        monkeypatch.setattr(handlers.guiwidgets_2, 'PreferencesGUI',
-                            lambda *args: self.calls.append(args))
-        try:
-            yield handlers.preferences_dialog()
-        finally:
-            handlers.config.persistent = hold_persistent
-            handlers.config.current = hold_current
-
-
-# noinspection PyMissingOrEmptyDocstring
 class TestGetTmdbGetApiKey:
     TEST_KEY = 'dummy key'
 

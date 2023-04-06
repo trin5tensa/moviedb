@@ -117,7 +117,7 @@ def _preferences_callback(tmdb_api_key: str, use_tmdb: bool):
         tmdb_api_key:
         use_tmdb:
     """
-
+    # todo test this function
     config.persistent.tmdb_api_key = tmdb_api_key
     config.persistent.use_tmdb = use_tmdb
 
@@ -141,6 +141,7 @@ def _delete_movie_callback(movie: config.FindMovieTypedDict):
     Args:
         movie:
     """
+    # todo test this function
     try:
         database.del_movie(movie)
 
@@ -179,8 +180,7 @@ def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[s
                                   database.all_tags(),
                                   old_movie=movie,
                                   edit_movie_callback=_edit_movie_callback(movie_key),
-                                  delete_movie_callback=_delete_movie_callback
-                                )
+                                  delete_movie_callback=_delete_movie_callback)
 
     else:
         # noinspection PyTypeChecker
@@ -244,8 +244,8 @@ def _select_movie_callback(movie_id: config.MovieKeyTypedDict):
     # Display the movie in the edit movie form.
     movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
     guiwidgets_2.EditMovieGUI(config.current.tk_root, _tmdb_io_handler, database.all_tags(), old_movie=movie,
-                          edit_movie_callback=_edit_movie_callback(movie_key),
-                          delete_movie_callback=_delete_movie_callback,)
+                              edit_movie_callback=_edit_movie_callback(movie_key),
+                              delete_movie_callback=_delete_movie_callback,)
 
 
 def _add_tag_callback(tag: str):

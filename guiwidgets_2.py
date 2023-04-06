@@ -44,11 +44,7 @@ ParentType = TypeVar('ParentType', tk.Tk, tk.Toplevel, ttk.Frame)
 @dataclass
 class MovieGUI:
     # noinspection GrazieInspection
-    """ Create and manage a Tk input form for movies.
-
-        The form operates in two modes - Add and Edit. The mode is determined from the supplied callbacks. Add mode
-        gets an add movie callback and edit mode gets both an edit movie callback and a "delete movie" callback.
-        """
+    """ Create and manage a Tk input form for movies. """
     parent: tk.Tk
     tmdb_search_callback: Callable[[str, queue.LifoQueue], None]
     # This is a complete list of the tags in the database
@@ -146,6 +142,7 @@ class MovieGUI:
             buttonbox:
             column_num:
         """
+        # todo test method
         raise NotImplementedError
 
     def call_title_notifees(self, commit_neuron: neurons.AndNeuron) -> Callable:
@@ -305,6 +302,7 @@ class MovieGUI:
 
 @dataclass
 class AddMovieGUI(MovieGUI):
+    """ Create and manage a GUI form for entering a new movie. """
     add_movie_callback: Callable[[config.MovieTypedDict, Sequence[str]], None] = field(default=None, kw_only=True)
 
     def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
@@ -357,6 +355,8 @@ class AddMovieGUI(MovieGUI):
 
 @dataclass
 class EditMovieGUI(MovieGUI):
+    """ Create and manage a GUI form for editing an existing movie. """
+    # todo test this class
     old_movie: config.MovieUpdateDef = field(default=None, kw_only=True)
     edit_movie_callback: Callable[[config.FindMovieTypedDict], None] = field(default=None, kw_only=True)
     delete_movie_callback: Callable[[config.FindMovieTypedDict], None] = field(default=None, kw_only=True)
@@ -830,6 +830,7 @@ class _MovieTagTreeview:
         Args:
             new_selection:
         """
+        # todo test this method
         self.treeview.selection_set(list(new_selection))
 
 

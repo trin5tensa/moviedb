@@ -4,6 +4,8 @@ This module contains new tests written after Brian Okken's course and book on py
 
 Test strategies are noted for each class.
 """
+from contextlib import contextmanager
+
 #  Copyright (c) 2023. Stephen Rigden.
 #  Last modified 3/15/23, 8:13 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
@@ -21,6 +23,56 @@ import handlers
 from unittest.mock import MagicMock
 
 import pytest
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestPreferencesDialog:
+    """ Test Strategy:
+
+
+    Tkinter interface is mocked.
+    """
+    TMDB_API_KEY = 'TestKey'
+    USE_TMDB = True
+
+    @pytest.fixture()
+    def widget(self, monkeypatch):
+        widget = MagicMock()
+        monkeypatch.setattr('handlers.guiwidgets_2.PreferencesGUI', widget)
+        return widget
+
+    @pytest.fixture()
+    def tk_root(self, monkeypatch):
+        current = MagicMock()
+        monkeypatch.setattr('handlers.config.current', current)
+        return current.tk_root
+
+    @contextmanager
+    def persistent(self, tmdb_api_key, use_tmdb):
+        hold_persistent = handlers.config.persistent
+        handlers.config.persistent = handlers.config.PersistentConfig('garbage', 'garbage')
+        handlers.config.persistent.tmdb_api_key = tmdb_api_key
+        handlers.config.persistent.use_tmdb = use_tmdb
+        yield handlers.config.persistent
+        handlers.config.persistent = hold_persistent
+
+    def test_call_with_valid_display_key(self, widget, tk_root):
+        with self.persistent(self.TMDB_API_KEY, self.USE_TMDB):
+            handlers.preferences_dialog()
+            widget.assert_called_once_with(tk_root, self.TMDB_API_KEY, self.USE_TMDB, handlers._preferences_callback)
+
+    def test_unset_key_call(self, widget, tk_root):
+        no_key = ''
+        with self.persistent(no_key, self.USE_TMDB):
+            handlers.preferences_dialog()
+            widget.assert_called_once_with(tk_root, no_key, self.USE_TMDB, handlers._preferences_callback)
+
+    def test_do_not_use_tmdb_call(self, widget, tk_root):
+        no_key = ''
+        use_tmdb = False
+        with self.persistent(self.TMDB_API_KEY, use_tmdb):
+            handlers.preferences_dialog()
+            widget.assert_called_once_with(tk_root, no_key, use_tmdb, handlers._preferences_callback)
 
 
 # noinspection PyMissingOrEmptyDocstring
