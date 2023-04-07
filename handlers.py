@@ -140,11 +140,10 @@ def _delete_movie_callback(movie: config.FindMovieTypedDict):
     Args:
         movie:
     """
-    # todo test this function
     try:
         database.del_movie(movie)
 
-    except sqlalchemy.exc.NoResultFound:
+    except database.NoResultFound:
         # This can happen if the movie was deleted by another process between the user retrieving a record for
         # deletion and the call to actually delete it.
         pass
