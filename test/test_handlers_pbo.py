@@ -29,9 +29,10 @@ import pytest
 class TestPreferencesDialog:
     """ Test Strategy:
 
-
-    Tkinter interface is mocked.
+    The arguments for the preferences dialog are dependent on the state of the persistent config. All state
+    configurations are tested. The Tkinter interface is mocked.
     """
+    # Non-exceptional persistent state values
     TMDB_API_KEY = 'TestKey'
     USE_TMDB = True
 
@@ -73,6 +74,29 @@ class TestPreferencesDialog:
         with self.persistent(self.TMDB_API_KEY, use_tmdb):
             handlers.preferences_dialog()
             widget.assert_called_once_with(tk_root, no_key, use_tmdb, handlers._preferences_callback)
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestPreferencesCallback:
+    """ Test Strategy:
+
+    Check that the persistent configuration os correctly updated.
+    """
+    TMDB_API_KEY = 'TestKey'
+    USE_TMDB = True
+
+    @contextmanager
+    def persistent(self):
+        hold_persistent = handlers.config.persistent
+        handlers.config.persistent = handlers.config.PersistentConfig('garbage', 'garbage')
+        yield handlers.config.persistent
+        handlers.config.persistent = hold_persistent
+
+    def test_settings_updated(self, check):
+        with self.persistent() as preferences:
+            handlers._preferences_callback(self.TMDB_API_KEY, self.USE_TMDB)
+            check.equal(preferences.tmdb_api_key, self.TMDB_API_KEY)
+            check.equal(preferences.use_tmdb, self.USE_TMDB)
 
 
 # noinspection PyMissingOrEmptyDocstring

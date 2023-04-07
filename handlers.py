@@ -117,7 +117,6 @@ def _preferences_callback(tmdb_api_key: str, use_tmdb: bool):
         tmdb_api_key:
         use_tmdb:
     """
-    # todo test this function
     config.persistent.tmdb_api_key = tmdb_api_key
     config.persistent.use_tmdb = use_tmdb
 
