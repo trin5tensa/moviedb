@@ -61,7 +61,7 @@ class MovieGUI:
 
     # Treeviews for tags and TMDB
     tags_treeview: '_MovieTagTreeview' = field(default=None, init=False, repr=False)
-    selected_tags: tuple[str] = field(default_factory=tuple, init=False, repr=False)
+    selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
     tmdb_treeview: ttk.Treeview = field(default=None, init=False, repr=False)
 
     # These variables are used for the consumer end of the TMDB producer/consumer pattern.
@@ -126,23 +126,21 @@ class MovieGUI:
         # Start the tmdb_work_queue polling
         self.tmdb_consumer()
 
-    def original_values(self):
+    def original_values(self):  # pragma no cover
         """ Initialize the original field values. """
-        for k in self.entry_fields.keys():
-            self.entry_fields[k].original_value = ''
+        raise NotImplementedError
 
-    def set_initial_tag_selection(self):
+    def set_initial_tag_selection(self):  # pragma no cover
         """ Override this method to set the movie tag selection """
-        pass
+        raise NotImplementedError
 
-    def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
+    def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):  # pragma no cover
         """ Create buttons within the buttonbox.
 
         Args:
             buttonbox:
             column_num:
         """
-        # todo test method
         raise NotImplementedError
 
     def call_title_notifees(self, commit_neuron: neurons.AndNeuron) -> Callable:
@@ -305,6 +303,15 @@ class AddMovieGUI(MovieGUI):
     """ Create and manage a GUI form for entering a new movie. """
     add_movie_callback: Callable[[config.MovieTypedDict, Sequence[str]], None] = field(default=None, kw_only=True)
 
+    def original_values(self):
+        """ Initialize the original field values. """
+        for k in self.entry_fields.keys():
+            self.entry_fields[k].original_value = ''
+
+    def set_initial_tag_selection(self):
+        """ No prior tags. """
+        pass
+
     def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
                                        command=self.commit, enabled=False)
@@ -356,7 +363,6 @@ class AddMovieGUI(MovieGUI):
 @dataclass
 class EditMovieGUI(MovieGUI):
     """ Create and manage a GUI form for editing an existing movie. """
-    # todo test this class
     old_movie: config.MovieUpdateDef = field(default=None, kw_only=True)
     edit_movie_callback: Callable[[config.FindMovieTypedDict], None] = field(default=None, kw_only=True)
     delete_movie_callback: Callable[[config.FindMovieTypedDict], None] = field(default=None, kw_only=True)
@@ -370,6 +376,7 @@ class EditMovieGUI(MovieGUI):
     def set_initial_tag_selection(self):
         """ Set the movie tag selection. """
         self.tags_treeview.selection_set(self.old_movie['tags'])
+        self.selected_tags = self.old_movie['tags']
 
     def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         _create_button(buttonbox, COMMIT_TEXT, column=next(column_num), command=self.commit)
@@ -400,8 +407,8 @@ class EditMovieGUI(MovieGUI):
 
     def delete(self):
         """The user clicked the 'Delete' button. """
-        if messagebox.askyesno(message='Do you want to delete this movie?',
-                               icon='question', default='no', parent=self.parent):
+        if gui_askyesno(message='Do you want to delete this movie?',  # pragma: no branch
+                        icon='question', parent=self.parent):
             movie = config.FindMovieTypedDict(title=self.entry_fields['title'].original_value,
                                               year=[self.entry_fields['year'].original_value])
             self.delete_movie_callback(movie)
@@ -572,7 +579,7 @@ class EditTagGUI:
         
         Get the user's confirmation of deletion with a dialog window. Either exit the method or call
         the registered deletion callback."""
-        if messagebox.askyesno(message=f"Do you want to delete tag '{self.tag}'?",
+        if messagebox.askyesno(message=f"Do you want to delete tag '{self.tag}'?",  # pragma: no branch
                                icon='question', default='no', parent=self.parent):
             self.delete_tag_callback()
             self.destroy()
@@ -726,7 +733,7 @@ def gui_messagebox(parent: ParentType, message: str, detail: str = '', icon: str
     messagebox.showinfo(parent, message, detail=detail, icon=icon)
 
 
-def gui_askyesno(parent: ParentType, message: str, detail: str = '') -> bool:
+def gui_askyesno(parent: ParentType, message: str, detail: str = '', icon: str = 'question') -> bool:
     """
     Present a Tk askyesno dialog.
     
@@ -734,11 +741,12 @@ def gui_askyesno(parent: ParentType, message: str, detail: str = '') -> bool:
         parent:
         message:
         detail:
+        icon:
 
     Returns:
         True if user clicks 'Yes', False if user clicks 'No'
     """
-    return messagebox.askyesno(parent, message, detail=detail)
+    return messagebox.askyesno(parent, message, detail=detail, icon=icon)
 
 
 def gui_askopenfilename(parent: ParentType, filetypes: Iterable[tuple[str, str | list[str] | tuple[str, ...]]] | None):
@@ -830,7 +838,6 @@ class _MovieTagTreeview:
         Args:
             new_selection:
         """
-        # todo test this method
         self.treeview.selection_set(list(new_selection))
 
 

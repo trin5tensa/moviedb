@@ -1007,6 +1007,12 @@ class TestMovieTagTreeview:
             cm.clear_selection()
             assert cm.treeview.selection_set_calls == [()]
 
+    def test_selection_set_calls_selection_set(self):
+        new_selection = ['choice 1', 'choice 2']
+        with self.movie_tag_treeview_context() as cm:
+            cm.selection_set(new_selection)
+            assert cm.treeview.selection_set_calls == [(new_selection,)]
+
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def movie_tag_treeview_context(self):
