@@ -19,7 +19,6 @@ from dataclasses import dataclass
 from typing import Callable, Dict
 
 import pytest
-import sqlalchemy.orm.exc
 
 import database
 import exception
@@ -477,7 +476,8 @@ class TestTagOperations:
         database.del_tag(test_tag)
         
         # Is the tag still there?
-        with pytest.raises(sqlalchemy.orm.exc.NoResultFound):
+        # with pytest.raises(sqlalchemy.orm.exc.NoResultFound):
+        with pytest.raises(database.NoResultFound):
             session.query(database.Tag).filter(database.Tag.tag == test_tag).one()
         
         # Do any movies still have the tag?

@@ -1,9 +1,8 @@
 """Menu handlers.
 
 This module is the glue between the user's selection of a menu item and the gui."""
-
-#  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Copyright (c) 2022-2023. Stephen Rigden.
+#  Last modified 1/18/23, 10:10 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,8 +13,11 @@ This module is the glue between the user's selection of a menu item and the gui.
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import concurrent.futures
+import logging
 import queue
-from typing import Callable, Sequence
+from typing import Callable, Optional, Sequence
 
 import sqlalchemy.exc
 import sqlalchemy.orm
@@ -26,6 +28,7 @@ import exception
 import guiwidgets
 import guiwidgets_2
 import impexp
+import tmdb
 
 
 def about_dialog():
@@ -36,14 +39,41 @@ def about_dialog():
 
 def preferences_dialog():
     """Display the 'preferences' dialog."""
-    guiwidgets_2.PreferencesGUI(config.current.tk_root, config.persistent.tmdb_api_key,
-                                config.persistent.use_tmdb, _preferences_callback)
+    try:
+        display_key = config.persistent.tmdb_api_key
+    except (config.ConfigTMDBAPIKeyNeedsSetting, config.ConfigTMDBDoNotUse):
+        display_key = ''
+    guiwidgets_2.PreferencesGUI(config.current.tk_root, display_key, config.persistent.use_tmdb,
+                                _preferences_callback)
+
+
+def _get_tmdb_api_key() -> Optional[str]:
+    """
+    Retrieve the TMDB API key from preference storage.
+    
+    Handles:
+        config.ConfigTMDBDoNotUse:
+            The exception is logged and None is returned.
+        config.ConfigTMDBAPIKeyNeedsSetting:
+            A call to the preferences dialog is scheduled and None is returned.
+        
+    Returns:
+        The TMDB API key or None if handled exceptions were encountered.
+    """
+    try:
+        tmdb_api_key = config.persistent.tmdb_api_key
+    except config.ConfigTMDBDoNotUse:
+        logging.info(f'User declined TMDB use.')
+    except config.ConfigTMDBAPIKeyNeedsSetting:
+        preferences_dialog()
+    else:
+        return tmdb_api_key
 
 
 def add_movie():
     """ Get new movie data from the user and add it to the database. """
     all_tags = database.all_tags()
-    guiwidgets_2.AddMovieGUI(config.current.tk_root, _add_movie_callback, _tmdb_io_handler, all_tags)
+    guiwidgets_2.AddMovieGUI(config.current.tk_root, _tmdb_io_handler, all_tags, add_movie_callback=_add_movie_callback)
 
 
 def edit_movie():
@@ -54,8 +84,6 @@ def edit_movie():
 
 def add_tag():
     """Add a new tag to the database."""
-    # PyCharm https://youtrack.jetbrains.com/issue/PY-41268
-    # noinspection PyTypeChecker
     guiwidgets_2.AddTagGUI(config.current.tk_root, _add_tag_callback)
 
 
@@ -89,7 +117,6 @@ def _preferences_callback(tmdb_api_key: str, use_tmdb: bool):
         tmdb_api_key:
         use_tmdb:
     """
-
     config.persistent.tmdb_api_key = tmdb_api_key
     config.persistent.use_tmdb = use_tmdb
 
@@ -112,23 +139,18 @@ def _delete_movie_callback(movie: config.FindMovieTypedDict):
     
     Args:
         movie:
-        
-    Raises:
-        sqlalchemy.orm.exc.NoResultFound
-            This exception is raised if the record cannot be found. This can happen if the movie was
-            deleted by another process between the user retrieving a record for deletion and the
-            call to actually delete it.
-            The exception is silently ignored.
     """
     try:
         database.del_movie(movie)
-    
-    except sqlalchemy.exc.NoResultFound:
+
+    except database.NoResultFound:
+        # This can happen if the movie was deleted by another process between the user retrieving a record for
+        # deletion and the call to actually delete it.
         pass
 
 
 def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
-    """Find movies which match the user entered criteria.
+    """Finds movies in the database which match the user entered criteria.
     Continue to the next appropriate stage of processing depending on whether no movies, one movie,
     or more than one movie is found.
     
@@ -150,16 +172,20 @@ def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[s
     elif movies_found == 1:
         movie = movies[0]
         movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
-        # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
-        # noinspection PyTypeChecker
-        guiwidgets.EditMovieGUI(config.current.tk_root, _edit_movie_callback_wrapper(movie_key),
-                                _delete_movie_callback, ['commit', 'delete'],
-                                database.all_tags(), movie)
+
+        guiwidgets_2.EditMovieGUI(config.current.tk_root,
+                                  _tmdb_io_handler,
+                                  database.all_tags(),
+                                  old_movie=movie,
+                                  edit_movie_callback=_edit_movie_callback(movie_key),
+                                  delete_movie_callback=_delete_movie_callback)
+
     else:
+        # noinspection PyTypeChecker
         guiwidgets.SelectMovieGUI(config.current.tk_root, movies, _select_movie_callback)
 
 
-def _edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callable:
+def _edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
     """ Crete the edit movie callback
     
     Args:
@@ -170,7 +196,7 @@ def _edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callabl
     Returns:
         edit_movie_callback
     """
-    def edit_movie_callback(new_movie: config.MovieTypedDict, selected_tags: Sequence[str]):
+    def func(new_movie: config.MovieTypedDict, selected_tags: Sequence[str]):
         """ Change movie and links in database with new user supplied data,
     
         Args:
@@ -200,25 +226,24 @@ def _edit_movie_callback_wrapper(old_movie: config.MovieKeyTypedDict) -> Callabl
                                   f'been deleted by another process. ')
             guiwidgets.gui_messagebox(*missing_movie_args)
             
-    return edit_movie_callback
+    return func
 
 
-def _select_movie_callback(title: str, year: int):
+def _select_movie_callback(movie_id: config.MovieKeyTypedDict):
     """Edit a movie selected by the user from a list of movies.
     
     Args:
-        title:
-        year:
+        movie_id:
     """
+    # Get one movie from the database
+    criteria = config.FindMovieTypedDict(title=movie_id['title'], year=[str(movie_id['year'])])
+    movie = database.find_movies(criteria)[0]
 
-    # Get record from database
-    movie = database.find_movies(dict(title=title, year=year))[0]
-    # moviedb-#272 'Wrong argument type in _select_movie_callback'
+    # Display the movie in the edit movie form.
     movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
-    # PyCharm bug https://youtrack.jetbrains.com/issue/PY-41268
-    # noinspection PyTypeChecker
-    guiwidgets.EditMovieGUI(config.current.tk_root, _edit_movie_callback_wrapper(movie_key),
-                            _delete_movie_callback, ['commit', 'delete'], database.all_tags(), movie)
+    guiwidgets_2.EditMovieGUI(config.current.tk_root, _tmdb_io_handler, database.all_tags(), old_movie=movie,
+                              edit_movie_callback=_edit_movie_callback(movie_key),
+                              delete_movie_callback=_delete_movie_callback,)
 
 
 def _add_tag_callback(tag: str):
@@ -322,9 +347,37 @@ def _select_tag_callback(old_tag: str):
     guiwidgets_2.EditTagGUI(config.current.tk_root, old_tag, delete_callback, edit_callback)
 
 
-def _tmdb_io_handler(title: str, work_queue: queue.LifoQueue):
-    # moviedb-#269 Stub function
-    #  Code
-    #  Docs
-    #  Tests
-    print(f"IMDB Search for {title} initiated.")
+def _tmdb_search_exception_callback(fut: concurrent.futures.Future):
+    """
+    This handles exceptions encountered while running tmdb.search_tmdb and which need user interaction.
+    
+    Args:
+        fut:
+    """
+    try:
+        fut.result()
+
+    except exception.TMDBAPIKeyException as exc:
+        logging.error(exc)
+        msg = 'Invalid API key for TMDB.'
+        detail = 'Do you want to set the key?'
+        if guiwidgets_2.gui_askyesno(config.current.tk_root, msg, detail):
+            preferences_dialog()
+
+    except exception.TMDBConnectionTimeout:
+        msg = 'TMDB database cannot be reached.'
+        guiwidgets_2.gui_messagebox(config.current.tk_root, msg)
+
+
+def _tmdb_io_handler(search_string: str, work_queue: queue.Queue):
+    """
+    Runs the movie search in a thread from the pool.
+    
+    Args:
+        search_string: The title search string
+        work_queue: A queue where compliant movies can be placed.
+    """
+    if tmdb_api_key := _get_tmdb_api_key():
+        executor = config.current.threadpool_executor
+        fut = executor.submit(tmdb.search_tmdb, tmdb_api_key, search_string, work_queue)
+        fut.add_done_callback(_tmdb_search_exception_callback)

@@ -2,7 +2,7 @@
 
 
 #  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Last modified 11/23/22, 8:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,6 +25,8 @@ class DatabaseException(MovieDBException):
 
 class MovieDBConstraintFailure(DatabaseException):
     """Exception raised for title and year constraint violation."""
+    msg = 'Database constraint failure.'
+    detail = 'A movie with this title and year is already present in the database.'
 
 
 class MovieYearConstraintFailure(DatabaseException):
@@ -41,3 +43,30 @@ class DatabaseSearchFoundNothing(DatabaseException):
 
 class MovieSearchInvalidCount(DatabaseException):
     """Exception raised when count is not a positive integer."""
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TMDBException(Exception):
+    pass
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TMDBAPIKeyException(TMDBException):
+    pass
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TMDBMovieIDMissing(TMDBException):
+    pass
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TMDBNoRecordsFound(TMDBException):
+    pass
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TMDBConnectionTimeout(TMDBException):
+    pass
+
+

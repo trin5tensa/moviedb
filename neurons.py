@@ -24,9 +24,9 @@ class Observer:
     Usage:
     1) Instantiate Observer.
     2) Call the method register to register one or more callables.
-    3) Call the method notify to call all of the notifees. This will call each registered callable with
+    3) Call the method notify to call all the notifees. This will call each registered callable with
         the arguments supplied to the notify method.
-    4) Call the method deregister to remove a observer and stop it from being called.
+    4) Call the method deregister to remove an observer and stop it from being called.
     """
     notifees: List[Callable] = field(default_factory=list, init=False, repr=False)
     
