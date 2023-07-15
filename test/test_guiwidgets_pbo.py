@@ -30,9 +30,9 @@ from test.dummytk import (DummyTk, TkStringVar, TkToplevel, TkText, TtkButton, T
 # noinspection PyTypeChecker,PyUnresolvedReferences
 @pytest.mark.usefixtures('patch_tk')
 class TestAddMovieGUI:
-    """ Test AddMovieGUI for:
+    """ Test AddMovieGUI and MovieGUI for:
             Initiation of an Internet search for matching movies whenever the user stops typing,
-            Retrieval of search results from AddMovieGUI's queue.Queue,
+            Retrieval of search results from MovieGUI's queue.Queue,
             Display of the movies,
             Database commitment of the input data,
             Closure of the input form.
@@ -46,7 +46,7 @@ class TestAddMovieGUI:
 
     def test_tmdb_search(self, check):
         """Confirm that a change to the title field makes a delayed call to tmdb_search_callback."""
-        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, lambda: None, self.tags)
+        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, self.tags, add_movie_callback=lambda: None)
         search_string = 'tmdb search substring'
         cut.entry_fields[cut.title].textvariable.set_for_test(search_string)
         cut.parent.after_calls = {}
@@ -74,10 +74,10 @@ class TestAddMovieGUI:
 
     def test_retrieve_movie_from_tmdb_results_queue(self, check):
         """ Confirm that:
-        Movies found in AddMovieGUI's queue are moved to the treeview and to tmdb_movies.
+        Movies found in MovieGUI's queue are moved to the treeview and to tmdb_movies.
         The polling call to tmdb_consumer is replaced on the mock tkinter event loop.
         """
-        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, lambda: None, self.tags)
+        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, self.tags, add_movie_callback=lambda: None)
         cut.tmdb_work_queue.put(self.test_movies)
         cut.tmdb_treeview.set_mock_children(['garbage1', 'garbage2'])
 
@@ -102,7 +102,7 @@ class TestAddMovieGUI:
     def test_commit_a_movie(self, check):
         """Confirm that the input form is populated by a user selection from the list of movies."""
         callback = MagicMock()
-        cut = guiwidgets_2.AddMovieGUI(DummyTk(), callback, lambda: None, self.tags)
+        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, self.tags, add_movie_callback=callback)
         for k, v in cut.entry_fields.items():
             if k == guiwidgets_2.MOVIE_FIELD_NAMES[-1]:
                 cut.notes_widget.delete('1.0', 'end')
@@ -124,7 +124,7 @@ class TestAddMovieGUI:
         messagebox = MagicMock(name='mock messagebox')
         monkeypatch.setattr('guiwidgets_2.messagebox', messagebox)
 
-        cut = guiwidgets_2.AddMovieGUI(parent, callback, lambda: None, self.tags)
+        cut = guiwidgets_2.AddMovieGUI(parent, lambda: None, self.tags, add_movie_callback=callback)
         cut.commit()
 
         messagebox.showinfo.assert_called_once_with(parent=parent, message=exc.msg, detail=exc.detail)
@@ -138,19 +138,19 @@ class TestAddMovieGUI:
         messagebox = MagicMock(name='mock messagebox')
         monkeypatch.setattr('guiwidgets_2.messagebox', messagebox)
 
-        cut = guiwidgets_2.AddMovieGUI(parent, callback, lambda: None, self.tags)
+        cut = guiwidgets_2.AddMovieGUI(parent, lambda: None, self.tags, add_movie_callback=callback)
         cut.commit()
 
         messagebox.showinfo.assert_called_once_with(parent=parent, message=exc.args[0])
 
     def test_tags_treeview_callback(self):
-        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, lambda: None, self.tags)
+        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, self.tags, add_movie_callback=lambda: None)
         selection = ('tag1', 'tag2')
         cut.tags_treeview_callback(selection)
         assert cut.selected_tags == selection
 
     def test_tmdb_treeview_callback(self, check):
-        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, lambda: None, self.tags)
+        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, self.tags, add_movie_callback=lambda: None)
         item_id = 'I001'
         cut.tmdb_movies = {item_id: self.test_movies[0]}
         cut.notes_widget.insert_calls = []
@@ -171,7 +171,7 @@ class TestAddMovieGUI:
 
     def test_tmdb_treeview_deselection(self, check):
         """The user has deselected the chosen movie so test that the input form fields have *not* been altered."""
-        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, lambda: None, self.tags)
+        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, self.tags, add_movie_callback=lambda: None)
         # noinspection PyArgumentList
         cut.tmdb_treeview.selection_set()
         entry_keys = list(cut.entry_fields.keys())[:-1]
@@ -184,7 +184,7 @@ class TestAddMovieGUI:
             check.equal(cut.entry_fields[k].textvariable.set_calls, [])
 
     def test_destroy(self, check):
-        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, lambda: None, self.tags)
+        cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, self.tags, add_movie_callback=lambda: None)
         cut.outer_frame.destroy_calls = []
         cut.parent.after_cancel_calls = []
         event_id = [[tuple(cut.parent.after_calls.keys())]]
@@ -198,6 +198,111 @@ class TestAddMovieGUI:
                         'An expected call to the destroy method was not made.')
         else:
             check.is_true(cut.outer_frame.destroy_calls[0])
+
+
+# noinspection PyTypeChecker,PyUnresolvedReferences
+@pytest.mark.usefixtures('patch_tk')
+class TestEditMovieGUI:
+    """ Test EditMovieGUI for:
+        Calls to commit and delete.
+
+    All external calls and user GUI interactions will be mocked or simulated.
+    """
+    tags = ['tag 41', 'tag 42']
+    all_tags = tags + ['tag 43']
+    old_movie = config.MovieUpdateDef(title='test old title',
+                                      year=1942,
+                                      director=['Test Old Director I', 'Test Old Director II'],
+                                      minutes=92,
+                                      notes='Another fine old "test_edit_movie"',
+                                      tags=tags)
+
+    def test_commit_a_movie(self, check):
+        """Commit method should call the edit movie callback."""
+        edit_movie = MagicMock()
+        delete_movie = MagicMock()
+        cut = guiwidgets_2.EditMovieGUI(DummyTk(), lambda: None, self.all_tags,
+                                        old_movie=self.old_movie, edit_movie_callback=edit_movie,
+                                        delete_movie_callback=delete_movie)
+
+        cut.commit()
+        edit_movie.assert_called_once_with(cut.return_fields, self.tags)
+
+    def test_invalid_key_exception_alerts_user(self, monkeypatch):
+        """Confirm an invalid title and year combination presents an alert."""
+        parent = DummyTk()
+        exc = guiwidgets_2.exception.MovieDBConstraintFailure
+        callback = MagicMock(side_effect=exc, name='mock commit callback')
+        messagebox = MagicMock(name='mock messagebox')
+        monkeypatch.setattr('guiwidgets_2.messagebox', messagebox)
+
+        cut = guiwidgets_2.EditMovieGUI(parent, lambda: None, self.tags,
+                                        old_movie=self.old_movie,
+                                        edit_movie_callback=callback)
+        cut.commit()
+
+        messagebox.showinfo.assert_called_once_with(parent=parent, message=exc.msg, detail=exc.detail)
+
+    def test_invalid_movie_year_exception_alerts_user(self, monkeypatch):
+        """Confirm an invalid year presents an alert."""
+        parent = DummyTk()
+
+        exc = guiwidgets_2.exception.MovieYearConstraintFailure
+        exc.args = ('test arg 1', 'test arg 2')
+        callback = MagicMock(side_effect=exc, name='mock commit callback')
+        messagebox = MagicMock(name='mock messagebox')
+        monkeypatch.setattr('guiwidgets_2.messagebox', messagebox)
+
+        cut = guiwidgets_2.EditMovieGUI(parent, lambda: None, self.tags,
+                                        old_movie=self.old_movie,
+                                        edit_movie_callback=callback)
+        cut.commit()
+
+        messagebox.showinfo.assert_called_once_with(parent=parent, message=exc.args[0])
+
+    def test_delete_calls_confirmation_dialog(self, check, monkeypatch):
+        delete_movie_callback_arg = None
+        destroy_called = False
+
+        # noinspection PyMissingOrEmptyDocstring
+        def mock_delete_movie_callback(movie):
+            nonlocal delete_movie_callback_arg
+            delete_movie_callback_arg = movie
+
+        # noinspection PyMissingOrEmptyDocstring
+        def mock_destroy():
+            nonlocal destroy_called
+            destroy_called = True
+
+        askyesno = MagicMock(name='mock messagebox', return_value=True)
+        monkeypatch.setattr('guiwidgets_2.gui_askyesno', askyesno)
+        parent = DummyTk()
+        callback = MagicMock(name='mock commit callback')
+        cut = guiwidgets_2.EditMovieGUI(parent, lambda: None, self.tags,
+                                        old_movie=self.old_movie,
+                                        edit_movie_callback=callback)
+        monkeypatch.setattr(cut, 'delete_movie_callback', mock_delete_movie_callback)
+        monkeypatch.setattr(cut, 'destroy', mock_destroy)
+        movie_to_delete = config.FindMovieTypedDict(title='test old title', year=[1942])
+
+        cut.delete()
+
+        check.equal(movie_to_delete, delete_movie_callback_arg)
+        check.is_true(destroy_called)
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestGUIAskYesNo:
+    def test_askyesno_called(self, monkeypatch):
+        askyesno = MagicMock(name='mock_gui_askyesno')
+        monkeypatch.setattr(guiwidgets_2.messagebox, 'askyesno', askyesno)
+        parent = DummyTk()
+        message = 'dummy message'
+
+        # noinspection PyTypeChecker
+        guiwidgets_2.gui_askyesno(parent, message)
+
+        askyesno.assert_called_once_with(parent, message, detail='', icon='question')
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode

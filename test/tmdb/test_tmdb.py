@@ -14,7 +14,6 @@
 
 import pytest
 
-import tmdb
 from .moxenstubs import *
 
 
@@ -61,6 +60,7 @@ def test_movie_data_with_no_date_placed_in_work_queue(monkeypatch):
     assert work_queue.get() == expected
 
 
+# noinspection DuplicatedCode
 def test_timeout_error_raised(monkeypatch):
     monkeypatch.setattr('tmdb.tmdbsimple.Search', DummyTMDBTimeoutError)
     monkeypatch.setattr('tmdb.tmdbsimple.Movies', DummyTMDBMovies)
@@ -80,6 +80,7 @@ def test_timeout_error_logged(monkeypatch, caplog):
     assert caplog.messages[0] == TEST_TIMEOUT_LOG_MSG
 
 
+# noinspection DuplicatedCode
 def test_http_error_raised(monkeypatch):
     monkeypatch.setattr('tmdb.tmdbsimple.Search', DummyTMDBKeyError)
     monkeypatch.setattr('tmdb.tmdbsimple.Movies', DummyTMDBMovies)
@@ -99,6 +100,7 @@ def test_http_error_logged(monkeypatch, caplog):
     assert caplog.messages[0] == TEST_BAD_KEY_LOG_MSG
 
 
+# noinspection DuplicatedCode
 def test_missing_movie_error_raised(monkeypatch):
     monkeypatch.setattr('tmdb.tmdbsimple.Search', DummyTMDBSearch)
     monkeypatch.setattr('tmdb.tmdbsimple.Movies', DummyTMDBMissingMovie)

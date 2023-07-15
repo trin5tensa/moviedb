@@ -13,7 +13,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from contextlib import contextmanager
-from typing import Callable, List, Optional, Tuple, Type
+from typing import Callable, List, Optional, Type
 from unittest.mock import Mock
 
 import pytest
@@ -31,7 +31,7 @@ Exc = Type[Optional[guiwidgets_2.exception.DatabaseSearchFoundNothing]]
 class TestSelectMovieGUI:
     handlers_callback = Mock()
     movies = [guiwidgets.config.MovieUpdateDef(title='Select Movie Test TItle', year=4242,
-                                    director='test director', minutes=42, notes='test notes')]
+                                               director='test director', minutes=42, notes='test notes')]
 
     def test_selected_movie_becomes_argument_for_callback(self):
         with self.select_movie() as cm:
@@ -702,7 +702,7 @@ class TestPreferencesGUI:
             outer_frame = toplevel.children[0]
             buttonbox_frame = outer_frame.children[1]
 
-            for ix, text in [(0, guiwidgets_2.SAVE_TEXT), (1, guiwidgets_2.CANCEL_TEXT),]:
+            for ix, text in [(0, guiwidgets_2.SAVE_TEXT), (1, guiwidgets_2.CANCEL_TEXT), ]:
                 button = buttonbox_frame.children[ix]
                 check.is_instance(button, TtkButton)
                 # noinspection PyTypeChecker
@@ -974,11 +974,11 @@ class TestMovieTagTreeview:
     def test_callback_called_with_current_user_selection(self):
         tree = TtkTreeview(TtkFrame(DummyTk()))
         calls = []
-        tree.selection_set('test tag', 'ignored tag')
+        tree.selection_set(('test tag', 'ignored tag'))
         with self.movie_tag_treeview_context() as cm:
             selection_callback = cm.selection_callback_wrapper(tree, lambda *args: calls.append(args))
             selection_callback()
-            assert calls == [(('test tag', 'ignored tag'),)]
+            assert calls == [((('test tag', 'ignored tag'),),)]
 
     def test_observer_notify_called_with_changed_selection(self, monkeypatch):
         tree = TtkTreeview(TtkFrame(DummyTk()))
@@ -993,12 +993,12 @@ class TestMovieTagTreeview:
     def test_observer_notify_called_with_unchanged_selection(self, monkeypatch):
         tree = TtkTreeview(TtkFrame(DummyTk()))
         calls = []
-        tree.selection_set('test tag', 'ignored tag')
+        tree.selection_set(('test tag', 'ignored tag'))
         with self.movie_tag_treeview_context() as cm:
             monkeypatch.setattr(cm.observer, 'notify',
                                 lambda *args: calls.append(args))
             selection_callback = cm.selection_callback_wrapper(tree, lambda *args: None)
-            cm.initial_selection = ('test tag', 'ignored tag')
+            cm.initial_selection = (('test tag', 'ignored tag'),)
             selection_callback()
             assert calls == [(False,)]
 
@@ -1006,6 +1006,12 @@ class TestMovieTagTreeview:
         with self.movie_tag_treeview_context() as cm:
             cm.clear_selection()
             assert cm.treeview.selection_set_calls == [()]
+
+    def test_selection_set_calls_selection_set(self):
+        new_selection = ['choice 1', 'choice 2']
+        with self.movie_tag_treeview_context() as cm:
+            cm.selection_set(new_selection)
+            assert cm.treeview.selection_set_calls == [(new_selection,)]
 
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager

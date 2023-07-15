@@ -33,6 +33,7 @@ from guiwidgets_2 import (CANCEL_TEXT, COMMIT_TEXT, DELETE_TEXT, MOVIE_FIELD_NAM
 
 TAG_TREEVIEW_INTERNAL_NAME = 'tag treeview'
 
+
 @dataclass
 class MovieGUIBase:
     """ A base class for movie input forms.
@@ -44,7 +45,7 @@ class MovieGUIBase:
         composed classes of guiwidgets_2 as a model for future development.
     """
     parent: tk.Tk
-    
+
     selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
     # All widgets of this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
@@ -52,7 +53,7 @@ class MovieGUIBase:
     entry_fields: Dict[str, '_EntryField'] = field(default_factory=dict, init=False, repr=False)
     # Observer of treeview selection state
     tag_treeview_observer: neurons.Observer = field(default=neurons.Observer, init=False)
-    
+
     def __post_init__(self):
         self.outer_frame = ttk.Frame(self.parent)
         self.outer_frame.grid(column=0, row=0, sticky='nsew')
@@ -94,7 +95,7 @@ class MovieGUIBase:
         cancel_button = ttk.Button(buttonbox, text=CANCEL_TEXT, command=self.destroy)
         cancel_button.grid(column=column, row=0)
         cancel_button.bind('<Return>', lambda event, b=cancel_button: b.invoke())
-    
+
     def neuron_linker(self, internal_name: str, neuron: neurons.Neuron,
                       neuron_callback: Callable, initial_state: bool = False):
         """Set a neuron callback which will be called whenever the field is changed by the user.
@@ -112,13 +113,13 @@ class MovieGUIBase:
         self.entry_fields[internal_name].textvariable.trace_add('write',
                                                                 neuron_callback(internal_name, neuron))
         neuron.register_event(internal_name, initial_state)
-    
+
     def neuron_callback(self, internal_name: str, neuron: neurons.Neuron) -> Callable:
         """Create the callback for an observed field.
 
         This will be registered as the 'trace_add' callback for an entry field.
         """
-        
+
         # noinspection PyUnusedLocal
         def change_neuron_state(*args):
             """Call the neuron when the field changes.
@@ -166,7 +167,7 @@ class MovieGUIBase:
 
         Use Case: Supports field validation by Tk
         """
-    
+
         lowest = user_input > lowest if lowest else True
         highest = user_input < highest if highest else True
         return lowest and highest
@@ -190,26 +191,26 @@ class CommonButtonbox(MovieGUIBase):
         Any proposed refactoring should consider abandoning these classes and using the newer
         composed classes of guiwidgets_2 as a model for future development.
     """
-    
+
     # On exit this callback will be called with a dictionary of fields and user entered values.
     commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
-    
+
     # If the user clicks the delete button this callback will be called.
     delete_callback: Callable[[config.MovieKeyTypedDict], None]
-    
+
     # The caller shall specify the buttons which are to be shown in the buttonbox except for
     # the cancel button which will always be provided.
     buttons_to_show: List[Literal['commit', 'delete']]
-    
+
     # AND Neuron controlling enabled state of Commit button
     commit_button_neuron: neurons.AndNeuron = field(default_factory=neurons.AndNeuron, init=False)
-    
+
     # noinspection DuplicatedCode
     def create_buttonbox(self, outerframe: ttk.Frame):
         """Create the buttons."""
         buttonbox = super().create_buttonbox(outerframe)
         column_num = itertools.count()
-        
+
         # Commit button
         if 'commit' in self.buttons_to_show:
             commit = ttk.Button(buttonbox, text=COMMIT_TEXT, command=self.commit)
@@ -217,27 +218,27 @@ class CommonButtonbox(MovieGUIBase):
             commit.bind('<Return>', lambda event, b=commit: b.invoke())
             commit.state(['disabled'])
             self.commit_button_neuron.register(self.button_state_callback(commit))
-        
+
         # Delete button
         if 'delete' in self.buttons_to_show:
             delete = ttk.Button(buttonbox, text=DELETE_TEXT, command=self.delete)
             delete.grid(column=next(column_num), row=0)
-        
+
         # Cancel button
         self.create_cancel_button(buttonbox, column=next(column_num))
-    
+
     def commit(self):
         """The user clicked the 'Commit' button."""
         return_fields = {internal_name: movie_field.textvariable.get()
                          for internal_name, movie_field in self.entry_fields.items()}
-        
+
         # Validate the year range
         if not self.validate_int_range(int(return_fields['year']), 1877, 10000):
             msg = 'Invalid year.'
             detail = 'The year must be between 1877 and 10000.'
             messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
             return
-    
+
         # Commit and exit
         try:
             self.commit_callback(return_fields, self.selected_tags)
@@ -247,83 +248,25 @@ class CommonButtonbox(MovieGUIBase):
             msg = 'Database constraint failure.'
             detail = 'A movie with this title and year is already present in the database.'
             messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
-            
+
         # Alert user and exit page
         except exception.MovieDBMovieNotFound as exc:
             msg = 'Missing movie.'
             detail = exc.args[0]
             messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
             self.destroy()
-            
+
         else:
             self.destroy()
-    
+
     def delete(self):
         """The user clicked the 'Delete' button. """
         if messagebox.askyesno(message='Do you want to delete this movie?',
                                icon='question', default='no', parent=self.parent):
             movie = config.MovieKeyTypedDict(title=self.entry_fields['title'].original_value,
                                              year=int(self.entry_fields['year'].original_value))
-            # moviedb-#148 Handle exception for missing database record
-            #   See test_guiwidgets.TestAddMovieGUI.test_commit_callback_method for test method
             self.delete_callback(movie)
             self.destroy()
-
-
-@dataclass
-class EditMovieGUI(CommonButtonbox):
-    """ A form for editing a movie.
-    
-    WARNING:
-        This module uses the original subclassed approach to Tkinter primary widgets. It
-        is fragile and should not be used as template for future developments.
-        Any proposed refactoring should consider abandoning these classes and using the newer
-        composed classes of guiwidgets_2 as a model for future development.
-    """
-
-    # Tags list
-    all_tags: Sequence[str]
-    # Fields of the movie to be edited.
-    movie: config.MovieUpdateDef
-    
-    # OR Neuron controlling enabled state of Commit button
-    commit_button_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron, init=False)
-    
-    # noinspection DuplicatedCode
-    def create_body(self, outerframe: ttk.Frame):
-        """Create a standard entry form body but with fields initialized with values from the record
-        being edited.
-        
-        Args:
-            outerframe:
-        """
-        self.selected_tags = self.movie['tags']
-        body_frame = super().create_body(outerframe)
-        
-        # Create entry fields and their labels.
-        for row_ix, internal_name in enumerate(MOVIE_FIELD_NAMES):
-            label = ttk.Label(body_frame, text=self.entry_fields[internal_name].label_text)
-            label.grid(column=0, row=row_ix, sticky='e', padx=5)
-            entry = ttk.Entry(body_frame, textvariable=self.entry_fields[internal_name].textvariable,
-                              width=36)
-            entry.grid(column=1, row=row_ix)
-    
-            entry_field = self.entry_fields[internal_name]
-            entry_field.widget = entry
-            # PyCharm https://youtrack.jetbrains.com/issue/PY-40397
-            # noinspection PyTypedDict
-            entry_field.original_value = self.movie[internal_name]
-            entry_field.textvariable.set(entry_field.original_value)
-            self.neuron_linker(internal_name, self.commit_button_neuron, self.neuron_callback)
-        
-        # Create treeview for tag selection.
-        self.tag_treeview_observer = MovieTreeview(
-                TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=5, column=0, label_text=SELECT_TAGS_TEXT,
-                items=self.all_tags, user_callback=self.treeview_callback,
-                initial_selection=self.selected_tags)()
-        self.tag_treeview_observer.register(self.commit_button_neuron)
-        
-        _focus_set(self.entry_fields['notes'].widget)
 
 
 @dataclass
@@ -336,34 +279,34 @@ class SearchMovieGUI(MovieGUIBase):
         Any proposed refactoring should consider abandoning these classes and using the newer
         composed classes of guiwidgets_2 as a model for future development.
     """
-    
+
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.FindMovieTypedDict, Sequence[str]], None]
     # Tags list
     all_tags: Sequence[str]
-    
+
     selected_tags: Sequence[str] = field(default_factory=tuple, init=False)
     # Neuron controlling enabled state of Search button
     search_button_neuron: neurons.OrNeuron = field(default_factory=neurons.OrNeuron, init=False)
-    
+
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form."""
         body_frame = super().create_body(outerframe)
         row = itertools.count()
-        
+
         self.create_body_item(body_frame, 'title', 'Title', next(row))
         self.create_min_max_body_item(body_frame, 'year', 'Year', next(row))
         self.create_body_item(body_frame, 'director', 'Director', next(row))
         self.create_min_max_body_item(body_frame, 'minutes', 'Length (minutes)', next(row))
         self.create_body_item(body_frame, 'notes', 'Notes', next(row))
-        
+
         # Create treeview for tag selection.
         self.tag_treeview_observer = MovieTreeview(
-                TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=next(row), column=0,
-                label_text=SELECT_TAGS_TEXT, items=self.all_tags,
-                user_callback=self.treeview_callback)()
+            TAG_TREEVIEW_INTERNAL_NAME, body_frame, row=next(row), column=0,
+            label_text=SELECT_TAGS_TEXT, items=self.all_tags,
+            user_callback=self.treeview_callback)()
         self.tag_treeview_observer.register(self.search_button_neuron)
-        
+
         _focus_set(self.entry_fields['title'].widget)
 
     def create_body_item(self, body_frame: ttk.Frame, internal_name: str, text: str, row: int):
@@ -378,7 +321,7 @@ class SearchMovieGUI(MovieGUIBase):
         label = ttk.Label(body_frame, text=text)
         label.grid(column=0, row=row, sticky='e', padx=5)
         self.create_entry(body_frame, internal_name, 1, row, 36)
-    
+
     def create_min_max_body_item(self, body_frame: ttk.Frame, internal_name: str, text: str, row: int):
         """Create a ttk label and ttk entry.
 
@@ -391,20 +334,20 @@ class SearchMovieGUI(MovieGUIBase):
         # Create label
         label = ttk.Label(body_frame, text=f'{text} (min, max)')
         label.grid(column=0, row=row, sticky='e', padx=5)
-        
+
         # Create entry frame with a max entry and a min entry
         entry_frame = ttk.Frame(body_frame, padding=(2, 0))
         entry_frame.grid(column=1, row=row, sticky='w')
         self.create_entry(entry_frame, (min_field_name := f'{internal_name}_min'), 0, 0, 6)
         self.create_entry(entry_frame, (max_field_name := f'{internal_name}_max'), 1, 0, 6)
-        
+
         # Place integer field validation on both fields
         for field_name in (min_field_name, max_field_name):
             entry_field = self.entry_fields[field_name]
             registered_callback = entry_field.widget.register(self.validate_int)
             entry_field.widget.config(validate='key',
                                       validatecommand=(registered_callback, '%S'))
-    
+
     def create_entry(self, body_frame: ttk.Frame, internal_name: str,
                      column: int, row: int, width: int):
         """Create a ttk entry
@@ -421,7 +364,7 @@ class SearchMovieGUI(MovieGUIBase):
         entry.grid(column=column, row=row)
         entry_field.widget = entry
         self.neuron_linker(internal_name, self.search_button_neuron, self.neuron_callback)
-    
+
     # noinspection DuplicatedCode
     def create_buttonbox(self, outerframe: ttk.Frame):
         """Create the buttons."""
@@ -437,7 +380,7 @@ class SearchMovieGUI(MovieGUIBase):
 
         # Cancel button
         self.create_cancel_button(buttonbox, column=next(column_num))
-    
+
     def search(self):
         """The user clicked the search button."""
         return_fields = {internal_name: movie_field.textvariable.get()
@@ -479,17 +422,17 @@ class SelectMovieGUI(MovieGUIBase):
     # Attributes for managing the treeview
     treeview: ttk.Treeview = field(default=None, init=False, repr=False)
     treeview_items: dict[str: config.MovieKeyTypedDict] = field(default_factory=dict, init=False, repr=False)
-    
+
     def create_body(self, outerframe: ttk.Frame):
         """Create the body of the form."""
         body_frame = super().create_body(outerframe)
-        
+
         # Create and grid treeview
         self.treeview = ttk.Treeview(body_frame,
-                            columns=MOVIE_FIELD_NAMES[1:],
-                            height=25, selectmode='browse')
+                                     columns=MOVIE_FIELD_NAMES[1:],
+                                     height=25, selectmode='browse')
         self.treeview.grid(column=0, row=0, sticky='w')
-        
+
         # Set up column widths and titles
         column_widths = (350, 50, 100, 50, 350)
         for column_ix, internal_name in enumerate(MOVIE_FIELD_NAMES):
@@ -497,16 +440,15 @@ class SelectMovieGUI(MovieGUIBase):
                 internal_name = '#0'
             self.treeview.column(internal_name, width=column_widths[column_ix])
             self.treeview.heading(internal_name, text=MOVIE_FIELD_TEXTS[column_ix])
-        
+
         # Populate rows with movies and build a lookup dictionary.
         for movie in self.movies:
-            # todo Is tags argument used for anything in this code?
             item_id = self.treeview.insert('', 'end', text=movie['title'],
                                            values=(movie['year'], movie['director'], movie['minutes'],
                                                    movie['notes']), tags='title')
             self.treeview_items[item_id] = config.MovieKeyTypedDict(title=movie['title'], year=int(movie['year']))
         self.treeview.bind('<<TreeviewSelect>>', func=self.treeview_callback(self.treeview))
-    
+
     def treeview_callback(self, tree: ttk.Treeview):
         """Create a callback which will be called when the user makes a selection.
 
@@ -515,7 +457,7 @@ class SelectMovieGUI(MovieGUIBase):
 
         Returns: The callback.
         """
-        
+
         # noinspection PyUnusedLocal
         def func(*args):
             """Save the newly changed user selection.
@@ -532,7 +474,7 @@ class SelectMovieGUI(MovieGUIBase):
     def create_buttonbox(self, outerframe: ttk.Frame):
         """Create the buttons."""
         buttonbox = super().create_buttonbox(outerframe)
-    
+
         # Cancel button
         self.create_cancel_button(buttonbox, column=0)
 
@@ -540,10 +482,10 @@ class SelectMovieGUI(MovieGUIBase):
 @dataclass
 class MovieTreeview:
     """Create and manage a treeview and a descriptive label."""
-    
+
     # Internal name of treeview
     internal_name: str
-    
+
     # The frame which contains the treeview.
     body_frame: ttk.Frame
     # The tk grid row of the label and treeview within the frame's grid.
@@ -556,7 +498,7 @@ class MovieTreeview:
     items: Sequence[str]
     # Caller's callback for notification of reselection.
     user_callback: Callable[[Sequence[str]], None]
-    
+
     # Items to be selected on opening.
     initial_selection: List[str] = field(default_factory=list)
     observer: neurons.Observer = field(default_factory=neurons.Observer, init=False)
@@ -566,30 +508,30 @@ class MovieTreeview:
         # Create the label
         label = ttk.Label(self.body_frame, text=self.label_text, padding=(0, 2))
         label.grid(column=self.column, row=self.row, sticky='ne', padx=5)
-        
+
         # Create a frame for the treeview and its scrollbar
         treeview_frame = ttk.Frame(self.body_frame, padding=5)
         treeview_frame.grid(column=self.column + 1, row=self.row, sticky='w')
-        
+
         # Create the treeview
         tree = ttk.Treeview(treeview_frame, columns=('tags',), height=10, selectmode='extended',
                             show='tree', padding=5)
         tree.grid(column=0, row=0, sticky='w')
         tree.column('tags', width=100)
         tree.bind('<<TreeviewSelect>>', func=self.treeview_callback(tree, self.user_callback))
-        
+
         # Create the scrollbar
         scrollbar = ttk.Scrollbar(treeview_frame, orient=tk.VERTICAL, command=tree.yview)
         scrollbar.grid(column=1, row=0)
         tree.configure(yscrollcommand=scrollbar.set)
-        
+
         # Populate the treeview
         for item in self.items:
             tree.insert('', 'end', item, text=item, tags='tags')
         tree.selection_add(self.initial_selection)
-        
+
         return self.observer
-    
+
     def treeview_callback(self, tree: ttk.Treeview, callback: Callable[[Sequence[str]], None]):
         """Create a callback which will be called whenever the user selection is changed.
 
@@ -599,7 +541,7 @@ class MovieTreeview:
 
         Returns: The callback.
         """
-        
+
         # noinspection PyUnusedLocal
         def update_tag_selection(*args):
             """Notify MovieTreeview's caller and observer's notifees.
@@ -611,5 +553,5 @@ class MovieTreeview:
             callback(current_selection)
             self.observer.notify(self.internal_name,
                                  set(current_selection) != set(self.initial_selection))
-        
+
         return update_tag_selection

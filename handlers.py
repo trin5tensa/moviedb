@@ -73,7 +73,7 @@ def _get_tmdb_api_key() -> Optional[str]:
 def add_movie():
     """ Get new movie data from the user and add it to the database. """
     all_tags = database.all_tags()
-    guiwidgets_2.AddMovieGUI(config.current.tk_root, _add_movie_callback, _tmdb_io_handler, all_tags)
+    guiwidgets_2.AddMovieGUI(config.current.tk_root, _tmdb_io_handler, all_tags, add_movie_callback=_add_movie_callback)
 
 
 def edit_movie():
@@ -117,7 +117,6 @@ def _preferences_callback(tmdb_api_key: str, use_tmdb: bool):
         tmdb_api_key:
         use_tmdb:
     """
-
     config.persistent.tmdb_api_key = tmdb_api_key
     config.persistent.use_tmdb = use_tmdb
 
@@ -144,7 +143,7 @@ def _delete_movie_callback(movie: config.FindMovieTypedDict):
     try:
         database.del_movie(movie)
 
-    except sqlalchemy.exc.NoResultFound:
+    except database.NoResultFound:
         # This can happen if the movie was deleted by another process between the user retrieving a record for
         # deletion and the call to actually delete it.
         pass
@@ -173,10 +172,16 @@ def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[s
     elif movies_found == 1:
         movie = movies[0]
         movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
-        guiwidgets.EditMovieGUI(config.current.tk_root, _edit_movie_callback(movie_key),
-                                _delete_movie_callback, ['commit', 'delete'],
-                                database.all_tags(), movie)
+
+        guiwidgets_2.EditMovieGUI(config.current.tk_root,
+                                  _tmdb_io_handler,
+                                  database.all_tags(),
+                                  old_movie=movie,
+                                  edit_movie_callback=_edit_movie_callback(movie_key),
+                                  delete_movie_callback=_delete_movie_callback)
+
     else:
+        # noinspection PyTypeChecker
         guiwidgets.SelectMovieGUI(config.current.tk_root, movies, _select_movie_callback)
 
 
@@ -236,8 +241,9 @@ def _select_movie_callback(movie_id: config.MovieKeyTypedDict):
 
     # Display the movie in the edit movie form.
     movie_key = config.MovieKeyTypedDict(title=movie['title'], year=movie['year'])
-    guiwidgets.EditMovieGUI(config.current.tk_root, _edit_movie_callback(movie_key),
-                            _delete_movie_callback, ['commit', 'delete'], database.all_tags(), movie)
+    guiwidgets_2.EditMovieGUI(config.current.tk_root, _tmdb_io_handler, database.all_tags(), old_movie=movie,
+                              edit_movie_callback=_edit_movie_callback(movie_key),
+                              delete_movie_callback=_delete_movie_callback,)
 
 
 def _add_tag_callback(tag: str):

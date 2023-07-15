@@ -21,6 +21,7 @@ from typing import Generator, Iterable, List, Optional, Union
 
 import sqlalchemy
 import sqlalchemy.exc
+from sqlalchemy.exc import NoResultFound
 import sqlalchemy.ext.declarative
 import sqlalchemy.ext.hybrid
 import sqlalchemy.orm
@@ -35,10 +36,11 @@ from config import FindMovieTypedDict, MovieKeyTypedDict, MovieTypedDict, MovieU
 
 
 class Base:
+    # noinspection LongLine
     """ See SQLAlchemy docs for why this is required.
 
-    https://docs.sqlalchemy.org/en/20/changelog/migration_20.html#migration-to-2-0-step-six-add-allow-unmapped-to-explicitly-typed-orm-models
-    """
+        https://docs.sqlalchemy.org/en/20/changelog/migration_20.html#migration-to-2-0-step-six-add-allow-unmapped-to-explicitly-typed-orm-models
+        """
     __allow_unmapped__ = True
 
 
@@ -75,7 +77,7 @@ def connect_to_database(filename: str = database_fn):
             session.query(MoviesMetaData).filter(MoviesMetaData.name == 'date_created').one()
 
         # Code for a new database
-        except sqlalchemy.orm.exc.NoResultFound:
+        except NoResultFound:
             session.add_all([MoviesMetaData(name='version', value='1'),
                              MoviesMetaData(name='date_last_accessed', value=timestamp),
                              MoviesMetaData(name='date_created', value=timestamp)])
@@ -100,48 +102,58 @@ def add_movie(movie: MovieTypedDict):
             session.add(movie)
             
     except sqlalchemy.exc.IntegrityError as exc:
-        # The combination of title and year matches a record already in the database.
-        if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
-            msg = exc.orig.args[0]
-            logging.error(msg)
-            raise exception.MovieDBConstraintFailure(msg) from exc
-        
-        # The year is not in the valid range.
-        if exc.orig.args[0] == 'CHECK constraint failed: movies':
-            msg = f"Invalid year '{exc.params[3]}'."
-            logging.error(msg)
-            raise exception.MovieYearConstraintFailure(msg) from exc
-        
-        else:
-            raise
+        integrity_error(exc)
+
+
+def integrity_error(exc: sqlalchemy.exc.IntegrityError):
+    """ Log expected errors and raise meainingful errors.
+
+    Args:
+        exc:
+    """
+    # The combination of title and year matches a record already in the database.
+    if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
+        msg = exc.orig.args[0]
+        logging.error(msg)
+        raise exception.MovieDBConstraintFailure(msg) from exc
+
+    # The year is not in the valid range.
+    if exc.orig.args[0] == 'CHECK constraint failed: movies':
+        msg = f"Invalid year '{exc.params[3]}'."
+        logging.error(msg)
+        raise exception.MovieYearConstraintFailure(msg) from exc
+
+    else:
+        raise
 
 
 def find_movies(criteria: FindMovieTypedDict) -> List[MovieUpdateDef]:
+    # noinspection GrazieInspection
     """Search for movies using any supplied_keys.
-    
-    Note:
-        The benefits of lazy evaluation of the SQL search cannot be passed on to the caller as the
-        query.count function returns the undeduplicated count which does not match the number of
-        deduplicated records returned by the query.
-        See https://docs.sqlalchemy.org/en/13/faq/sessions.html#faq-query-deduplicating
 
-    Args:
-        criteria: FindMovieDict. A dictionary containing none or more of the following keys:
-            title: str. A matching column will be a superstring of this value..
-            director: str.A matching column will be a superstring of this value.
-            minutes: list. A matching column will be between the minimum and maximum values in this
-            iterable. A single value is permissible.
-            year: list. A matching column will be between the minimum and maximum values in this
-            iterable. A single value is permissible.
-            notes: str. A matching column will be a superstring of this value.
-            tag: list. Movies matching any tag in this list will be selected.
+        Note:
+            The benefits of lazy evaluation of the SQL search cannot be passed on to the caller as the
+            query.count function returns the undeduplicated count which does not match the number of
+            deduplicated records returned by the query.
+            See https://docs.sqlalchemy.org/en/13/faq/sessions.html#faq-query-deduplicating
 
-    Raises:
-        ValueError: If a supplied_keys key is not a column name
+        Args:
+            criteria: FindMovieDict. A dictionary containing none or more of the following keys:
+                title: str. A matching column will be a superstring of this value.
+                director: str.A matching column will be a superstring of this value.
+                minutes: list. A matching column will be between the minimum and maximum values in this
+                iterable. A single value is permissible.
+                year: list. A matching column will be between the minimum and maximum values in this
+                iterable. A single value is permissible.
+                notes: str. A matching column will be a superstring of this value.
+                tag: list. Movies matching any tag in this list will be selected.
 
-    Returns:
-        A list of movies compliant with the search criteria sorted by title and year.
-    """
+        Raises:
+            ValueError: If a supplied_keys key is not a column name
+
+        Returns:
+            A list of movies compliant with the search criteria sorted by title and year.
+        """
     Movie.validate_columns(criteria.keys())
     
     with _session_scope() as session:
@@ -163,8 +175,8 @@ def replace_movie(old_movie: MovieKeyTypedDict, new_movie: MovieTypedDict):
         
     Raises:
         MovieDBMovieNotFound
-            The old movie is no longer present so is no longer capable of being modified.  This
-            function neither assumes nor checks that the new_movie information is sufficient to create a
+            The old movie is no longer present, so it can't be modified.  This
+            function neither assumes nor checks that the new_movie information is enough to create a
             new valid record.
         MovieDBConstraintFailure
             The new movie has an edited title or year and the new combination matches that of an
@@ -176,8 +188,8 @@ def replace_movie(old_movie: MovieKeyTypedDict, new_movie: MovieTypedDict):
             try:
                 movie = _build_movie_query(session, old_movie).one()
                 
-            # The old movie has gone and is no longer capable of being modified.
-            except sqlalchemy.orm.exc.NoResultFound as exc:
+            # The old movie has gone, so it can't be modified.
+            except NoResultFound as exc:
                 msg = (f'The movie was not found in the database. It may have been deleted by an '
                        f'external process.')
                 logging.error(msg)
@@ -187,12 +199,7 @@ def replace_movie(old_movie: MovieKeyTypedDict, new_movie: MovieTypedDict):
                 setattr(movie, k, v)
             
     except sqlalchemy.exc.IntegrityError as exc:
-        if exc.orig.args[0] == 'UNIQUE constraint failed: movies.title, movies.year':
-            msg = exc.orig.args[0]
-            logging.error(msg)
-            raise exception.MovieDBConstraintFailure(msg) from exc
-        else:
-            raise
+        integrity_error(exc)
 
 
 def del_movie(title_year: FindMovieTypedDict):
@@ -286,7 +293,7 @@ def edit_tag(old_tag: str, new_tag: str):
             tag.tag = new_tag
     
     # The specified tag is not available possibly because it was deleted by another process.
-    except sqlalchemy.orm.exc.NoResultFound as exc:
+    except NoResultFound as exc:
         msg = f"The tag {old_tag} is not in the database."
         logging.info(msg)
         raise exception.DatabaseSearchFoundNothing(msg) from exc
@@ -314,7 +321,7 @@ def edit_movie_tag_links(movie: MovieKeyTypedDict, old_tags: Iterable[str], new_
             for name in (set(new_tags) - set(old_tags)):
                 tag = session.query(Tag).filter(Tag.tag == name).one()
                 movie.tags.append(tag)
-    except sqlalchemy.orm.exc.NoResultFound as exc:
+    except NoResultFound as exc:
         msg = f"The movie {movie['title']}, {movie['year']} is not in the database."
         logging.info(msg)
         raise exception.DatabaseSearchFoundNothing(msg) from exc
@@ -367,7 +374,7 @@ class Movie(Base):
                  tmdb_id: str = '', original_title: str = '', release_date: datetime.date = None,
                  synopsis: str = ''):
     
-        # Carry out validation which is not done by SQLAlchemy or sqlite3
+        # Carry out validation not done by SQLAlchemy or sqlite3
         if year == '':
             msg = f"Year string expected but got empty string."
             logging.error(msg)
@@ -435,14 +442,15 @@ class Tag(Base):
 
 
 class Review(Base):
+    # noinspection GrazieInspection
     """Reviews tables schema.
 
-    This table has been designed to provide a single row for a reviewer and rating value.
-    So a 3.5/4 star rating from Ebert will be linked to none or more movies.
-    The reviewer can ba an individual like 'Ebert' or an aggregator like 'Rotten Tomatoes.
-    max_rating is part of the secondary key. This allows for a particular reviewer changing
-    his/her/its rating system.
-    """
+        This table has been designed to provide a single row for a reviewer and rating value.
+        So a 3.5/4 star rating from Ebert will be linked to none or more movies.
+        The reviewer can ba an individual like 'Ebert' or an aggregator like 'Rotten Tomatoes.
+        max_rating is part of the secondary key. This allows for a particular reviewer changing
+        his/her/its rating system.
+        """
     __tablename__ = 'reviews'
 
     id = Column(sqlalchemy.Integer, sqlalchemy.Sequence('review_id_sequence'), primary_key=True)

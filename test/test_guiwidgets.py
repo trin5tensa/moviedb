@@ -25,166 +25,6 @@ from test.dummytk import DummyTk, TkStringVar, TtkButton, TtkEntry, TtkFrame, Tt
 
 
 # noinspection PyMissingOrEmptyDocstring
-class TestEditMovieGUI:
-    
-    def test_delete_button_created(self, patch_tk, class_fixtures):
-        with self.movie_context() as movie_gui:
-            button = movie_gui.parent.children[0].children[1].children[1]
-            assert button == TtkButton(parent=TtkFrame(parent=TtkFrame(parent=DummyTk()),
-                                                       padding=(5, 5, 10, 10)),
-                                       text='Delete', command=movie_gui.delete)
-    
-    def test_delete_button_gridded(self, patch_tk, class_fixtures):
-        with self.movie_context() as movie_gui:
-            button = movie_gui.parent.children[0].children[1].children[1]
-            assert button.grid_calls[0] == dict(column=1, row=0)
-    
-    def test_tree_selection_add(self, patch_tk, class_fixtures):
-        with self.movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            bodyframe = outerframe.children[0]
-            tags_frame = bodyframe.children[-1]
-            tree = tags_frame.children[0]
-            assert tree.selection_add_calls == [(('test selected tag',),)]
-    
-    def test_entry_field_original_value_set(self, patch_tk, class_fixtures):
-        with self.movie_context() as movie_gui:
-            expected = dict(title='Test Movie', year=2050, director='Test Director', minutes=142,
-                            notes='Test note')
-            original_values = {field_name: movie_gui.entry_fields[field_name].original_value
-                               for field_name in movie_gui.entry_fields}
-            assert original_values == expected
-    
-    def test_text_variable_set_called(self, patch_tk, class_fixtures):
-        with self.movie_context() as movie_gui:
-            expected = dict(title='Test Movie', year=2050, director='Test Director', minutes=142,
-                            notes='Test note')
-            # The code initializes some textvariable values to a non-space value (in [0]). This test
-            # requires the latest and final entry (in [-1])
-            original_values = {
-                    field_name: movie_gui.entry_fields[field_name].textvariable.set_calls[-1][0]
-                    for field_name in movie_gui.entry_fields}
-            assert original_values == expected
-    
-    def test_neuron_linker_called(self, patch_tk, class_fixtures):
-        with self.movie_context() as movie_gui:
-            internal_names = []
-            neurons = []
-            callbacks = []
-            initial_values = []
-            for link in self.neuron_linker_args:
-                try:
-                    _, internal_name, neuron, callback = link
-                except ValueError:
-                    _, internal_name, neuron, callback, initial_value = link
-                    initial_values.append(initial_value)
-                internal_names.append(internal_name)
-                callbacks.append(callback)
-                neurons.append(neuron)
-            
-            assert internal_names == ['title', 'year', 'director', 'minutes', 'notes']
-            for neuron in neurons:
-                assert isinstance(neuron, guiwidgets.neurons.OrNeuron)
-            for callback in callbacks:
-                assert callback == movie_gui.neuron_callback
-            assert initial_values == []
-    
-    def test_treeview_observer_registered(self, patch_tk, class_fixtures):
-        self.tag_treeview_observer_args = []
-        with self.movie_context():
-            for args in self.tag_treeview_observer_args:
-                assert isinstance(args[1], Callable)
-        assert len(self.tag_treeview_observer_args) == 2
-    
-    def test_observer_notified(self, patch_tk, monkeypatch):
-        notify_calls = []
-        
-        def dummy_notify(*args):
-            notify_calls.append(args[1:])
-        
-        monkeypatch.setattr(guiwidgets.neurons.Observer, 'notify', dummy_notify)
-        with self.movie_context() as movie_gui:
-            outerframe = movie_gui.parent.children[0]
-            bodyframe = outerframe.children[0]
-            tags_frame = bodyframe.children[-1]
-            tree = tags_frame.children[0]
-            tree.bind_calls[0][1]['func']()
-            assert notify_calls[0] == (guiwidgets.TAG_TREEVIEW_INTERNAL_NAME, True)
-    
-    def test_delete_calls_askyesno_dialog(self, patch_tk, monkeypatch):
-        calls = []
-        with self.movie_context() as movie_gui:
-            monkeypatch.setattr(guiwidgets.messagebox, 'askyesno',
-                                lambda **kwargs: calls.append(kwargs))
-            monkeypatch.setattr(movie_gui, 'delete_callback', lambda movie: None)
-            monkeypatch.setattr(movie_gui, 'destroy', lambda: None)
-            guiwidgets.CommonButtonbox.delete(movie_gui)
-            assert calls == [dict(message='Do you want to delete this movie?',
-                                  icon='question', default='no', parent=DummyTk())]
-    
-    def test_delete_callback_method(self, patch_tk, monkeypatch):
-        calls = []
-        with self.movie_context() as movie_gui:
-            monkeypatch.setattr(guiwidgets.messagebox, 'askyesno', lambda **kwargs: True)
-            monkeypatch.setattr(movie_gui, 'delete_callback', lambda movie: calls.append(movie))
-            monkeypatch.setattr(movie_gui, 'destroy', lambda: None)
-            movie_gui.delete()
-            assert calls == [dict(title='Test Movie', year=2050)]
-    
-    def test_delete_calls_destroy(self, patch_tk, monkeypatch):
-        calls = []
-        with self.movie_context() as movie_gui:
-            monkeypatch.setattr(guiwidgets.messagebox, 'askyesno', lambda **kwargs: True)
-            monkeypatch.setattr(movie_gui, 'delete_callback', lambda movie: None)
-            monkeypatch.setattr(movie_gui, 'destroy', lambda: calls.append(True))
-            movie_gui.delete()
-            assert calls == [True]
-    
-    def test_focus_set_on_title_field(self, patch_tk, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets, '_focus_set', lambda *args: calls.append(args))
-        with self.movie_context():
-            trace_add_callback = calls[0][0].textvariable.trace_add_callback
-            assert calls == [(TtkEntry(parent=TtkFrame(parent=TtkFrame(parent=DummyTk(), padding=''),
-                                                       padding=(10, 25, 10, 0)),
-                                       textvariable=TkStringVar(trace_add_callback=trace_add_callback), width=36),)]
-    
-    def test_focus_set_to_notes(self, patch_tk):
-        with self.movie_context() as movie_gui:
-            assert movie_gui.entry_fields['notes'].widget.focus_set_calls == [True]
-    
-    def test_all_notes_test_selected(self, patch_tk):
-        with self.movie_context() as movie_gui:
-            assert movie_gui.entry_fields['notes'].widget.select_range_calls == [(0, 'end')]
-    
-    def test_cursor_placed_at_end_of_notes_entry(self, patch_tk):
-        with self.movie_context() as movie_gui:
-            assert movie_gui.entry_fields['notes'].widget.icursor_calls == [('end',)]
-    
-    # noinspection PyMissingOrEmptyDocstring
-    @contextmanager
-    def movie_context(self):
-        self.neuron_linker_args = []
-        all_tag_names = ('test tag 1', 'test tag 2')
-        movie = guiwidgets.config.MovieUpdateDef(title='Test Movie', year=2050,
-                                                 director='Test Director', minutes=142,
-                                                 notes='Test note', tags=('test selected tag',))
-        # noinspection PyTypeChecker
-        yield guiwidgets.EditMovieGUI(DummyTk(), dummy_commit_callback, dummy_delete_callback,
-                                      ['commit', 'delete'], all_tag_names, movie)
-    
-    neuron_linker_args = []
-    tag_treeview_observer_args = []
-    
-    @pytest.fixture
-    def class_fixtures(self, monkeypatch):
-        monkeypatch.setattr(guiwidgets.MovieGUIBase, 'neuron_linker',
-                            lambda *args: self.neuron_linker_args.append(args))
-        monkeypatch.setattr(guiwidgets.MovieGUIBase.tag_treeview_observer, 'register',
-                            lambda *args: self.tag_treeview_observer_args.append(args))
-
-
-# noinspection PyMissingOrEmptyDocstring
 class TestSearchMovieGUI:
     
     # Test Basic Initialization
@@ -422,9 +262,9 @@ class TestSearchMovieGUI:
     
     # @pytest.mark.skip('Test dependency discovered')
     # def test_callback_called(self, patch_tk):
-    #     with self.movie_context() as movie_gui:
-    #         movie_gui.selected_tags = ['tag 1', 'tag 2']
-    #         movie_gui.search()
+    #     with self.movie_context() as something:
+    #         something.selected_tags = ['tag 1', 'tag 2']
+    #         something.search()
     #         assert commit_callback_calls == [(dict(director='4242', minutes=['4242', '4242'],
     #                                                notes='4242', title='4242', year=['4242', '4242'], ),
     #                                           ['tag 1', 'tag 2'])]
@@ -467,11 +307,11 @@ class TtkTreeview:
     columns: Sequence[str]
     height: int
     selectmode: str
-    
+
     show: str = field(default='tree headings')
     padding: int = field(default=0)
     item_id: Generator = itertools.count(1)
-    
+
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     column_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     heading_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -480,35 +320,35 @@ class TtkTreeview:
     yview_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     configure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     selection_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    
+
     def __post_init__(self):
         self.parent.children.append(self)
-    
+
     def grid(self, **kwargs):
         self.grid_calls.append(kwargs, )
-    
+
     def column(self, *args, **kwargs):
         self.column_calls.append((args, kwargs))
-    
+
     def heading(self, *args, **kwargs):
         self.heading_calls.append((args, kwargs))
-    
+
     def insert(self, *args, **kwargs):
         self.insert_calls.append((args, kwargs))
         return f'I{next(self.item_id):03}'
-    
+
     def bind(self, *args, **kwargs):
         self.bind_calls.append((args, kwargs))
-    
+
     def yview(self, *args, **kwargs):
         self.yview_calls.append((args, kwargs))
-    
+
     def selection_add(self, *args):
         self.selection_add_calls.append(args)
-    
+
     def configure(self, **kwargs):
         self.configure_calls.append(kwargs)
-    
+
     @staticmethod
     def selection():
         return ['test tag 1', 'test tag 2']
@@ -520,28 +360,18 @@ class TtkScrollbar:
     parent: TtkFrame
     orient: str
     command: Callable
-    
+
     set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    
+
     def __post_init__(self):
         self.parent.children.append(self)
-    
+
     def set(self, *args, **kwargs):
         self.set_calls.append((args, kwargs))
-    
+
     def grid(self, **kwargs):
         self.grid_calls.append(kwargs)
-
-
-# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
-@dataclass
-class TkMessagebox:
-    """A test double for Tk.Messagebox."""
-    showinfo_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    
-    def showinfo(self, **kwargs):
-        self.showinfo_calls.append(kwargs)
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
@@ -600,11 +430,3 @@ commit_callback_calls = []
 # noinspection PyUnusedLocal,PyMissingOrEmptyDocstring
 def dummy_commit_callback(movie_dict: guiwidgets.config.MovieTypedDict, tags: Sequence[str]):
     commit_callback_calls.append((movie_dict, tags))
-
-
-delete_callback_calls = []
-
-
-# noinspection PyUnusedLocal,PyMissingOrEmptyDocstring
-def dummy_delete_callback(movie_dict: guiwidgets.config.MovieTypedDict, tags: Sequence[str]):
-    delete_callback_calls.append((movie_dict, tags))

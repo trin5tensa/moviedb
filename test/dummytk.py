@@ -18,6 +18,7 @@ from typing import Callable, Literal, Sequence, Tuple, Union, TypeVar
 
 ParentType = TypeVar('ParentType', 'DummyTk', 'TkToplevel', 'TtkFrame')
 
+
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class DummyTk:
@@ -116,6 +117,7 @@ class TkText:
         self.insert_calls.append((pos, text, tags))
         self.text = text
 
+    # noinspection PyUnusedLocal
     def get(self, *args):
         return self.text
 

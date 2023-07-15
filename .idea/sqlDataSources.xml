@@ -14,6 +14,17 @@
           </option>
           <option name="outLayout" value="File per object by schema.groovy" />
         </State>
+        <State>
+          <option name="id" value="59adbc11-3547-40b4-b95d-50ac78932c36" />
+          <option name="name" value="DDL data source [2]" />
+          <option name="dbmsName" value="SQLITE" />
+          <option name="urls">
+            <array>
+              <option value="file://$PROJECT_DIR$/movie_database.sqlite3" />
+            </array>
+          </option>
+          <option name="outLayout" value="File per object by schema.groovy" />
+        </State>
       </list>
     </option>
   </component>

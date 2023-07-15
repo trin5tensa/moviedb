@@ -50,10 +50,6 @@ class TestMainWindowInit:
         with self.init_context():
             assert self.place_menubar == (mainwindow.MenuData().menus,)
 
-    def test_bind_escape(self, class_patches):
-        with self.init_context():
-            assert self.root_pane.parent.bind_args == ('<Escape>', self.root_pane.tk_shutdown)
-
     def test_tk_shutdown_protocol_set(self, class_patches):
         with self.init_context():
             assert self.root_pane.parent.protocol_args == ('WM_DELETE_WINDOW',
