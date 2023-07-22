@@ -32,7 +32,7 @@ class TestAboutDialog:
     messagebox_calls = []
 
     def test_about_dialog_called(self, monkeypatch):
-        monkeypatch.setattr(handlers.guiwidgets, 'gui_messagebox', self.gui_messagebox)
+        monkeypatch.setattr(handlers.guiwidgets_2, 'gui_messagebox', self.gui_messagebox)
         with self.about_context():
             assert self.messagebox_calls == [(DummyParent(), 'Test program name',
                                               'Test program version'), ]
@@ -42,7 +42,7 @@ class TestAboutDialog:
         hold_persistent = handlers.config.persistent
         hold_current = handlers.config.current
 
-        handlers.config.persistent = handlers.config.PersistentConfig(program='Test program name',
+        handlers.config.persistent = handlers.config.PersistentConfig(program_name='Test program name',
                                                                       program_version='Test program version')
         handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
         try:
@@ -81,7 +81,7 @@ class TestGetTmdbGetApiKey:
 
     def test_key_needs_setting_calls_preferences_dialog(self, monkeypatch):
         calls = []
-        monkeypatch.setattr(handlers, 'preferences_dialog', lambda: calls.append(True))
+        monkeypatch.setattr(handlers, 'settings_dialog', lambda: calls.append(True))
         with self.get_tmdb_key(monkeypatch, api_key=''):
             assert calls[0]
 
@@ -110,7 +110,7 @@ class TestTmdbIOExceptionHandler:
 
         monkeypatch.setattr(handlers.guiwidgets_2, 'gui_askyesno', partial(self.dummy_askyesno, askyesno=askyesno))
         monkeypatch.setattr(handlers.guiwidgets_2, 'gui_messagebox', partial(self.dummy_messagebox))
-        monkeypatch.setattr(handlers, 'preferences_dialog', lambda: self.preference_dialog_calls.append(True))
+        monkeypatch.setattr(handlers, 'settings_dialog', lambda: self.preference_dialog_calls.append(True))
         # noinspection PyProtectedMember
         handlers._tmdb_search_exception_callback(mock_fut)
         yield
@@ -286,7 +286,7 @@ class TestImportMovies:
         hold_persistent = handlers.config.persistent
         hold_current = handlers.config.current
 
-        handlers.config.persistent = handlers.config.PersistentConfig(program='test moviedb',
+        handlers.config.persistent = handlers.config.PersistentConfig(program_name='test moviedb',
                                                                       program_version='test 1.0.0.dev')
         handlers.config.current = handlers.config.CurrentConfig(tk_root='tk_root')
         try:
@@ -549,7 +549,7 @@ class TestTags:
         hold_persistent = handlers.config.persistent
         hold_current = handlers.config.current
 
-        handlers.config.persistent = handlers.config.PersistentConfig(program='Test program name',
+        handlers.config.persistent = handlers.config.PersistentConfig(program_name='Test program name',
                                                                       program_version='Test program version')
         handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
 
@@ -613,7 +613,7 @@ class TestSearchTagCallback:
         hold_persistent = handlers.config.persistent
         hold_current = handlers.config.current
 
-        handlers.config.persistent = handlers.config.PersistentConfig(program='Test program name',
+        handlers.config.persistent = handlers.config.PersistentConfig(program_name='Test program name',
                                                                       program_version='Test program version')
         handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
 
@@ -654,7 +654,7 @@ class TestEditTagCallback:
         hold_persistent = handlers.config.persistent
         hold_current = handlers.config.current
 
-        handlers.config.persistent = handlers.config.PersistentConfig(program='Test program name',
+        handlers.config.persistent = handlers.config.PersistentConfig(program_name='Test program name',
                                                                       program_version='Test program version')
         handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
         callback = handlers._edit_tag_callback_wrapper(self.old_tag)
@@ -716,7 +716,7 @@ class TestSearchTagCallbackWrapper:
         hold_persistent = handlers.config.persistent
         hold_current = handlers.config.current
 
-        handlers.config.persistent = handlers.config.PersistentConfig(program='Test program name',
+        handlers.config.persistent = handlers.config.PersistentConfig(program_name='Test program name',
                                                                       program_version='Test program version')
         handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
         try:

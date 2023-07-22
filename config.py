@@ -1,22 +1,21 @@
 """Application configuration data """
 #  Copyright (c) 2022-2023. Stephen Rigden.
 #  Last modified 1/28/23, 8:30 AM by stephen.
-#  This program is free software: you can redistribute it and/or modify
+#  This program_name is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#  This program is distributed in the hope that it will be useful,
+#  This program_name is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#  along with this program_name.  If not, see <https://www.gnu.org/licenses/>.
 
 from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Optional, TypedDict
-
+from typing import Optional, TypedDict, NotRequired
 
 CONFIG_JSON_SUFFIX = '_config.json'
 
@@ -69,7 +68,7 @@ class FindMovieTypedDict(TypedDict, total=False):
 class CurrentConfig:
     """The application's configuration data.
 
-    This transient configuration data is created during a single program run and is discarded when the program
+    This transient configuration data is created during a single program_name run and is discarded when the program_name
     terminates.
     """
     tk_root: 'tk.Tk' = None
@@ -84,7 +83,7 @@ class PersistentConfig:
     This persistent configuration data is loaded in the application's start_up() function and saved on exit.
     """
     # Program
-    program: str
+    program_name: str
     program_version: str
 
     # tk.Tk screen geometry

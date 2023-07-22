@@ -18,7 +18,7 @@ import re
 import tkinter as tk
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Callable, List, Sequence, Tuple, Union
+from typing import Sequence, Tuple
 
 import config
 import handlers
@@ -36,10 +36,9 @@ class MainWindow:
     tk_kwargs: Mapping = None
     
     def __post_init__(self):
-        self.parent.title(config.persistent.program)
-        self.parent.option_add('*tearOff', False)
+        self.parent.title(config.persistent.program_name)
         self.parent.geometry(self.set_geometry())
-        self.place_menubar(MenuData().menus)
+        self.place_menubar()
         self.parent.protocol('WM_DELETE_WINDOW', self.tk_shutdown)
 
     def set_geometry(self) -> str:
@@ -93,54 +92,55 @@ class MainWindow:
                 length = available
         return str(length), f'{offset:+}'
 
-    def place_menubar(self, menus: List['Menu']):
+    def place_menubar(self):
         """Create menubar."""
+        self.parent.option_add('*tearOff', False)
+
         menubar = tk.Menu(self.parent)
+
+        apple_menu = tk.Menu(menubar, name='apple')
+        menubar.add_cascade(menu=apple_menu)
+        apple_menu.add_command(label='About ' + config.persistent.program_name + '…', command=handlers.about_dialog)
+        self.parent.createcommand('tk::mac::ShowPreferences', handlers.settings_dialog)
+        apple_menu.add_separator()
+
+        edit_menu = tk.Menu(menubar)
+        menubar.add_cascade(menu=edit_menu, label='Edit')
+        # todo find out if these events do everything needed to implement the edit functions.
+        # todo All except Undo and Redo appear to be functioning correctly. Why aren't they working?
+        edit_menu.add_command(label='Undo', command=lambda: self.parent.focus_get().event_generate('<<Undo>>'),
+                              accelerator='Command+Z')
+        edit_menu.add_command(label='Redo', command=lambda: self.parent.focus_get().event_generate('<<Redo>>'),
+                              accelerator='Command+Ctrl+Z')
+        edit_menu.add_separator()
+        edit_menu.add_command(label='Cut', command=lambda: self.parent.focus_get().event_generate('<<Cut>>'),
+                              accelerator='Command+X')
+        edit_menu.add_command(label='Copy', command=lambda: self.parent.focus_get().event_generate('<<Copy>>'),
+                              accelerator='Command+C')
+        edit_menu.add_command(label='Paste', command=lambda: self.parent.focus_get().event_generate('<<Paste>>'),
+                              accelerator='Command+V')
+        edit_menu.add_command(label='Clear', command=lambda: self.parent.focus_get().event_generate('<<Clear>>'))
+
+        movie_menu = tk.Menu(menubar)
+        menubar.add_cascade(menu=movie_menu, label='Movie')
+        movie_menu.add_command(label='Add Movie…', command=handlers.add_movie)
+        movie_menu.add_command(label='Edit Movie…', command=handlers.edit_movie)
+        movie_menu.add_command(label='Delete Movie…', command=handlers.edit_movie)
+        movie_menu.add_separator()
+        movie_menu.add_command(label='Add Tag…', command=handlers.add_tag)
+        movie_menu.add_command(label='Edit Tag…', command=handlers.edit_tag)
+        movie_menu.add_command(label='Delete Tag…', command=handlers.edit_tag)
+
+        window_menu = tk.Menu(menubar, name='window')
+        menubar.add_cascade(menu=window_menu, label='Window')
+
+        # todo add help screen otherwise remove the help menu altogether.
+        help_menu = tk.Menu(menubar, name='help')
+        menubar.add_cascade(menu=help_menu, label='Help')
+        # Todo find out why 'search' can't find anything.
+        # self.parent.createcommand('tk::mac::ShowHelp', <<code to display on-line(?) help>>)
+
         self.parent.config(menu=menubar)
-        for menu in menus:
-            self.place_menu(menubar, menu)
-
-    def place_menu(self, menubar: tk.Menu, menu: 'Menu'):
-        """Create a menu with its menu items.
-
-        Args:
-            menubar: Parent menu bar.
-            menu:
-        """
-        # Create a Tk menu for building the Tk menu object.
-        cascade = tk.Menu(menubar)
-
-        for menu_item_ix, menu_item in enumerate(menu.menu_items):
-            # Add a separator
-            if isinstance(menu_item, str):
-                cascade.add_separator()
-
-            # Create the program exit item
-            elif menu_item.name == QUIT_ITEM:
-                cascade.add_command(label=f"{QUIT_ITEM} {config.persistent.program.title()}",
-                                    command=self.tk_shutdown, state=tk.NORMAL)
-
-            # Add a menu item which has a handler
-            elif callable(menu_item.selection_handler):
-                cascade.add_command(label=menu_item.name, command=menu_item.selection_handler)
-                if menu_item.active:
-                    cascade.entryconfig(menu_item_ix, state=tk.NORMAL)
-                else:
-                    cascade.entryconfig(menu_item_ix, state=tk.DISABLED)
-
-            # Add a disabled menu item if there is no handler.
-            elif not menu_item.selection_handler:
-                cascade.add_command(label=menu_item.name, state=tk.DISABLED)
-
-            # Unhandled conditions: Not a separator and with a non-callable selection_handler.
-            else:
-                msg = (f"The menu item '{menu_item.name=}' is not a separator and does not "
-                       f"contain a callable handler.")
-                logging.error(msg=msg)
-                cascade.add_command(label=menu_item.name, state=tk.DISABLED)
-
-        # Add menu to menubar
-        menubar.add_cascade(label=menu.name, menu=cascade)
 
     # noinspection PyUnusedLocal
     def tk_shutdown(self, *args):
@@ -153,72 +153,3 @@ class MainWindow:
         config.persistent.geometry = self.parent.winfo_geometry()
         # Destroy all widgets and end mainloop.
         self.parent.destroy()
-
-
-# noinspection PyUnresolvedReferences
-@dataclass
-class MenuItem:
-    """Data describing a menu item.
-    
-    Attributes:
-        name: User visible label of menu item.
-        selection_handler: Handler called when menu item is selected.
-        active: Initial active (True) or inactive (False) tk state
-    """
-    name: str
-    selection_handler: Callable = None
-    active: bool = True
-
-
-# noinspection PyUnresolvedReferences
-@dataclass
-class Menu:
-    """Data describing a menu.
-    
-    Attributes:
-        name:
-        menu_items:
-    """
-    name: str
-    menu_items: Sequence[Union[MenuItem, str]]
-
-
-@dataclass
-class MenuData:
-    """Data for construction and management of the menu."""
-    
-    def __post_init__(self):
-        """Initialize the applications menu bar data.
-        
-        Menu separators: Use '-' or any other character of type str.
-        """
-        self.menus = [
-                Menu('Moviedb', [
-                        MenuItem('About…', handlers.about_dialog),
-                        MenuItem('Preferences…', handlers.preferences_dialog),
-                        MenuItem(QUIT_ITEM), ]),
-                Menu('File', [
-                        MenuItem('New…'),
-                        MenuItem('Open…'),
-                        MenuItem('Save As…'),
-                        '-',
-                        MenuItem('Import csv'), ]),
-                Menu('Edit', [
-                        MenuItem('Cut'),
-                        MenuItem('Copy'),
-                        MenuItem('Paste'), ]),
-                Menu('Movie', [
-                        MenuItem('Add Movie…', handlers.add_movie),
-                        MenuItem('Edit Movie…', handlers.edit_movie),
-                        MenuItem('Delete Movie…', handlers.edit_movie),
-                        '-',
-                        MenuItem('Import…', handlers.import_movies), ]),
-                Menu('Tag', [
-                        MenuItem('Add Tag…', handlers.add_tag),
-                        MenuItem('Edit Tag…', handlers.edit_tag),
-                        MenuItem('Delete Tag…', handlers.edit_tag), ]),
-                Menu('Test', [
-                        MenuItem('Nothing to see here, folks', ),
-                        MenuItem('Nope, no tests today', ),
-                        ]),
-                ]

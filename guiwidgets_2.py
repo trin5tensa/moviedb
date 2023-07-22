@@ -40,7 +40,6 @@ CANCEL_TEXT = 'Cancel'
 MOVIE_GUI_MODE = Literal['add', 'edit']
 ParentType = TypeVar('ParentType', tk.Tk, tk.Toplevel, ttk.Frame)
 
-# moviedb-#321 GUI improvements project.
 
 @dataclass
 class MovieGUI:

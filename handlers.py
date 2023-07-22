@@ -3,24 +3,21 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 #  Copyright (c) 2022-2023. Stephen Rigden.
 #  Last modified 1/18/23, 10:10 AM by stephen.
-#  This program is free software: you can redistribute it and/or modify
+#  This program_name is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#  This program is distributed in the hope that it will be useful,
+#  This program_name is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#  along with this program_name.  If not, see <https://www.gnu.org/licenses/>.
 
 import concurrent.futures
 import logging
 import queue
 from typing import Callable, Optional, Sequence
-
-import sqlalchemy.exc
-import sqlalchemy.orm
 
 import config
 import database
@@ -33,18 +30,18 @@ import tmdb
 
 def about_dialog():
     """Display the 'about' dialog."""
-    guiwidgets.gui_messagebox(config.current.tk_root, config.persistent.program,
-                              config.persistent.program_version)
+    guiwidgets_2.gui_messagebox(config.current.tk_root, config.persistent.program_name,
+                                config.persistent.program_version)
 
 
-def preferences_dialog():
+def settings_dialog():
     """Display the 'preferences' dialog."""
     try:
         display_key = config.persistent.tmdb_api_key
     except (config.ConfigTMDBAPIKeyNeedsSetting, config.ConfigTMDBDoNotUse):
         display_key = ''
     guiwidgets_2.PreferencesGUI(config.current.tk_root, display_key, config.persistent.use_tmdb,
-                                _preferences_callback)
+                                _settings_callback)
 
 
 def _get_tmdb_api_key() -> Optional[str]:
@@ -65,7 +62,7 @@ def _get_tmdb_api_key() -> Optional[str]:
     except config.ConfigTMDBDoNotUse:
         logging.info(f'User declined TMDB use.')
     except config.ConfigTMDBAPIKeyNeedsSetting:
-        preferences_dialog()
+        settings_dialog()
     else:
         return tmdb_api_key
 
@@ -109,7 +106,7 @@ def import_movies():
                                   detail=exc.args[0], icon='warning')
 
 
-def _preferences_callback(tmdb_api_key: str, use_tmdb: bool):
+def _settings_callback(tmdb_api_key: str, use_tmdb: bool):
     """
     Update the config file with the user's changes.
 
@@ -362,7 +359,7 @@ def _tmdb_search_exception_callback(fut: concurrent.futures.Future):
         msg = 'Invalid API key for TMDB.'
         detail = 'Do you want to set the key?'
         if guiwidgets_2.gui_askyesno(config.current.tk_root, msg, detail):
-            preferences_dialog()
+            settings_dialog()
 
     except exception.TMDBConnectionTimeout:
         msg = 'TMDB database cannot be reached.'

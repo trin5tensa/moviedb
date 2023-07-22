@@ -51,7 +51,7 @@ def start_up():
     program_path = Path(__file__)
     start_logger(program_path.cwd(), program_path)
     config.current = config.CurrentConfig()
-    load_config_file(program_path.name)
+    load_config_file(program_path)
     database.connect_to_database()
 
 
@@ -75,7 +75,7 @@ def start_logger(root_dir: Path, program: Path):
                         filename=q_name, filemode='w')
 
 
-def load_config_file(program: str):
+def load_config_file(program: Path):
     """ Create the persistent config object. """
     
     try:
@@ -87,7 +87,9 @@ def load_config_file(program: str):
         logging.info(msg)
         
         # Initialise persistent application data for first use
-        config.persistent = config.PersistentConfig(program, VERSION)
+        _, name = os.path.split(program)
+        name, _ = os.path.splitext(name)
+        config.persistent = config.PersistentConfig(name.title(), VERSION)
 
     else:
         config.persistent = config.PersistentConfig(**data)

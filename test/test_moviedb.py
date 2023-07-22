@@ -112,7 +112,7 @@ class TestStartUp:
     
     def test_load_config_file(self, monkeypatch_startup):
         program_path = moviedb.Path(moviedb.__file__)
-        expected_filename = program_path.name
+        expected_filename = program_path
         
         _, load_config_calls, _ = monkeypatch_startup
         moviedb.start_up()
@@ -131,7 +131,7 @@ class TestLoadConfigFile:
     version = 'test version'
     
     def test_existing_file_loaded_into_config_persistent(self, monkeypatch):
-        expected = config.PersistentConfig(program=self.program, program_version=self.version)
+        expected = config.PersistentConfig(program_name=self.program, program_version=self.version)
         data = moviedb.asdict(expected)
         with self.fut_runner(self.program, data, monkeypatch):
             assert config.persistent == expected
@@ -156,7 +156,7 @@ class TestLoadConfigFile:
 
 
 def test_save_config_file(monkeypatch):
-    persistent = moviedb.config.PersistentConfig(program='test_program', program_version='42')
+    persistent = moviedb.config.PersistentConfig(program_name='test_program', program_version='42')
     path = moviedb._json_path()
     calls = []
     monkeypatch.setattr(moviedb, '_json_dump', lambda *args: calls.append(args))
@@ -220,7 +220,7 @@ def test__json_load(monkeypatch, tmp_path):
         
     # Create a test dummy file in tmp_path
     fn = tmp_path / 'dummy_file.text'
-    persistent = moviedb.config.PersistentConfig(program='test_program', program_version='42')
+    persistent = moviedb.config.PersistentConfig(program_name='test_program', program_version='42')
     moviedb._json_dump(moviedb.asdict(persistent), fn)
 
     # Call json_load
@@ -246,7 +246,7 @@ def test__json_path():
     
     
 def test__json_dump(monkeypatch, tmp_path):
-    persistent = moviedb.config.PersistentConfig(program='test_program', program_version='42')
+    persistent = moviedb.config.PersistentConfig(program_name='test_program', program_version='42')
     json_obj = moviedb.asdict(persistent)
     path = tmp_path / 'dummy_file.df'
     
