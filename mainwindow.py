@@ -24,10 +24,6 @@ import config
 import handlers
 
 
-# The quit item needs special processing.
-QUIT_ITEM = 'Quit'
-
-
 @dataclass
 class MainWindow:
     """Create and manage the menu bar and the application's main window. """
@@ -101,17 +97,12 @@ class MainWindow:
         apple_menu = tk.Menu(menubar, name='apple')
         menubar.add_cascade(menu=apple_menu)
         apple_menu.add_command(label='About ' + config.persistent.program_name + '…', command=handlers.about_dialog)
+        apple_menu.add_command(label='Settings for Moviedb…', command=handlers.settings_dialog)
+        # Of all the different things that could be done with the standard 'Settings…' item this is the least ugly.
         self.parent.createcommand('tk::mac::ShowPreferences', handlers.settings_dialog)
-        apple_menu.add_separator()
 
         edit_menu = tk.Menu(menubar)
         menubar.add_cascade(menu=edit_menu, label='Edit')
-        # todo find out if these events do everything needed to implement the edit functions.
-        # todo All except Undo and Redo appear to be functioning correctly. Why aren't they working?
-        edit_menu.add_command(label='Undo', command=lambda: self.parent.focus_get().event_generate('<<Undo>>'),
-                              accelerator='Command+Z')
-        edit_menu.add_command(label='Redo', command=lambda: self.parent.focus_get().event_generate('<<Redo>>'),
-                              accelerator='Command+Ctrl+Z')
         edit_menu.add_separator()
         edit_menu.add_command(label='Cut', command=lambda: self.parent.focus_get().event_generate('<<Cut>>'),
                               accelerator='Command+X')
@@ -133,12 +124,6 @@ class MainWindow:
 
         window_menu = tk.Menu(menubar, name='window')
         menubar.add_cascade(menu=window_menu, label='Window')
-
-        # todo add help screen otherwise remove the help menu altogether.
-        help_menu = tk.Menu(menubar, name='help')
-        menubar.add_cascade(menu=help_menu, label='Help')
-        # Todo find out why 'search' can't find anything.
-        # self.parent.createcommand('tk::mac::ShowHelp', <<code to display on-line(?) help>>)
 
         self.parent.config(menu=menubar)
 
