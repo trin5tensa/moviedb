@@ -4,9 +4,6 @@ This module contains new tests written after Brian Okken's course and book on py
 
 Test strategies are noted for each class.
 """
-from contextlib import contextmanager
-
-import config
 #  Copyright (c) 2023. Stephen Rigden.
 #  Last modified 3/15/23, 8:13 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
@@ -20,6 +17,8 @@ import config
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import config
+from contextlib import contextmanager
 import handlers
 from unittest.mock import MagicMock
 

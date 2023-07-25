@@ -90,6 +90,7 @@ class MainWindow:
 
     def place_menubar(self):
         """Create menubar."""
+        # todo test this line
         self.parent.option_add('*tearOff', False)
 
         menubar = tk.Menu(self.parent)

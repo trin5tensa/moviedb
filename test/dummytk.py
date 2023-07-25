@@ -34,6 +34,9 @@ class DummyTk:
     bell_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     after_calls: dict = field(default_factory=dict, init=False, repr=False, compare=False)
     after_cancel_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    title_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    geometry_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    protocol_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
 
     # This is used to generate unique event queue ids
     event_id = itertools.count()
@@ -62,6 +65,15 @@ class DummyTk:
         cancel_id, = args
         del self.after_calls[cancel_id]
         self.after_cancel_calls.append([args])
+
+    def title(self, name: str):
+        self.title_calls.append(name)
+
+    def geometry(self, geometry: str):
+        self.geometry_calls.append(geometry)
+
+    def protocol(self, protocol: str, func: Callable):
+        self.protocol_calls.append((protocol, func))
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
