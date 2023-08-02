@@ -17,7 +17,7 @@ import logging
 import re
 import tkinter as tk
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Sequence, Tuple
 
 import config
@@ -30,7 +30,13 @@ class MainWindow:
     parent: tk.Tk
     tk_args: Sequence = None
     tk_kwargs: Mapping = None
-    
+
+    # Local variables exposed as attributes for testing
+    menubar: tk.Menu = field(default=None, init=False, repr=False)
+    apple_menu: tk.Menu = field(default=None, init=False, repr=False)
+    edit_menu: tk.Menu = field(default=None, init=False, repr=False)
+    movie_menu: tk.Menu = field(default=None, init=False, repr=False)
+
     def __post_init__(self):
         self.parent.title(config.persistent.program_name)
         self.parent.geometry(self.set_geometry())
@@ -89,44 +95,43 @@ class MainWindow:
         return str(length), f'{offset:+}'
 
     def place_menubar(self):
-        """Create menubar."""
-        # todo test this line
+        """Create menubar and menu items."""
         self.parent.option_add('*tearOff', False)
 
-        menubar = tk.Menu(self.parent)
+        self.menubar = tk.Menu(self.parent)
 
-        apple_menu = tk.Menu(menubar, name='apple')
-        menubar.add_cascade(menu=apple_menu)
-        apple_menu.add_command(label='About ' + config.persistent.program_name + '…', command=handlers.about_dialog)
-        apple_menu.add_command(label='Settings for Moviedb…', command=handlers.settings_dialog)
+        self.apple_menu = tk.Menu(self.menubar, name='apple')
+        self.menubar.add_cascade(menu=self.apple_menu)
+        self.apple_menu.add_command(label='About ' + config.persistent.program_name + '…',
+                                    command=handlers.about_dialog)
+        self.apple_menu.add_command(label='Settings for Moviedb…', command=handlers.settings_dialog)
         # Of all the different things that could be done with the standard 'Settings…' item this is the least ugly.
         self.parent.createcommand('tk::mac::ShowPreferences', handlers.settings_dialog)
 
-        edit_menu = tk.Menu(menubar)
-        menubar.add_cascade(menu=edit_menu, label='Edit')
-        edit_menu.add_separator()
-        edit_menu.add_command(label='Cut', command=lambda: self.parent.focus_get().event_generate('<<Cut>>'),
-                              accelerator='Command+X')
-        edit_menu.add_command(label='Copy', command=lambda: self.parent.focus_get().event_generate('<<Copy>>'),
-                              accelerator='Command+C')
-        edit_menu.add_command(label='Paste', command=lambda: self.parent.focus_get().event_generate('<<Paste>>'),
-                              accelerator='Command+V')
-        edit_menu.add_command(label='Clear', command=lambda: self.parent.focus_get().event_generate('<<Clear>>'))
+        self.edit_menu = tk.Menu(self.menubar)
+        self.menubar.add_cascade(menu=self.edit_menu, label='Edit')
+        self.edit_menu.add_command(label='Cut', command=lambda: self.parent.focus_get().event_generate('<<Cut>>'),
+                                   accelerator='Command+X')
+        self.edit_menu.add_command(label='Copy', command=lambda: self.parent.focus_get().event_generate('<<Copy>>'),
+                                   accelerator='Command+C')
+        self.edit_menu.add_command(label='Paste', command=lambda: self.parent.focus_get().event_generate('<<Paste>>'),
+                                   accelerator='Command+V')
+        self.edit_menu.add_command(label='Clear', command=lambda: self.parent.focus_get().event_generate('<<Clear>>'))
 
-        movie_menu = tk.Menu(menubar)
-        menubar.add_cascade(menu=movie_menu, label='Movie')
-        movie_menu.add_command(label='Add Movie…', command=handlers.add_movie)
-        movie_menu.add_command(label='Edit Movie…', command=handlers.edit_movie)
-        movie_menu.add_command(label='Delete Movie…', command=handlers.edit_movie)
-        movie_menu.add_separator()
-        movie_menu.add_command(label='Add Tag…', command=handlers.add_tag)
-        movie_menu.add_command(label='Edit Tag…', command=handlers.edit_tag)
-        movie_menu.add_command(label='Delete Tag…', command=handlers.edit_tag)
+        self.movie_menu = tk.Menu(self.menubar)
+        self.menubar.add_cascade(menu=self.movie_menu, label='Movie')
+        self.movie_menu.add_command(label='Add Movie…', command=handlers.add_movie)
+        self.movie_menu.add_command(label='Edit Movie…', command=handlers.edit_movie)
+        self.movie_menu.add_command(label='Delete Movie…', command=handlers.edit_movie)
+        self.movie_menu.add_separator()
+        self.movie_menu.add_command(label='Add Tag…', command=handlers.add_tag)
+        self.movie_menu.add_command(label='Edit Tag…', command=handlers.edit_tag)
+        self.movie_menu.add_command(label='Delete Tag…', command=handlers.edit_tag)
 
-        window_menu = tk.Menu(menubar, name='window')
-        menubar.add_cascade(menu=window_menu, label='Window')
+        window_menu = tk.Menu(self.menubar, name='window')
+        self.menubar.add_cascade(menu=window_menu, label='Window')
 
-        self.parent.config(menu=menubar)
+        self.parent.config(menu=self.menubar)
 
     # noinspection PyUnusedLocal
     def tk_shutdown(self, *args):

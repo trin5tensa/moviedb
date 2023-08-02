@@ -14,9 +14,9 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import itertools
 from dataclasses import dataclass, field
-from typing import Callable, Literal, Sequence, Tuple, Union, TypeVar
+from typing import Callable, Literal, Sequence, Tuple, Union, TypeVar, Optional
 
-ParentType = TypeVar('ParentType', 'DummyTk', 'TkToplevel', 'TtkFrame')
+ParentType = TypeVar('ParentType', 'DummyTk', 'TkToplevel', 'TtkFrame', 'TkMenu')
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
@@ -37,6 +37,9 @@ class DummyTk:
     title_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     geometry_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     protocol_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    option_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    createcommand_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    config_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
 
     # This is used to generate unique event queue ids
     event_id = itertools.count()
@@ -74,6 +77,15 @@ class DummyTk:
 
     def protocol(self, protocol: str, func: Callable):
         self.protocol_calls.append((protocol, func))
+
+    def option_add(self, option: str, *args):
+        self.option_add_calls.append((option, args))
+
+    def createcommand(self, command: str, func: Callable):
+        self.createcommand_calls.append((command, func))
+
+    def config(self, **kwargs):
+        self.config_calls.append(kwargs)
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
@@ -390,3 +402,23 @@ class TtkScrollbar:
 
     def set(self):
         pass
+
+
+# noinspection PyMissingOrEmptyDocstring
+@dataclass
+class TkMenu:
+    parent: ParentType
+    name: Optional[str] = None
+
+    add_cascade_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    add_command_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    add_separator_count: int = field(default=0, init=False, repr=False, compare=False)
+
+    def add_cascade(self, *args, **kwargs):
+        self.add_cascade_calls.append((args, kwargs))
+
+    def add_command(self, *args, **kwargs):
+        self.add_command_calls.append((args, kwargs))
+
+    def add_separator(self):
+        self.add_separator_count += 1
