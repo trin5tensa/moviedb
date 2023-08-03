@@ -4,9 +4,6 @@ This module contains new tests written after Brian Okken's course and book on py
 
 Test strategies are noted for each class.
 """
-from contextlib import contextmanager
-
-import config
 #  Copyright (c) 2023. Stephen Rigden.
 #  Last modified 3/15/23, 8:13 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
@@ -20,6 +17,8 @@ import config
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import config
+from contextlib import contextmanager
 import handlers
 from unittest.mock import MagicMock
 
@@ -60,21 +59,21 @@ class TestPreferencesDialog:
 
     def test_call_with_valid_display_key(self, widget, tk_root):
         with self.persistent(self.TMDB_API_KEY, self.USE_TMDB):
-            handlers.preferences_dialog()
-            widget.assert_called_once_with(tk_root, self.TMDB_API_KEY, self.USE_TMDB, handlers._preferences_callback)
+            handlers.settings_dialog()
+            widget.assert_called_once_with(tk_root, self.TMDB_API_KEY, self.USE_TMDB, handlers._settings_callback)
 
     def test_unset_key_call(self, widget, tk_root):
         no_key = ''
         with self.persistent(no_key, self.USE_TMDB):
-            handlers.preferences_dialog()
-            widget.assert_called_once_with(tk_root, no_key, self.USE_TMDB, handlers._preferences_callback)
+            handlers.settings_dialog()
+            widget.assert_called_once_with(tk_root, no_key, self.USE_TMDB, handlers._settings_callback)
 
     def test_do_not_use_tmdb_call(self, widget, tk_root):
         no_key = ''
         use_tmdb = False
         with self.persistent(self.TMDB_API_KEY, use_tmdb):
-            handlers.preferences_dialog()
-            widget.assert_called_once_with(tk_root, no_key, use_tmdb, handlers._preferences_callback)
+            handlers.settings_dialog()
+            widget.assert_called_once_with(tk_root, no_key, use_tmdb, handlers._settings_callback)
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -95,7 +94,7 @@ class TestPreferencesCallback:
 
     def test_settings_updated(self, check):
         with self.persistent() as preferences:
-            handlers._preferences_callback(self.TMDB_API_KEY, self.USE_TMDB)
+            handlers._settings_callback(self.TMDB_API_KEY, self.USE_TMDB)
             check.equal(preferences.tmdb_api_key, self.TMDB_API_KEY)
             check.equal(preferences.use_tmdb, self.USE_TMDB)
 

@@ -17,15 +17,11 @@ import logging
 import re
 import tkinter as tk
 from collections.abc import Mapping
-from dataclasses import dataclass
-from typing import Callable, List, Sequence, Tuple, Union
+from dataclasses import dataclass, field
+from typing import Sequence, Tuple
 
 import config
 import handlers
-
-
-# The quit item needs special processing.
-QUIT_ITEM = 'Quit'
 
 
 @dataclass
@@ -34,12 +30,17 @@ class MainWindow:
     parent: tk.Tk
     tk_args: Sequence = None
     tk_kwargs: Mapping = None
-    
+
+    # Local variables exposed as attributes for testing
+    menubar: tk.Menu = field(default=None, init=False, repr=False)
+    apple_menu: tk.Menu = field(default=None, init=False, repr=False)
+    edit_menu: tk.Menu = field(default=None, init=False, repr=False)
+    movie_menu: tk.Menu = field(default=None, init=False, repr=False)
+
     def __post_init__(self):
-        self.parent.title(config.persistent.program)
-        self.parent.option_add('*tearOff', False)
+        self.parent.title(config.persistent.program_name)
         self.parent.geometry(self.set_geometry())
-        self.place_menubar(MenuData().menus)
+        self.place_menubar()
         self.parent.protocol('WM_DELETE_WINDOW', self.tk_shutdown)
 
     def set_geometry(self) -> str:
@@ -93,54 +94,48 @@ class MainWindow:
                 length = available
         return str(length), f'{offset:+}'
 
-    def place_menubar(self, menus: List['Menu']):
-        """Create menubar."""
-        menubar = tk.Menu(self.parent)
-        self.parent.config(menu=menubar)
-        for menu in menus:
-            self.place_menu(menubar, menu)
+    def place_menubar(self):
+        """Create menubar and menu items."""
+        self.parent.option_add('*tearOff', False)
 
-    def place_menu(self, menubar: tk.Menu, menu: 'Menu'):
-        """Create a menu with its menu items.
+        self.menubar = tk.Menu(self.parent)
 
-        Args:
-            menubar: Parent menu bar.
-            menu:
-        """
-        # Create a Tk menu for building the Tk menu object.
-        cascade = tk.Menu(menubar)
+        self.apple_menu = tk.Menu(self.menubar, name='apple')
+        self.menubar.add_cascade(menu=self.apple_menu)
+        self.apple_menu.add_command(label='About ' + config.persistent.program_name + '…',
+                                    command=handlers.about_dialog)
+        self.apple_menu.add_command(label='Settings for Moviedb…', command=handlers.settings_dialog)
+        # Of all the different things that could be done with the standard 'Settings…' item this is the least ugly.
+        self.parent.createcommand('tk::mac::ShowPreferences', handlers.settings_dialog)
 
-        for menu_item_ix, menu_item in enumerate(menu.menu_items):
-            # Add a separator
-            if isinstance(menu_item, str):
-                cascade.add_separator()
+        self.edit_menu = tk.Menu(self.menubar)
+        self.menubar.add_cascade(menu=self.edit_menu, label='Edit')
+        self.edit_menu.add_command(label='Cut',  # pragma no branch
+                                   command=lambda: self.parent.focus_get().event_generate('<<Cut>>'),
+                                   accelerator='Command+X')
+        self.edit_menu.add_command(label='Copy',  # pragma no branch
+                                   command=lambda: self.parent.focus_get().event_generate('<<Copy>>'),
+                                   accelerator='Command+C')
+        self.edit_menu.add_command(label='Paste',  # pragma no branch
+                                   command=lambda: self.parent.focus_get().event_generate('<<Paste>>'),
+                                   accelerator='Command+V')
+        self.edit_menu.add_command(label='Clear',  # pragma no branch
+                                   command=lambda: self.parent.focus_get().event_generate('<<Clear>>'))
 
-            # Create the program exit item
-            elif menu_item.name == QUIT_ITEM:
-                cascade.add_command(label=f"{QUIT_ITEM} {config.persistent.program.title()}",
-                                    command=self.tk_shutdown, state=tk.NORMAL)
+        self.movie_menu = tk.Menu(self.menubar)
+        self.menubar.add_cascade(menu=self.movie_menu, label='Movie')
+        self.movie_menu.add_command(label='Add Movie…', command=handlers.add_movie)
+        self.movie_menu.add_command(label='Edit Movie…', command=handlers.edit_movie)
+        self.movie_menu.add_command(label='Delete Movie…', command=handlers.edit_movie)
+        self.movie_menu.add_separator()
+        self.movie_menu.add_command(label='Add Tag…', command=handlers.add_tag)
+        self.movie_menu.add_command(label='Edit Tag…', command=handlers.edit_tag)
+        self.movie_menu.add_command(label='Delete Tag…', command=handlers.edit_tag)
 
-            # Add a menu item which has a handler
-            elif callable(menu_item.selection_handler):
-                cascade.add_command(label=menu_item.name, command=menu_item.selection_handler)
-                if menu_item.active:
-                    cascade.entryconfig(menu_item_ix, state=tk.NORMAL)
-                else:
-                    cascade.entryconfig(menu_item_ix, state=tk.DISABLED)
+        window_menu = tk.Menu(self.menubar, name='window')
+        self.menubar.add_cascade(menu=window_menu, label='Window')
 
-            # Add a disabled menu item if there is no handler.
-            elif not menu_item.selection_handler:
-                cascade.add_command(label=menu_item.name, state=tk.DISABLED)
-
-            # Unhandled conditions: Not a separator and with a non-callable selection_handler.
-            else:
-                msg = (f"The menu item '{menu_item.name=}' is not a separator and does not "
-                       f"contain a callable handler.")
-                logging.error(msg=msg)
-                cascade.add_command(label=menu_item.name, state=tk.DISABLED)
-
-        # Add menu to menubar
-        menubar.add_cascade(label=menu.name, menu=cascade)
+        self.parent.config(menu=self.menubar)
 
     # noinspection PyUnusedLocal
     def tk_shutdown(self, *args):
@@ -153,72 +148,3 @@ class MainWindow:
         config.persistent.geometry = self.parent.winfo_geometry()
         # Destroy all widgets and end mainloop.
         self.parent.destroy()
-
-
-# noinspection PyUnresolvedReferences
-@dataclass
-class MenuItem:
-    """Data describing a menu item.
-    
-    Attributes:
-        name: User visible label of menu item.
-        selection_handler: Handler called when menu item is selected.
-        active: Initial active (True) or inactive (False) tk state
-    """
-    name: str
-    selection_handler: Callable = None
-    active: bool = True
-
-
-# noinspection PyUnresolvedReferences
-@dataclass
-class Menu:
-    """Data describing a menu.
-    
-    Attributes:
-        name:
-        menu_items:
-    """
-    name: str
-    menu_items: Sequence[Union[MenuItem, str]]
-
-
-@dataclass
-class MenuData:
-    """Data for construction and management of the menu."""
-    
-    def __post_init__(self):
-        """Initialize the applications menu bar data.
-        
-        Menu separators: Use '-' or any other character of type str.
-        """
-        self.menus = [
-                Menu('Moviedb', [
-                        MenuItem('About…', handlers.about_dialog),
-                        MenuItem('Preferences…', handlers.preferences_dialog),
-                        MenuItem(QUIT_ITEM), ]),
-                Menu('File', [
-                        MenuItem('New…'),
-                        MenuItem('Open…'),
-                        MenuItem('Save As…'),
-                        '-',
-                        MenuItem('Import csv'), ]),
-                Menu('Edit', [
-                        MenuItem('Cut'),
-                        MenuItem('Copy'),
-                        MenuItem('Paste'), ]),
-                Menu('Movie', [
-                        MenuItem('Add Movie…', handlers.add_movie),
-                        MenuItem('Edit Movie…', handlers.edit_movie),
-                        MenuItem('Delete Movie…', handlers.edit_movie),
-                        '-',
-                        MenuItem('Import…', handlers.import_movies), ]),
-                Menu('Tag', [
-                        MenuItem('Add Tag…', handlers.add_tag),
-                        MenuItem('Edit Tag…', handlers.edit_tag),
-                        MenuItem('Delete Tag…', handlers.edit_tag), ]),
-                Menu('Test', [
-                        MenuItem('Nothing to see here, folks', ),
-                        MenuItem('Nope, no tests today', ),
-                        ]),
-                ]
