@@ -110,13 +110,17 @@ class MainWindow:
 
         self.edit_menu = tk.Menu(self.menubar)
         self.menubar.add_cascade(menu=self.edit_menu, label='Edit')
-        self.edit_menu.add_command(label='Cut', command=lambda: self.parent.focus_get().event_generate('<<Cut>>'),
+        self.edit_menu.add_command(label='Cut',  # pragma no branch
+                                   command=lambda: self.parent.focus_get().event_generate('<<Cut>>'),
                                    accelerator='Command+X')
-        self.edit_menu.add_command(label='Copy', command=lambda: self.parent.focus_get().event_generate('<<Copy>>'),
+        self.edit_menu.add_command(label='Copy',  # pragma no branch
+                                   command=lambda: self.parent.focus_get().event_generate('<<Copy>>'),
                                    accelerator='Command+C')
-        self.edit_menu.add_command(label='Paste', command=lambda: self.parent.focus_get().event_generate('<<Paste>>'),
+        self.edit_menu.add_command(label='Paste',  # pragma no branch
+                                   command=lambda: self.parent.focus_get().event_generate('<<Paste>>'),
                                    accelerator='Command+V')
-        self.edit_menu.add_command(label='Clear', command=lambda: self.parent.focus_get().event_generate('<<Clear>>'))
+        self.edit_menu.add_command(label='Clear',  # pragma no branch
+                                   command=lambda: self.parent.focus_get().event_generate('<<Clear>>'))
 
         self.movie_menu = tk.Menu(self.menubar)
         self.menubar.add_cascade(menu=self.movie_menu, label='Movie')

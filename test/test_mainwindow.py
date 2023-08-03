@@ -14,13 +14,12 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from contextlib import contextmanager
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Literal, NewType, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, Literal, NewType, Optional
 
 import pytest
 
 import mainwindow
-
 
 TEST_TITLE = 'test moviedb'
 TEST_VERSION = 'Test version'
@@ -172,47 +171,3 @@ class InstrumentedTtkFrame:
     
     def pack(self, **kwargs):
         self.pack_args = kwargs
-
-
-# noinspection PyMissingOrEmptyDocstring
-@dataclass
-class InstrumentedTkMenu:
-    """Note: This simplified test dummy for Tk.Menu does not attempt to replicate its hierarchy of
-    menubar and the 'cascades' of subordinate menus."""
-    parent: InstrumentedTk
-    add_separator_called = False
-    label: str = None
-    menu: 'InstrumentedTkMenu' = None
-    menu_items: List[Tuple[str, Optional[Callable], Optional[tk_state]]] = field(default_factory=list)
-    
-    def add_separator(self):
-        self.add_separator_called = True
-        self.menu_items.append(tuple())
-    
-    def add_cascade(self, label: str, menu: 'InstrumentedTkMenu'):
-        self.label = label
-        self.menu = menu
-    
-    def add_command(self, label: str, command: Optional[Callable] = None,
-                    state: Optional[tk_state] = None):
-        self.menu_items.append((label, command, state))
-    
-    def entryconfig(self, item_index: int, state: tk_state):
-        label, command, _ = self.menu_items[item_index]
-        self.menu_items[item_index] = label, command, state
-
-
-@dataclass
-class DummyMenuData:
-    """Dummy menu."""
-    
-    def __post_init__(self):
-        # noinspection PyTypeChecker
-        self.menus = [mainwindow.Menu(TEST_MENU, [
-                '-',
-                mainwindow.MenuItem('Item 1', lambda: 'Item 1 handler'),
-                mainwindow.MenuItem('Item 2', lambda: 'Item 2 handler', active=False),
-                mainwindow.MenuItem('Item 3'),
-                mainwindow.MenuItem('Item 4', 42),
-                mainwindow.MenuItem(mainwindow.QUIT_ITEM),
-                ])]

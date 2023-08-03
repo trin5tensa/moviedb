@@ -1,8 +1,6 @@
-"""test_handlers_pbo
+"""test_mainwindow_pbo
 
 This module contains new tests written after Brian Okken's course and book on pytest in Fall 2022.
-
-Test strategies are noted for each class.
 """
 #  Copyright (c) 2023. Stephen Rigden.
 #  Last modified 3/15/23, 8:13 AM by stephen.
@@ -34,12 +32,13 @@ class TestMainWindowInit:
     mock_place_menubar: MagicMock = None
 
     def test_main_window_initialization(self, monkeypatch, check):
-        # todo Add meaningful exception messages
         with self.main_window_context(monkeypatch) as main_window:
-            check.equal(self.tk_root.title_calls, [TEST_TITLE])
-            check.equal(self.tk_root.geometry_calls, [main_window.set_geometry()])
-            check.equal(self.place_menubar.call_count, 1)
-            check.equal(self.tk_root.protocol_calls, [('WM_DELETE_WINDOW', main_window.tk_shutdown)])
+            check.equal(self.tk_root.title_calls, [TEST_TITLE], 'parent.title not called with expected arguments.')
+            msg = 'parent.geometry not called with expected arguments.'
+            check.equal(self.tk_root.geometry_calls, [main_window.set_geometry()], msg)
+            check.equal(self.place_menubar.call_count, 1, 'place_menubar not called.')
+            msg = '\nparent.protocol not called with expected arguments.'
+            check.equal(self.tk_root.protocol_calls, [('WM_DELETE_WINDOW', main_window.tk_shutdown)], msg)
 
     # noinspection PyMissingOrEmptyDocstring, PyTypeChecker
     @contextmanager

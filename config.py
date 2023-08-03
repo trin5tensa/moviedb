@@ -15,7 +15,7 @@
 from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Optional, TypedDict, NotRequired
+from typing import Optional, TypedDict
 
 CONFIG_JSON_SUFFIX = '_config.json'
 

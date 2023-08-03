@@ -358,7 +358,7 @@ def _tmdb_search_exception_callback(fut: concurrent.futures.Future):
         logging.error(exc)
         msg = 'Invalid API key for TMDB.'
         detail = 'Do you want to set the key?'
-        if guiwidgets_2.gui_askyesno(config.current.tk_root, msg, detail):
+        if guiwidgets_2.gui_askyesno(config.current.tk_root, msg, detail):  # pragma no branch
             settings_dialog()
 
     except exception.TMDBConnectionTimeout:
@@ -374,7 +374,7 @@ def _tmdb_io_handler(search_string: str, work_queue: queue.Queue):
         search_string: The title search string
         work_queue: A queue where compliant movies can be placed.
     """
-    if tmdb_api_key := _get_tmdb_api_key():
+    if tmdb_api_key := _get_tmdb_api_key():  # pragma no branch
         executor = config.current.threadpool_executor
         fut = executor.submit(tmdb.search_tmdb, tmdb_api_key, search_string, work_queue)
         fut.add_done_callback(_tmdb_search_exception_callback)
