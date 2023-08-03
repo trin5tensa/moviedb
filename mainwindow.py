@@ -126,6 +126,7 @@ class MainWindow:
         self.menubar.add_cascade(menu=self.movie_menu, label='Movie')
         self.movie_menu.add_command(label='Add Movie…', command=handlers.add_movie)
         self.movie_menu.add_command(label='Edit Movie…', command=handlers.edit_movie)
+        self.movie_menu.add_command(label='View Movie…', command=handlers.edit_movie)
         self.movie_menu.add_command(label='Delete Movie…', command=handlers.edit_movie)
         self.movie_menu.add_separator()
         self.movie_menu.add_command(label='Add Tag…', command=handlers.add_tag)

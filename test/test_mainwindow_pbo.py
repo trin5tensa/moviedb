@@ -98,7 +98,7 @@ class TestPlaceMenubar:
                     for k in ['label', 'accelerator']:
                         msg = f"Menu item {k} is not {label_and_accelerator.get(k)}"
                         check.equal(actual.get(k), label_and_accelerator.get(k), msg)
-            except ValueError as exc:
+            except ValueError as exc:  # pragma no cover
                 if exc.args[0][:14] == 'zip() argument':
                     msg = (f"{len(expected)} Calls to the edit menu's add_command method were expected. "
                            f"A different number of calls were made.")
@@ -110,6 +110,7 @@ class TestPlaceMenubar:
             check.equal(main_window.movie_menu.add_command_calls, [
                         ((), {'label': 'Add Movie…', 'command': mainwindow.handlers.add_movie}),
                         ((), {'label': 'Edit Movie…', 'command': mainwindow.handlers.edit_movie}),
+                        ((), {'label': 'View Movie…', 'command': mainwindow.handlers.edit_movie}),
                         ((), {'label': 'Delete Movie…', 'command': mainwindow.handlers.edit_movie}),
                         ((), {'label': 'Add Tag…', 'command': mainwindow.handlers.add_tag}),
                         ((), {'label': 'Edit Tag…', 'command': mainwindow.handlers.edit_tag}),
