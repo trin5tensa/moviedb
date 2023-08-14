@@ -37,8 +37,8 @@ SAVE_TEXT = 'Save'
 DELETE_TEXT = 'Delete'
 CANCEL_TEXT = 'Cancel'
 
-MOVIE_GUI_MODE = Literal['add', 'edit']
 ParentType = TypeVar('ParentType', tk.Tk, tk.Toplevel, ttk.Frame)
+StateFlags = list[Literal['active', '!active', 'disabled', '!disabled']]
 
 
 @dataclass
@@ -120,8 +120,10 @@ class MovieGUI:
         # Populate buttonbox with buttons.
         column_num = itertools.count()
         self.create_buttons(buttonbox, column_num)
-        _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
-                       command=self.destroy, enabled=True)
+        cancel_button = _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
+                                       command=self.destroy, state=['!disabled'])
+        self.parent.bind('<Escape>', lambda e: cancel_button.invoke())
+        self.parent.bind('<Command-.>', lambda e: cancel_button.invoke())
 
         # Start the tmdb_work_queue polling
         self.tmdb_consumer()
@@ -255,6 +257,8 @@ class MovieGUI:
 
     def destroy(self):
         """Destroy all widgets of this class."""
+        self.parent.bind('<Escape>', lambda e: None)
+        self.parent.bind('<Command-.>', lambda e: None)
         self.parent.after_cancel(self.recall_id)
         self.outer_frame.destroy()
 
@@ -313,8 +317,9 @@ class AddMovieGUI(MovieGUI):
         pass
 
     def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
+        # todo test revised state
         commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
-                                       command=self.commit, enabled=False)
+                                       command=self.commit, state=['disabled', 'active'])
 
         # Link commit neuron to commit button.
         commit_button_enabler = _enable_button(commit_button)
@@ -379,7 +384,9 @@ class EditMovieGUI(MovieGUI):
         self.selected_tags = self.old_movie['tags']
 
     def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
-        _create_button(buttonbox, COMMIT_TEXT, column=next(column_num), command=self.commit)
+        # todo test revised state
+        _create_button(buttonbox, COMMIT_TEXT, column=next(column_num), command=self.commit,
+                       state=['disabled', 'active'])
         _create_button(buttonbox, DELETE_TEXT, column=next(column_num), command=self.delete)
 
     def commit(self):
@@ -442,8 +449,9 @@ class AddTagGUI:
 
         # Populate buttonbox with commit and cancel buttons
         column_num = itertools.count()
+        # todo test revised state
         commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
-                                       command=self.commit, enabled=False)
+                                       command=self.commit,  state=['disabled'])
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                        command=self.destroy).focus_set()
 
@@ -495,8 +503,9 @@ class SearchTagGUI:
 
         # Populate buttonbox with the search and cancel buttons.
         column_num = itertools.count()
+        # todo test revised state
         search_button = _create_button(buttonbox, SEARCH_TEXT, column=next(column_num),
-                                       command=self.search, enabled=False)
+                                       command=self.search,  state=['disabled'])
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                        command=self.destroy).focus_set()
 
@@ -556,8 +565,9 @@ class EditTagGUI:
 
         # Populate buttonbox with commit, delete, and cancel buttons
         column_num = itertools.count()
+        # todo test revised state
         commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
-                                       command=self.commit, enabled=False)
+                                       command=self.commit, state=['!disabled'])
         _create_button(buttonbox, DELETE_TEXT, column=next(column_num), command=self.delete)
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                        command=self.destroy).focus_set()
@@ -695,10 +705,11 @@ class PreferencesGUI:
 
         # Create buttons
         column_num = itertools.count()
+        # todo test revised state
         save_button = _create_button(buttonbox, SAVE_TEXT, column=next(column_num),
-                                     command=self.save, enabled=False)
+                                     command=self.save,  state=['disabled'])
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
-                       command=self.destroy, enabled=True)
+                       command=self.destroy, state=['!disabled'])
 
         # Link save button to save neuron
         save_button_enabler = _enable_button(save_button)
@@ -1063,7 +1074,8 @@ def _clear_input_form_fields(entry_fields: Mapping[str, '_EntryField']):
 
 
 def _create_button(buttonbox: ttk.Frame, text: str, column: int, command: Callable,
-                   enabled: bool = True) -> ttk.Button:
+                   state: StateFlags = None,
+                   ) -> ttk.Button:
     """Create a button
 
     Args:
@@ -1071,7 +1083,7 @@ def _create_button(buttonbox: ttk.Frame, text: str, column: int, command: Callab
         text: The enclosing buttonbox.
         column: The index of the button in the buttonbox. '0' is leftmost position.
         command: The command to be executed when the button is clicked.
-        enabled: Sets the initial enabled or disables state of the button.
+        state: A list of tkinter widget states including 'disabled' and 'active.
 
     Returns:
         The button
@@ -1079,8 +1091,8 @@ def _create_button(buttonbox: ttk.Frame, text: str, column: int, command: Callab
     button = ttk.Button(buttonbox, text=text, command=command)
     button.grid(column=column, row=0)
     button.bind('<Return>', lambda event, b=button: b.invoke())  # pragma nocover
-    if not enabled:
-        button.state(['disabled'])
+    if state:
+        button.state(state)
     return button
 
 

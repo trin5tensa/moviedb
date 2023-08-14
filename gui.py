@@ -2,7 +2,6 @@
 
 This module controls all gui activity
 """
-
 #  Copyright (c) 2022-2022. Stephen Rigden.
 #  Last modified 10/28/22, 8:36 AM by stephen.
 #  This program_name is free software: you can redistribute it and/or modify
@@ -21,9 +20,12 @@ import tkinter as tk
 import config
 import mainwindow
 
+# todo Move the run function to mainwindow (new name guirun) and delete this module
+
 
 def run():
     """Run the GUI."""
+    # todo Rename to run_tktcl
     config.current.tk_root = tk.Tk()
     root = config.current.tk_root
     root.columnconfigure(0, weight=1)

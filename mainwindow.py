@@ -23,6 +23,7 @@ from typing import Sequence, Tuple
 import config
 import handlers
 
+# todo Change module name to guirun.
 
 @dataclass
 class MainWindow:

@@ -79,7 +79,7 @@ class TestAddTagGUI:
         with self.add_tag_gui_context() as cm:
             assert self.create_button_calls == [
                 ((TtkFrame(parent=TtkFrame(parent=DummyTk())), 'Commit'),
-                 dict(column=0, command=cm.commit, enabled=False)),
+                 dict(column=0, command=cm.commit, state=['disabled'])),
                 ((TtkFrame(parent=TtkFrame(parent=DummyTk())), 'Cancel'),
                  dict(column=1, command=cm.destroy))]
 
@@ -373,7 +373,7 @@ class TestEditTagGUI:
         with self.edit_tag_gui_context() as cm:
             assert self.create_button_calls == [
                 ((TtkFrame(parent=TtkFrame(parent=DummyTk())), 'Commit'),
-                 dict(column=0, command=cm.commit, enabled=False)),
+                 dict(column=0, command=cm.commit, state=['!disabled'])),
                 ((TtkFrame(parent=TtkFrame(parent=DummyTk())), 'Delete'),
                  dict(column=1, command=cm.delete)),
                 ((TtkFrame(parent=TtkFrame(parent=DummyTk())), 'Cancel'),
@@ -1090,16 +1090,16 @@ class TestCreateButton:
             assert isinstance(button.bind_calls[0][1], Callable)
 
     def test_disable_at_initialization(self):
-        with self.button_context(False) as button:
+        with self.button_context(['disabled', ]) as button:
             assert button.state_calls == [['disabled']]
 
     @contextmanager
-    def button_context(self, enabled=True):
+    def button_context(self, state_flags=None):
         buttonbox = TtkFrame(DummyTk())
         text = 'Dummy Button'
         column = 0
         # noinspection PyTypeChecker
-        yield guiwidgets_2._create_button(buttonbox, text, column, lambda: None, enabled)
+        yield guiwidgets_2._create_button(buttonbox, text, column, lambda: None, state=state_flags)
 
 
 def test_gui_messagebox(monkeypatch):
