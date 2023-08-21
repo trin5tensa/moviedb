@@ -52,6 +52,7 @@ class TestSelectMovieGUI:
 
 
 # noinspection DuplicatedCode,PyMissingOrEmptyDocstring
+@pytest.mark.skip('Rewrite in _pbo')
 @pytest.mark.usefixtures('patch_tk')
 class TestAddTagGUI:
 

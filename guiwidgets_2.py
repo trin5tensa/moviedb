@@ -446,14 +446,15 @@ class AddTagGUI:
         label_field = _InputZone(body_frame)
         for movie_field_name in TAG_FIELD_NAMES:
             label_field.add_entry_row(self.entry_fields[movie_field_name])
+        _focus_set(self.entry_fields[TAG_FIELD_NAMES[0]].widget)
 
         # Populate buttonbox with commit and cancel buttons
         column_num = itertools.count()
-        # todo test revised state
-        commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
-                                       command=self.commit,  state=['disabled'])
-        _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
-                       command=self.destroy).focus_set()
+        commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num), command=self.commit,
+                                       state=['disabled'])
+        cancel_button = _create_button(buttonbox, CANCEL_TEXT, column=next(column_num), command=self.destroy)
+        self.parent.bind('<Escape>', lambda e: cancel_button.invoke())
+        self.parent.bind('<Command-.>', lambda e: cancel_button.invoke())
 
         # Link commit button to tag field
         button_enabler = _enable_button(commit_button)
@@ -469,6 +470,8 @@ class AddTagGUI:
 
     def destroy(self):
         """Destroy this instance's widgets."""
+        self.parent.bind('<Escape>', lambda e: None)
+        self.parent.bind('<Command-.>', lambda e: None)
         self.outer_frame.destroy()
 
 
@@ -503,7 +506,7 @@ class SearchTagGUI:
 
         # Populate buttonbox with the search and cancel buttons.
         column_num = itertools.count()
-        # todo test revised state
+        # todo integration and unit test revised state
         search_button = _create_button(buttonbox, SEARCH_TEXT, column=next(column_num),
                                        command=self.search,  state=['disabled'])
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
@@ -565,7 +568,7 @@ class EditTagGUI:
 
         # Populate buttonbox with commit, delete, and cancel buttons
         column_num = itertools.count()
-        # todo test revised state
+        # todo integration and unit test revised state
         commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
                                        command=self.commit, state=['!disabled'])
         _create_button(buttonbox, DELETE_TEXT, column=next(column_num), command=self.delete)
@@ -664,6 +667,7 @@ class SelectTagGUI:
 @dataclass
 class PreferencesGUI:
     """Create and manage a Tk input form which allows the user to update program preferences."""
+    # todo change name to SettingsGUI. See moviedb-#325
     parent: tk.Tk
 
     # Preference fields

@@ -25,6 +25,7 @@ import handlers
 
 # todo Change module name to guirun.
 
+
 @dataclass
 class MainWindow:
     """Create and manage the menu bar and the application's main window. """
@@ -35,6 +36,7 @@ class MainWindow:
     # Local variables exposed as attributes for testing
     menubar: tk.Menu = field(default=None, init=False, repr=False)
     apple_menu: tk.Menu = field(default=None, init=False, repr=False)
+    moviedb_menu: tk.Menu = field(default=None, init=False, repr=False)
     edit_menu: tk.Menu = field(default=None, init=False, repr=False)
     movie_menu: tk.Menu = field(default=None, init=False, repr=False)
 
@@ -101,13 +103,20 @@ class MainWindow:
 
         self.menubar = tk.Menu(self.parent)
 
-        self.apple_menu = tk.Menu(self.menubar, name='apple')
-        self.menubar.add_cascade(menu=self.apple_menu)
-        self.apple_menu.add_command(label='About ' + config.persistent.program_name + '…',
-                                    command=handlers.about_dialog)
-        self.apple_menu.add_command(label='Settings for Moviedb…', command=handlers.settings_dialog)
-        # Of all the different things that could be done with the standard 'Settings…' item this is the least ugly.
+        # 'apple' menu
+        # todo write tests for this menu
         self.parent.createcommand('tk::mac::ShowPreferences', handlers.settings_dialog)
+        self.parent.createcommand('tk::mac::Quit', self.tk_shutdown)
+
+        # todo write tests for this menu
+        self.moviedb_menu = tk.Menu(self.menubar)
+        self.menubar.add_cascade(menu=self.moviedb_menu, label='Moviedb')
+        self.moviedb_menu.add_command(label='About ' + config.persistent.program_name + '…',
+                                      command=handlers.about_dialog)
+        self.moviedb_menu.add_separator()
+        self.moviedb_menu.add_command(label='Settings for Moviedb…', command=handlers.settings_dialog)
+        self.moviedb_menu.add_separator()
+        self.moviedb_menu.add_command(label='Quit Moviedb', command=self.tk_shutdown)
 
         self.edit_menu = tk.Menu(self.menubar)
         self.menubar.add_cascade(menu=self.edit_menu, label='Edit')
@@ -146,6 +155,7 @@ class MainWindow:
         Args:
             *args: Not used. Required for compatibility with caller
         """
+        print(f'\ntk_shutdown invoked.{args=}')
         # Save geometry in config.current for future permanent storage.
         config.persistent.geometry = self.parent.winfo_geometry()
         # Destroy all widgets and end mainloop.
