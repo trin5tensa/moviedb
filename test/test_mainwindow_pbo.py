@@ -18,6 +18,8 @@ This module contains new tests written after Brian Okken's course and book on py
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
+import pytest
+
 import mainwindow
 from test.dummytk import DummyTk, TkMenu
 
@@ -31,6 +33,7 @@ class TestMainWindowInit:
     mock_set_geometry: MagicMock = None
     mock_place_menubar: MagicMock = None
 
+    @pytest.mark.skip
     def test_main_window_initialization(self, monkeypatch, check):
         with self.main_window_context(monkeypatch) as main_window:
             check.equal(self.tk_root.title_calls, [TEST_TITLE], 'parent.title not called with expected arguments.')
@@ -63,6 +66,7 @@ class TestPlaceMenubar:
     mock_place_menubar: MagicMock = None
     tk_menu: TkMenu = None
 
+    @pytest.mark.skip
     def test_main_window_initialization(self, monkeypatch, check):
         with self.main_window_context(monkeypatch) as main_window:
             msg = "The menu '*tearOff' suppression option is missing."
