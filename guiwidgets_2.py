@@ -20,7 +20,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 from tkinter import filedialog, messagebox
-from typing import Callable, Dict, Iterable, Iterator, Mapping, Sequence, Tuple, TypeVar, Literal
+from typing import Callable, Dict, Iterable, Iterator, Mapping, Sequence, Tuple, TypeVar, Literal, Optional
 
 import config
 import exception
@@ -38,7 +38,7 @@ DELETE_TEXT = 'Delete'
 CANCEL_TEXT = 'Cancel'
 
 ParentType = TypeVar('ParentType', tk.Tk, tk.Toplevel, ttk.Frame)
-StateFlags = list[Literal['active', '!active', 'disabled', '!disabled']]
+StateFlags = Optional[list[Literal['active', 'normal', 'disabled', '!disabled']]]
 
 
 @dataclass
@@ -120,8 +120,9 @@ class MovieGUI:
         # Populate buttonbox with buttons.
         column_num = itertools.count()
         self.create_buttons(buttonbox, column_num)
+        # todo integration and unit test of buttons particularly active, normal and disabled status.
         cancel_button = _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
-                                       command=self.destroy, state=['!disabled'])
+                                       command=self.destroy, default='active')
         self.parent.bind('<Escape>', lambda e: cancel_button.invoke())
         self.parent.bind('<Command-.>', lambda e: cancel_button.invoke())
 
@@ -317,9 +318,9 @@ class AddMovieGUI(MovieGUI):
         pass
 
     def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
-        # todo test revised state
+        # todo integration and unit test of buttons particularly active, normal and disabled status.
         commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
-                                       command=self.commit, state=['disabled', 'active'])
+                                       command=self.commit, default='normal')
 
         # Link commit neuron to commit button.
         commit_button_enabler = _enable_button(commit_button)
@@ -384,10 +385,9 @@ class EditMovieGUI(MovieGUI):
         self.selected_tags = self.old_movie['tags']
 
     def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
-        # todo test revised state
-        _create_button(buttonbox, COMMIT_TEXT, column=next(column_num), command=self.commit,
-                       state=['disabled', 'active'])
-        _create_button(buttonbox, DELETE_TEXT, column=next(column_num), command=self.delete)
+        # todo integration and unit test of buttons particularly active, normal and disabled status.
+        _create_button(buttonbox, COMMIT_TEXT, column=next(column_num), command=self.commit, default='active')
+        _create_button(buttonbox, DELETE_TEXT, column=next(column_num), command=self.delete, default='active')
 
     def commit(self):
         """Commit an edited movie to the database."""
@@ -450,9 +450,11 @@ class AddTagGUI:
 
         # Populate buttonbox with commit and cancel buttons
         column_num = itertools.count()
+        # todo integration and unit test of buttons particularly active, normal and disabled status.
         commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num), command=self.commit,
-                                       state=['disabled'])
-        cancel_button = _create_button(buttonbox, CANCEL_TEXT, column=next(column_num), command=self.destroy)
+                                       default='disabled')
+        cancel_button = _create_button(buttonbox, CANCEL_TEXT, column=next(column_num), command=self.destroy,
+                                       default='active')
         self.parent.bind('<Escape>', lambda e: cancel_button.invoke())
         self.parent.bind('<Command-.>', lambda e: cancel_button.invoke())
 
@@ -506,11 +508,11 @@ class SearchTagGUI:
 
         # Populate buttonbox with the search and cancel buttons.
         column_num = itertools.count()
-        # todo integration and unit test revised state
+        # todo integration and unit test of buttons particularly active, normal and disabled status.
         search_button = _create_button(buttonbox, SEARCH_TEXT, column=next(column_num),
-                                       command=self.search,  state=['disabled'])
+                                       command=self.search,  default='disabled')
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
-                       command=self.destroy).focus_set()
+                       command=self.destroy, default='active').focus_set()
 
         # Link the search button to the tag field.
         button_enabler = _enable_button(search_button)
@@ -568,12 +570,12 @@ class EditTagGUI:
 
         # Populate buttonbox with commit, delete, and cancel buttons
         column_num = itertools.count()
-        # todo integration and unit test revised state
+        # todo integration and unit test of buttons particularly active, normal and disabled status.
         commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
-                                       command=self.commit, state=['!disabled'])
-        _create_button(buttonbox, DELETE_TEXT, column=next(column_num), command=self.delete)
+                                       command=self.commit, default='active')
+        _create_button(buttonbox, DELETE_TEXT, column=next(column_num), command=self.delete, default='active')
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
-                       command=self.destroy).focus_set()
+                       command=self.destroy, default='active').focus_set()
 
         # Link commit button to tag field
         button_enabler = _enable_button(commit_button)
@@ -633,7 +635,8 @@ class SelectTagGUI:
 
         # Create the button
         column_num = 0
-        _create_button(buttonbox, CANCEL_TEXT, column_num, self.destroy)
+        # todo integration and unit test of buttons particularly active, normal and disabled status.
+        _create_button(buttonbox, CANCEL_TEXT, column_num, self.destroy, default='active')
 
     def selection_callback_wrapper(self, tree: ttk.Treeview) -> Callable:
         """Call the callback provided by the caller and destroy all Tk widgets associated with this
@@ -709,11 +712,11 @@ class PreferencesGUI:
 
         # Create buttons
         column_num = itertools.count()
-        # todo test revised state
+        # todo integration and unit test of buttons particularly active, normal and disabled status.
         save_button = _create_button(buttonbox, SAVE_TEXT, column=next(column_num),
-                                     command=self.save,  state=['disabled'])
+                                     command=self.save,  default='disabled')
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
-                       command=self.destroy, state=['!disabled'])
+                       command=self.destroy, default='active')
 
         # Link save button to save neuron
         save_button_enabler = _enable_button(save_button)
@@ -1078,7 +1081,7 @@ def _clear_input_form_fields(entry_fields: Mapping[str, '_EntryField']):
 
 
 def _create_button(buttonbox: ttk.Frame, text: str, column: int, command: Callable,
-                   state: StateFlags = None,
+                   default: Literal['normal', 'active', 'disabled']
                    ) -> ttk.Button:
     """Create a button
 
@@ -1087,16 +1090,13 @@ def _create_button(buttonbox: ttk.Frame, text: str, column: int, command: Callab
         text: The enclosing buttonbox.
         column: The index of the button in the buttonbox. '0' is leftmost position.
         command: The command to be executed when the button is clicked.
-        state: A list of tkinter widget states including 'disabled' and 'active.
 
     Returns:
         The button
     """
-    button = ttk.Button(buttonbox, text=text, command=command)
+    button = ttk.Button(buttonbox, text=text, default=default, command=command)
     button.grid(column=column, row=0)
     button.bind('<Return>', lambda event, b=button: b.invoke())  # pragma nocover
-    if state:
-        button.state(state)
     return button
 
 
@@ -1123,9 +1123,15 @@ def _enable_button(button: ttk.Button) -> Callable:
             state:
         """
         if state:
+            # Enable the button
             button.state(['!disabled'])
+            # Highlight the button to show it is enabled
+            button.configure(default='active')
         else:
+            # Disable the button
             button.state(['disabled'])
+            # Remove the button highlight
+            button.configure(default='disabled')
 
     return func
 
