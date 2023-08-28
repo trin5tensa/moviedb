@@ -292,6 +292,7 @@ class TtkButton:
     parent: ParentType
     text: str
     command: Callable = None
+    default: str = None
 
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     bind_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -316,6 +317,9 @@ class TtkButton:
 
     def invoke(self):
         self.invoke_calls.append(True)
+
+    def configure(self, *args, **kwargs):
+        ...
 
 
 # noinspection PyMissingOrEmptyDocstring

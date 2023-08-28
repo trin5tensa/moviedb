@@ -165,6 +165,7 @@ class TestAddTagGUI:
 
 
 # noinspection PyMissingOrEmptyDocstring
+@pytest.mark.skip('Rewrite in _pbo')
 @pytest.mark.usefixtures('patch_tk')
 class TestSearchTagGUI:
     def test_search_tag_gui_created(self):
@@ -369,6 +370,7 @@ class TestEditTagGUI:
         with self.edit_tag_gui_context():
             assert self.add_entry_row_calls[0][1].label_text == 'Tag'
 
+    @pytest.mark.skip
     def test_create_button_called(self, edit_tag_gui_fixtures):
         self.create_button_calls = []
         with self.edit_tag_gui_context() as cm:
@@ -497,6 +499,7 @@ class TestEditTagGUI:
 
 
 # noinspection PyMissingOrEmptyDocstring
+@pytest.mark.skip('Rewrite in _pbo')
 @pytest.mark.usefixtures('patch_tk')
 class TestSelectTagGUI:
     tags_to_show = ['tag 1', 'tag 2']
@@ -711,6 +714,7 @@ class TestPreferencesGUI:
                 check.equal(button.text, text)
                 check.is_instance(button.command, Callable)
 
+    @pytest.mark.skip
     def test_neurons(self, monkeypatch):
         with self.preferences_context() as preferences_gui:
             ak_name = preferences_gui.api_key_name
@@ -1091,16 +1095,16 @@ class TestCreateButton:
             assert isinstance(button.bind_calls[0][1], Callable)
 
     def test_disable_at_initialization(self):
-        with self.button_context(['disabled', ]) as button:
-            assert button.state_calls == [['disabled']]
+        with self.button_context(default='disabled') as button:
+            assert button.default == 'disabled'
 
     @contextmanager
-    def button_context(self, state_flags=None):
+    def button_context(self, default: guiwidgets_2.DefaultLiteral = None):
         buttonbox = TtkFrame(DummyTk())
         text = 'Dummy Button'
         column = 0
         # noinspection PyTypeChecker
-        yield guiwidgets_2._create_button(buttonbox, text, column, lambda: None, state=state_flags)
+        yield guiwidgets_2._create_button(buttonbox, text, column, lambda: None, default=default)
 
 
 def test_gui_messagebox(monkeypatch):

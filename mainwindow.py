@@ -169,7 +169,6 @@ class MainWindow:
         Args:
             *args: Not used. Required for compatibility with caller
         """
-        print(f'\ntk_shutdown invoked.{args=}')
         # Save geometry in config.current for future permanent storage.
         config.persistent.geometry = self.parent.winfo_geometry()
         # Destroy all widgets and end mainloop.

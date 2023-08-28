@@ -38,6 +38,7 @@ DELETE_TEXT = 'Delete'
 CANCEL_TEXT = 'Cancel'
 
 ParentType = TypeVar('ParentType', tk.Tk, tk.Toplevel, ttk.Frame)
+DefaultLiteral = Literal['normal', 'active', 'disabled']
 StateFlags = Optional[list[Literal['active', 'normal', 'disabled', '!disabled']]]
 
 
@@ -75,7 +76,7 @@ class MovieGUI:
     last_text_event_id: str = field(default='', init=False, repr=False)
 
     # Local variables exposed for testing
-    commit_neuron: neurons.AndNeuron = field(default=None, init=False, repr=False)
+    commit_neuron: neurons.Neuron = field(default=None, init=False, repr=False)
     return_fields: dict = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
@@ -146,7 +147,7 @@ class MovieGUI:
         """
         raise NotImplementedError
 
-    def call_title_notifees(self, commit_neuron: neurons.AndNeuron) -> Callable:
+    def call_title_notifees(self, commit_neuron: neurons.Neuron) -> Callable:
         """
         This function creates the notifee for the title field observer which will be called whenever
         the user changes the title.
@@ -167,12 +168,13 @@ class MovieGUI:
                 *args: Not used. This is required to match unused arguments from the caller.
             """
             text = self.entry_fields[self.title].textvariable.get()
+            old_text = self.entry_fields[self.title].original_value
 
             # Invoke a TMDB search
             self.tmdb_search(text)
 
             # Notify the commit button neuron
-            commit_neuron(self.title, bool(text))
+            commit_neuron(self.title, bool(text != old_text))
 
         return func
 
@@ -322,7 +324,7 @@ class AddMovieGUI(MovieGUI):
         commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
                                        command=self.commit, default='normal')
 
-        # Link commit neuron to commit button.
+        # Link commit button to new commit button neuron.
         commit_button_enabler = _enable_button(commit_button)
         self.commit_neuron = _create_buttons_andneuron(commit_button_enabler)
 
@@ -1081,8 +1083,7 @@ def _clear_input_form_fields(entry_fields: Mapping[str, '_EntryField']):
 
 
 def _create_button(buttonbox: ttk.Frame, text: str, column: int, command: Callable,
-                   default: Literal['normal', 'active', 'disabled']
-                   ) -> ttk.Button:
+                   default: DefaultLiteral) -> ttk.Button:
     """Create a button
 
     Args:
@@ -1133,6 +1134,7 @@ def _enable_button(button: ttk.Button) -> Callable:
             # Remove the button highlight
             button.configure(default='disabled')
 
+        x = 42
     return func
 
 
@@ -1152,6 +1154,7 @@ def _create_button_orneuron(change_button_state: Callable) -> neurons.OrNeuron:
     Returns:
         Neuron
     """
+    # todo refactor _create_button_orneuron and _create_buttons_andneuron into a single function
     neuron = neurons.OrNeuron()
     neuron.register(change_button_state)
     return neuron
@@ -1166,6 +1169,7 @@ def _create_buttons_andneuron(change_button_state: Callable) -> neurons.AndNeuro
     Returns:
         Neuron
     """
+    # todo refactor _create_button_orneuron and _create_buttons_andneuron into a single function
     neuron = neurons.AndNeuron()
     neuron.register(change_button_state)
     return neuron
