@@ -504,6 +504,7 @@ class SearchTagGUI:
         label_field = _InputZone(body_frame)
         for movie_field_name in TAG_FIELD_NAMES:
             label_field.add_entry_row(self.entry_fields[movie_field_name])
+        _focus_set(self.entry_fields[TAG_FIELD_NAMES[0]].widget)
 
         # Populate buttonbox with the search and cancel buttons.
         column_num = itertools.count()
@@ -511,7 +512,7 @@ class SearchTagGUI:
         search_button = _create_button(buttonbox, SEARCH_TEXT, column=next(column_num),
                                        command=self.search,  default='disabled')
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
-                       command=self.destroy, default='active').focus_set()
+                       command=self.destroy, default='active')
 
         # Link the search button to the tag field.
         button_enabler = _enable_button(search_button)
@@ -630,6 +631,9 @@ class SelectTagGUI:
         # Populate the treeview rows
         for tag in self.tags_to_show:
             tree.insert('', 'end', iid=tag, text=tag, values=[], tags=TAG_FIELD_NAMES[0])
+        # Set focus here so that the <Escape> keypress can identify which moviedb window is subject to the <Escape>
+        # action.
+        tree.focus_set()
 
         # Bind the treeview callback
         tree.bind('<<TreeviewSelect>>', func=self.selection_callback_wrapper(tree))
@@ -1141,7 +1145,6 @@ def _enable_button(button: ttk.Button) -> Callable:
             # Remove the button highlight
             button.configure(default='disabled')
 
-        x = 42
     return func
 
 
