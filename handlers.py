@@ -78,7 +78,7 @@ class EscapeKeyDict(UserDict):
             match len(outer_frame_name):
                 case 0:
                     message = f"Keypress {keypress} detected but no valid name was found in the topmost Tk/Tcl window."
-                    logging.info(message)
+                    logging.info(f"{message}. {keypress_event.keysym=}, {keypress_event.widget=}")
                     guiwidgets_2.gui_messagebox(parent, heading, message)
                     return
                 case 1:
