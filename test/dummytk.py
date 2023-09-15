@@ -178,6 +178,7 @@ class TtkFrame:
     """
     parent: ParentType
     padding: Union[int, Tuple[int, ...], str] = field(default='')
+    name: str = ''
 
     children: list = field(default_factory=list, init=False, repr=False, compare=False)
     grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
@@ -240,6 +241,7 @@ class TtkEntry:
     focus_set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     select_range_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
     icursor_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    bind_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
 
     def __post_init__(self):
         self.parent.children.append(self)
@@ -263,6 +265,8 @@ class TtkEntry:
     def icursor(self, *args):
         self.icursor_calls.append(args)
 
+    def bind(self, *args):
+        self.bind_calls.append(args, )
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass

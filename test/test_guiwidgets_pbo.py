@@ -46,6 +46,7 @@ class TestAddMovieGUI:
 
     def test_tmdb_search(self, check):
         """Confirm that a change to the title field makes a delayed call to tmdb_search_callback."""
+        guiwidgets_2.config.current = MagicMock()
         cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, self.tags, add_movie_callback=lambda: None)
         search_string = 'tmdb search substring'
         cut.entry_fields[cut.title].textvariable.set_for_test(search_string)
@@ -77,6 +78,7 @@ class TestAddMovieGUI:
         Movies found in MovieGUI's queue are moved to the treeview and to tmdb_movies.
         The polling call to tmdb_consumer is replaced on the mock tkinter event loop.
         """
+        guiwidgets_2.config.current = MagicMock()
         cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, self.tags, add_movie_callback=lambda: None)
         cut.tmdb_work_queue.put(self.test_movies)
         cut.tmdb_treeview.set_mock_children(['garbage1', 'garbage2'])
@@ -101,6 +103,7 @@ class TestAddMovieGUI:
 
     def test_commit_a_movie(self, check):
         """Confirm that the input form is populated by a user selection from the list of movies."""
+        guiwidgets_2.config.current = MagicMock()
         callback = MagicMock()
         cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, self.tags, add_movie_callback=callback)
         for k, v in cut.entry_fields.items():
@@ -118,6 +121,7 @@ class TestAddMovieGUI:
 
     def test_invalid_key_exception_alerts_user(self, monkeypatch):
         """Confirm an invalid title and year combination presents an alert."""
+        guiwidgets_2.config.current = MagicMock()
         parent = DummyTk()
         exc = guiwidgets_2.exception.MovieDBConstraintFailure
         callback = MagicMock(side_effect=exc, name='mock commit callback')
@@ -131,6 +135,7 @@ class TestAddMovieGUI:
 
     def test_invalid_movie_year_exception_alerts_user(self, monkeypatch):
         """Confirm an invalid year presents an alert."""
+        guiwidgets_2.config.current = MagicMock()
         parent = DummyTk()
         exc = guiwidgets_2.exception.MovieYearConstraintFailure
         exc.args = ('test arg 1', 'test arg 2')
@@ -144,12 +149,14 @@ class TestAddMovieGUI:
         messagebox.showinfo.assert_called_once_with(parent=parent, message=exc.args[0])
 
     def test_tags_treeview_callback(self):
+        guiwidgets_2.config.current = MagicMock()
         cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, self.tags, add_movie_callback=lambda: None)
         selection = ('tag1', 'tag2')
         cut.tags_treeview_callback(selection)
         assert cut.selected_tags == selection
 
     def test_tmdb_treeview_callback(self, check):
+        guiwidgets_2.config.current = MagicMock()
         cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, self.tags, add_movie_callback=lambda: None)
         item_id = 'I001'
         cut.tmdb_movies = {item_id: self.test_movies[0]}
@@ -171,6 +178,7 @@ class TestAddMovieGUI:
 
     def test_tmdb_treeview_deselection(self, check):
         """The user has deselected the chosen movie so test that the input form fields have *not* been altered."""
+        guiwidgets_2.config.current = MagicMock()
         cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, self.tags, add_movie_callback=lambda: None)
         # noinspection PyArgumentList
         cut.tmdb_treeview.selection_set()
@@ -184,6 +192,7 @@ class TestAddMovieGUI:
             check.equal(cut.entry_fields[k].textvariable.set_calls, [])
 
     def test_destroy(self, check):
+        guiwidgets_2.config.current = MagicMock()
         cut = guiwidgets_2.AddMovieGUI(DummyTk(), lambda: None, self.tags, add_movie_callback=lambda: None)
         cut.outer_frame.destroy_calls = []
         cut.parent.after_cancel_calls = []
@@ -219,6 +228,7 @@ class TestEditMovieGUI:
 
     def test_commit_a_movie(self, check):
         """Commit method should call the edit movie callback."""
+        guiwidgets_2.config.current = MagicMock()
         edit_movie = MagicMock()
         delete_movie = MagicMock()
         cut = guiwidgets_2.EditMovieGUI(DummyTk(), lambda: None, self.all_tags,
@@ -230,6 +240,7 @@ class TestEditMovieGUI:
 
     def test_invalid_key_exception_alerts_user(self, monkeypatch):
         """Confirm an invalid title and year combination presents an alert."""
+        guiwidgets_2.config.current = MagicMock()
         parent = DummyTk()
         exc = guiwidgets_2.exception.MovieDBConstraintFailure
         callback = MagicMock(side_effect=exc, name='mock commit callback')
@@ -245,6 +256,7 @@ class TestEditMovieGUI:
 
     def test_invalid_movie_year_exception_alerts_user(self, monkeypatch):
         """Confirm an invalid year presents an alert."""
+        guiwidgets_2.config.current = MagicMock()
         parent = DummyTk()
 
         exc = guiwidgets_2.exception.MovieYearConstraintFailure
@@ -261,6 +273,7 @@ class TestEditMovieGUI:
         messagebox.showinfo.assert_called_once_with(parent=parent, message=exc.args[0])
 
     def test_delete_calls_confirmation_dialog(self, check, monkeypatch):
+        guiwidgets_2.config.current = MagicMock()
         delete_movie_callback_arg = None
         destroy_called = False
 

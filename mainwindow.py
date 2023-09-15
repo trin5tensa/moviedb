@@ -44,7 +44,12 @@ class MainWindow:
         self.parent.title(config.persistent.program_name)
         self.parent.geometry(self.set_geometry())
         self.place_menubar()
-        # self.parent.protocol('WM_DELETE_WINDOW', self.tk_shutdown)
+
+        # Set up handling of <Escape> and <Command-.>
+        # todo test next three lines
+        config.current.escape_key_dict = escape_key_dict = handlers.EscapeKeyDict()
+        self.parent.bind_all(key := '<Escape>', escape_key_dict.close_topview(self.parent, key))
+        self.parent.bind_all(key := '<Command-.>', escape_key_dict.close_topview(self.parent, key))
 
     def set_geometry(self) -> str:
         """Set window geometry from a default value or app.geometry and make sure it will
@@ -107,17 +112,20 @@ class MainWindow:
         application menu. The 'Moviedb' menu has the items 'About…', 'Settings…', and 'Quit. Neither the 'Quit' nor
         the 'Settings…' items will accept the standard accelerator keys of <Command-Q> or <Command-,> presumably
         because these are reserved for the 'Python' menu. For that reason these two accelerator keys have been
-        attached to the 'Python' menu with 'tk::mac::Quit' and 'tk::mac::ShowPreferences'. The quit accelerator is
-        particularly important as Moviedb's shutdown procedure would not be invoked if the user presses <Command-Q>.
-        Of the four different ways of quitting a program which are <Command-Q>, Application menu item 'Quit',
-        dock application popup, and close box (red 'x' button at top of window); only the first three are intercepted
-        by the command tk::mac::Quit. The close box is intercepted by the protocol 'WM_DELETE_WINDOW'.
+        attached to the 'Python' menu with 'tk::mac::Quit' and 'tk::mac::ShowPreferences'.
+
+        tk_shutdown (Moviedb's final cleanup function)
+        The quit accelerator is particularly important as Moviedb's shutdown procedure would not be invoked if the
+        user presses <Command-Q>. Of the four different ways of quitting a program which are <Command-Q>,
+        Application menu item 'Quit', dock application popup, and close box (red 'x' button at top of window);
+        only the first three are intercepted by the command tk::mac::Quit. The close box is intercepted by the
+        protocol 'WM_DELETE_WINDOW'.
         """
+        # todo test next five lines
         self.parent.option_add('*tearOff', False)
-        # Intercept close button (red 'x')
+        # Intercept window close button (red 'x')
         self.parent.protocol('WM_DELETE_WINDOW', self.tk_shutdown)
-        # todo test next two lines
-        # Intercept <Command-Q>, Application menu item 'Quit', dock application popup quit itme.
+        # Intercept <Command-Q>, Application menu item 'Quit', and dock application popup quit item.
         self.parent.createcommand('tk::mac::Quit', self.tk_shutdown)
         self.parent.createcommand('tk::mac::ShowPreferences', handlers.settings_dialog)
         self.menubar = tk.Menu(self.parent)

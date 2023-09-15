@@ -1,4 +1,5 @@
 """Application configuration data """
+
 #  Copyright (c) 2022-2023. Stephen Rigden.
 #  Last modified 1/28/23, 8:30 AM by stephen.
 #  This program_name is free software: you can redistribute it and/or modify
@@ -12,6 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program_name.  If not, see <https://www.gnu.org/licenses/>.
 
+from collections import UserDict
 from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -74,6 +76,8 @@ class CurrentConfig:
     tk_root: 'tk.Tk' = None
     safeprint: Callable = None
     threadpool_executor: ThreadPoolExecutor = None
+    # todo test next line
+    escape_key_dict: UserDict = None
 
 
 @dataclass

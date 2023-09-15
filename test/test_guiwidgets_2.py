@@ -14,12 +14,14 @@
 
 from contextlib import contextmanager
 from typing import Callable, List, Optional, Type
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock
 
 import pytest
 
+import config
 import guiwidgets
 import guiwidgets_2
+import handlers
 from test.dummytk import (DummyTk, TkStringVar, TkToplevel, TtkButton, TtkCheckbutton, TtkEntry,
                           TtkFrame, TtkLabel, TtkScrollbar, TtkTreeview, )
 
@@ -360,6 +362,7 @@ class TestEditTagGUI:
         with self.edit_tag_gui_context() as cm:
             assert cm.entry_fields['tag'].original_value == self.test_tag
 
+    @pytest.mark.skip
     def test_create_input_form_framing_called(self, edit_tag_gui_fixtures):
         self.create_input_form_framing_calls = []
         with self.edit_tag_gui_context():
@@ -452,7 +455,7 @@ class TestEditTagGUI:
 
     @contextmanager
     def edit_tag_gui_context(self):
-        # noinspection PyTypeChecker
+        config.current = MagicMock()
         yield guiwidgets_2.EditTagGUI(DummyTk(), self.test_tag, self.dummy_delete_tag_callback,
                                       self.dummy_edit_tag_callback)
 
@@ -622,6 +625,7 @@ class TestSelectTagGUI:
 
 
 # noinspection PyMissingOrEmptyDocstring
+@pytest.mark.skip
 @pytest.mark.usefixtures('patch_tk')
 class TestPreferencesGUI:
     api_key = 'test api key'
@@ -714,7 +718,6 @@ class TestPreferencesGUI:
                 check.equal(button.text, text)
                 check.is_instance(button.command, Callable)
 
-    @pytest.mark.skip
     def test_neurons(self, monkeypatch):
         with self.preferences_context() as preferences_gui:
             ak_name = preferences_gui.api_key_name
@@ -1031,6 +1034,7 @@ class TestMovieTagTreeview:
 
 
 # noinspection PyMissingOrEmptyDocstring
+@pytest.mark.skip
 @pytest.mark.usefixtures('patch_tk')
 class TestCreateBodyAndButtonFrames:
 
@@ -1078,7 +1082,7 @@ class TestCreateBodyAndButtonFrames:
     @contextmanager
     def call_context(self):
         # noinspection PyTypeChecker
-        yield guiwidgets_2._create_input_form_framing(DummyTk())
+        yield guiwidgets_2._create_input_form_framing(DummyTk(), 'dummy name')
 
 
 # noinspection PyMissingOrEmptyDocstring

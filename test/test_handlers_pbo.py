@@ -26,6 +26,22 @@ import pytest
 
 
 # noinspection PyMissingOrEmptyDocstring
+
+class TestEscapeKeyDict:
+    def test_dict(self, check):
+        ecd = handlers.EscapeKeyDict()
+        ecd['one'] = self.test_func
+        check.equal(ecd, {'one': self.test_func})
+        ecd['two'] = self.test_func
+        check.equal(ecd, {'one': self.test_func, 'two': self.test_func})
+        ecd['one'] = self.test_func
+        check.equal(ecd, {'one': self.test_func, 'two': self.test_func})
+
+    def test_func(self):
+        pass
+
+
+# noinspection PyMissingOrEmptyDocstring
 class TestPreferencesDialog:
     """ Test Strategy:
 

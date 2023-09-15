@@ -17,7 +17,8 @@ This module is the glue between the user's selection of a menu item and the gui.
 import concurrent.futures
 import logging
 import queue
-from typing import Callable, Optional, Sequence
+from collections import UserDict
+from typing import Callable, Optional, Sequence, Literal
 
 import config
 import database
@@ -26,6 +27,73 @@ import guiwidgets
 import guiwidgets_2
 import impexp
 import tmdb
+
+
+class EscapeKeyDict(UserDict):
+    """ Support for Apple's <Escape> amd <Command-.> key presses.
+
+        Use Case:
+            Apple GUI advice asks that the <Escape> and <Command-.> accelerator keys and modifiers close the
+            current activity.
+
+        Application of the Apple requirements to moviedb is accomplished by calling the destroy method of the moviedb
+        object. The precise nature of what happens when a specific destroy method is called can vary so this approach
+        can accommodate any tkinter widget which is managed by a moviedb class. This excludes the convenience windows
+        such as messageboxes.
+
+        The two escape accelerator key combinations have be attached to Tk/Tcl's root with the bind_all function. When
+        invoked the event loop will call the supplied user function with a keypress event object as argument. This
+        keypress event object identifies the root and its children using Tk/Tcl's default names, for example
+        .!root.!frame.!frame.!entry. This is a str object and cannot be used to identify any tkinter or Tk/Tcl objects.
+
+        Matching the Tk/Tcl widget to the destroy method of its controlling moviedb object is accomplished by:
+        1) Uniquely naming the outer frame widget with the name of the moviedb class.
+        2) Registering the mapping of the outer frame name and the destroy method.
+    """
+    def __setitem__(self, outer_frame: str, destroy: Callable):
+        """Register a destroy method for a particular outer frame."""
+        if outer_frame not in self:
+            self.data[outer_frame] = destroy
+
+    def close_topview(self, parent: guiwidgets_2.ParentType, keypress: Literal['<Escape>', '<Command-.>']):
+        """ Sets up the callback which will close a moviedb logical window.
+
+        Args:
+            parent: Used to call tkinter messageboxes
+            keypress: User readable text used for reporting exceptions.
+        """
+
+        def func(keypress_event):
+            """ Closes a moviedb logical window.
+
+            Args:
+                keypress_event:
+            """
+            # todo test this method
+            outer_frame_name = [widget_name for widget_name in str(keypress_event.widget).split('.')
+                                if widget_name and widget_name[:1] != '!']
+
+            # Validate the Tk/Tcl name
+            heading = 'Internal Error'
+            match len(outer_frame_name):
+                case 0:
+                    message = f"Keypress {keypress} detected but no valid name was found in the topmost Tk/Tcl window."
+                    logging.info(message)
+                    guiwidgets_2.gui_messagebox(parent, heading, message)
+                    return
+                case 1:
+                    pass
+                case _:
+                    message = (f"Keypress {keypress} detected but more than one valid "
+                               f"name was found in the topmost Tk/Tcl window.")
+                    logging.info(message)
+                    guiwidgets_2.gui_messagebox(parent, heading, message)
+                    return
+
+            outer_frame_name = outer_frame_name.pop()
+            print(f"{ outer_frame_name=}")
+            print(f"{self.data[outer_frame_name]=}")
+        return func
 
 
 def about_dialog():

@@ -121,11 +121,8 @@ class MovieGUI:
         # Populate buttonbox with buttons.
         column_num = itertools.count()
         self.create_buttons(buttonbox, column_num)
-        # todo integration and unit test of buttons particularly active, normal and disabled status.
-        cancel_button = _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
-                                       command=self.destroy, default='active')
-        self.parent.bind('<Escape>', lambda e: cancel_button.invoke())
-        self.parent.bind('<Command-.>', lambda e: cancel_button.invoke())
+        _create_button(buttonbox, CANCEL_TEXT, column=next(column_num), command=self.destroy,
+                       default='active')
 
         # Start the tmdb_work_queue polling
         self.tmdb_consumer()
@@ -258,15 +255,13 @@ class MovieGUI:
             else:
                 self.entry_fields[k].textvariable.set(v)
 
-    def destroy(self):
+    def destroy(self, *args):
         """Destroy all widgets of this class."""
-        self.parent.bind('<Escape>', lambda e: None)
-        self.parent.bind('<Command-.>', lambda e: None)
         self.parent.after_cancel(self.recall_id)
         self.outer_frame.destroy()
 
-    @staticmethod
-    def framing(parent: ParentType) -> tuple[ttk.Frame, ttk.Frame, ttk.Frame, ttk.Frame]:
+    # @staticmethod
+    def framing(self, parent: ParentType) -> tuple[ttk.Frame, ttk.Frame, ttk.Frame, ttk.Frame]:
         """ Create framing.
 
         Structure:
@@ -282,11 +277,14 @@ class MovieGUI:
         Returns:
             outer_frame, fields, buttonbox, internet
         """
-        outer_frame = ttk.Frame(parent, padding=10)
+        # todo can this be refactored with common code in _create_input_form_framing
+        name = type(self).__name__.lower()
+        outer_frame = ttk.Frame(parent, padding=10, name=name)
         outer_frame.grid(column=0, row=0, sticky='nsew')
         outer_frame.columnconfigure(0, weight=1)
         outer_frame.columnconfigure(1, weight=1000)
         outer_frame.rowconfigure(0)
+        config.current.escape_key_dict[name] = self.destroy
 
         input_zone = ttk.Frame(outer_frame, padding=10)
         input_zone.grid(column=0, row=0, sticky='nw')
@@ -326,6 +324,7 @@ class AddMovieGUI(MovieGUI):
 
         # Link commit button to new commit button neuron.
         commit_button_enabler = _enable_button(commit_button)
+        commit_button_enabler(False)
         self.commit_neuron = _create_buttons_andneuron(commit_button_enabler)
 
         # Link commit neuron to year field.
@@ -442,7 +441,8 @@ class AddTagGUI:
         self.entry_fields = _create_entry_fields(TAG_FIELD_NAMES, TAG_FIELD_TEXTS)
 
         # Create outer frames to hold fields and buttons.
-        self.outer_frame, body_frame, buttonbox = _create_input_form_framing(self.parent)
+        self.outer_frame, body_frame, buttonbox = (_create_input_form_framing(self.parent, type(self).__name__.lower(),
+                                                                              self.destroy))
 
         # Create label and field
         label_field = _InputZone(body_frame)
@@ -455,10 +455,8 @@ class AddTagGUI:
         # todo integration and unit test of buttons particularly active, normal and disabled status.
         commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num), command=self.commit,
                                        default='disabled')
-        cancel_button = _create_button(buttonbox, CANCEL_TEXT, column=next(column_num), command=self.destroy,
-                                       default='active')
-        self.parent.bind('<Escape>', lambda e: cancel_button.invoke())
-        self.parent.bind('<Command-.>', lambda e: cancel_button.invoke())
+        _create_button(buttonbox, CANCEL_TEXT, column=next(column_num), command=self.destroy,
+                       default='active')
 
         # Link commit button to tag field
         button_enabler = _enable_button(commit_button)
@@ -472,10 +470,8 @@ class AddTagGUI:
         self.add_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
         self.destroy()
 
-    def destroy(self):
+    def destroy(self, *args):
         """Destroy this instance's widgets."""
-        self.parent.bind('<Escape>', lambda e: None)
-        self.parent.bind('<Command-.>', lambda e: None)
         self.outer_frame.destroy()
 
 
@@ -496,12 +492,13 @@ class SearchTagGUI:
     # noinspection DuplicatedCode,DuplicatedCode
     def __post_init__(self):
         """Create the Tk widget."""
-
+        # todo Make first field active. Currently, user needs to click in it upon opening.
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = _create_entry_fields(TAG_FIELD_NAMES, TAG_FIELD_TEXTS)
 
         # Create the outer frames to hold fields and buttons.
-        self.outer_frame, body_frame, buttonbox = _create_input_form_framing(self.parent)
+        self.outer_frame, body_frame, buttonbox = _create_input_form_framing(self.parent, type(self).__name__.lower(),
+                                                                             self.destroy)
 
         # Create the field label and field entry widgets.
         label_field = _InputZone(body_frame)
@@ -563,7 +560,8 @@ class EditTagGUI:
         self.entry_fields[TAG_FIELD_NAMES[0]].original_value = self.tag
 
         # Create outer frames to hold fields and buttons.
-        self.outer_frame, body_frame, buttonbox = _create_input_form_framing(self.parent)
+        self.outer_frame, body_frame, buttonbox = (_create_input_form_framing(self.parent, type(self).__name__.lower(),
+                                                                              self.destroy))
 
         # Create field label and field entry widgets.
         label_field = _InputZone(body_frame)
@@ -618,7 +616,8 @@ class SelectTagGUI:
 
     def __post_init__(self):
         # Create outer frames to hold fields and buttons.
-        self.outer_frame, body_frame, buttonbox = _create_body_and_button_frames(self.parent)
+        frames = _create_input_form_framing(self.parent, type(self).__name__.lower(), self.destroy)
+        self.outer_frame, body_frame, buttonbox = frames
 
         # Create and grid treeview
         tree = ttk.Treeview(body_frame, columns=[], height=10, selectmode='browse')
@@ -698,7 +697,8 @@ class PreferencesGUI:
         self.toplevel = tk.Toplevel(self.parent)
 
         # Create outer frames to hold fields and buttons.
-        self.outer_frame, body_frame, buttonbox = _create_input_form_framing(self.toplevel)
+        frames = _create_input_form_framing(self.toplevel, type(self).__name__.lower(), self.destroy)
+        self.outer_frame, body_frame, buttonbox = frames
 
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = _create_entry_fields((self.api_key_name, self.use_tmdb_name),
@@ -1021,7 +1021,8 @@ def _set_original_value(entry_fields: Dict[str, _EntryField], original_values: D
         entry_fields[internal_name].textvariable.set(original_value)
 
 
-def _create_body_and_button_frames(parent: ParentType) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
+def _create_body_and_button_frames(parent: ParentType, name: str, destroy: Callable
+                                   ) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
     """Create the outer frames for an input form.
 
     This consists of an upper body and a lower buttonbox frame.
@@ -1031,15 +1032,18 @@ def _create_body_and_button_frames(parent: ParentType) -> Tuple[ttk.Frame, ttk.F
 
     Args:
         parent: The Tk parent frame.
+        name: Name which identifies which moviedb class has the destroy method.
+        destroy:
 
     Returns:
         Outer frame which contains the body and buttonbox frames.
         Body frame
         Buttonbox frame
     """
-    outer_frame = ttk.Frame(parent)
+    outer_frame = ttk.Frame(parent, name=name)
     outer_frame.grid(column=0, row=0, sticky='nsew')
     outer_frame.columnconfigure(0, weight=1)
+    config.current.escape_key_dict[name] = destroy
 
     body_frame = ttk.Frame(outer_frame, padding=(10, 25, 10, 0))
     body_frame.grid(column=0, row=0, sticky='n')
@@ -1050,7 +1054,8 @@ def _create_body_and_button_frames(parent: ParentType) -> Tuple[ttk.Frame, ttk.F
     return outer_frame, body_frame, buttonbox
 
 
-def _create_input_form_framing(parent: ParentType) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
+def _create_input_form_framing(parent: ParentType, name: str, destroy: Callable
+                               ) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
     """Create the outer frames for an input form.
 
     An input body frame has two columns, one for the field labels and one for the entry fields.
@@ -1059,13 +1064,15 @@ def _create_input_form_framing(parent: ParentType) -> Tuple[ttk.Frame, ttk.Frame
 
     Args:
         parent: The Tk parent frame.
+        name: Name which identifies which moviedb class has the destroy method.
+        destroy:
 
     Returns:
         Outer frame which contains the body and buttonbox frames.
         Body frame
         Buttonbox frame
     """
-    outer_frame, body_frame, buttonbox = _create_body_and_button_frames(parent)
+    outer_frame, body_frame, buttonbox = _create_body_and_button_frames(parent, name, destroy)
     outer_frame.rowconfigure(0, weight=1)
     outer_frame.rowconfigure(1, minsize=35)
     return outer_frame, body_frame, buttonbox
