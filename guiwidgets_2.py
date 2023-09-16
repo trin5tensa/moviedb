@@ -278,12 +278,14 @@ class MovieGUI:
             outer_frame, fields, buttonbox, internet
         """
         # todo can this be refactored with common code in _create_input_form_framing
+        # todo test next 2
         name = type(self).__name__.lower()
         outer_frame = ttk.Frame(parent, padding=10, name=name)
         outer_frame.grid(column=0, row=0, sticky='nsew')
         outer_frame.columnconfigure(0, weight=1)
         outer_frame.columnconfigure(1, weight=1000)
         outer_frame.rowconfigure(0)
+        # todo test next 1
         config.current.escape_key_dict[name] = self.destroy
 
         input_zone = ttk.Frame(outer_frame, padding=10)
