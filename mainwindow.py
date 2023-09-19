@@ -48,8 +48,8 @@ class MainWindow:
         # Set up handling of <Escape> and <Command-.>
         # todo test next three lines
         config.current.escape_key_dict = escape_key_dict = handlers.EscapeKeyDict()
-        self.parent.bind_all(key := '<Escape>', escape_key_dict.close_topview(self.parent, key))
-        self.parent.bind_all(key := '<Command-.>', escape_key_dict.close_topview(self.parent, key))
+        self.parent.bind_all(key := '<Escape>', escape_key_dict.escape(self.parent, key))
+        self.parent.bind_all(key := '<Command-.>', escape_key_dict.escape(self.parent, key))
 
     def set_geometry(self) -> str:
         """Set window geometry from a default value or app.geometry and make sure it will

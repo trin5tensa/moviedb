@@ -40,8 +40,8 @@ class EscapeKeyDict(UserDict):
         can accommodate any tkinter widget which is managed by a moviedb class. This excludes 'convenience' windows
         such as messageboxes.
 
-        The two escape accelerator key combinations have been attached to Tk/Tcl's root with the bind_all function.
-        When either accelerator key is pressed the closure within the close_topview method will be called.
+        The two escape accelerators have been attached to Tk/Tcl's root with the bind_all function. When either
+        accelerator is pressed the closure within the escape method will be called.
 
         The complicated design of this class has been dictated by the inadequacy of information provided by the
         keypress event callback from tkinter. A moviedb object will be destroyed by the closure and this object is
@@ -54,19 +54,27 @@ class EscapeKeyDict(UserDict):
         1) Uniquely naming the outer frame widget with the name of the moviedb class.
         2) Registering in this class the mapping of the outer frame name and its destroy method.
     """
+    internal_error_txt = 'Internal Error'
+    accelerator_txt = 'Accelerator'
+    no_valid_name_txt = 'detected but no valid name was found in the topmost Tk/Tcl window.'
+    gt1_valid_name_txt = "detected but more than one valid name was found in the topmost Tk/Tcl window."
+    key_error_text = "detected but not found in lookup dictionary."
+    type_error_text = "Invalid callback for"
+
     def __setitem__(self, outer_frame: str, destroy: Callable):
         """Register a destroy method for a particular outer frame."""
         if outer_frame not in self:
             self.data[outer_frame] = destroy
 
-    def close_topview(self, parent: guiwidgets_2.ParentType, keypress: Literal['<Escape>', '<Command-.>']):
+    def escape(self, parent: guiwidgets_2.ParentType, accelerator: Literal['<Escape>', '<Command-.>']):
         """ Sets up the callback which will destroy a moviedb logical window.
 
 
         Args:
             parent: Used to call tkinter messageboxes
-            keypress: User readable text used for reporting exceptions.
+            accelerator: User readable text used for reporting exceptions.
         """
+
         # todo test this method
 
         def closure(keypress_event):
@@ -80,35 +88,35 @@ class EscapeKeyDict(UserDict):
                                  if widget_name and widget_name[:1] != '!']
 
             # Validate the Tk/Tcl name
-            heading = 'Internal Error'
             match len(outer_frame_names):
-                case 0:
-                    message = (f"Keypress {keypress} detected but no valid name was found in the "
-                               f"topmost Tk/Tcl window.")
-                    logging.warning(f"{message} {keypress_event.widget=}")
-                    guiwidgets_2.gui_messagebox(parent, heading, message, icon='warning')
-                    return
                 case 1:
                     pass
-                case _:
-                    message = (f"Keypress {keypress} detected but more than one valid "
-                               f"name was found in the topmost Tk/Tcl window.")
+                case 0:
+                    message = f"{self.accelerator_txt} {accelerator} {self.no_valid_name_txt}"
                     logging.warning(f"{message} {keypress_event.widget=}")
-                    guiwidgets_2.gui_messagebox(parent, heading, message, icon='warning')
+                    guiwidgets_2.gui_messagebox(parent, self.internal_error_txt, message, icon='warning')
+                    return
+                case _:
+                    message = f"{self.accelerator_txt} {accelerator} {self.gt1_valid_name_txt}"
+                    logging.warning(f"{message} {keypress_event.widget=}")
+                    guiwidgets_2.gui_messagebox(parent, self.internal_error_txt, message, icon='warning')
                     return
 
             # Try to call the widget's destroy method.
             outer_frame_name = outer_frame_names[0]
+            print(f'\n{outer_frame_name=}')
+            print(f'{self.data=}')
             try:
                 self.data[outer_frame_name]()
+                print(f'{self.data[outer_frame_name]=}')
             except KeyError:
-                message = f"Keypress {keypress} detected but not found in lookup dictionary."
+                message = f"{self.accelerator_txt}  {accelerator} {self.key_error_text}"
                 logging.warning(f"{message} {self.data.keys()}")
-                guiwidgets_2.gui_messagebox(parent, heading, message, icon='warning')
+                guiwidgets_2.gui_messagebox(parent, self.internal_error_txt, message, icon='warning')
             except TypeError:
-                message = f"Invalid callback for keypress {keypress}."
-                logging.warning(f"{message} {self.data[outer_frame_name]=}")
-                guiwidgets_2.gui_messagebox(parent, heading, message, icon='warning')
+                message = f"{self.type_error_text} {self.accelerator_txt.lower()}  {accelerator}."
+                logging.warning(f"{message} {self.data[outer_frame_name]}")
+                guiwidgets_2.gui_messagebox(parent, self.internal_error_txt, message, icon='warning')
 
         return closure
 

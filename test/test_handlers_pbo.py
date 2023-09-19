@@ -26,19 +26,71 @@ import pytest
 
 
 # noinspection PyMissingOrEmptyDocstring
-
 class TestEscapeKeyDict:
-    def test_dict(self, check):
+    def test_dict_setitem_(self, check):
+        test_func = MagicMock()
         ecd = handlers.EscapeKeyDict()
-        ecd['one'] = self.test_func
-        check.equal(ecd, {'one': self.test_func})
-        ecd['two'] = self.test_func
-        check.equal(ecd, {'one': self.test_func, 'two': self.test_func})
-        ecd['one'] = self.test_func
-        check.equal(ecd, {'one': self.test_func, 'two': self.test_func})
+        ecd['one'] = test_func
+        check.equal(ecd, {'one': test_func})
+        ecd['two'] = test_func
+        check.equal(ecd, {'one': test_func, 'two': test_func})
+        ecd['one'] = test_func
+        check.equal(ecd, {'one': test_func, 'two': test_func})
 
-    def test_func(self):
-        pass
+    # noinspection DuplicatedCode
+    def test_escape(self, mock_config_current, monkeypatch, check):
+        # Create an EscapeKeyDict object and get a window closure.
+        ecd = handlers.EscapeKeyDict()
+        parent = mock_config_current.tk_root
+        accelerator = '<Escape>'
+        closure = ecd.escape(parent, accelerator)
+
+        # Create a mock keypress event, logging and gui_messagebox.
+        keypress_event = MagicMock()
+        mock_logging = MagicMock()
+        monkeypatch.setattr(handlers, 'logging', mock_logging)
+        mock_messagebox = MagicMock()
+        monkeypatch.setattr(handlers.guiwidgets_2, 'gui_messagebox', mock_messagebox)
+
+        # Test 'no valid name' error handling
+        keypress_event.widget = '.!frame.!frame.!button'
+        message = f"{ecd.accelerator_txt} {accelerator} {ecd.no_valid_name_txt}"
+        closure(keypress_event)
+        logging_msg = f"{message} {keypress_event.widget=}"
+        check.is_none(mock_logging.warning.assert_called_with(logging_msg))
+        check.is_none(mock_messagebox.assert_called_with(parent, ecd.internal_error_txt, message, icon='warning'))
+
+        # Test 'more than one valid name' error handling
+        keypress_event.widget = '.!frame.valid name.valid name'
+        message = f"{ecd.accelerator_txt} {accelerator} {ecd.gt1_valid_name_txt}"
+        closure(keypress_event)
+        logging_msg = f"{message} {keypress_event.widget=}"
+        check.is_none(mock_logging.warning.assert_called_with(logging_msg))
+        check.is_none(mock_messagebox.assert_called_with(parent, ecd.internal_error_txt, message, icon='warning'))
+
+        # Set up for call to method 'destroy'
+        keypress_event.widget = '.!frame.valid name.!entry'
+        mock_func = MagicMock()
+
+        # Test destroy method called
+        ecd.data = {'valid name': mock_func}
+        closure(keypress_event)
+        check.is_none(mock_func.assert_called_once_with())
+
+        # Test key error handling
+        ecd.data = {'a different valid name': mock_func}
+        closure(keypress_event)
+        message = f"{ecd.accelerator_txt}  {accelerator} {ecd.key_error_text}"
+        check.is_none(mock_logging.warning.assert_called_with(f"{message} {ecd.data.keys()}"))
+        check.is_none(mock_messagebox.assert_called_with(parent, ecd.internal_error_txt, message, icon='warning'))
+
+        # Test type error handling
+        bad_callback = None
+        ecd.data = {'valid name': bad_callback}
+        closure(keypress_event)
+        message = f"{ecd.type_error_text} {ecd.accelerator_txt.lower()}  {accelerator}."
+        check.is_none(mock_logging.warning.assert_called_with(f"{message} {ecd.data['valid name']}"))
+        check.is_none(mock_messagebox.assert_called_with(parent, ecd.internal_error_txt, message, icon='warning'))
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -58,12 +110,6 @@ class TestPreferencesDialog:
         monkeypatch.setattr('handlers.guiwidgets_2.PreferencesGUI', widget)
         return widget
 
-    @pytest.fixture()
-    def tk_root(self, monkeypatch):
-        current = MagicMock()
-        monkeypatch.setattr('handlers.config.current', current)
-        return current.tk_root
-
     @contextmanager
     def persistent(self, tmdb_api_key, use_tmdb):
         hold_persistent = handlers.config.persistent
@@ -73,23 +119,25 @@ class TestPreferencesDialog:
         yield handlers.config.persistent
         handlers.config.persistent = hold_persistent
 
-    def test_call_with_valid_display_key(self, widget, tk_root):
+    def test_call_with_valid_display_key(self, widget, mock_config_current):
         with self.persistent(self.TMDB_API_KEY, self.USE_TMDB):
             handlers.settings_dialog()
-            widget.assert_called_once_with(tk_root, self.TMDB_API_KEY, self.USE_TMDB, handlers._settings_callback)
+            widget.assert_called_once_with(mock_config_current.tk_root, self.TMDB_API_KEY, self.USE_TMDB,
+                                           handlers._settings_callback)
 
-    def test_unset_key_call(self, widget, tk_root):
+    def test_unset_key_call(self, widget, mock_config_current):
         no_key = ''
         with self.persistent(no_key, self.USE_TMDB):
             handlers.settings_dialog()
-            widget.assert_called_once_with(tk_root, no_key, self.USE_TMDB, handlers._settings_callback)
+            widget.assert_called_once_with(mock_config_current.tk_root, no_key, self.USE_TMDB,
+                                           handlers._settings_callback)
 
-    def test_do_not_use_tmdb_call(self, widget, tk_root):
+    def test_do_not_use_tmdb_call(self, widget, mock_config_current):
         no_key = ''
         use_tmdb = False
         with self.persistent(self.TMDB_API_KEY, use_tmdb):
             handlers.settings_dialog()
-            widget.assert_called_once_with(tk_root, no_key, use_tmdb, handlers._settings_callback)
+            widget.assert_called_once_with(mock_config_current.tk_root, no_key, use_tmdb, handlers._settings_callback)
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -168,24 +216,18 @@ class TestSelectMovieCallback:
         monkeypatch.setattr('handlers.database.all_tags', all_tags)
         return all_tags
 
-    @pytest.fixture()
-    def config_current(self, monkeypatch):
-        config_current = MagicMock()
-        monkeypatch.setattr('handlers.config.current', config_current)
-        return config_current
-
-    def test_database_find_movies_called(self, find_movies, movie_gui, all_tags, config_current):
+    def test_database_find_movies_called(self, find_movies, movie_gui, all_tags, mock_config_current):
         handlers._select_movie_callback(self.MOVIE)
         find_movies.assert_called_once_with(dict(title=self.TITLE, year=[str(self.YEAR)]))
 
-    def test_movie_gui_called(self, find_movies, movie_gui, all_tags, config_current, check):
+    def test_movie_gui_called(self, find_movies, movie_gui, all_tags, mock_config_current, check):
         handlers._select_movie_callback(self.MOVIE)
         call_args = movie_gui.call_args
         tk_root, tmdb, all_tags = call_args.args
         movie, edit_movie, delete_movie = call_args.kwargs.items()
 
         msg = 'Incorrect argument for guiwidgets_2.MovieGUI.'
-        check.equal(tk_root, config_current.tk_root, msg)
+        check.equal(tk_root, mock_config_current.tk_root, msg)
         check.equal(tmdb, handlers._tmdb_io_handler, msg)
         check.equal(all_tags, self.TAGS, msg)
         check.equal(movie, ('old_movie', self.MOVIE), msg)

@@ -633,7 +633,7 @@ class SelectTagGUI:
         # Populate the treeview rows
         for tag in self.tags_to_show:
             tree.insert('', 'end', iid=tag, text=tag, values=[], tags=TAG_FIELD_NAMES[0])
-        # Set focus here so that the <Escape> keypress can identify which moviedb window is subject to the <Escape>
+        # Set focus here so that the <Escape> accelerator can identify which moviedb window is subject to the <Escape>
         # action.
         tree.focus_set()
 

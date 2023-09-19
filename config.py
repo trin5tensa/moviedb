@@ -76,7 +76,6 @@ class CurrentConfig:
     tk_root: 'tk.Tk' = None
     safeprint: Callable = None
     threadpool_executor: ThreadPoolExecutor = None
-    # todo test next line
     escape_key_dict: UserDict = None
 
 

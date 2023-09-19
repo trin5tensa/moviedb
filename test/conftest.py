@@ -13,6 +13,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from dataclasses import dataclass, field
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -55,6 +56,14 @@ def mock_fut_unexpected():
 @pytest.fixture()
 def mock_executor():
     return _MockThreadPoolExecutor()
+
+
+@pytest.fixture()
+def mock_config_current(monkeypatch):
+    """Mock handlers.config.current."""
+    current = MagicMock()
+    monkeypatch.setattr('handlers.config.current', current)
+    return current
 
 
 # noinspection PyMissingOrEmptyDocstring
