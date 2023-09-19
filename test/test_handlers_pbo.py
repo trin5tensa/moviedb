@@ -57,16 +57,20 @@ class TestEscapeKeyDict:
         message = f"{ecd.accelerator_txt} {accelerator} {ecd.no_valid_name_txt}"
         closure(keypress_event)
         logging_msg = f"{message} {keypress_event.widget=}"
-        check.is_none(mock_logging.warning.assert_called_with(logging_msg))
-        check.is_none(mock_messagebox.assert_called_with(parent, ecd.internal_error_txt, message, icon='warning'))
+        with check:
+            mock_logging.warning.assert_called_with(logging_msg)
+        with check:
+            mock_messagebox.assert_called_with(parent, ecd.internal_error_txt, message, icon='warning')
 
         # Test 'more than one valid name' error handling
         keypress_event.widget = '.!frame.valid name.valid name'
         message = f"{ecd.accelerator_txt} {accelerator} {ecd.gt1_valid_name_txt}"
         closure(keypress_event)
         logging_msg = f"{message} {keypress_event.widget=}"
-        check.is_none(mock_logging.warning.assert_called_with(logging_msg))
-        check.is_none(mock_messagebox.assert_called_with(parent, ecd.internal_error_txt, message, icon='warning'))
+        with check:
+            mock_logging.warning.assert_called_with(logging_msg)
+        with check:
+            mock_messagebox.assert_called_with(parent, ecd.internal_error_txt, message, icon='warning')
 
         # Set up for call to method 'destroy'
         keypress_event.widget = '.!frame.valid name.!entry'
@@ -75,22 +79,27 @@ class TestEscapeKeyDict:
         # Test destroy method called
         ecd.data = {'valid name': mock_func}
         closure(keypress_event)
-        check.is_none(mock_func.assert_called_once_with())
+        with check:
+            mock_func.assert_called_once_with()
 
         # Test key error handling
         ecd.data = {'a different valid name': mock_func}
         closure(keypress_event)
         message = f"{ecd.accelerator_txt}  {accelerator} {ecd.key_error_text}"
-        check.is_none(mock_logging.warning.assert_called_with(f"{message} {ecd.data.keys()}"))
-        check.is_none(mock_messagebox.assert_called_with(parent, ecd.internal_error_txt, message, icon='warning'))
+        with check:
+            mock_logging.warning.assert_called_with(f"{message} {ecd.data.keys()}")
+        with check:
+            mock_messagebox.assert_called_with(parent, ecd.internal_error_txt, message, icon='warning')
 
         # Test type error handling
         bad_callback = None
         ecd.data = {'valid name': bad_callback}
         closure(keypress_event)
         message = f"{ecd.type_error_text} {ecd.accelerator_txt.lower()}  {accelerator}."
-        check.is_none(mock_logging.warning.assert_called_with(f"{message} {ecd.data['valid name']}"))
-        check.is_none(mock_messagebox.assert_called_with(parent, ecd.internal_error_txt, message, icon='warning'))
+        with check:
+            mock_logging.warning.assert_called_with(f"{message} {ecd.data['valid name']}")
+        with check:
+            mock_messagebox.assert_called_with(parent, ecd.internal_error_txt, message, icon='warning')
 
 
 # noinspection PyMissingOrEmptyDocstring

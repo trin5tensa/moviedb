@@ -81,7 +81,6 @@ class EscapeKeyDict(UserDict):
             Args:
                 keypress_event:
             """
-            # todo test this method
             outer_frame_names = [widget_name for widget_name in str(keypress_event.widget).split('.')
                                  if widget_name and widget_name[:1] != '!']
 
@@ -102,11 +101,8 @@ class EscapeKeyDict(UserDict):
 
             # Try to call the widget's destroy method.
             outer_frame_name = outer_frame_names[0]
-            print(f'\n{outer_frame_name=}')
-            print(f'{self.data=}')
             try:
                 self.data[outer_frame_name]()
-                print(f'{self.data[outer_frame_name]=}')
             except KeyError:
                 message = f"{self.accelerator_txt}  {accelerator} {self.key_error_text}"
                 logging.warning(f"{message} {self.data.keys()}")
