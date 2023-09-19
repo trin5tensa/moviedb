@@ -75,8 +75,6 @@ class EscapeKeyDict(UserDict):
             accelerator: User readable text used for reporting exceptions.
         """
 
-        # todo test this method
-
         def closure(keypress_event):
             """ Destroys a moviedb logical window.
 
