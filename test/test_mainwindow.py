@@ -15,7 +15,7 @@
 
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Dict, Literal, NewType, Optional
+from typing import Any, Dict, Optional
 from unittest.mock import MagicMock
 
 import pytest
@@ -25,8 +25,6 @@ import mainwindow
 TEST_TITLE = 'test moviedb'
 TEST_VERSION = 'Test version'
 TEST_MENU = 'Test Menu'
-
-tk_state = NewType('tk_state', Literal['mainwindow.tk.DISABLED', 'mainwindow.tk.NORMAL'])
 
 
 class TestMainWindowGeometry:

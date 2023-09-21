@@ -16,9 +16,10 @@ This module contains new tests written after Brian Okken's course and book on py
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from contextlib import contextmanager
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 import pytest
+from pytest_check import check
 
 import mainwindow
 from test.dummytk import DummyTk, TkMenu
@@ -29,34 +30,38 @@ TEST_VERSION = 'Test version'
 
 class TestMainWindowInit:
     """Ensure that MainWindow is correctly initialized.."""
-    tk_root: DummyTk = None
-    mock_set_geometry: MagicMock = None
-    mock_place_menubar: MagicMock = None
+    def test_main_window_initialization(self, monkeypatch):
+        mock_set_geometry = MagicMock()
+        monkeypatch.setattr(mainwindow.MainWindow, 'set_geometry', mock_set_geometry)
+        mock_place_menubar = MagicMock()
+        monkeypatch.setattr(mainwindow.MainWindow, 'place_menubar', mock_place_menubar)
+        mock_escape_key_dict = MagicMock()
+        monkeypatch.setattr(mainwindow.handlers, 'EscapeKeyDict', mock_escape_key_dict)
 
-    @pytest.mark.skip
-    def test_main_window_initialization(self, monkeypatch, check):
-        with self.main_window_context(monkeypatch) as main_window:
-            check.equal(self.tk_root.title_calls, [TEST_TITLE], 'parent.title not called with expected arguments.')
-            msg = 'parent.geometry not called with expected arguments.'
-            check.equal(self.tk_root.geometry_calls, [main_window.set_geometry()], msg)
-            check.equal(self.place_menubar.call_count, 1, 'place_menubar not called.')
-            msg = '\nparent.protocol not called with expected arguments.'
-            check.equal(self.tk_root.protocol_calls, [('WM_DELETE_WINDOW', main_window.tk_shutdown)], msg)
+        with self.context(monkeypatch) as main_window:
+            with check:
+                main_window.parent.title.assert_called_once_with(TEST_TITLE)
+            with check:
+                main_window.parent.geometry.assert_called_once_with(mock_set_geometry())
+            with check:
+                main_window.place_menubar.assert_called_once_with()
+            with check:
+                main_window.parent.bind_all.assert_has_calls([call('<Escape>', mock_escape_key_dict().escape()),
+                                                              call('<Command-.>', mock_escape_key_dict().escape())])
 
     # noinspection PyMissingOrEmptyDocstring, PyTypeChecker
     @contextmanager
-    def main_window_context(self, monkeypatch):
-        persistent_hold = mainwindow.config.persistent
-        mainwindow.config.persistent = mainwindow.config.PersistentConfig(TEST_TITLE, TEST_VERSION)
-        self.tk_root = DummyTk()
-        self.mock_set_geometry = MagicMock()
-        monkeypatch.setattr('mainwindow.MainWindow.set_geometry', self.mock_set_geometry)
-        self.place_menubar = MagicMock()
-        monkeypatch.setattr('mainwindow.MainWindow.place_menubar', self.place_menubar)
-        try:
-            yield mainwindow.MainWindow(self.tk_root)
-        finally:
-            mainwindow.config.persistent = persistent_hold
+    def context(self, monkeypatch):
+        current_config = mainwindow.config.CurrentConfig()
+        current_config.tk_root = MagicMock()
+        persistent_config = mainwindow.config.PersistentConfig(TEST_TITLE, TEST_VERSION)
+
+        mock_config = MagicMock()
+        mock_config.current = current_config
+        mock_config.persistent = persistent_config
+        monkeypatch.setattr('mainwindow.config', mock_config)
+
+        yield mainwindow.MainWindow(current_config.tk_root)
 
 
 class TestPlaceMenubar:
@@ -67,7 +72,7 @@ class TestPlaceMenubar:
     tk_menu: TkMenu = None
 
     @pytest.mark.skip
-    def test_main_window_initialization(self, monkeypatch, check):
+    def test_main_window_initialization(self, monkeypatch):
         with self.main_window_context(monkeypatch) as main_window:
             msg = "The menu '*tearOff' suppression option is missing."
             check.equal(self.tk_root.option_add_calls, [('*tearOff', (False,))], msg),

@@ -46,7 +46,6 @@ class MainWindow:
         self.place_menubar()
 
         # Set up handling of <Escape> and <Command-.>
-        # todo test next three lines
         config.current.escape_key_dict = escape_key_dict = handlers.EscapeKeyDict()
         self.parent.bind_all(key := '<Escape>', escape_key_dict.escape(self.parent, key))
         self.parent.bind_all(key := '<Command-.>', escape_key_dict.escape(self.parent, key))

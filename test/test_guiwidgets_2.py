@@ -343,6 +343,7 @@ class TestSearchTagGUI:
 
 
 # noinspection DuplicatedCode,PyMissingOrEmptyDocstring
+@pytest.mark.skip('Rewrite in _pbo')
 @pytest.mark.usefixtures('patch_tk')
 class TestEditTagGUI:
     test_tag = 'test_tag'

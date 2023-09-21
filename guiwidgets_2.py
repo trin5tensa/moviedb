@@ -504,6 +504,7 @@ class SearchTagGUI:
         label_field = _InputZone(body_frame)
         for movie_field_name in TAG_FIELD_NAMES:
             label_field.add_entry_row(self.entry_fields[movie_field_name])
+        _focus_set(self.entry_fields[TAG_FIELD_NAMES[0]].widget)
 
         # Populate buttonbox with the search and cancel buttons.
         column_num = itertools.count()
@@ -511,7 +512,7 @@ class SearchTagGUI:
         search_button = _create_button(buttonbox, SEARCH_TEXT, column=next(column_num),
                                        command=self.search,  default='disabled')
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
-                       command=self.destroy, default='active').focus_set()
+                       command=self.destroy, default='active')
 
         # Link the search button to the tag field.
         button_enabler = _enable_button(search_button)
@@ -567,6 +568,7 @@ class EditTagGUI:
         label_field = _InputZone(body_frame)
         for movie_field_name in TAG_FIELD_NAMES:
             label_field.add_entry_row(self.entry_fields[movie_field_name])
+        _focus_set(self.entry_fields[TAG_FIELD_NAMES[0]].widget)
 
         # Populate buttonbox with commit, delete, and cancel buttons
         column_num = itertools.count()
@@ -575,7 +577,7 @@ class EditTagGUI:
                                        command=self.commit, default='active')
         _create_button(buttonbox, DELETE_TEXT, column=next(column_num), command=self.delete, default='active')
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
-                       command=self.destroy, default='active').focus_set()
+                       command=self.destroy, default='active')
 
         # Link commit button to tag field
         button_enabler = _enable_button(commit_button)
