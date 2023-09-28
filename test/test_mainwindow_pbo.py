@@ -3,8 +3,8 @@
 This module contains new tests written after Brian Okken's course and book on pytest in Fall 2022.
 """
 
-#  Copyright (c) 2023. Stephen Rigden.
-#  Last modified 3/15/23, 8:13 AM by stephen.
+#  Copyright (c) 2023-2023. Stephen Rigden.
+#  Last modified 9/28/23, 7:09 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,7 +25,7 @@ import mainwindow
 
 TEST_TITLE = 'test moviedb'
 TEST_VERSION = 'Test version'
-
+# todo Fix commit message 2
 
 class TestMainWindowInit:
     """Ensure that MainWindow is correctly initialized.."""
