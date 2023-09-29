@@ -4,7 +4,7 @@ This module contains new tests written after Brian Okken's course and book on py
 """
 
 #  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 9/28/23, 7:10 AM by stephen.
+#  Last modified 9/29/23, 6:51 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -26,8 +26,9 @@ import mainwindow
 TEST_TITLE = 'test moviedb'
 TEST_VERSION = 'Test version'
 
-class TestMainWindowInit:
-    """Ensure that MainWindow is correctly initialized.."""
+
+class TestMainWindow:
+    """Ensure that MainWindow is correctly initialized."""
     def test_main_window_initialization(self, monkeypatch):
         monkeypatch.setattr(mainwindow.MainWindow, 'set_geometry', mock_set_geometry := MagicMock())
         monkeypatch.setattr(mainwindow.MainWindow, 'place_menubar', MagicMock())
@@ -45,6 +46,9 @@ class TestMainWindowInit:
                                                       call('<Command-.>', mock_escape_key_dict().escape())])
 
     def test_place_menubar(self, monkeypatch):
+        """ Strategy: Menu construction is tested by checking that each expected menu item is present and in the
+        correct order. Meta calls connecting the menu system to tkinter are also tested.
+        """
         with main_window(monkeypatch) as cut:
             # Meta
             with check:
