@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/17/23, 2:19 PM by stephen.
+#  Last modified 10/2/23, 8:21 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -191,7 +191,7 @@ class CommonButtonbox(MovieGUIBase):
         Any proposed refactoring should consider abandoning these classes and using the newer
         composed classes of guiwidgets_2 as a model for future development.
     """
-
+    # todo Unused? Check and remove
     # On exit this callback will be called with a dictionary of fields and user entered values.
     commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
 
@@ -279,7 +279,7 @@ class SearchMovieGUI(MovieGUIBase):
         Any proposed refactoring should consider abandoning these classes and using the newer
         composed classes of guiwidgets_2 as a model for future development.
     """
-
+    # todo Update to new GUI standards and move to guiwidgets_2
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.FindMovieTypedDict, Sequence[str]], None]
     # Tags list
@@ -415,6 +415,8 @@ class SelectMovieGUI(MovieGUIBase):
         Any proposed refactoring should consider abandoning these classes and using the newer
         composed classes of guiwidgets_2 as a model for future development.
     """
+    # todo Update to new GUI standards and move to guiwidgets_2
+
     # Movie records retrieved from the database.
     movies: List[config.MovieUpdateDef]
     # On exit this callback will be called with a dictionary of fields and user entered values.

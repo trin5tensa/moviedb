@@ -1,6 +1,6 @@
 """Test module."""
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/28/23, 8:30 AM by stephen.
+#  Last modified 10/2/23, 8:21 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -54,7 +54,7 @@ class TestSelectMovieGUI:
 
 
 # noinspection DuplicatedCode,PyMissingOrEmptyDocstring
-@pytest.mark.skip('Rewrite in _pbo')
+@pytest.mark.skip('Rewrite in _pbom')
 @pytest.mark.usefixtures('patch_tk')
 class TestAddTagGUI:
 
@@ -167,7 +167,7 @@ class TestAddTagGUI:
 
 
 # noinspection PyMissingOrEmptyDocstring
-@pytest.mark.skip('Rewrite in _pbo')
+@pytest.mark.skip('Rewrite in _pbom')
 @pytest.mark.usefixtures('patch_tk')
 class TestSearchTagGUI:
     def test_search_tag_gui_created(self):
@@ -343,7 +343,7 @@ class TestSearchTagGUI:
 
 
 # noinspection DuplicatedCode,PyMissingOrEmptyDocstring
-@pytest.mark.skip('Rewrite in _pbo')
+@pytest.mark.skip('Rewrite in _pbom')
 @pytest.mark.usefixtures('patch_tk')
 class TestEditTagGUI:
     test_tag = 'test_tag'
@@ -503,7 +503,7 @@ class TestEditTagGUI:
 
 
 # noinspection PyMissingOrEmptyDocstring
-@pytest.mark.skip('Rewrite in _pbo')
+@pytest.mark.skip('Rewrite in _pbom')
 @pytest.mark.usefixtures('patch_tk')
 class TestSelectTagGUI:
     tags_to_show = ['tag 1', 'tag 2']
@@ -626,7 +626,7 @@ class TestSelectTagGUI:
 
 
 # noinspection PyMissingOrEmptyDocstring
-@pytest.mark.skip
+@pytest.mark.skip('Rewrite in pbom')
 @pytest.mark.usefixtures('patch_tk')
 class TestPreferencesGUI:
     api_key = 'test api key'
@@ -1035,7 +1035,7 @@ class TestMovieTagTreeview:
 
 
 # noinspection PyMissingOrEmptyDocstring
-@pytest.mark.skip
+@pytest.mark.skip('Rewrite in pbom')
 @pytest.mark.usefixtures('patch_tk')
 class TestCreateBodyAndButtonFrames:
 

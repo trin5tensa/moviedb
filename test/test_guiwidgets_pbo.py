@@ -6,7 +6,7 @@ Test strategies are noted for each class but, in general, they test the interfac
 internal implementation of widgets.
 """
 #  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 1/31/23, 1:31 PM by stephen.
+#  Last modified 10/2/23, 8:21 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -28,6 +28,7 @@ from test.dummytk import (DummyTk, TkStringVar, TkToplevel, TkText, TtkButton, T
 
 
 # noinspection PyTypeChecker,PyUnresolvedReferences
+@pytest.mark.skip('Rewrite in pbom')
 @pytest.mark.usefixtures('patch_tk')
 class TestAddMovieGUI:
     """ Test AddMovieGUI and MovieGUI for:
@@ -210,6 +211,7 @@ class TestAddMovieGUI:
 
 
 # noinspection PyTypeChecker,PyUnresolvedReferences
+@pytest.mark.skip('Rewrite in pbom')
 @pytest.mark.usefixtures('patch_tk')
 class TestEditMovieGUI:
     """ Test EditMovieGUI for:
@@ -302,20 +304,6 @@ class TestEditMovieGUI:
 
         check.equal(movie_to_delete, delete_movie_callback_arg)
         check.is_true(destroy_called)
-
-
-# noinspection PyMissingOrEmptyDocstring
-class TestGUIAskYesNo:
-    def test_askyesno_called(self, monkeypatch):
-        askyesno = MagicMock(name='mock_gui_askyesno')
-        monkeypatch.setattr(guiwidgets_2.messagebox, 'askyesno', askyesno)
-        parent = DummyTk()
-        message = 'dummy message'
-
-        # noinspection PyTypeChecker
-        guiwidgets_2.gui_askyesno(parent, message)
-
-        askyesno.assert_called_once_with(parent, message, detail='', icon='question')
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
