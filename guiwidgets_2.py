@@ -3,7 +3,7 @@
 This module includes windows for presenting data and returning entered data to its callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 10/2/23, 8:21 AM by stephen.
+#  Last modified 10/7/23, 8:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -90,43 +90,42 @@ class MovieGUI:
         input_zone = _InputZone(body_frame)
 
         # Create labels and entry widgets.
-        # daybreak
         for movie_field_name in MOVIE_FIELD_NAMES[:-1]:
             input_zone.add_entry_row(self.entry_fields[movie_field_name])
-        # _focus_set(self.entry_fields[self.title].widget)
-        #
-        # # Create label and text widget.
-        # self.notes_widget = input_zone.add_text_row(self.entry_fields[MOVIE_FIELD_NAMES[-1]])
-        #
-        # # Create a label and treeview for movie tags.
-        # self.tags_treeview = input_zone.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
-        #                                                  callers_callback=self.tags_treeview_callback)
-        # self.set_initial_tag_selection()
-        #
-        # # Create a treeview for movies retrieved from tmdb.
-        # self.tmdb_treeview = ttk.Treeview(internet_frame,
-        #                                   columns=('title', 'year', 'director'),
-        #                                   show=['headings'],
-        #                                   height=20,
-        #                                   selectmode='browse')
-        # self.tmdb_treeview.column('title', width=300, stretch=True)
-        # self.tmdb_treeview.heading('title', text='Title', anchor='w')
-        # self.tmdb_treeview.column('year', width=40, stretch=True)
-        # self.tmdb_treeview.heading('year', text='Year', anchor='w')
-        # self.tmdb_treeview.column('director', width=200, stretch=True)
-        # self.tmdb_treeview.heading('director', text='Director', anchor='w')
-        # self.tmdb_treeview.grid(column=0, row=0, sticky='nsew')
-        # self.tmdb_treeview.bind('<<TreeviewSelect>>',
-        #                         func=self.tmdb_treeview_callback)
-        #
-        # # Populate buttonbox with buttons.
-        # column_num = itertools.count()
-        # self.create_buttons(buttonbox, column_num)
-        # _create_button(buttonbox, CANCEL_TEXT, column=next(column_num), command=self.destroy,
-        #                default='active')
-        #
+        _focus_set(self.entry_fields[self.title].widget)
+
+        # Create label and text widget.
+        self.notes_widget = input_zone.add_text_row(self.entry_fields[MOVIE_FIELD_NAMES[-1]])
+
+        # Create a label and treeview for movie tags.
+        self.tags_treeview = input_zone.add_treeview_row(SELECT_TAGS_TEXT, items=self.all_tags,
+                                                         callers_callback=self.tags_treeview_callback)
+        self.set_initial_tag_selection()
+
+        # Create a treeview for movies retrieved from tmdb.
+        self.tmdb_treeview = ttk.Treeview(internet_frame,
+                                          columns=('title', 'year', 'director'),
+                                          show=['headings'],
+                                          height=20,
+                                          selectmode='browse')
+        self.tmdb_treeview.column('title', width=300, stretch=True)
+        self.tmdb_treeview.heading('title', text='Title', anchor='w')
+        self.tmdb_treeview.column('year', width=40, stretch=True)
+        self.tmdb_treeview.heading('year', text='Year', anchor='w')
+        self.tmdb_treeview.column('director', width=200, stretch=True)
+        self.tmdb_treeview.heading('director', text='Director', anchor='w')
+        self.tmdb_treeview.grid(column=0, row=0, sticky='nsew')
+        self.tmdb_treeview.bind('<<TreeviewSelect>>',
+                                func=self.tmdb_treeview_callback)
+
+        # Populate buttonbox with buttons.
+        column_num = itertools.count()
+        self._create_buttons(buttonbox, column_num)
+        _create_button(buttonbox, CANCEL_TEXT, column=next(column_num), command=self.destroy,
+                       default='active')
+
         # # Start the tmdb_work_queue polling
-        # self.tmdb_consumer()
+        self.tmdb_consumer()
 
     def original_values(self):  # pragma no cover
         """ Initialize the original field values. """
@@ -136,8 +135,11 @@ class MovieGUI:
         """ Override this method to set the movie tag selection """
         raise NotImplementedError
 
-    def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):  # pragma no cover
+    def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):  # pragma no cover
         """ Create buttons within the buttonbox.
+
+        Subclasses may call _create_button to place a button in the buttonbox from left to right. The Iterator is
+        defined and used in __post_init__.
 
         Args:
             buttonbox:
@@ -318,7 +320,7 @@ class AddMovieGUI(MovieGUI):
         """ No prior tags. """
         pass
 
-    def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
+    def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         commit_button = _create_button(buttonbox, COMMIT_TEXT, column=next(column_num),
                                        command=self.commit, default='normal')
 
@@ -385,7 +387,7 @@ class EditMovieGUI(MovieGUI):
         self.tags_treeview.selection_set(self.old_movie['tags'])
         self.selected_tags = self.old_movie['tags']
 
-    def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
+    def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         _create_button(buttonbox, COMMIT_TEXT, column=next(column_num), command=self.commit, default='active')
         _create_button(buttonbox, DELETE_TEXT, column=next(column_num), command=self.delete, default='active')
 

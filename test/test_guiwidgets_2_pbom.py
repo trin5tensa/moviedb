@@ -8,7 +8,7 @@ internal implementation of widgets.
 """
 
 #  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 10/2/23, 8:21 AM by stephen.
+#  Last modified 10/7/23, 8:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,7 +21,7 @@ internal implementation of widgets.
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from contextlib import contextmanager
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 import pytest
 from pytest_check import check
@@ -36,6 +36,8 @@ TEST_VERSION = 'Test version'
 class TestMovieGUI:
     """
     Test Strategy:
+    __post_init__ Ensure initial values are set and calls to set up methods and functions are made with the correct
+        arguments.
     """
     # todo  Complete docstring
 
@@ -43,29 +45,94 @@ class TestMovieGUI:
         monkeypatch.setattr('guiwidgets_2._create_entry_fields', mock_create_entry_fields := MagicMock())
         monkeypatch.setattr('guiwidgets_2.MovieGUI.original_values', mock_original_values := MagicMock())
         monkeypatch.setattr('guiwidgets_2.MovieGUI.framing', mock_framing := MagicMock())
-        mock_framing.return_value = [MagicMock(), body_frame := MagicMock(), MagicMock(), MagicMock()]
+        mock_framing.return_value = [MagicMock(), body_frame := MagicMock(),
+                                     mock_buttonbox := MagicMock(),
+                                     mock_internet_frame := MagicMock()]
         monkeypatch.setattr('guiwidgets_2._InputZone', mock_inputzone := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._focus_set', mock_focus_set := MagicMock())
+        monkeypatch.setattr('guiwidgets_2.MovieGUI.set_initial_tag_selection',
+                            mock_set_initial_tag_selection := MagicMock())
+        monkeypatch.setattr('guiwidgets_2.ttk.Treeview', mock_treeview := MagicMock())
+        monkeypatch.setattr('guiwidgets_2.MovieGUI._create_buttons', mock_create_buttons := MagicMock())
+        monkeypatch.setattr('guiwidgets_2.itertools.count', MagicMock())
+        monkeypatch.setattr('guiwidgets_2._create_button', mock_create_button := MagicMock())
+        monkeypatch.setattr('guiwidgets_2.MovieGUI.tmdb_consumer', mock_tmdb_consumer := MagicMock())
 
         with self.moviegui(monkeypatch) as cut:
-            # Test initialize an internal dictionary to simplify field data management.
+            # Test initialize an internal dictionary.
             with check:
                 mock_create_entry_fields.assert_called_once_with(guiwidgets_2.MOVIE_FIELD_NAMES,
                                                                  guiwidgets_2.MOVIE_FIELD_TEXTS)
             check.equal(cut.title, guiwidgets_2.MOVIE_FIELD_NAMES[0])
             with check:
                 mock_original_values.assert_called_once_with()
+            cut.entry_fields.fromkeys(guiwidgets_2.MOVIE_FIELD_NAMES)
 
-            # Test create frames to hold fields and buttons.
+            # Test create frames.
             with check:
                 mock_framing.assert_called_once_with(cut.parent)
             with check:
                 mock_inputzone.assert_called_once_with(body_frame)
 
             # Test create labels and entry widgets.
-            print(f'\n{guiwidgets_2.MOVIE_FIELD_NAMES=}')
-            print(f'{cut.entry_fields=}')
-            # daybreak
-            assert False
+            check.equal(mock_inputzone().add_entry_row.call_count, 4)
+            arg = cut.entry_fields['dummy']
+            with check:
+                mock_inputzone().add_entry_row.assert_has_calls([call(arg), call(arg), call(arg), call(arg)])
+            with check:
+                mock_focus_set.assert_called_once_with(cut.entry_fields[cut.title].widget)
+
+            # Test create label and text widget.
+            check.equal(mock_inputzone().add_text_row.call_count, 1)
+            with check:
+                mock_inputzone().add_text_row.assert_called_once_with(cut.entry_fields['dummy'])
+
+            # Test create a label and treeview for movie tags.
+            check.equal(mock_inputzone().add_treeview_row.call_count, 1)
+            with check:
+                mock_inputzone().add_treeview_row.assert_called_once_with(
+                    'Tags', items=['test tag 1', 'test tag 2', 'test tag 3'],
+                    callers_callback=cut.tags_treeview_callback)
+            with check:
+                mock_set_initial_tag_selection.assert_called_once_with()
+
+            # Test create a treeview for movies retrieved from tmdb.
+            with check:
+                mock_treeview.assert_called_once_with(
+                    mock_internet_frame, columns=('title', 'year', 'director'),
+                    show=['headings'], height=20, selectmode='browse')
+            check.equal(cut.tmdb_treeview.column.call_count, 3)
+            with check:
+                cut.tmdb_treeview.column.assert_has_calls([
+                    call('title', width=300, stretch=True),
+                    call('year', width=40, stretch=True),
+                    call('director', width=200, stretch=True),
+                    ])
+            check.equal(cut.tmdb_treeview.heading.call_count, 3)
+            with check:
+                cut.tmdb_treeview.heading.assert_has_calls([
+                    call('title', text='Title', anchor='w'),
+                    call('year', text='Year', anchor='w'),
+                    call('director', text='Director', anchor='w')
+                    ])
+            with check:
+                cut.tmdb_treeview.grid.assert_called_once_with(column=0, row=0, sticky='nsew')
+            with check:
+                cut.tmdb_treeview.bind.assert_called_once_with('<<TreeviewSelect>>',
+                                                               func=cut.tmdb_treeview_callback)
+
+            # Test populate buttonbox with buttons.
+            column_num = guiwidgets_2.itertools.count()
+            with check:
+                mock_create_buttons.assert_called_once_with(mock_buttonbox, column_num)
+            with check:
+                mock_create_button.assert_called_once_with(
+                    mock_buttonbox, guiwidgets_2.CANCEL_TEXT, column=next(column_num),
+                    command=cut.destroy, default='active')
+
+            # Test start the tmdb_work_queue polling
+            with check:
+                mock_tmdb_consumer.assert_called_once_with()
 
     @contextmanager
     def moviegui(self, monkeypatch):
