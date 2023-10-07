@@ -5,8 +5,9 @@ This module contains new tests written after Brian Okken's course and book on py
 Test strategies are noted for each class but, in general, they test the interface with other code and not the
 internal implementation of widgets.
 """
+
 #  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 10/2/23, 8:21 AM by stephen.
+#  Last modified 10/7/23, 8:35 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,6 +18,7 @@ internal implementation of widgets.
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from unittest.mock import MagicMock
 
 import pytest
