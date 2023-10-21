@@ -8,7 +8,7 @@ internal implementation of widgets.
 """
 
 #  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 10/7/23, 8:20 AM by stephen.
+#  Last modified 10/21/23, 11:55 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -26,6 +26,7 @@ from unittest.mock import MagicMock, call
 import pytest
 from pytest_check import check
 
+import config
 import guiwidgets_2
 
 TEST_TITLE = 'test moviedb'
@@ -35,25 +36,25 @@ TEST_VERSION = 'Test version'
 # noinspection PyMissingOrEmptyDocstring
 class TestMovieGUI:
     """
-    Test Strategy:
-    __post_init__ Ensure initial values are set and calls to set up methods and functions are made with the correct
-        arguments.
+    Detect any changes to calls to other functions and methods and changes to the arguments to those calls.
+    Changes in the API of called functions and methods are not part of this test suite.
     """
-    # todo  Complete docstring
 
     def test_post_init(self, monkeypatch):
+        # todo Do all of these need mocks? Without an assignment they cannot be interrogated.
         monkeypatch.setattr('guiwidgets_2._create_entry_fields', mock_create_entry_fields := MagicMock())
         monkeypatch.setattr('guiwidgets_2.MovieGUI.original_values', mock_original_values := MagicMock())
         monkeypatch.setattr('guiwidgets_2.MovieGUI.framing', mock_framing := MagicMock())
-        mock_framing.return_value = [MagicMock(), body_frame := MagicMock(),
+        mock_framing.return_value = [MagicMock(), mock_body_frame := MagicMock(),
                                      mock_buttonbox := MagicMock(),
                                      mock_internet_frame := MagicMock()]
-        monkeypatch.setattr('guiwidgets_2._InputZone', mock_inputzone := MagicMock())
-        monkeypatch.setattr('guiwidgets_2._focus_set', mock_focus_set := MagicMock())
         monkeypatch.setattr('guiwidgets_2.MovieGUI.set_initial_tag_selection',
                             mock_set_initial_tag_selection := MagicMock())
-        monkeypatch.setattr('guiwidgets_2.ttk.Treeview', mock_treeview := MagicMock())
         monkeypatch.setattr('guiwidgets_2.MovieGUI._create_buttons', mock_create_buttons := MagicMock())
+
+        monkeypatch.setattr('guiwidgets_2._InputZone', mock_inputzone := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._focus_set', mock_focus_set := MagicMock())
+        monkeypatch.setattr('guiwidgets_2.ttk.Treeview', mock_treeview := MagicMock())
         monkeypatch.setattr('guiwidgets_2.itertools.count', MagicMock())
         monkeypatch.setattr('guiwidgets_2._create_button', mock_create_button := MagicMock())
         monkeypatch.setattr('guiwidgets_2.MovieGUI.tmdb_consumer', mock_tmdb_consumer := MagicMock())
@@ -72,7 +73,7 @@ class TestMovieGUI:
             with check:
                 mock_framing.assert_called_once_with(cut.parent)
             with check:
-                mock_inputzone.assert_called_once_with(body_frame)
+                mock_inputzone.assert_called_once_with(mock_body_frame)
 
             # Test create labels and entry widgets.
             check.equal(mock_inputzone().add_entry_row.call_count, 4)
@@ -83,12 +84,10 @@ class TestMovieGUI:
                 mock_focus_set.assert_called_once_with(cut.entry_fields[cut.title].widget)
 
             # Test create label and text widget.
-            check.equal(mock_inputzone().add_text_row.call_count, 1)
             with check:
                 mock_inputzone().add_text_row.assert_called_once_with(cut.entry_fields['dummy'])
 
             # Test create a label and treeview for movie tags.
-            check.equal(mock_inputzone().add_treeview_row.call_count, 1)
             with check:
                 mock_inputzone().add_treeview_row.assert_called_once_with(
                     'Tags', items=['test tag 1', 'test tag 2', 'test tag 3'],
@@ -134,20 +133,205 @@ class TestMovieGUI:
             with check:
                 mock_tmdb_consumer.assert_called_once_with()
 
+    def test_original_values(self, monkeypatch):
+        # todo Do all of these need mocks? Without an assignment they cannot be interrogated.
+        monkeypatch.setattr('guiwidgets_2._create_entry_fields', MagicMock())
+        monkeypatch.setattr('guiwidgets_2.MovieGUI.framing', mock_framing := MagicMock())
+        mock_framing.return_value = [MagicMock(), MagicMock(), MagicMock(), MagicMock()]
+        monkeypatch.setattr('guiwidgets_2.MovieGUI.set_initial_tag_selection', MagicMock())
+        monkeypatch.setattr('guiwidgets_2.MovieGUI._create_buttons', MagicMock())
+
+        with pytest.raises(NotImplementedError):
+            with self.moviegui(monkeypatch):
+                pass
+
+    def test_initial_tag_selection(self, monkeypatch):
+        # todo Do all of these need mocks? Without an assignment they cannot be interrogated.
+        monkeypatch.setattr('guiwidgets_2._create_entry_fields', MagicMock())
+        monkeypatch.setattr('guiwidgets_2.MovieGUI.original_values', mock_original_values := MagicMock())
+        monkeypatch.setattr('guiwidgets_2.MovieGUI.framing', mock_framing := MagicMock())
+        mock_framing.return_value = [MagicMock(), MagicMock(), MagicMock(), MagicMock()]
+        monkeypatch.setattr('guiwidgets_2.MovieGUI._create_buttons', MagicMock())
+
+        with pytest.raises(NotImplementedError):
+            with self.moviegui(monkeypatch):
+                pass
+
+    def test_create_buttons(self, monkeypatch):
+        # todo Do all of these need mocks? Without an assignment they cannot be interrogated.
+        monkeypatch.setattr('guiwidgets_2._create_entry_fields', MagicMock())
+        monkeypatch.setattr('guiwidgets_2.MovieGUI.original_values', mock_original_values := MagicMock())
+        monkeypatch.setattr('guiwidgets_2.MovieGUI.framing', mock_framing := MagicMock())
+        mock_framing.return_value = [MagicMock(), MagicMock(), MagicMock(), MagicMock()]
+        monkeypatch.setattr('guiwidgets_2.MovieGUI.set_initial_tag_selection', MagicMock())
+
+        with pytest.raises(NotImplementedError):
+            with self.moviegui(monkeypatch):
+                pass
+
+    def test_call_title_notifees(self, monkeypatch, movie_gui_patch):
+        with self.moviegui(monkeypatch) as cut:
+            func = cut.call_title_notifees(mock_commit_neuron := MagicMock())
+            monkeypatch.setattr('guiwidgets_2.MovieGUI.tmdb_search', mock_tmdb_search := MagicMock())
+            cut.entry_fields[cut.title].textvariable.get.return_value = mock_text = 'mock text'
+            cut.entry_fields[cut.title].original_value = mock_original_text = 'mock original text'
+            func(mock_commit_neuron)
+
+            with check:
+                mock_tmdb_search.assert_called_once_with(mock_text)
+            with check:
+                mock_commit_neuron.assert_called_once_with(cut.title, mock_text != mock_original_text)
+
+    def test_tmdb_search(self, monkeypatch, movie_gui_patch):
+        with self.moviegui(monkeypatch) as cut:
+            substring = 'mock substring'
+            cut.tmdb_search(substring)
+            with check:
+                assert cut.parent.after.mock_calls[1] == call(cut.last_text_queue_timer, cut.tmdb_search_callback,
+                                                              substring, cut.tmdb_work_queue)
+
+            # First call only
+            with check:
+                cut.parent.after_cancel.assert_not_called()
+
+            # Second and subsequent calls
+            cut.tmdb_search(substring)
+            with check:
+                cut.parent.after_cancel.assert_called_once_with(cut.last_text_event_id)
+
+    def test_tmdb_consumer(self, monkeypatch, movie_gui_patch):
+        items = ['child 1', 'child 2']
+        title = 'test title'
+        year = 2042
+        director = 'test director'
+        minutes = 142
+        notes = 'test notes'
+
+        with self.moviegui(monkeypatch) as cut:
+            movie = [config.MovieTypedDict(title=title, year=year, director=[director],
+                                           minutes=minutes, notes=notes), ]
+            cut.tmdb_work_queue.put(movie)
+            monkeypatch.setattr(cut, 'tmdb_treeview', mock_tmdb_treeview := MagicMock())
+            mock_tmdb_treeview.get_children.return_value = items
+            # This tmdb_movies item should be cleared by the function under test.
+            cut.tmdb_movies['dummy'] = 'garbage'
+
+            # test with item in queue ('else' branch executed)
+            cut.tmdb_consumer()
+            with check:
+                cut.tmdb_treeview.get_children.assert_called_once_with()
+            with check:
+                cut.tmdb_treeview.delete.assert_called_once_with(*items)
+            with check:
+                cut.tmdb_treeview.insert.assert_called_once_with('', 'end', values=(title, year, director))
+            check.equal(list(cut.tmdb_movies.values()), [dict(title=title, year=year, director=director,
+                                                              minutes=minutes, notes=notes), ])
+
+            # test with no items in queue ('else' branch not executed)
+            cut.tmdb_movies['dummy'] = 'garbage'
+            cut.tmdb_consumer()
+            check.is_true('dummy' in cut.tmdb_movies)
+
+            # test finally branch
+            with check:
+                cut.parent.after.assert_has_calls([call(cut.work_queue_poll, cut.tmdb_consumer),
+                                                   call(cut.work_queue_poll, cut.tmdb_consumer),
+                                                   call(cut.work_queue_poll, cut.tmdb_consumer)])
+
+    def test_tags_treeview_callback(self, monkeypatch, movie_gui_patch):
+        reselection = ('a', 'b', 'c')
+        with self.moviegui(monkeypatch) as cut:
+            cut.tags_treeview_callback(reselection)
+        check.equal(cut.selected_tags, reselection)
+
+    def test_tmdb_treeview_callback(self, monkeypatch, movie_gui_patch):
+        dummy_item_id = 'dummy_item_id'
+        dummy_entry_fields = {
+            guiwidgets_2.MOVIE_FIELD_NAMES[-1]: (mock_notes := MagicMock()),
+            guiwidgets_2.MOVIE_FIELD_NAMES[0]: (mock_title := MagicMock()),
+            }
+
+        with self.moviegui(monkeypatch) as cut:
+            monkeypatch.setattr(cut, 'tmdb_treeview', mock_tmdb_treeview := MagicMock())
+            mock_tmdb_treeview.selection.return_value = [dummy_item_id]
+            monkeypatch.setattr(cut, 'notes_widget', mock_notes_widget := MagicMock())
+            cut.entry_fields = dummy_entry_fields
+            cut.tmdb_movies = {dummy_item_id: dummy_entry_fields}
+
+            cut.tmdb_treeview_callback()
+            with check:
+                mock_notes_widget.delete.assert_called_once_with('1.0', 'end')
+            with check:
+                mock_notes_widget.insert.assert_called_once_with('1.0', mock_notes, ('font_tag',))
+            textvariable_set = cut.entry_fields[guiwidgets_2.MOVIE_FIELD_NAMES[0]].textvariable.set
+            with check:
+                textvariable_set.assert_called_once_with(mock_title)
+
+    def test_destroy(self, monkeypatch, movie_gui_patch):
+        with self.moviegui(monkeypatch) as cut:
+            cut.destroy()
+            with check:
+                cut.parent.after_cancel.assert_called_once_with(cut.recall_id)
+            with check:
+                cut.outer_frame.destroy.assert_called_once_with()
+
+    def test_framing(self, monkeypatch):
+        # todo
+        #  Do all of these need mocks? Without an assignment they cannot be interrogated.
+        #  Should they be separate fixtures?
+        monkeypatch.setattr('guiwidgets_2._create_entry_fields', MagicMock())
+        monkeypatch.setattr('guiwidgets_2.MovieGUI.original_values', lambda *args: None)
+        monkeypatch.setattr('guiwidgets_2.MovieGUI.set_initial_tag_selection', lambda *args: None)
+        monkeypatch.setattr('guiwidgets_2.MovieGUI._create_buttons', lambda *args: None)
+
+        monkeypatch.setattr('guiwidgets_2.ttk.Frame', MagicMock())
+
+        with self.moviegui(monkeypatch) as cut:
+            with check:
+                cut.outer_frame.assert_has_calls(
+                    [call.grid(column=0, row=0, sticky='nsew'),
+                     call.columnconfigure(0, weight=1),
+                     call.columnconfigure(1, weight=1000),
+                     call.rowconfigure(0),
+
+                     call.grid(column=0, row=0, sticky='nw'),
+                     call.columnconfigure(0, weight=1, minsize=25),
+
+                     call.grid(column=1, row=0, sticky='nw'),
+                     call.columnconfigure(0, weight=1, minsize=25),
+
+                     call.grid(column=0, row=0, sticky='new'),
+
+                     call.grid(column=0, row=1, sticky='ne')])
+
+            check.equal(guiwidgets_2.config.current.escape_key_dict[type(cut).__name__.lower()], cut.destroy)
+
     @contextmanager
     def moviegui(self, monkeypatch):
-        current_config = guiwidgets_2.config.CurrentConfig()
-        current_config.tk_root = MagicMock()
-        persistent_config = guiwidgets_2.config.PersistentConfig(TEST_TITLE, TEST_VERSION)
+        dummy_current_config = guiwidgets_2.config.CurrentConfig()
+        dummy_current_config.tk_root = MagicMock(name='test tk_root')
+        dummy_current_config.escape_key_dict = {}
+        dummy_persistent_config = guiwidgets_2.config.PersistentConfig(TEST_TITLE, TEST_VERSION)
 
-        monkeypatch.setattr('mainwindow.config', mock_config := MagicMock())
-        mock_config.current = current_config
-        mock_config.persistent = persistent_config
+        monkeypatch.setattr('guiwidgets_2.config', mock_config := MagicMock(name='config'))
+        mock_config.current = dummy_current_config
+        mock_config.persistent = dummy_persistent_config
 
         # noinspection PyTypeChecker
-        yield guiwidgets_2.MovieGUI(current_config.tk_root,
+        yield guiwidgets_2.MovieGUI(dummy_current_config.tk_root,
                                     tmdb_search_callback=MagicMock(),
                                     all_tags=['test tag 1', 'test tag 2', 'test tag 3', ])
+
+    @pytest.fixture
+    def movie_gui_patch(self, monkeypatch):
+        # todo
+        #  Should they be five separate fixtures?
+        monkeypatch.setattr('guiwidgets_2._create_entry_fields', MagicMock())
+        monkeypatch.setattr('guiwidgets_2.MovieGUI.original_values', lambda *args: None)
+        monkeypatch.setattr('guiwidgets_2.MovieGUI.framing', mock_framing := MagicMock())
+        mock_framing.return_value = [MagicMock(), MagicMock(), MagicMock(), MagicMock()]
+        monkeypatch.setattr('guiwidgets_2.MovieGUI.set_initial_tag_selection', lambda *args: None)
+        monkeypatch.setattr('guiwidgets_2.MovieGUI._create_buttons', lambda *args: None)
 
 
 class TestAddMovieGUI:

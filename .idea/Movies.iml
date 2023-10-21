@@ -5,6 +5,7 @@
       <excludeFolder url="file://$MODULE_DIR$/htmlcov" />
       <excludeFolder url="file://$MODULE_DIR$/virtualenv 3.x" />
       <excludeFolder url="file://$MODULE_DIR$/venv_3_11" />
+      <excludeFolder url="file://$MODULE_DIR$/venv_3_12" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.11 (Movies 2023)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

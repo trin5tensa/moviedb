@@ -3,7 +3,7 @@
 This module includes windows for presenting data and returning entered data to its callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 10/7/23, 8:20 AM by stephen.
+#  Last modified 10/21/23, 11:55 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -127,15 +127,15 @@ class MovieGUI:
         # # Start the tmdb_work_queue polling
         self.tmdb_consumer()
 
-    def original_values(self):  # pragma no cover
+    def original_values(self):
         """ Initialize the original field values. """
         raise NotImplementedError
 
-    def set_initial_tag_selection(self):  # pragma no cover
+    def set_initial_tag_selection(self):
         """ Override this method to set the movie tag selection """
         raise NotImplementedError
 
-    def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):  # pragma no cover
+    def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         """ Create buttons within the buttonbox.
 
         Subclasses may call _create_button to place a button in the buttonbox from left to right. The Iterator is
@@ -185,7 +185,7 @@ class MovieGUI:
         Args:
             substring: The current content of the title field.
         """
-        # Delete the previous call to tmdb_search_callback if it still in the event queue. It will only be in the
+        # Delete the previous call to tmdb_search_callback if it's still in the event queue. It will only be in the
         # event queue if it is still waiting to be executed.
         if substring:  # pragma no branch
             if self.last_text_event_id:
@@ -244,12 +244,11 @@ class MovieGUI:
         """
         if self.tmdb_treeview.selection():
             item_id = self.tmdb_treeview.selection()[0]
-        # User deselected prior selection.
-        else:
+        # Else user has deselected prior selection.
+        else:  # pragma nocover
             return
 
         for k, v in self.tmdb_movies[item_id].items():
-            # Update tkinter text widget(s).
             if k == MOVIE_FIELD_NAMES[-1]:
                 self.notes_widget.delete('1.0', 'end')
                 self.notes_widget.insert('1.0', v, ('font_tag',))
@@ -263,7 +262,6 @@ class MovieGUI:
         self.parent.after_cancel(self.recall_id)
         self.outer_frame.destroy()
 
-    # @staticmethod
     def framing(self, parent: ParentType) -> tuple[ttk.Frame, ttk.Frame, ttk.Frame, ttk.Frame]:
         """ Create framing.
 
