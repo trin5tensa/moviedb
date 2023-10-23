@@ -3,7 +3,7 @@
 This module includes windows for presenting data and returning entered data to its callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 10/21/23, 11:55 AM by stephen.
+#  Last modified 10/23/23, 7:09 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -1120,7 +1120,6 @@ def _enable_button(button: ttk.Button) -> Callable:
         is changed back to its original value the neuron is notified with a 'False' argument. All
         registered notifees will then be called with the argument given to the neuron.
     """
-
     def func(state: bool):
         """Enable or disable the button.
 
@@ -1137,8 +1136,6 @@ def _enable_button(button: ttk.Button) -> Callable:
             button.state(['disabled'])
             # Remove the button highlight
             button.configure(default='disabled')
-
-        x = 42
     return func
 
 
