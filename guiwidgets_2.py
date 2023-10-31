@@ -3,7 +3,7 @@
 This module includes windows for presenting data and returning entered data to its callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 10/23/23, 7:09 AM by stephen.
+#  Last modified 10/31/23, 7:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -36,6 +36,7 @@ COMMIT_TEXT = 'Commit'
 SAVE_TEXT = 'Save'
 DELETE_TEXT = 'Delete'
 CANCEL_TEXT = 'Cancel'
+MOVIE_DELETE_MESSAGE = 'Do you want to delete this movie?'
 
 ParentType = TypeVar('ParentType', tk.Tk, tk.Toplevel, ttk.Frame)
 DefaultLiteral = Literal['normal', 'active', 'disabled']
@@ -329,19 +330,19 @@ class AddMovieGUI(MovieGUI):
 
         # Link commit neuron to year field.
         year = MOVIE_FIELD_NAMES[1]
-        observer = _create_the_fields_observer(self.entry_fields, year, self.commit_neuron)
-        self.entry_fields[year].observer = observer
-        _link_field_to_neuron(self.entry_fields, year, self.commit_neuron, observer)
+        year_observer = _create_the_fields_observer(self.entry_fields, year, self.commit_neuron)
+        self.entry_fields[year].observer = year_observer
+        _link_field_to_neuron(self.entry_fields, year, self.commit_neuron, year_observer)
 
         # Link a new observer to the title field.
-        observer = neurons.Observer()
-        self.entry_fields[self.title].observer = observer
-        observer.register(self.call_title_notifees(self.commit_neuron))
-        _link_field_to_neuron(self.entry_fields, self.title, self.commit_neuron, observer.notify)
+        title_observer = neurons.Observer()
+        self.entry_fields[self.title].observer = title_observer
+        title_observer.register(self.call_title_notifees(self.commit_neuron))
+        _link_field_to_neuron(self.entry_fields, self.title, self.commit_neuron, title_observer.notify)
 
     def commit(self):
         """Commit a new movie to the database."""
-        self.return_fields = {internal_name: movie_field.textvariable.get()
+        self.return_fields = {internal_name: movie_field.textvariable.get()  # pragma no cover
                               for internal_name, movie_field in self.entry_fields.items()}
         self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get('1.0', 'end')
 
@@ -391,7 +392,7 @@ class EditMovieGUI(MovieGUI):
 
     def commit(self):
         """Commit an edited movie to the database."""
-        self.return_fields = {internal_name: movie_field.textvariable.get()
+        self.return_fields = {internal_name: movie_field.textvariable.get()  # pragma no cover
                               for internal_name, movie_field in self.entry_fields.items()}
         self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get('1.0', 'end')
 
@@ -414,7 +415,7 @@ class EditMovieGUI(MovieGUI):
 
     def delete(self):
         """The user clicked the 'Delete' button. """
-        if gui_askyesno(message='Do you want to delete this movie?',  # pragma: no branch
+        if gui_askyesno(message=MOVIE_DELETE_MESSAGE,
                         icon='question', parent=self.parent):
             movie = config.FindMovieTypedDict(title=self.entry_fields['title'].original_value,
                                               year=[self.entry_fields['year'].original_value])
