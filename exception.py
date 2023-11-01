@@ -2,7 +2,7 @@
 
 
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 10/31/23, 7:57 AM by stephen.
+#  Last modified 11/1/23, 8:09 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -31,14 +31,6 @@ class MovieDBConstraintFailure(DatabaseException):
 
 class MovieYearConstraintFailure(DatabaseException):
     """Exception raised for invalid year constraint violation."""
-    # When this exception is raised during normal running the exc.args[0] from the database manager is
-    # reported to the user. This 'args' attribute supplies a dummy fpr testing.
-    # moviedb-#262 Invalid year crashes the program
-    # This bug makes it impossible to carry out integration testing. It is possible that the presence of the
-    # `args` attribute blocks retrieval of the exact cause of error from exc.args[0].
-    # todo Write code to simulate this problem and see if a 'test' attribute steps on the args raised by the
-    #  exception mechanism
-    args = ('test msg', )
 
 
 class MovieDBMovieNotFound(DatabaseException):

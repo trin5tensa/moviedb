@@ -7,8 +7,8 @@ Strategy:
 Detect any changes to calls to other functions and methods and changes to the arguments to those calls.
 Changes in the API of called functions and methods are not part of this test suite.
 """
-#  Copyright (c) 2023. Stephen Rigden.
-#  Last modified 10/31/23, 7:57 AM by stephen.
+#  Copyright (c) 2023-2023. Stephen Rigden.
+#  Last modified 11/1/23, 8:09 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -330,6 +330,7 @@ class TestAddMovieGUI:
                     call().register_event(year),
                     call().register_event(title),])
 
+    # noinspection DuplicatedCode
     def test_commit(self, monkeypatch, movie_patches):
         monkeypatch.setattr('guiwidgets_2.messagebox.showinfo', mock_showinfo := MagicMock())
         with self.addmoviegui(monkeypatch) as cut:
@@ -352,6 +353,7 @@ class TestAddMovieGUI:
                                                     call.get_children().__len__(), call.delete()])
 
             # Test exception paths.
+            monkeypatch.setattr(guiwidgets_2.exception.MovieYearConstraintFailure, 'args', 'garbage')
             monkeypatch.setattr(cut, 'add_movie_callback', mock_add_movie_callback := MagicMock())
             mock_add_movie_callback.side_effect = guiwidgets_2.exception.MovieDBConstraintFailure
             cut.commit()
@@ -407,6 +409,7 @@ class TestEditMovieGUI:
                     call(ttk_frame, guiwidgets_2.COMMIT_TEXT, column=0, command=cut.commit, default='active'),
                     call(ttk_frame, guiwidgets_2.DELETE_TEXT, column=1, command=cut.delete, default='active')])
 
+    # noinspection DuplicatedCode
     def test_commit(self, monkeypatch, movie_patches):
         monkeypatch.setattr('guiwidgets_2.EditMovieGUI.destroy', mock_destroy := MagicMock())
         monkeypatch.setattr('guiwidgets_2.messagebox.showinfo', mock_showinfo := MagicMock())
@@ -422,6 +425,7 @@ class TestEditMovieGUI:
                 mock_destroy.assert_called_once_with()
 
             # Test exception paths.
+            monkeypatch.setattr(guiwidgets_2.exception.MovieYearConstraintFailure, 'args', 'garbage')
             monkeypatch.setattr(cut, 'edit_movie_callback', mock_edit_movie_callback := MagicMock())
             mock_edit_movie_callback.side_effect = guiwidgets_2.exception.MovieDBConstraintFailure
             cut.commit()
