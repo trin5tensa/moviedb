@@ -1,6 +1,6 @@
 """Test module."""
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 10/2/23, 8:21 AM by stephen.
+#  Last modified 11/3/23, 7:06 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -51,119 +51,6 @@ class TestSelectMovieGUI:
         # noinspection PyTypeChecker
         gui = guiwidgets.SelectMovieGUI(DummyTk(), self.movies, self.handlers_callback)
         yield gui
-
-
-# noinspection DuplicatedCode,PyMissingOrEmptyDocstring
-@pytest.mark.skip('Rewrite in _pbom')
-@pytest.mark.usefixtures('patch_tk')
-class TestAddTagGUI:
-
-    def test_add_tag_gui_created(self):
-        with self.add_tag_gui_context() as cm:
-            assert cm.parent == DummyTk()
-            assert cm.add_tag_callback == self.dummy_add_tag_callback
-
-    def test_create_entry_fields_called(self, add_tag_gui_fixtures):
-        with self.add_tag_gui_context() as cm:
-            assert cm.entry_fields['tag'].label_text == 'Tag'
-
-    def test_create_input_form_framing_called(self, add_tag_gui_fixtures):
-        self.create_input_form_framing_calls = []
-        with self.add_tag_gui_context():
-            assert self.create_input_form_framing_calls == [(DummyTk(),)]
-
-    def test_add_entry_row_called(self, add_tag_gui_fixtures):
-        with self.add_tag_gui_context():
-            assert len(self.add_entry_row_calls) == 1
-            assert self.add_entry_row_calls[0][1].label_text == 'Tag'
-
-    def test_create_button_called(self, add_tag_gui_fixtures):
-        self.create_button_calls = []
-        with self.add_tag_gui_context() as cm:
-            assert self.create_button_calls == [
-                ((TtkFrame(parent=TtkFrame(parent=DummyTk())), 'Commit'),
-                 dict(column=0, command=cm.commit, state=['disabled'])),
-                ((TtkFrame(parent=TtkFrame(parent=DummyTk())), 'Cancel'),
-                 dict(column=1, command=cm.destroy))]
-
-    def test_focus_set_on_cancel_button(self, add_tag_gui_fixtures):
-        with self.add_tag_gui_context():
-            cancel_button = self.buttonbox.children[1]
-            assert cancel_button.focus_set_calls == [True]
-
-    def test_link_or_neuron_to_button(self, add_tag_gui_fixtures):
-        with self.add_tag_gui_context():
-            enable_button = self.link_or_neuron_to_button_calls[0][0]
-            enable_button(True)
-            enable_button(False)
-
-            commit_button = self.buttonbox.children[0]
-            assert commit_button.state_calls == [['!disabled'], ['disabled']]
-
-    def test_link_field_to_neuron(self, add_tag_gui_fixtures):
-        with self.add_tag_gui_context():
-            calls = self.link_field_to_neuron_calls[0]
-            assert len(calls) == 4
-            assert calls[0]['tag'].label_text == 'Tag'
-            assert calls[1] == guiwidgets_2.TAG_FIELD_NAMES[0]
-            assert calls[2] == self.dummy_neuron
-            assert isinstance(calls[3], Callable)
-
-    def test_commit_calls_add_tag_callback(self, add_tag_gui_fixtures):
-        with self.add_tag_gui_context() as cm:
-            cm.commit()
-            assert self.add_tag_callback_calls == [('4242',)]
-
-    def test_destroy_destroys_outer_frame(self, add_tag_gui_fixtures):
-        with self.add_tag_gui_context() as cm:
-            cm.commit()
-            assert cm.outer_frame.destroy_calls == [True]
-
-    def dummy_add_tag_callback(self, *args):
-        self.add_tag_callback_calls.append(args)
-
-    def dummy_create_input_form_framing(self, *args):
-        self.create_input_form_framing_calls.append(args)
-        return self.outer_frame, self.body_frame, self.buttonbox
-
-    def dummy_create_button(self, *args, **kwargs):
-        self.create_button_calls.append((args, kwargs))
-        return TtkButton(self.buttonbox, 'Test Button')
-
-    def dummy_link_or_neuron_to_button(self, *args):
-        self.link_or_neuron_to_button_calls.append(args)
-        return self.dummy_neuron
-
-    @contextmanager
-    def add_tag_gui_context(self):
-        # noinspection PyTypeChecker
-        yield guiwidgets_2.AddTagGUI(DummyTk(), self.dummy_add_tag_callback)
-
-    @pytest.fixture
-    def add_tag_gui_fixtures(self, monkeypatch):
-        self.add_tag_callback_calls = []
-        self.create_entry_fields_calls = []
-        self.create_input_form_framing_calls = []
-        self.add_entry_row_calls = []
-        self.create_button_calls = []
-        self.link_or_neuron_to_button_calls = []
-        self.link_field_to_neuron_calls = []
-
-        self.dummy_neuron = object()
-
-        self.outer_frame = TtkFrame(DummyTk())
-        self.body_frame = TtkFrame(self.outer_frame)
-        self.buttonbox = TtkFrame(self.outer_frame)
-
-        monkeypatch.setattr(guiwidgets_2, '_create_input_form_framing',
-                            self.dummy_create_input_form_framing)
-        monkeypatch.setattr(guiwidgets_2._InputZone, 'add_entry_row',
-                            lambda *args: self.add_entry_row_calls.append(args))
-        monkeypatch.setattr(guiwidgets_2, '_create_button', self.dummy_create_button)
-        monkeypatch.setattr(guiwidgets_2, '_create_button_orneuron',
-                            self.dummy_link_or_neuron_to_button)
-        monkeypatch.setattr(guiwidgets_2, '_link_field_to_neuron',
-                            lambda *args: self.link_field_to_neuron_calls.append(args))
 
 
 # noinspection PyMissingOrEmptyDocstring

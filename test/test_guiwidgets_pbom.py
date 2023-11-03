@@ -1,4 +1,4 @@
-""" Test._guiwidgets_<..>.
+""" Test guiwidgets.
 
 This module contains new tests written after Brian Okken's course and book on pytest in Fall 2022 together with
 mocks from Python's unittest.mok module.
@@ -8,7 +8,7 @@ Detect any changes to calls to other functions and methods and changes to the ar
 Changes in the API of called functions and methods are not part of this test suite.
 """
 #  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 11/1/23, 8:09 AM by stephen.
+#  Last modified 11/3/23, 7:06 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -51,10 +51,11 @@ TEST_VERSION = 'Test version'
 
 # noinspection PyMissingOrEmptyDocstring
 class TestMovieGUI:
-    def test_post_init(self, monkeypatch, create_entry_fields, original_values, framing, set_initial_tag_selection,
+    def test_post_init(self, monkeypatch, create_entry_fields, original_values, movie_framing,
+                       set_initial_tag_selection,
                        create_buttons):
-        framing.return_value = [MagicMock(), mock_body_frame := MagicMock(), mock_buttonbox := MagicMock(),
-                                mock_internet_frame := MagicMock()]
+        movie_framing.return_value = [MagicMock(), mock_body_frame := MagicMock(), mock_buttonbox := MagicMock(),
+                                      mock_internet_frame := MagicMock()]
 
         monkeypatch.setattr('guiwidgets_2._InputZone', mock_inputzone := MagicMock())
         monkeypatch.setattr('guiwidgets_2._focus_set', mock_focus_set := MagicMock())
@@ -75,7 +76,7 @@ class TestMovieGUI:
 
             # Test create frames.
             with check:
-                framing.assert_called_once_with(cut.parent)
+                movie_framing.assert_called_once_with(cut.parent)
             with check:
                 mock_inputzone.assert_called_once_with(mock_body_frame)
 
@@ -147,7 +148,7 @@ class TestMovieGUI:
             with self.moviegui(monkeypatch):
                 pass
 
-    def test_create_buttons(self, monkeypatch, create_entry_fields, original_values, framing,
+    def test_create_buttons(self, monkeypatch, create_entry_fields, original_values, movie_framing,
                             set_initial_tag_selection):
         with pytest.raises(NotImplementedError):
             with self.moviegui(monkeypatch):
@@ -474,11 +475,75 @@ class TestEditMovieGUI:
                                         delete_movie_callback=MagicMock(),)
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestAddTagGUI:
-    """
-    Test Strategy:
-    """
-    # todo
+    def test_post_init(self, monkeypatch, create_entry_fields, general_framing, create_buttons):
+        monkeypatch.setattr('guiwidgets_2._InputZone', mock_inputzone := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._focus_set', mock_focus_set := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._create_button', mock_create_button := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._enable_button', mock_enable_button := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._create_button_orneuron', mock_create_button_orneuron := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._link_field_to_neuron', mock_link_field_to_neuron := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._create_the_fields_observer', mock_create_the_fields_observer := MagicMock())
+        _, body_frame, mock_buttonbox = general_framing()
+
+        with self.addtaggui(monkeypatch) as cut:
+            # Test initialize an internal dictionary.
+            with check:
+                create_entry_fields.assert_called_once_with(guiwidgets_2.TAG_FIELD_NAMES, guiwidgets_2.TAG_FIELD_TEXTS)
+
+            # Test create frames.
+            with check:
+                general_framing.assert_called_with(cut.parent, type(cut).__name__.lower(), cut.destroy)
+
+            # Test create label and field.
+            with check:
+                mock_inputzone.assert_called_once_with(body_frame)
+            with check:
+                mock_focus_set.assert_called_once_with(cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].widget)
+
+            # Test populate buttonbox with commit and cancel buttons
+            column_num = guiwidgets_2.itertools.count()
+            with check:
+                mock_create_button.assert_has_calls([
+                    call(mock_buttonbox, guiwidgets_2.COMMIT_TEXT, column=next(column_num), command=cut.commit,
+                         default='disabled'),
+                    call(mock_buttonbox, guiwidgets_2.CANCEL_TEXT, column=next(column_num), command=cut.destroy,
+                         default='active')])
+
+            # Test link commit button to tag field
+            with check:
+                mock_enable_button.assert_called_once_with(mock_create_button())
+            with check:
+                mock_create_button_orneuron.assert_called_once_with(mock_enable_button())
+            with check:
+                mock_link_field_to_neuron.assert_called_once_with(
+                    cut.entry_fields, guiwidgets_2.TAG_FIELD_NAMES[0], mock_create_button_orneuron(),
+                    mock_create_the_fields_observer())
+            check.equal(cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].observer, mock_create_button_orneuron())
+
+    def test_commit(self, monkeypatch, create_entry_fields):
+        with self.addtaggui(monkeypatch) as cut:
+            monkeypatch.setattr(cut, 'destroy', mock_destroy := MagicMock())
+
+            cut.commit()
+            with check:
+                cut.add_tag_callback.assert_called_once_with(
+                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].textvariable.get())
+            with check:
+                mock_destroy.assert_called_once_with()
+
+    def test_destroy(self, monkeypatch, create_entry_fields):
+        with self.addtaggui(monkeypatch) as cut:
+            monkeypatch.setattr(cut, 'outer_frame', mock_outer_frame := MagicMock())
+
+            cut.destroy()
+            mock_outer_frame.destroy.assert_called_once_with()
+
+    @contextmanager
+    def addtaggui(self, monkeypatch):
+        yield guiwidgets_2.AddTagGUI(patch_config(monkeypatch).current.tk_root,
+                                     add_tag_callback=MagicMock())
 
 
 class TestEditTagGUI:
@@ -554,7 +619,7 @@ def patch_config(monkeypatch):
 
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
-def movie_patches(create_entry_fields, original_values, framing, set_initial_tag_selection, create_buttons):
+def movie_patches(create_entry_fields, original_values, movie_framing, set_initial_tag_selection, create_buttons):
     pass
 
 
@@ -596,9 +661,17 @@ def ttk_frame(monkeypatch):
 
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
-def framing(monkeypatch):
+def movie_framing(monkeypatch):
     monkeypatch.setattr('guiwidgets_2.MovieGUI.framing', mock_framing := MagicMock())
     mock_framing.return_value = [MagicMock(), MagicMock(), MagicMock(), MagicMock()]
+    return mock_framing
+
+
+# noinspection PyMissingOrEmptyDocstring
+@pytest.fixture
+def general_framing(monkeypatch):
+    monkeypatch.setattr('guiwidgets_2._create_input_form_framing', mock_framing := MagicMock())
+    mock_framing.return_value = [MagicMock(), MagicMock(), MagicMock()]
     return mock_framing
 
 
