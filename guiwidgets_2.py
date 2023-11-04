@@ -3,7 +3,7 @@
 This module includes windows for presenting data and returning entered data to its callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 10/31/23, 7:57 AM by stephen.
+#  Last modified 11/4/23, 7:22 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -77,7 +77,6 @@ class MovieGUI:
     last_text_event_id: str = field(default='', init=False, repr=False)
 
     # Local variables exposed for testing
-    commit_neuron: neurons.Neuron = field(default=None, init=False, repr=False)
     return_fields: dict = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
@@ -258,8 +257,14 @@ class MovieGUI:
             else:
                 self.entry_fields[k].textvariable.set(v)
 
+    # noinspection PyUnusedLocal
     def destroy(self, *args):
-        """Destroy all widgets of this class."""
+        """
+        Destroy all widgets of this class.
+
+        Args:
+            *args: Not used but needed to match external caller.
+        """
         self.parent.after_cancel(self.recall_id)
         self.outer_frame.destroy()
 
@@ -415,8 +420,7 @@ class EditMovieGUI(MovieGUI):
 
     def delete(self):
         """The user clicked the 'Delete' button. """
-        if gui_askyesno(message=MOVIE_DELETE_MESSAGE,
-                        icon='question', parent=self.parent):
+        if gui_askyesno(message=MOVIE_DELETE_MESSAGE, icon='question', parent=self.parent):
             movie = config.FindMovieTypedDict(title=self.entry_fields['title'].original_value,
                                               year=[self.entry_fields['year'].original_value])
             self.delete_movie_callback(movie)
@@ -446,8 +450,8 @@ class AddTagGUI:
 
         # Create label and field
         label_field = _InputZone(body_frame)
-        for movie_field_name in TAG_FIELD_NAMES:
-            label_field.add_entry_row(self.entry_fields[movie_field_name])
+        for tag_field_name in TAG_FIELD_NAMES:
+            label_field.add_entry_row(self.entry_fields[tag_field_name])
         _focus_set(self.entry_fields[TAG_FIELD_NAMES[0]].widget)
 
         # Populate buttonbox with commit and cancel buttons
@@ -469,8 +473,14 @@ class AddTagGUI:
         self.add_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
         self.destroy()
 
+    # noinspection PyUnusedLocal
     def destroy(self, *args):
-        """Destroy this instance's widgets."""
+        """
+        Destroy all widgets of this class.
+
+        Args:
+            *args: Not used but needed to match external caller.
+        """
         self.outer_frame.destroy()
 
 
@@ -508,7 +518,7 @@ class SearchTagGUI:
         # Populate buttonbox with the search and cancel buttons.
         column_num = itertools.count()
         search_button = _create_button(buttonbox, SEARCH_TEXT, column=next(column_num),
-                                       command=self.search,  default='disabled')
+                                       command=self.search, default='disabled')
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                        command=self.destroy, default='active')
 
@@ -564,8 +574,8 @@ class EditTagGUI:
 
         # Create field label and field entry widgets.
         label_field = _InputZone(body_frame)
-        for movie_field_name in TAG_FIELD_NAMES:
-            label_field.add_entry_row(self.entry_fields[movie_field_name])
+        for tag_field_name in TAG_FIELD_NAMES:
+            label_field.add_entry_row(self.entry_fields[tag_field_name])
         _focus_set(self.entry_fields[TAG_FIELD_NAMES[0]].widget)
 
         # Populate buttonbox with commit, delete, and cancel buttons
@@ -593,8 +603,8 @@ class EditTagGUI:
         
         Get the user's confirmation of deletion with a dialog window. Either exit the method or call
         the registered deletion callback."""
-        if messagebox.askyesno(message=f"Do you want to delete tag '{self.tag}'?",  # pragma: no branch
-                               icon='question', default='no', parent=self.parent):
+        if gui_askyesno(message=f"Do you want to delete tag '{self.tag}'?",
+                        icon='question', default='no', parent=self.parent):
             self.delete_tag_callback()
             self.destroy()
 
@@ -690,6 +700,7 @@ class PreferencesGUI:
     # A more convenient data structure for entry fields.
     entry_fields: Dict[str, '_EntryField'] = field(default_factory=dict, init=False, repr=False)
 
+    # noinspection DuplicatedCode
     def __post_init__(self):
         """Create the widgets and closures required for their operation."""
         # Create a toplevel window
@@ -714,7 +725,7 @@ class PreferencesGUI:
         # Create buttons
         column_num = itertools.count()
         save_button = _create_button(buttonbox, SAVE_TEXT, column=next(column_num),
-                                     command=self.save,  default='disabled')
+                                     command=self.save, default='disabled')
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                        command=self.destroy, default='active')
 
@@ -751,11 +762,12 @@ def gui_messagebox(parent: ParentType, message: str, detail: str = '', icon: str
     messagebox.showinfo(parent, message, detail=detail, icon=icon)
 
 
-def gui_askyesno(parent: ParentType, message: str, detail: str = '', icon: str = 'question') -> bool:
+def gui_askyesno(parent: ParentType, message: str, detail: str = '', icon: str = 'question', default='no') -> bool:
     """
     Present a Tk askyesno dialog.
     
     Args:
+        default:
         parent:
         message:
         detail:
@@ -764,7 +776,7 @@ def gui_askyesno(parent: ParentType, message: str, detail: str = '', icon: str =
     Returns:
         True if user clicks 'Yes', False if user clicks 'No'
     """
-    return messagebox.askyesno(parent, message, detail=detail, icon=icon)
+    return messagebox.askyesno(parent, message, detail=detail, icon=icon, default=default)
 
 
 def gui_askopenfilename(parent: ParentType, filetypes: Iterable[tuple[str, str | list[str] | tuple[str, ...]]] | None):
@@ -923,7 +935,7 @@ class _InputZone:
         entry_field.widget.grid(column=1, row=row_ix)
         entry_field.textvariable.set(entry_field.original_value)
 
-    def add_text_row(self,  entry_field: _EntryField) -> tk.Text:
+    def add_text_row(self, entry_field: _EntryField) -> tk.Text:
         """
         Add label and text widgets as the bottom row.
 
@@ -1121,6 +1133,7 @@ def _enable_button(button: ttk.Button) -> Callable:
         is changed back to its original value the neuron is notified with a 'False' argument. All
         registered notifees will then be called with the argument given to the neuron.
     """
+
     def func(state: bool):
         """Enable or disable the button.
 
@@ -1137,6 +1150,7 @@ def _enable_button(button: ttk.Button) -> Callable:
             button.state(['disabled'])
             # Remove the button highlight
             button.configure(default='disabled')
+
     return func
 
 

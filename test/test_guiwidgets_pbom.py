@@ -8,7 +8,7 @@ Detect any changes to calls to other functions and methods and changes to the ar
 Changes in the API of called functions and methods are not part of this test suite.
 """
 #  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 11/3/23, 7:06 AM by stephen.
+#  Last modified 11/4/23, 7:22 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,7 +21,15 @@ Changes in the API of called functions and methods are not part of this test sui
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import tkinter.messagebox
-from collections.abc import Callable
+from contextlib import contextmanager
+from unittest.mock import MagicMock, call
+
+import pytest
+from pytest_check import check
+
+import config
+import guiwidgets_2
+
 #  Copyright (c) 2023-2023. Stephen Rigden.
 #  Last modified 10/23/23, 7:09 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
@@ -34,16 +42,6 @@ from collections.abc import Callable
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-from contextlib import contextmanager
-from unittest.mock import MagicMock, call
-
-import pytest
-from pytest_check import check
-
-import config
-import exception
-import guiwidgets_2
 
 TEST_TITLE = 'test moviedb'
 TEST_VERSION = 'Test version'
@@ -143,7 +141,7 @@ class TestMovieGUI:
             with self.moviegui(monkeypatch):
                 pass
 
-    def test_initial_tag_selection(self, monkeypatch, create_entry_fields, original_values,):
+    def test_initial_tag_selection(self, monkeypatch, create_entry_fields, original_values, ):
         with pytest.raises(NotImplementedError):
             with self.moviegui(monkeypatch):
                 pass
@@ -329,7 +327,7 @@ class TestAddMovieGUI:
                 mock_create_buttons_andneuron.assert_has_calls([
                     call(mock_enable_button()),
                     call().register_event(year),
-                    call().register_event(title),])
+                    call().register_event(title), ])
 
     # noinspection DuplicatedCode
     def test_commit(self, monkeypatch, movie_patches):
@@ -387,7 +385,7 @@ class TestEditMovieGUI:
             cut.entry_fields = dict([(entry, guiwidgets_2._EntryField('dummy label', original_value='garbage')), ])
 
             cut.original_values()
-            check.equal(cut.entry_fields[entry].original_value, ('test tag', ))
+            check.equal(cut.entry_fields[entry].original_value, ('test tag',))
 
     def test_set_initial_tag_selection(self, monkeypatch, movie_patches):
         with self.editmoviegui(monkeypatch) as cut:
@@ -446,6 +444,7 @@ class TestEditMovieGUI:
         monkeypatch.setattr('guiwidgets_2.gui_askyesno', mock_gui_askyesno := MagicMock())
         with self.editmoviegui(monkeypatch) as cut:
             monkeypatch.setattr(cut, 'destroy', MagicMock())
+
             # User responds 'No' - Do not delete movie.
             mock_gui_askyesno.return_value = False
             cut.delete()
@@ -462,20 +461,21 @@ class TestEditMovieGUI:
             with check:
                 cut.destroy.assert_called_once_with()
 
+    # noinspection PyArgumentList
     @contextmanager
     def editmoviegui(self, monkeypatch):
         old_movie = guiwidgets_2.config.MovieUpdateDef()
-        old_movie["tags"] = ('test tag', )
+        old_movie["tags"] = ('test tag',)
         # noinspection PyTypeChecker
         yield guiwidgets_2.EditMovieGUI(patch_config(monkeypatch).current.tk_root,
                                         MagicMock(),  # tmdb_io_handler
                                         all_tags=['test tag 1', 'test tag 2', 'test tag 3', ],
                                         old_movie=old_movie,
                                         edit_movie_callback=MagicMock(),
-                                        delete_movie_callback=MagicMock(),)
+                                        delete_movie_callback=MagicMock(), )
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 class TestAddTagGUI:
     def test_post_init(self, monkeypatch, create_entry_fields, general_framing, create_buttons):
         monkeypatch.setattr('guiwidgets_2._InputZone', mock_inputzone := MagicMock())
@@ -499,6 +499,9 @@ class TestAddTagGUI:
             # Test create label and field.
             with check:
                 mock_inputzone.assert_called_once_with(body_frame)
+            with check:
+                mock_inputzone().add_entry_row.assert_called_once_with(
+                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]])
             with check:
                 mock_focus_set.assert_called_once_with(cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].widget)
 
@@ -546,11 +549,110 @@ class TestAddTagGUI:
                                      add_tag_callback=MagicMock())
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestEditTagGUI:
-    """
-    Test Strategy:
-    """
-    # todo
+    dummy_tag = 'dummy tag'
+
+    # noinspection DuplicatedCode
+    def test_post_init(self, monkeypatch, create_entry_fields, general_framing, create_buttons):
+        monkeypatch.setattr('guiwidgets_2._InputZone', mock_inputzone := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._focus_set', mock_focus_set := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._create_button', mock_create_button := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._enable_button', mock_enable_button := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._create_button_orneuron', mock_create_button_orneuron := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._link_field_to_neuron', mock_link_field_to_neuron := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._create_the_fields_observer', mock_create_the_fields_observer := MagicMock())
+        _, body_frame, mock_buttonbox = general_framing()
+
+        with self.edittaggui(monkeypatch) as cut:
+            # Test initialize an internal dictionary.
+            with check:
+                create_entry_fields.assert_called_once_with(guiwidgets_2.TAG_FIELD_NAMES, guiwidgets_2.TAG_FIELD_TEXTS)
+            check.equal(cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].original_value, self.dummy_tag)
+
+            # Test create outer frames to hold fields and buttons.
+            with check:
+                general_framing.assert_called_with(cut.parent, type(cut).__name__.lower(), cut.destroy)
+
+            # Test create field label and field entry widgets.
+            with check:
+                mock_inputzone.assert_called_once_with(body_frame)
+            with check:
+                mock_inputzone().add_entry_row.assert_called_once_with(
+                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]])
+            with check:
+                mock_focus_set.assert_called_once_with(cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].widget)
+
+            # Test populate buttonbox with commit and cancel buttons
+            column_num = guiwidgets_2.itertools.count()
+            with check:
+                mock_create_button.assert_has_calls([
+                    call(mock_buttonbox, guiwidgets_2.COMMIT_TEXT, column=next(column_num), command=cut.commit,
+                         default='active'),
+                    call(mock_buttonbox, guiwidgets_2.DELETE_TEXT, column=next(column_num), command=cut.delete,
+                         default='active'),
+                    call(mock_buttonbox, guiwidgets_2.CANCEL_TEXT, column=next(column_num), command=cut.destroy,
+                         default='active')])
+
+            # Test link commit button to tag field
+            with check:
+                mock_enable_button.assert_called_once_with(mock_create_button())
+            with check:
+                mock_create_button_orneuron.assert_called_once_with(mock_enable_button())
+            with check:
+                mock_link_field_to_neuron.assert_called_once_with(
+                    cut.entry_fields, guiwidgets_2.TAG_FIELD_NAMES[0], mock_create_button_orneuron(),
+                    mock_create_the_fields_observer())
+            check.equal(cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].observer, mock_create_button_orneuron())
+
+    # noinspection DuplicatedCode
+    def test_commit(self, monkeypatch, create_entry_fields):
+        with self.edittaggui(monkeypatch) as cut:
+            monkeypatch.setattr(cut, 'destroy', mock_destroy := MagicMock())
+
+            cut.commit()
+            with check:
+                cut.edit_tag_callback.assert_called_once_with(
+                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].textvariable.get())
+            with check:
+                mock_destroy.assert_called_once_with()
+
+    # noinspection DuplicatedCode
+    def test_delete(self, monkeypatch, create_entry_fields):
+        monkeypatch.setattr('guiwidgets_2.gui_askyesno', mock_gui_askyesno := MagicMock())
+        with self.edittaggui(monkeypatch) as cut:
+            monkeypatch.setattr(cut, 'destroy', mock_destroy := MagicMock())
+
+            # User responds 'No' - Do not delete movie.
+            mock_gui_askyesno.return_value = False
+            cut.delete()
+            with check:
+                mock_gui_askyesno.assert_called_once_with(message=f"Do you want to delete tag '{self.dummy_tag}'?",
+                                                          icon='question',
+                                                          default='no',
+                                                          parent=cut.parent)
+
+            # User responds 'Yes' - Go ahead and delete movie.
+            mock_gui_askyesno.return_value = True
+            cut.delete()
+            with check:
+                cut.delete_tag_callback.assert_called_once_with()
+            with check:
+                mock_destroy.assert_called_once_with()
+
+    def test_destroy(self, monkeypatch, create_entry_fields):
+        with self.edittaggui(monkeypatch) as cut:
+            monkeypatch.setattr(cut, 'outer_frame', mock_outer_frame := MagicMock())
+
+            cut.destroy()
+            mock_outer_frame.destroy.assert_called_once_with()
+
+    @contextmanager
+    def edittaggui(self, monkeypatch):
+        yield guiwidgets_2.EditTagGUI(patch_config(monkeypatch).current.tk_root,
+                                      tag=self.dummy_tag,
+                                      delete_tag_callback=MagicMock(),
+                                      edit_tag_callback=MagicMock())
 
 
 class TestSearchTagGUI:
