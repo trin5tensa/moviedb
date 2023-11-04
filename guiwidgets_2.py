@@ -3,7 +3,7 @@
 This module includes windows for presenting data and returning entered data to its callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/4/23, 7:22 AM by stephen.
+#  Last modified 11/4/23, 1:24 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -36,7 +36,10 @@ COMMIT_TEXT = 'Commit'
 SAVE_TEXT = 'Save'
 DELETE_TEXT = 'Delete'
 CANCEL_TEXT = 'Cancel'
+
 MOVIE_DELETE_MESSAGE = 'Do you want to delete this movie?'
+NO_MATCH_MESSAGE = 'No matches'
+NO_MATCH_DETAIL = 'There are no matching tags in the database.'
 
 ParentType = TypeVar('ParentType', tk.Tk, tk.Toplevel, ttk.Frame)
 DefaultLiteral = Literal['normal', 'active', 'disabled']
@@ -531,15 +534,12 @@ class SearchTagGUI:
 
     def search(self):
         """Respond to the user's click of the 'Search' button."""
+        pattern = self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get()
         try:
-            pattern = self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get()
             self.search_tag_callback(pattern)
         except exception.DatabaseSearchFoundNothing:
             # Warn user and give user the opportunity to reenter the search criteria.
-            parent = self.parent
-            message = 'No matches'
-            detail = 'There are no matching tags in the database.'
-            gui_messagebox(parent, message, detail)
+            gui_messagebox(self.parent, NO_MATCH_MESSAGE, NO_MATCH_DETAIL)
         else:
             self.destroy()
 

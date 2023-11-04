@@ -8,7 +8,7 @@ Detect any changes to calls to other functions and methods and changes to the ar
 Changes in the API of called functions and methods are not part of this test suite.
 """
 #  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 11/4/23, 7:22 AM by stephen.
+#  Last modified 11/4/23, 1:24 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -481,7 +481,6 @@ class TestAddTagGUI:
         monkeypatch.setattr('guiwidgets_2._InputZone', mock_inputzone := MagicMock())
         monkeypatch.setattr('guiwidgets_2._focus_set', mock_focus_set := MagicMock())
         monkeypatch.setattr('guiwidgets_2._create_button', mock_create_button := MagicMock())
-        monkeypatch.setattr('guiwidgets_2._enable_button', mock_enable_button := MagicMock())
         monkeypatch.setattr('guiwidgets_2._create_button_orneuron', mock_create_button_orneuron := MagicMock())
         monkeypatch.setattr('guiwidgets_2._link_field_to_neuron', mock_link_field_to_neuron := MagicMock())
         monkeypatch.setattr('guiwidgets_2._create_the_fields_observer', mock_create_the_fields_observer := MagicMock())
@@ -515,10 +514,6 @@ class TestAddTagGUI:
                          default='active')])
 
             # Test link commit button to tag field
-            with check:
-                mock_enable_button.assert_called_once_with(mock_create_button())
-            with check:
-                mock_create_button_orneuron.assert_called_once_with(mock_enable_button())
             with check:
                 mock_link_field_to_neuron.assert_called_once_with(
                     cut.entry_fields, guiwidgets_2.TAG_FIELD_NAMES[0], mock_create_button_orneuron(),
@@ -558,7 +553,6 @@ class TestEditTagGUI:
         monkeypatch.setattr('guiwidgets_2._InputZone', mock_inputzone := MagicMock())
         monkeypatch.setattr('guiwidgets_2._focus_set', mock_focus_set := MagicMock())
         monkeypatch.setattr('guiwidgets_2._create_button', mock_create_button := MagicMock())
-        monkeypatch.setattr('guiwidgets_2._enable_button', mock_enable_button := MagicMock())
         monkeypatch.setattr('guiwidgets_2._create_button_orneuron', mock_create_button_orneuron := MagicMock())
         monkeypatch.setattr('guiwidgets_2._link_field_to_neuron', mock_link_field_to_neuron := MagicMock())
         monkeypatch.setattr('guiwidgets_2._create_the_fields_observer', mock_create_the_fields_observer := MagicMock())
@@ -595,10 +589,6 @@ class TestEditTagGUI:
                          default='active')])
 
             # Test link commit button to tag field
-            with check:
-                mock_enable_button.assert_called_once_with(mock_create_button())
-            with check:
-                mock_create_button_orneuron.assert_called_once_with(mock_enable_button())
             with check:
                 mock_link_field_to_neuron.assert_called_once_with(
                     cut.entry_fields, guiwidgets_2.TAG_FIELD_NAMES[0], mock_create_button_orneuron(),
@@ -655,11 +645,81 @@ class TestEditTagGUI:
                                       edit_tag_callback=MagicMock())
 
 
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 class TestSearchTagGUI:
-    """
-    Test Strategy:
-    """
-    # todo
+    def test_post_init(self, monkeypatch, create_entry_fields, general_framing):
+        monkeypatch.setattr('guiwidgets_2._InputZone', mock_inputzone := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._focus_set', mock_focus_set := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._create_button', mock_create_button := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._create_button_orneuron', mock_create_button_orneuron := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._link_field_to_neuron', mock_link_field_to_neuron := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._create_the_fields_observer', mock_create_the_fields_observer := MagicMock())
+        _, body_frame, mock_buttonbox = general_framing()
+
+        with self.searchtaggui(monkeypatch) as cut:
+            # Test initialize an internal dictionary.
+            with check:
+                create_entry_fields.assert_called_once_with(guiwidgets_2.TAG_FIELD_NAMES, guiwidgets_2.TAG_FIELD_TEXTS)
+
+            # Test create frames.
+            with check:
+                general_framing.assert_called_with(cut.parent, type(cut).__name__.lower(), cut.destroy)
+
+            # Test create label and field.
+            with check:
+                mock_inputzone.assert_called_once_with(body_frame)
+            with check:
+                mock_inputzone().add_entry_row.assert_called_once_with(
+                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]])
+            with check:
+                mock_focus_set.assert_called_once_with(cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].widget)
+
+            # Test populate buttonbox with commit and cancel buttons
+            column_num = guiwidgets_2.itertools.count()
+            with check:
+                mock_create_button.assert_has_calls([
+                    call(mock_buttonbox, guiwidgets_2.SEARCH_TEXT, column=next(column_num), command=cut.search,
+                         default='disabled'),
+                    call(mock_buttonbox, guiwidgets_2.CANCEL_TEXT, column=next(column_num), command=cut.destroy,
+                         default='active')])
+
+            # Test link commit button to tag field
+            with check:
+                mock_link_field_to_neuron.assert_called_once_with(
+                    cut.entry_fields, guiwidgets_2.TAG_FIELD_NAMES[0], mock_create_button_orneuron(),
+                    mock_create_the_fields_observer())
+            check.equal(cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].observer, mock_create_button_orneuron())
+
+    def test_search(self, monkeypatch, create_entry_fields):
+        monkeypatch.setattr(guiwidgets_2, 'gui_messagebox', mock_guimessgebox := MagicMock())
+        with self.searchtaggui(monkeypatch) as cut:
+            monkeypatch.setattr(cut, 'destroy', mock_destroy := MagicMock())
+
+            # Regular control flow
+            cut.search()
+            with check:
+                cut.search_tag_callback.assert_called_once_with(
+                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].textvariable.get())
+            with check:
+                mock_destroy.assert_called_once_with()
+
+            # Exception DatabaseSearchFoundNothing control flow
+            cut.search_tag_callback.side_effect = guiwidgets_2.exception.DatabaseSearchFoundNothing
+            cut.search()
+            with check:
+                mock_guimessgebox.assert_called_once_with(cut.parent, guiwidgets_2.NO_MATCH_MESSAGE,
+                                                          guiwidgets_2.NO_MATCH_DETAIL)
+
+    def test_destroy(self, monkeypatch, create_entry_fields):
+        with self.searchtaggui(monkeypatch) as cut:
+            monkeypatch.setattr(cut, 'outer_frame', mock_outer_frame := MagicMock())
+
+            cut.destroy()
+            mock_outer_frame.destroy.assert_called_once_with()
+
+    @contextmanager
+    def searchtaggui(self, monkeypatch):
+        yield guiwidgets_2.SearchTagGUI(patch_config(monkeypatch).current.tk_root, search_tag_callback=MagicMock())
 
 
 class TestSelectTagGUI:
