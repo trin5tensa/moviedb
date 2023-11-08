@@ -1,6 +1,6 @@
 """Test module."""
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/4/23, 1:24 PM by stephen.
+#  Last modified 11/8/23, 7:19 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -51,129 +51,6 @@ class TestSelectMovieGUI:
         # noinspection PyTypeChecker
         gui = guiwidgets.SelectMovieGUI(DummyTk(), self.movies, self.handlers_callback)
         yield gui
-
-
-# noinspection PyMissingOrEmptyDocstring
-@pytest.mark.skip('Rewrite in _pbom')
-@pytest.mark.usefixtures('patch_tk')
-class TestSelectTagGUI:
-    tags_to_show = ['tag 1', 'tag 2']
-
-    def test_select_tag_gui_created(self, select_tag_fixtures):
-        with self.select_gui_context() as cm:
-            assert cm.parent == DummyTk()
-            assert cm.select_tag_callback == self.dummy_select_tag_callback
-
-    def test_outer_frame_created(self, select_tag_fixtures):
-        with self.select_gui_context() as cm:
-            assert cm.outer_frame == TtkFrame(parent=DummyTk())
-            # Check that it only has two children: The body frame and buttonbox frame.
-            assert len(cm.outer_frame.children) == 2
-
-    def test_body_frame_created(self, select_tag_fixtures):
-        with self.select_gui_context() as cm:
-            assert cm.outer_frame.children[0] == TtkFrame(parent=TtkFrame(parent=DummyTk()),
-                                                          padding=(10, 25, 10, 0))
-
-    def test_buttonbox_frame_created(self, select_tag_fixtures):
-        with self.select_gui_context() as cm:
-            assert cm.outer_frame.children[1] == TtkFrame(parent=TtkFrame(parent=DummyTk()),
-                                                          padding=(5, 5, 10, 10))
-
-    def test_treeview_created(self, select_tag_fixtures):
-        with self.select_gui_context() as cm:
-            assert cm.outer_frame.children[0].children[0] == TtkTreeview(
-                cm.outer_frame.children[0], columns=[],
-                height=10, selectmode='browse', )
-
-    def test_treeview_gridded(self, select_tag_fixtures):
-        with self.select_gui_context() as cm:
-            tree = cm.outer_frame.children[0].children[0]
-            assert tree.grid_calls == [dict(column=0, row=0, sticky='w')]
-
-    def test_column_width_set(self, select_tag_fixtures):
-        with self.select_gui_context() as cm:
-            tree = cm.outer_frame.children[0].children[0]
-            assert tree.column_calls == [(('#0',), dict(width=350))]
-
-    def test_column_heading_set(self, select_tag_fixtures):
-        with self.select_gui_context() as cm:
-            tree = cm.outer_frame.children[0].children[0]
-            assert tree.heading_calls == [(('#0',), dict(text=guiwidgets_2.TAG_FIELD_TEXTS[0]))]
-
-    def test_rows_populated(self, select_tag_fixtures):
-        with self.select_gui_context() as cm:
-            tree = cm.outer_frame.children[0].children[0]
-            assert tree.insert_calls == [
-                (('', 'end'), dict(iid=self.tags_to_show[0], text=self.tags_to_show[0],
-                                   values=[], tags='tag')),
-                (('', 'end'), dict(iid=self.tags_to_show[1], text=self.tags_to_show[1],
-                                   values=[], tags='tag')), ]
-
-    def test_callback_bound_to_treeview(self, select_tag_fixtures, monkeypatch):
-        sentinel = object()
-
-        def dummy_wrapper(): return sentinel
-
-        monkeypatch.setattr(guiwidgets_2.SelectTagGUI, 'selection_callback_wrapper',
-                            lambda *args: dummy_wrapper)
-        with self.select_gui_context() as cm:
-            tree = cm.outer_frame.children[0].children[0]
-            args_ = tree.bind_calls[0][0]
-            assert args_ == ('<<TreeviewSelect>>',)
-            kwargs = tree.bind_calls[0][1]
-            assert len(kwargs) == 1
-            assert kwargs['func']() == sentinel
-
-    def test_cancel_button_created(self, select_tag_fixtures):
-        with self.select_gui_context() as cm:
-            assert self.create_button_calls == [(cm.outer_frame.children[1], guiwidgets_2.CANCEL_TEXT,
-                                                 0, cm.destroy)]
-
-    def test_select_tag_callback_called(self, select_tag_fixtures, monkeypatch):
-        with self.select_gui_context() as cm:
-            tree = cm.outer_frame.children[0].children[0]
-            tree.selection_set('test tag', 'ignored tag')
-            selection_callback = cm.selection_callback_wrapper(tree)
-            selection_callback()
-            assert self.select_tag_callback_calls == [('test tag',)]
-
-    def test_destroy_called(self, select_tag_fixtures, monkeypatch):
-        """This tests the call from selection_callback and not the cancel button callback."""
-        destroy_calls = []
-        monkeypatch.setattr(guiwidgets_2.SelectTagGUI, 'destroy',
-                            lambda *args: destroy_calls.append(True))
-        with self.select_gui_context() as cm:
-            tree = cm.outer_frame.children[0].children[0]
-            tree.selection_set('test tag', 'ignored tag')
-            selection_callback = cm.selection_callback_wrapper(tree)
-            selection_callback()
-            assert destroy_calls == [True, ]
-
-    def test_destroy_calls_tk_destroy(self, select_tag_fixtures):
-        with self.select_gui_context() as cm:
-            cm.destroy()
-            assert cm.outer_frame.destroy_calls == [True, ]
-
-    def dummy_select_tag_callback(self, *args):
-        self.select_tag_callback_calls.append(args)
-
-    def dummy_create_button(self, *args):
-        self.create_button_calls.append(args)
-
-    @pytest.fixture
-    def select_tag_fixtures(self, monkeypatch):
-        monkeypatch.setattr(guiwidgets_2.ttk, 'Frame', TtkFrame)
-        monkeypatch.setattr(guiwidgets_2.ttk, 'Treeview', TtkTreeview)
-        monkeypatch.setattr(guiwidgets_2, '_create_button', self.dummy_create_button)
-
-    @contextmanager
-    def select_gui_context(self):
-        self.select_tag_callback_calls = []
-        self.create_body_and_button_frames_calls = []
-        self.create_button_calls = []
-        # noinspection PyTypeChecker
-        yield guiwidgets_2.SelectTagGUI(DummyTk(), self.dummy_select_tag_callback, self.tags_to_show)
 
 
 # noinspection PyMissingOrEmptyDocstring

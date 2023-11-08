@@ -8,7 +8,7 @@ Detect any changes to calls to other functions and methods and changes to the ar
 Changes in the API of called functions and methods are not part of this test suite.
 """
 #  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 11/4/23, 1:24 PM by stephen.
+#  Last modified 11/8/23, 7:19 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -722,11 +722,76 @@ class TestSearchTagGUI:
         yield guiwidgets_2.SearchTagGUI(patch_config(monkeypatch).current.tk_root, search_tag_callback=MagicMock())
 
 
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 class TestSelectTagGUI:
-    """
-    Test Strategy:
-    """
-    # todo
+    TAGS_TO_SHOW = ['test tag 1', 'test tag 2']
+
+    def test_post_init(self, monkeypatch, create_entry_fields, general_framing):
+        monkeypatch.setattr('guiwidgets_2.ttk.Treeview', mock_tree := MagicMock())
+        monkeypatch.setattr(guiwidgets_2.SelectTagGUI, 'selection_callback',
+                            mock_selection_callback_wrapper := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._create_button', mock_create_button := MagicMock())
+        _, body_frame, mock_buttonbox = general_framing()
+
+        with self.selecttaggui(monkeypatch) as cut:
+            # Test create outer frames to hold fields and buttons.
+            with check:
+                general_framing.assert_called_with(cut.parent, type(cut).__name__.lower(), cut.destroy)
+
+            # Test create and grid treeview
+            with check:
+                mock_tree.assert_called_once_with(body_frame, columns=[], height=10, selectmode='browse')
+            with check:
+                mock_tree().grid.assert_called_once_with(column=0, row=0, sticky='w')
+
+            # Test specify column width and title
+            with check:
+                mock_tree().column.assert_called_once_with('#0', width=350)
+            with check:
+                mock_tree().heading.assert_called_once_with('#0', text=guiwidgets_2.TAG_FIELD_TEXTS[0])
+
+            # Test populate the treeview rows
+            with check:
+                mock_tree().insert.assert_has_calls([
+                    call('', 'end', iid=self.TAGS_TO_SHOW[0], text=self.TAGS_TO_SHOW[0], values=[],
+                         tags=guiwidgets_2.TAG_FIELD_NAMES[0]),
+                    call('', 'end', iid=self.TAGS_TO_SHOW[1], text=self.TAGS_TO_SHOW[1], values=[],
+                         tags=guiwidgets_2.TAG_FIELD_NAMES[0])])
+
+            # Test bind the treeview callback
+            with check:
+                mock_tree().bind.assert_called_once_with('<<TreeviewSelect>>',
+                                                         func=mock_selection_callback_wrapper())
+
+            # Test create the button
+            column_num = 0
+            with check:
+                mock_create_button.assert_called_once_with(mock_buttonbox, guiwidgets_2.CANCEL_TEXT, column_num,
+                                                           cut.destroy, default='active')
+
+    def test_selection_callback(self, monkeypatch, create_entry_fields):
+        monkeypatch.setattr('guiwidgets_2.ttk.Treeview', mock_tree := MagicMock())
+        with self.selecttaggui(monkeypatch) as cut:
+            monkeypatch.setattr(cut, 'destroy', mock_destroy := MagicMock())
+            func = cut.selection_callback(mock_tree())
+
+            func()
+            with check:
+                cut.select_tag_callback.assert_called_once_with(mock_tree().selection()[0])
+            with check:
+                mock_destroy.assert_called_once_with()
+
+    def test_destroy(self, monkeypatch, create_entry_fields):
+        with self.selecttaggui(monkeypatch) as cut:
+            monkeypatch.setattr(cut, 'outer_frame', mock_outer_frame := MagicMock())
+
+            cut.destroy()
+            mock_outer_frame.destroy.assert_called_once_with()
+
+    @contextmanager
+    def selecttaggui(self, monkeypatch):
+        yield guiwidgets_2.SelectTagGUI(patch_config(monkeypatch).current.tk_root, select_tag_callback=MagicMock(),
+                                        tags_to_show=self.TAGS_TO_SHOW)
 
 
 class TestPreferencesGUI:

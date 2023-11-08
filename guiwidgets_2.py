@@ -3,7 +3,7 @@
 This module includes windows for presenting data and returning entered data to its callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/4/23, 1:24 PM by stephen.
+#  Last modified 11/8/23, 7:19 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -641,14 +641,14 @@ class SelectTagGUI:
             tree.insert('', 'end', iid=tag, text=tag, values=[], tags=TAG_FIELD_NAMES[0])
 
         # Bind the treeview callback
-        tree.bind('<<TreeviewSelect>>', func=self.selection_callback_wrapper(tree))
+        tree.bind('<<TreeviewSelect>>', func=self.selection_callback(tree))
 
         # Create the button
         column_num = 0
-        # todo integration and unit test of buttons particularly active, normal and disabled status.
+        # todo integration test of buttons particularly active, normal and disabled status.
         _create_button(buttonbox, CANCEL_TEXT, column_num, self.destroy, default='active')
 
-    def selection_callback_wrapper(self, tree: ttk.Treeview) -> Callable:
+    def selection_callback(self, tree: ttk.Treeview) -> Callable:
         """Call the callback provided by the caller and destroy all Tk widgets associated with this
         class.
         
@@ -660,7 +660,7 @@ class SelectTagGUI:
         """
 
         # noinspection PyUnusedLocal
-        def selection_callback(*args):
+        def func(*args):
             """Save the newly changed user selection.
 
             Args:
@@ -670,7 +670,7 @@ class SelectTagGUI:
             self.select_tag_callback(tag)
             self.destroy()
 
-        return selection_callback
+        return func
 
     def destroy(self):
         """Destroy all Tk widgets associated with this class."""
