@@ -3,7 +3,7 @@
 This module includes windows for presenting data and returning entered data to its callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/8/23, 7:19 AM by stephen.
+#  Last modified 11/11/23, 7:08 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -688,6 +688,7 @@ class PreferencesGUI:
     do_not_ask: bool
 
     # On commit this callback will be called with the updated preferences.
+    # todo Is this correctly typed?
     save_callback: Callable[[str, bool], None]
 
     # Internal field names and associated GUI texts.
@@ -722,24 +723,24 @@ class PreferencesGUI:
         label_field.add_checkbox_row(self.entry_fields[self.use_tmdb_name])
         _focus_set(self.entry_fields[self.api_key_name].widget)
 
-        # Create buttons
+        # # Create buttons
         column_num = itertools.count()
         save_button = _create_button(buttonbox, SAVE_TEXT, column=next(column_num),
                                      command=self.save, default='disabled')
         _create_button(buttonbox, CANCEL_TEXT, column=next(column_num),
                        command=self.destroy, default='active')
 
-        # Link save button to save neuron
+        # # Link save button to save neuron
         save_button_enabler = _enable_button(save_button)
         save_neuron = _create_button_orneuron(save_button_enabler)
 
-        # Link api key field to save neuron
+        # # Link 'api key' field to save neuron
         self.entry_fields[self.api_key_name].observer = _create_the_fields_observer(
             self.entry_fields, self.api_key_name, save_neuron)
         _link_field_to_neuron(self.entry_fields, self.api_key_name, save_neuron,
                               self.entry_fields[self.api_key_name].observer)
 
-        # Link tmdb don't ask field to save neuron
+        # # Link 'tmdb don't ask' field to save neuron
         self.entry_fields[self.use_tmdb_name].observer = _create_the_fields_observer(
             self.entry_fields, self.use_tmdb_name, save_neuron)
         _link_field_to_neuron(self.entry_fields, self.use_tmdb_name, save_neuron,

@@ -8,7 +8,7 @@ Detect any changes to calls to other functions and methods and changes to the ar
 Changes in the API of called functions and methods are not part of this test suite.
 """
 #  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 11/8/23, 7:19 AM by stephen.
+#  Last modified 11/11/23, 7:08 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -794,11 +794,118 @@ class TestSelectTagGUI:
                                         tags_to_show=self.TAGS_TO_SHOW)
 
 
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 class TestPreferencesGUI:
-    """
-    Test Strategy:
-    """
-    # todo
+    api_key = 'test api key'
+    do_not_ask = False
+    save_callback = 'test save callback'
+
+    def test_post_init(self, monkeypatch, create_entry_fields, general_framing):
+        monkeypatch.setattr(guiwidgets_2.tk, 'Toplevel', mock_toplevel := MagicMock())
+        monkeypatch.setattr(guiwidgets_2, '_set_original_value', mock_set_original_value := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._InputZone', mock_inputzone := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._focus_set', mock_focus_set := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._create_button', mock_create_button := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._create_button_orneuron', mock_create_button_orneuron := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._enable_button', mock_enable_button := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._create_the_fields_observer', mock_create_the_fields_observer := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._link_field_to_neuron', mock_link_field_to_neuron := MagicMock())
+        _, body_frame, mock_buttonbox = general_framing()
+
+        with self.preferencesgui(monkeypatch) as cut:
+            # Test create a toplevel window
+            with check:
+                mock_toplevel.assert_called_once_with(cut.parent)
+
+            # Test initialize an internal dictionary to simplify field data management.
+            with check:
+                create_entry_fields.assert_called_once_with(
+                    (cut.api_key_name, cut.use_tmdb_name),
+                    (cut.api_key_text, cut.use_tmdb_text))
+            with check:
+                mock_set_original_value.assert_called_once_with(
+                    cut.entry_fields,
+                    {cut.api_key_name: cut.api_key, cut.use_tmdb_name: cut.do_not_ask})
+
+            # Test create outer frames t hold fields and buttons.
+            check.equal(general_framing.call_count, 2)
+            with check:
+                general_framing.assert_has_calls([
+                    call(),
+                    call(cut.toplevel, type(cut).__name__.lower(), cut.destroy), ])
+
+            # Test create labels and entry widgets.
+            with check:
+                mock_inputzone().add_entry_row.assert_called_once_with(cut.entry_fields[cut.api_key_name])
+            with check:
+                mock_inputzone().add_checkbox_row.assert_called_once_with(cut.entry_fields[cut.use_tmdb_name])
+            with check:
+                mock_focus_set.assert_called_once_with(cut.entry_fields[cut.api_key_name].widget)
+
+            # Test create buttons.
+            check.equal(mock_create_button.call_count, 2)
+            with check:
+                mock_create_button.assert_has_calls([
+                    call(mock_buttonbox, guiwidgets_2.SAVE_TEXT, column=0, command=cut.save, default='disabled'),
+                    call(mock_buttonbox, guiwidgets_2.CANCEL_TEXT, column=1, command=cut.destroy, default='active')
+                    ])
+
+            # Test link save button to save neuron
+            with check:
+                mock_enable_button.assert_called_once_with(mock_create_button())
+            with check:
+                mock_create_button_orneuron.assert_called_once_with(mock_enable_button())
+
+            # Test link api key field and 'tmdb don't ask' field to save neuron
+            mock_neuron = mock_create_button_orneuron()
+            with check:
+                mock_create_the_fields_observer.assert_has_calls([
+                    call(cut.entry_fields, cut.api_key_name, mock_neuron),
+                    call(cut.entry_fields, cut.use_tmdb_name, mock_neuron)])
+            with check:
+                mock_link_field_to_neuron.assert_has_calls([
+                    call(cut.entry_fields, cut.api_key_name, mock_neuron,
+                         cut.entry_fields[cut.api_key_name].observer),
+                    call(cut.entry_fields, cut.use_tmdb_name, mock_neuron,
+                         cut.entry_fields[cut.use_tmdb_name].observer)])
+
+    def test_save(self, monkeypatch, create_entry_fields, general_framing):
+        monkeypatch.setattr(guiwidgets_2.tk, 'Toplevel', MagicMock())
+        monkeypatch.setattr('guiwidgets_2._focus_set', MagicMock())
+
+        with self.preferencesgui(monkeypatch) as cut:
+            monkeypatch.setattr(cut, 'save_callback', mock_save_callback := MagicMock())
+            monkeypatch.setattr(cut, 'destroy', mock_destroy := MagicMock())
+
+            cut.save()
+            with check:
+                mock_save_callback.assert_called_with(cut.entry_fields[cut.api_key_name].textvariable.get(),
+                                                      cut.entry_fields[cut.use_tmdb_name].textvariable.get() == '1')
+            with check:
+                mock_destroy.assert_called_once_with()
+
+    def test_destroy(self, monkeypatch, create_entry_fields, general_framing):
+        monkeypatch.setattr(guiwidgets_2.tk, 'Toplevel', mock_toplevel := MagicMock())
+        monkeypatch.setattr('guiwidgets_2._focus_set', MagicMock())
+
+        with self.preferencesgui(monkeypatch) as cut:
+            cut.destroy()
+            mock_toplevel().destroy.assert_called_once_with()
+
+    @contextmanager
+    def preferencesgui(self, monkeypatch):
+        # noinspection PyTypeChecker
+        yield guiwidgets_2.PreferencesGUI(patch_config(monkeypatch).current.tk_root,
+                                          api_key=self.api_key,
+                                          do_not_ask=self.do_not_ask,
+                                          save_callback=self.test_callback())
+
+    def test_callback(self):
+        def func(*args):
+            print(f'{args=}')
+            return args
+
+        return func
 
 
 class TestCreateBodyAndButtonFrames:
