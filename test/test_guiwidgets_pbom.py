@@ -8,7 +8,7 @@ Detect any changes to calls to other functions and methods and changes to the ar
 Changes in the API of called functions and methods are not part of this test suite.
 """
 #  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 11/11/23, 7:08 AM by stephen.
+#  Last modified 11/11/23, 9:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,19 +30,7 @@ from pytest_check import check
 import config
 import guiwidgets_2
 
-#  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 10/23/23, 7:09 AM by stephen.
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
+TEST_TK_ROOT = 'test tk_root'
 TEST_TITLE = 'test moviedb'
 TEST_VERSION = 'Test version'
 
@@ -50,8 +38,7 @@ TEST_VERSION = 'Test version'
 # noinspection PyMissingOrEmptyDocstring
 class TestMovieGUI:
     def test_post_init(self, monkeypatch, create_entry_fields, original_values, movie_framing,
-                       set_initial_tag_selection,
-                       create_buttons):
+                       set_initial_tag_selection, create_buttons):
         movie_framing.return_value = [MagicMock(), mock_body_frame := MagicMock(), mock_buttonbox := MagicMock(),
                                       mock_internet_frame := MagicMock()]
 
@@ -908,11 +895,38 @@ class TestPreferencesGUI:
         return func
 
 
+# noinspection PyMissingOrEmptyDocstring
 class TestCreateBodyAndButtonFrames:
-    """
-    Test Strategy:
-    """
-    # todo
+    escape_key_callback = 'test escape key callback'
+
+    def test_framing(self, monkeypatch):
+        monkeypatch.setattr('guiwidgets_2.ttk.Frame', mock_frame := MagicMock())
+        mock_destroy = MagicMock(name='mock destroy')
+
+        with self.create_frames(monkeypatch, mock_destroy) as fut:
+            outer_frame, body_frame, buttonbox = fut
+            check.equal(mock_frame.call_count, 3)
+            check.equal(mock_frame().grid.call_count, 3)
+            check.equal(mock_frame().columnconfigure.call_count, 1)
+            with check:
+                mock_frame.assert_has_calls([
+                    call(guiwidgets_2.config.current.tk_root, name=self.escape_key_callback),
+                    call(outer_frame, padding=(10, 25, 10, 0)),
+                    call(outer_frame, padding=(5, 5, 10, 10)),
+                    ], any_order=True)
+            check.equal(guiwidgets_2.config.current.escape_key_dict, {self.escape_key_callback: mock_destroy})
+            with check:
+                outer_frame.assert_has_calls([call.grid(column=0, row=0, sticky='nsew'),
+                                              call.columnconfigure(0, weight=1)])
+            with check:
+                body_frame.grid.assert_has_calls([call(column=0, row=0, sticky='n')])
+            with check:
+                buttonbox.grid.assert_has_calls([call(column=0, row=1, sticky='e')])
+
+    @contextmanager
+    def create_frames(self, monkeypatch, mock_destroy):
+        yield guiwidgets_2._create_body_and_button_frames(patch_config(monkeypatch).current.tk_root,
+                                                          self.escape_key_callback, mock_destroy)
 
 
 @pytest.mark.skip('Rewrite')
@@ -940,7 +954,7 @@ class TestInputZone:
 # noinspection PyMissingOrEmptyDocstring
 def patch_config(monkeypatch):
     dummy_current_config = guiwidgets_2.config.CurrentConfig()
-    dummy_current_config.tk_root = MagicMock(name='test tk_root')
+    dummy_current_config.tk_root = MagicMock(name=TEST_TK_ROOT)
     dummy_current_config.escape_key_dict = {}
     dummy_persistent_config = guiwidgets_2.config.PersistentConfig(TEST_TITLE, TEST_VERSION)
 

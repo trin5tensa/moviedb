@@ -1,6 +1,6 @@
 """Test module."""
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/11/23, 7:08 AM by stephen.
+#  Last modified 11/11/23, 9:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -296,58 +296,6 @@ class TestMovieTagTreeview:
         initial_selection = ['tag 1', ]
         yield guiwidgets_2._MovieTagTreeview(parent, row, items, lambda *args: None,
                                              initial_selection)
-
-
-# noinspection PyMissingOrEmptyDocstring
-@pytest.mark.skip('Rewrite in pbom')
-@pytest.mark.usefixtures('patch_tk')
-class TestCreateBodyAndButtonFrames:
-
-    def test_outer_frame_created(self):
-        with self.call_context() as cm:
-            outer_frame, body_frame, buttonbox = cm
-            assert outer_frame == TtkFrame(parent=DummyTk())
-
-    def test_outer_frame_gridded(self):
-        with self.call_context() as cm:
-            outer_frame, body_frame, buttonbox = cm
-            assert outer_frame.grid_calls == [dict(column=0, row=0, sticky='nsew')]
-
-    def test_outer_frame_column_configured(self):
-        with self.call_context() as cm:
-            outer_frame, body_frame, buttonbox = cm
-            assert outer_frame.columnconfigure_calls == [((0,), dict(weight=1))]
-
-    def test_outer_frame_row_configured(self):
-        with self.call_context() as cm:
-            outer_frame, body_frame, buttonbox = cm
-            assert outer_frame.rowconfigure_calls == [((0,), dict(weight=1)),
-                                                      ((1,), dict(minsize=35)), ]
-
-    def test_body_frame_created(self):
-        with self.call_context() as cm:
-            outer_frame, body_frame, buttonbox = cm
-            assert body_frame == TtkFrame(parent=outer_frame, padding=(10, 25, 10, 0))
-
-    def test_body_frame_gridded(self):
-        with self.call_context() as cm:
-            outer_frame, body_frame, buttonbox = cm
-            assert body_frame.grid_calls == [dict(column=0, row=0, sticky='n')]
-
-    def test_buttonbox_created(self):
-        with self.call_context() as cm:
-            outer_frame, body_frame, buttonbox = cm
-            assert buttonbox == TtkFrame(parent=outer_frame, padding=(5, 5, 10, 10))
-
-    def test_buttonbox_gridded(self):
-        with self.call_context() as cm:
-            outer_frame, body_frame, buttonbox = cm
-            assert buttonbox.grid_calls == [dict(column=0, row=1, sticky='e')]
-
-    @contextmanager
-    def call_context(self):
-        # noinspection PyTypeChecker
-        yield guiwidgets_2._create_input_form_framing(DummyTk(), 'dummy name')
 
 
 # noinspection PyMissingOrEmptyDocstring
