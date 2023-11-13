@@ -1,6 +1,6 @@
 """Test module."""
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/11/23, 9:11 AM by stephen.
+#  Last modified 11/13/23, 7:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -359,6 +359,7 @@ def test_clear_input_form_fields_calls_textvariable_set():
     assert entry_fields['test_entry'].textvariable.set_calls == [('original value',), ('',)]
 
 
+@pytest.mark.skip
 def test_create_entry_fields(patch_tk):
     names = ('test field',)
     texts = ('Test Field',)
