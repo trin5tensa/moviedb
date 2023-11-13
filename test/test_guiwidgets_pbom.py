@@ -8,7 +8,7 @@ Detect any changes to calls to other functions and methods and changes to the ar
 Changes in the API of called functions and methods are not part of this test suite.
 """
 #  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 11/11/23, 9:11 AM by stephen.
+#  Last modified 11/13/23, 6:55 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -929,19 +929,14 @@ class TestCreateBodyAndButtonFrames:
                                                           self.escape_key_callback, mock_destroy)
 
 
-@pytest.mark.skip('Rewrite')
 class TestGUIAskYesNo:
     def test_askyesno_called(self, monkeypatch):
-        # askyesno = MagicMock(name='mock_gui_askyesno')
-        # monkeypatch.setattr(guiwidgets_2.messagebox, 'askyesno', askyesno)
-        # parent = DummyTk()
-        # message = 'dummy message'
-        #
-        # # noinspection PyTypeChecker
-        # guiwidgets_2.gui_askyesno(parent, message)
-        #
-        # askyesno.assert_called_once_with(parent, message, detail='', icon='question')
-        ...
+        monkeypatch.setattr(guiwidgets_2.messagebox, 'askyesno', mock_askyesno := MagicMock(name='mock_gui_askyesno'))
+        parent = MagicMock()
+        message = 'dummy message'
+
+        guiwidgets_2.gui_askyesno(parent, message)
+        mock_askyesno.assert_called_once_with(parent, message, detail='', icon='question', default='no')
 
 
 class TestInputZone:
@@ -949,6 +944,9 @@ class TestInputZone:
     Test Strategy:
     """
     # todo
+
+
+# class Test
 
 
 # noinspection PyMissingOrEmptyDocstring
