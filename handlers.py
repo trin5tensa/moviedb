@@ -17,7 +17,8 @@ This module is the glue between the user's selection of a menu item and the gui.
 import concurrent.futures
 import logging
 import queue
-from typing import Callable, Optional, Sequence
+from collections import UserDict
+from typing import Callable, Optional, Sequence, Literal
 
 import config
 import database
@@ -26,6 +27,92 @@ import guiwidgets
 import guiwidgets_2
 import impexp
 import tmdb
+
+
+class EscapeKeyDict(UserDict):
+    """ Support for Apple's <Escape> amd <Command-.> key presses.
+
+        Use Case:
+            Apple GUI docs state the <Escape> and <Command-.> accelerator keys should end the current activity.
+
+        Application of the Apple requirements to moviedb is accomplished by calling the destroy method of the moviedb
+        object. The precise nature of what happens when a specific destroy method is called can vary so this approach
+        can accommodate any tkinter widget which is managed by a moviedb class. This excludes 'convenience' windows
+        such as messageboxes.
+
+        The two escape accelerators have been attached to Tk/Tcl's root with the bind_all function. When either
+        accelerator is pressed the closure within the escape method will be called.
+
+        The complicated design of this class has been dictated by the inadequacy of information provided by the
+        keypress event callback from tkinter. A moviedb object will be destroyed by the closure and this object is
+        identified by naming the outer frame widget. This outer frame name can be extracted from the keypress event
+        supplied by tkinter. This is used to match an entry in the 'data' attribute of this class. This entry should
+        be registered when the moviedb object is initialized. Extensive validation is necessary to ensure that all of
+        these elements are in place.
+
+        The matching is accomplished by:
+        1) Uniquely naming the outer frame widget with the name of the moviedb class.
+        2) Registering in this class the mapping of the outer frame name and its destroy method.
+    """
+    internal_error_txt = 'Internal Error'
+    accelerator_txt = 'Accelerator'
+    no_valid_name_txt = 'detected but no valid name was found in the topmost Tk/Tcl window.'
+    gt1_valid_name_txt = "detected but more than one valid name was found in the topmost Tk/Tcl window."
+    key_error_text = "detected but not found in lookup dictionary."
+    type_error_text = "Invalid callback for"
+
+    def __setitem__(self, outer_frame: str, destroy: Callable):
+        """Register a destroy method for a particular outer frame."""
+        if outer_frame not in self:
+            self.data[outer_frame] = destroy
+
+    def escape(self, parent: guiwidgets_2.ParentType, accelerator: Literal['<Escape>', '<Command-.>']):
+        """ Sets up the callback which will destroy a moviedb logical window.
+
+
+        Args:
+            parent: Used to call tkinter messageboxes
+            accelerator: User readable text used for reporting exceptions.
+        """
+
+        def closure(keypress_event):
+            """ Destroys a moviedb logical window.
+
+            Args:
+                keypress_event:
+            """
+            outer_frame_names = [widget_name for widget_name in str(keypress_event.widget).split('.')
+                                 if widget_name and widget_name[:1] != '!']
+
+            # Validate the Tk/Tcl name
+            match len(outer_frame_names):
+                case 1:
+                    pass
+                case 0:
+                    message = f"{self.accelerator_txt} {accelerator} {self.no_valid_name_txt}"
+                    logging.warning(f"{message} {keypress_event.widget=}")
+                    guiwidgets_2.gui_messagebox(parent, self.internal_error_txt, message, icon='warning')
+                    return
+                case _:
+                    message = f"{self.accelerator_txt} {accelerator} {self.gt1_valid_name_txt}"
+                    logging.warning(f"{message} {keypress_event.widget=}")
+                    guiwidgets_2.gui_messagebox(parent, self.internal_error_txt, message, icon='warning')
+                    return
+
+            # Try to call the widget's destroy method.
+            outer_frame_name = outer_frame_names[0]
+            try:
+                self.data[outer_frame_name]()
+            except KeyError:
+                message = f"{self.accelerator_txt}  {accelerator} {self.key_error_text}"
+                logging.warning(f"{message} {self.data.keys()}")
+                guiwidgets_2.gui_messagebox(parent, self.internal_error_txt, message, icon='warning')
+            except TypeError:
+                message = f"{self.type_error_text} {self.accelerator_txt.lower()}  {accelerator}."
+                logging.warning(f"{message} {self.data[outer_frame_name]}")
+                guiwidgets_2.gui_messagebox(parent, self.internal_error_txt, message, icon='warning')
+
+        return closure
 
 
 def about_dialog():

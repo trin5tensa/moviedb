@@ -15,7 +15,8 @@
 
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Dict, Literal, NewType, Optional
+from typing import Any, Dict, Optional
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -24,8 +25,6 @@ import mainwindow
 TEST_TITLE = 'test moviedb'
 TEST_VERSION = 'Test version'
 TEST_MENU = 'Test Menu'
-
-tk_state = NewType('tk_state', Literal['mainwindow.tk.DISABLED', 'mainwindow.tk.NORMAL'])
 
 
 class TestMainWindowGeometry:
@@ -71,6 +70,7 @@ class TestMainWindowGeometry:
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
     def geometry_context(self, desired_geometry):
+        mainwindow.config.current = MagicMock()
         persistent_hold = mainwindow.config.persistent
         mainwindow.config.persistent = mainwindow.config.PersistentConfig(TEST_TITLE, TEST_VERSION)
         mainwindow.config.persistent.geometry = desired_geometry
@@ -108,11 +108,14 @@ class TestMainWindowShutdown:
     def shutdown_context(self):
         persistent_hold = mainwindow.config.persistent
         mainwindow.config.persistent = mainwindow.config.PersistentConfig(TEST_TITLE, TEST_VERSION)
+        current_hold = mainwindow.config.current
+        mainwindow.config.current = mainwindow.config.CurrentConfig()
         self.root_window = mainwindow.MainWindow(InstrumentedTk())
         self.root_window.tk_shutdown()
         try:
             yield
         finally:
+            mainwindow.config.current = current_hold
             mainwindow.config.persistent = persistent_hold
 
 
@@ -125,6 +128,7 @@ class InstrumentedTk:
     geometry_args = None
     protocol_args = None
     bind_args = None
+    bind_all_args = None
     menu = None
     destroy_called = False
     
@@ -142,6 +146,9 @@ class InstrumentedTk:
 
     def bind(self, *args):
         self.bind_args = args
+
+    def bind_all(self, *args):
+        self.bind_all_args = args
 
     def config(self, **kwargs):
         self.menu = kwargs.get('menu')
