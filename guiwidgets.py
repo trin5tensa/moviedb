@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 10/2/23, 8:21 AM by stephen.
+#  Last modified 11/16/23, 3:26 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,13 +21,12 @@ import itertools
 import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
-from tkinter import messagebox
-from typing import Callable, Dict, List, Literal, Sequence
+from typing import Callable, Dict, List, Sequence
 
 import config
 import exception
 import neurons
-from guiwidgets_2 import (CANCEL_TEXT, COMMIT_TEXT, DELETE_TEXT, MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS,
+from guiwidgets_2 import (CANCEL_TEXT, MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS,
                           SEARCH_TEXT, SELECT_TAGS_TEXT, _EntryField,
                           _create_entry_fields, _focus_set, gui_messagebox, )
 
@@ -37,7 +36,7 @@ TAG_TREEVIEW_INTERNAL_NAME = 'tag treeview'
 @dataclass
 class MovieGUIBase:
     """ A base class for movie input forms.
-    
+
     WARNING:
         This module uses the original subclassed approach to Tkinter primary widgets. It
         is fragile and should not be used as template for future developments.
@@ -99,7 +98,7 @@ class MovieGUIBase:
     def neuron_linker(self, internal_name: str, neuron: neurons.Neuron,
                       neuron_callback: Callable, initial_state: bool = False):
         """Set a neuron callback which will be called whenever the field is changed by the user.
-        
+
         Args:
             internal_name: Name of widget. The neuron will be notified whenever this widget is
             changed by the user.
@@ -182,94 +181,6 @@ class MovieGUIBase:
 
 
 @dataclass
-class CommonButtonbox(MovieGUIBase):
-    """ A form for adding a movie.
-    
-    WARNING:
-        This module uses the original subclassed approach to Tkinter primary widgets. It
-        is fragile and should not be used as template for future developments.
-        Any proposed refactoring should consider abandoning these classes and using the newer
-        composed classes of guiwidgets_2 as a model for future development.
-    """
-    # todo Unused? Check and remove
-    # On exit this callback will be called with a dictionary of fields and user entered values.
-    commit_callback: Callable[[config.MovieTypedDict, Sequence[str]], None]
-
-    # If the user clicks the delete button this callback will be called.
-    delete_callback: Callable[[config.MovieKeyTypedDict], None]
-
-    # The caller shall specify the buttons which are to be shown in the buttonbox except for
-    # the cancel button which will always be provided.
-    buttons_to_show: List[Literal['commit', 'delete']]
-
-    # AND Neuron controlling enabled state of Commit button
-    commit_button_neuron: neurons.AndNeuron = field(default_factory=neurons.AndNeuron, init=False)
-
-    # noinspection DuplicatedCode
-    def create_buttonbox(self, outerframe: ttk.Frame):
-        """Create the buttons."""
-        buttonbox = super().create_buttonbox(outerframe)
-        column_num = itertools.count()
-
-        # Commit button
-        if 'commit' in self.buttons_to_show:
-            commit = ttk.Button(buttonbox, text=COMMIT_TEXT, command=self.commit)
-            commit.grid(column=next(column_num), row=0)
-            commit.bind('<Return>', lambda event, b=commit: b.invoke())
-            commit.state(['disabled'])
-            self.commit_button_neuron.register(self.button_state_callback(commit))
-
-        # Delete button
-        if 'delete' in self.buttons_to_show:
-            delete = ttk.Button(buttonbox, text=DELETE_TEXT, command=self.delete)
-            delete.grid(column=next(column_num), row=0)
-
-        # Cancel button
-        self.create_cancel_button(buttonbox, column=next(column_num))
-
-    def commit(self):
-        """The user clicked the 'Commit' button."""
-        return_fields = {internal_name: movie_field.textvariable.get()
-                         for internal_name, movie_field in self.entry_fields.items()}
-
-        # Validate the year range
-        if not self.validate_int_range(int(return_fields['year']), 1877, 10000):
-            msg = 'Invalid year.'
-            detail = 'The year must be between 1877 and 10000.'
-            messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
-            return
-
-        # Commit and exit
-        try:
-            self.commit_callback(return_fields, self.selected_tags)
-
-        # Alert user and stay on page
-        except exception.MovieDBConstraintFailure:
-            msg = 'Database constraint failure.'
-            detail = 'A movie with this title and year is already present in the database.'
-            messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
-
-        # Alert user and exit page
-        except exception.MovieDBMovieNotFound as exc:
-            msg = 'Missing movie.'
-            detail = exc.args[0]
-            messagebox.showinfo(parent=self.parent, message=msg, detail=detail)
-            self.destroy()
-
-        else:
-            self.destroy()
-
-    def delete(self):
-        """The user clicked the 'Delete' button. """
-        if messagebox.askyesno(message='Do you want to delete this movie?',
-                               icon='question', default='no', parent=self.parent):
-            movie = config.MovieKeyTypedDict(title=self.entry_fields['title'].original_value,
-                                             year=int(self.entry_fields['year'].original_value))
-            self.delete_callback(movie)
-            self.destroy()
-
-
-@dataclass
 class SearchMovieGUI(MovieGUIBase):
     """A form for searching for a movie.
     
@@ -279,7 +190,6 @@ class SearchMovieGUI(MovieGUIBase):
         Any proposed refactoring should consider abandoning these classes and using the newer
         composed classes of guiwidgets_2 as a model for future development.
     """
-    # todo Update to new GUI standards and move to guiwidgets_2
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[config.FindMovieTypedDict, Sequence[str]], None]
     # Tags list
@@ -415,7 +325,6 @@ class SelectMovieGUI(MovieGUIBase):
         Any proposed refactoring should consider abandoning these classes and using the newer
         composed classes of guiwidgets_2 as a model for future development.
     """
-    # todo Update to new GUI standards and move to guiwidgets_2
 
     # Movie records retrieved from the database.
     movies: List[config.MovieUpdateDef]

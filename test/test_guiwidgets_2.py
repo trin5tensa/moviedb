@@ -1,6 +1,6 @@
 """Test module."""
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/13/23, 7:14 AM by stephen.
+#  Last modified 11/16/23, 3:26 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,15 +13,13 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from contextlib import contextmanager
-from typing import Callable, List, Optional, Type
-from unittest.mock import Mock, MagicMock
+from typing import Callable, Optional, Type
+from unittest.mock import Mock
 
 import pytest
 
-import config
 import guiwidgets
 import guiwidgets_2
-import handlers
 from test.dummytk import (DummyTk, TkStringVar, TkToplevel, TtkButton, TtkCheckbutton, TtkEntry,
                           TtkFrame, TtkLabel, TtkScrollbar, TtkTreeview, )
 
@@ -151,7 +149,9 @@ class TestLabelFieldWidget:
     # noinspection PyPep8Naming
     def test_add_treeview_row_creates_MovieTagTreeview_object(self, monkeypatch):
         items = ['tag 1', 'tag 2']
+
         def dummy_callback(): pass
+
         with self.labelfield_context() as labelfield:
             calls = []
             monkeypatch.setattr(guiwidgets_2, '_MovieTagTreeview', lambda *args: calls.append(args))
@@ -357,16 +357,6 @@ def test_clear_input_form_fields_calls_textvariable_set():
     guiwidgets_2._clear_input_form_fields(entry_fields)
     # noinspection PyUnresolvedReferences
     assert entry_fields['test_entry'].textvariable.set_calls == [('original value',), ('',)]
-
-
-@pytest.mark.skip
-def test_create_entry_fields(patch_tk):
-    names = ('test field',)
-    texts = ('Test Field',)
-    entry_fields = guiwidgets_2._create_entry_fields(names, texts)
-    # noinspection PyTypeChecker
-    assert entry_fields == {names[0]: guiwidgets_2._EntryField(label_text=texts[0], original_value='',
-                                                               textvariable=TkStringVar(), )}
 
 
 def test_set_original_value(patch_tk):

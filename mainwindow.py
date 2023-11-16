@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 9/28/23, 7:10 AM by stephen.
+#  Last modified 11/16/23, 3:26 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,8 +22,6 @@ from typing import Tuple
 
 import config
 import handlers
-
-# todo Change module name to guirun.
 
 
 @dataclass

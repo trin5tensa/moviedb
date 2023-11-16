@@ -3,7 +3,7 @@
 This module includes windows for presenting data and returning entered data to its callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/11/23, 7:08 AM by stephen.
+#  Last modified 11/16/23, 3:26 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -287,7 +287,6 @@ class MovieGUI:
         Returns:
             outer_frame, fields, buttonbox, internet
         """
-        # todo can this be refactored with common code in _create_input_form_framing
         name = type(self).__name__.lower()
         outer_frame = ttk.Frame(parent, padding=10, name=name)
         outer_frame.grid(column=0, row=0, sticky='nsew')
@@ -504,7 +503,6 @@ class SearchTagGUI:
     # noinspection DuplicatedCode,DuplicatedCode
     def __post_init__(self):
         """Create the Tk widget."""
-        # todo Make first field active. Currently, user needs to click in it upon opening.
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = _create_entry_fields(TAG_FIELD_NAMES, TAG_FIELD_TEXTS)
 
@@ -645,7 +643,6 @@ class SelectTagGUI:
 
         # Create the button
         column_num = 0
-        # todo integration test of buttons particularly active, normal and disabled status.
         _create_button(buttonbox, CANCEL_TEXT, column_num, self.destroy, default='active')
 
     def selection_callback(self, tree: ttk.Treeview) -> Callable:
@@ -680,7 +677,6 @@ class SelectTagGUI:
 @dataclass
 class PreferencesGUI:
     """Create and manage a Tk input form which allows the user to update program preferences."""
-    # todo change name to SettingsGUI. See moviedb-#325
     parent: tk.Tk
 
     # Preference fields
@@ -688,7 +684,6 @@ class PreferencesGUI:
     do_not_ask: bool
 
     # On commit this callback will be called with the updated preferences.
-    # todo Is this correctly typed?
     save_callback: Callable[[str, bool], None]
 
     # Internal field names and associated GUI texts.
@@ -1013,7 +1008,7 @@ def _create_entry_fields(internal_names: Sequence[str], label_texts: Sequence[st
         key: The internal name of the field.
         value: An EntryField instance.
     """
-    return {internal_name: _EntryField(label_text)
+    return {internal_name: _EntryField(label_text)  # pragma no cover (coverage cannot handle this code)
             for internal_name, label_text in zip(internal_names, label_texts)}
 
 
@@ -1171,7 +1166,6 @@ def _create_button_orneuron(change_button_state: Callable) -> neurons.OrNeuron:
     Returns:
         Neuron
     """
-    # todo refactor _create_button_orneuron and _create_buttons_andneuron into a single function
     neuron = neurons.OrNeuron()
     neuron.register(change_button_state)
     return neuron
@@ -1186,7 +1180,6 @@ def _create_buttons_andneuron(change_button_state: Callable) -> neurons.AndNeuro
     Returns:
         Neuron
     """
-    # todo refactor _create_button_orneuron and _create_buttons_andneuron into a single function
     neuron = neurons.AndNeuron()
     neuron.register(change_button_state)
     return neuron

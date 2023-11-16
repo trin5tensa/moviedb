@@ -8,7 +8,7 @@ Detect any changes to calls to other functions and methods and changes to the ar
 Changes in the API of called functions and methods are not part of this test suite.
 """
 #  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 11/13/23, 7:14 AM by stephen.
+#  Last modified 11/16/23, 3:26 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -939,18 +939,18 @@ class TestGUIAskYesNo:
         mock_askyesno.assert_called_once_with(parent, message, detail='', icon='question', default='no')
 
 
-class TestInputZone:
-    """
-    Test Strategy:
-    """
-    # todo
-
-
 class TestCreateEntryFields:
-    """
-    Test Strategy:
-    """
-    # todo
+    def test_create_entry_fields(self, monkeypatch):
+        dummy_name = 'dummy name'
+        internal_names = (dummy_name,)
+        dummy_text = 'dummy text'
+        label_texts = (dummy_text,)
+        monkeypatch.setattr('guiwidgets_2.tk', MagicMock())
+        monkeypatch.setattr('guiwidgets_2.ttk', MagicMock())
+        dummy_entry_field = guiwidgets_2._EntryField(dummy_text)
+
+        result = guiwidgets_2._create_entry_fields(internal_names, label_texts)
+        check.equal(result, {dummy_name: dummy_entry_field})
 
 
 # noinspection PyMissingOrEmptyDocstring
