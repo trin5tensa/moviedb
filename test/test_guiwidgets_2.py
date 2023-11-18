@@ -1,6 +1,6 @@
 """Test module."""
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/18/23, 5:44 AM by stephen.
+#  Last modified 11/18/23, 5:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +31,7 @@ from test.dummytk import (
     TtkLabel,
     TtkScrollbar,
     TtkTreeview,
-    )
+)
 
 Exc = Type[Optional[guiwidgets_2.exception.DatabaseSearchFoundNothing]]
 

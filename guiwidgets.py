@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/18/23, 5:44 AM by stephen.
+#  Last modified 11/18/23, 5:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -36,7 +36,7 @@ from guiwidgets_2 import (
     _create_entry_fields,
     _focus_set,
     gui_messagebox,
-    )
+)
 
 TAG_TREEVIEW_INTERNAL_NAME = "tag treeview"
 
