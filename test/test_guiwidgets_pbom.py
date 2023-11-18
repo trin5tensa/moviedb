@@ -8,7 +8,7 @@ Detect any changes to calls to other functions and methods and changes to the ar
 Changes in the API of called functions and methods are not part of this test suite.
 """
 #  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 11/18/23, 5:44 AM by stephen.
+#  Last modified 11/18/23, 6:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -865,7 +865,7 @@ class TestEditTagGUI:
                             guiwidgets_2.COMMIT_TEXT,
                             column=next(column_num),
                             command=cut.commit,
-                            default="active",
+                            default="disabled",
                         ),
                         call(
                             mock_buttonbox,
