@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/16/23, 3:26 PM by stephen.
+#  Last modified 11/18/23, 5:44 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -26,7 +26,8 @@ import handlers
 
 @dataclass
 class MainWindow:
-    """Create and manage the menu bar and the application's main window. """
+    """Create and manage the menu bar and the application's main window."""
+
     parent: tk.Tk
 
     # Expose local variables for test access
@@ -47,8 +48,12 @@ class MainWindow:
 
         # Set up handling of <Escape> and <Command-.>
         config.current.escape_key_dict = escape_key_dict = handlers.EscapeKeyDict()
-        self.parent.bind_all(key := '<Escape>', escape_key_dict.escape(self.parent, key))
-        self.parent.bind_all(key := '<Command-.>', escape_key_dict.escape(self.parent, key))
+        self.parent.bind_all(
+            key := "<Escape>", escape_key_dict.escape(self.parent, key)
+        )
+        self.parent.bind_all(
+            key := "<Command-.>", escape_key_dict.escape(self.parent, key)
+        )
 
     def set_geometry(self) -> str:
         """Set window geometry from a default value or app.geometry and make sure it will
@@ -58,24 +63,32 @@ class MainWindow:
             tkinter geometry string.
         """
         if not config.persistent.geometry:
-            config.persistent.geometry = '900x400+30+30'
-        regex = ("(?P<width>[0-9]+)x"
-                 "(?P<height>[0-9]+)"
-                 "(?P<horizontal_offset>[+-]?[0-9]+)"
-                 "(?P<vertical_offset>[+-]?[0-9]+)")
+            config.persistent.geometry = "900x400+30+30"
+        regex = (
+            "(?P<width>[0-9]+)x"
+            "(?P<height>[0-9]+)"
+            "(?P<horizontal_offset>[+-]?[0-9]+)"
+            "(?P<vertical_offset>[+-]?[0-9]+)"
+        )
         regex = re.compile(regex)
         re_geometry = re.search(regex, config.persistent.geometry)
         width, horizontal_offset = self.validate_desired_geometry(
-            re_geometry.group('width'), re_geometry.group('horizontal_offset'),
-            self.parent.winfo_screenwidth())
+            re_geometry.group("width"),
+            re_geometry.group("horizontal_offset"),
+            self.parent.winfo_screenwidth(),
+        )
         height, vertical_offset = self.validate_desired_geometry(
-            re_geometry.group('height'), re_geometry.group('vertical_offset'),
-            self.parent.winfo_screenheight())
+            re_geometry.group("height"),
+            re_geometry.group("vertical_offset"),
+            self.parent.winfo_screenheight(),
+        )
         geometry = "{}x{}{}{}".format(width, height, horizontal_offset, vertical_offset)
         return geometry
 
     @staticmethod
-    def validate_desired_geometry(length: str, offset: str, available: int) -> Tuple[str, str]:
+    def validate_desired_geometry(
+        length: str, offset: str, available: int
+    ) -> Tuple[str, str]:
         """Validate the geometry against the available length or height.
 
         Args:
@@ -93,13 +106,15 @@ class MainWindow:
         req_length = length + abs(offset)
         available = int(available)
         if req_length > available:
-            msg = (f'The saved screen geometry {length=} and {offset=} '
-                   f'is too large for this monitor ({available=})')
+            msg = (
+                f"The saved screen geometry {length=} and {offset=} "
+                f"is too large for this monitor ({available=})"
+            )
             logging.info(msg=msg)
             offset = 0
             if length > available:
                 length = available
-        return str(length), f'{offset:+}'
+        return str(length), f"{offset:+}"
 
     def place_menubar(self):
         """Create menubar and menu items.
@@ -120,62 +135,73 @@ class MainWindow:
         only the first three are intercepted by the command tk::mac::Quit. The close box is intercepted by the
         protocol 'WM_DELETE_WINDOW'.
         """
-        self.parent.option_add('*tearOff', False)
+        self.parent.option_add("*tearOff", False)
         # Intercepts the window close button (red 'x')
-        self.parent.protocol('WM_DELETE_WINDOW', self.tk_shutdown)
+        self.parent.protocol("WM_DELETE_WINDOW", self.tk_shutdown)
         # Intercepts the <Command-Q> key press, the application menu item 'Quit',
         # and the dock application popup 'Quit' item.
-        self.parent.createcommand('tk::mac::Quit', self.tk_shutdown)
-        self.parent.createcommand('tk::mac::ShowPreferences', handlers.settings_dialog)
+        self.parent.createcommand("tk::mac::Quit", self.tk_shutdown)
+        self.parent.createcommand("tk::mac::ShowPreferences", handlers.settings_dialog)
         self.menubar = tk.Menu(self.parent)
 
         self.moviedb_menu = tk.Menu(self.menubar)
-        self.menubar.add_cascade(menu=self.moviedb_menu, label='Moviedb')
-        self.moviedb_menu.add_command(label='About ' + config.persistent.program_name + '…',
-                                      command=handlers.about_dialog)
+        self.menubar.add_cascade(menu=self.moviedb_menu, label="Moviedb")
+        self.moviedb_menu.add_command(
+            label="About " + config.persistent.program_name + "…",
+            command=handlers.about_dialog,
+        )
         self.moviedb_menu.add_separator()
-        self.moviedb_menu.add_command(label='Settings for Moviedb…', command=handlers.settings_dialog)
+        self.moviedb_menu.add_command(
+            label="Settings for Moviedb…", command=handlers.settings_dialog
+        )
         self.moviedb_menu.add_separator()
-        self.moviedb_menu.add_command(label='Quit Moviedb', command=self.tk_shutdown)
+        self.moviedb_menu.add_command(label="Quit Moviedb", command=self.tk_shutdown)
 
         self.edit_menu = tk.Menu(self.menubar)
-        self.menubar.add_cascade(menu=self.edit_menu, label='Edit')
-        self.cut_command = lambda: self.parent.focus_get().event_generate('<<Cut>>')  # pragma no branch
-        self.edit_menu.add_command(label='Cut',
-                                   command=self.cut_command,
-                                   accelerator='Command+X')
-        self.copy_command = lambda: self.parent.focus_get().event_generate('<<Copy>>')  # pragma no branch
-        self.edit_menu.add_command(label='Copy',
-                                   command=self.copy_command,
-                                   accelerator='Command+C')
-        self.paste_command = lambda: self.parent.focus_get().event_generate('<<Paste>>')  # pragma no branch
-        self.edit_menu.add_command(label='Paste',
-                                   command=self.paste_command,
-                                   accelerator='Command+V')
-        self.clear_command = lambda: self.parent.focus_get().event_generate('<<Clear>>')  # pragma no branch
-        self.edit_menu.add_command(label='Clear',
-                                   command=self.clear_command)
+        self.menubar.add_cascade(menu=self.edit_menu, label="Edit")
+        self.cut_command = lambda: self.parent.focus_get().event_generate(
+            "<<Cut>>"
+        )  # pragma no branch
+        self.edit_menu.add_command(
+            label="Cut", command=self.cut_command, accelerator="Command+X"
+        )
+        self.copy_command = lambda: self.parent.focus_get().event_generate(
+            "<<Copy>>"
+        )  # pragma no branch
+        self.edit_menu.add_command(
+            label="Copy", command=self.copy_command, accelerator="Command+C"
+        )
+        self.paste_command = lambda: self.parent.focus_get().event_generate(
+            "<<Paste>>"
+        )  # pragma no branch
+        self.edit_menu.add_command(
+            label="Paste", command=self.paste_command, accelerator="Command+V"
+        )
+        self.clear_command = lambda: self.parent.focus_get().event_generate(
+            "<<Clear>>"
+        )  # pragma no branch
+        self.edit_menu.add_command(label="Clear", command=self.clear_command)
 
         self.movie_menu = tk.Menu(self.menubar)
-        self.menubar.add_cascade(menu=self.movie_menu, label='Movie')
-        self.movie_menu.add_command(label='Add Movie…', command=handlers.add_movie)
-        self.movie_menu.add_command(label='Edit Movie…', command=handlers.edit_movie)
-        self.movie_menu.add_command(label='View Movie…', command=handlers.edit_movie)
-        self.movie_menu.add_command(label='Delete Movie…', command=handlers.edit_movie)
+        self.menubar.add_cascade(menu=self.movie_menu, label="Movie")
+        self.movie_menu.add_command(label="Add Movie…", command=handlers.add_movie)
+        self.movie_menu.add_command(label="Edit Movie…", command=handlers.edit_movie)
+        self.movie_menu.add_command(label="View Movie…", command=handlers.edit_movie)
+        self.movie_menu.add_command(label="Delete Movie…", command=handlers.edit_movie)
         self.movie_menu.add_separator()
-        self.movie_menu.add_command(label='Add Tag…', command=handlers.add_tag)
-        self.movie_menu.add_command(label='Edit Tag…', command=handlers.edit_tag)
-        self.movie_menu.add_command(label='Delete Tag…', command=handlers.edit_tag)
+        self.movie_menu.add_command(label="Add Tag…", command=handlers.add_tag)
+        self.movie_menu.add_command(label="Edit Tag…", command=handlers.edit_tag)
+        self.movie_menu.add_command(label="Delete Tag…", command=handlers.edit_tag)
 
-        self.window_menu = tk.Menu(self.menubar, name='window')
-        self.menubar.add_cascade(menu=self.window_menu, label='Window')
+        self.window_menu = tk.Menu(self.menubar, name="window")
+        self.menubar.add_cascade(menu=self.window_menu, label="Window")
 
         self.parent.config(menu=self.menubar)
 
     # noinspection PyUnusedLocal
     def tk_shutdown(self, *args):
         """Carry out actions needed when main window is closed.
-        
+
         Args:
             *args: Not used. Required for compatibility with caller
         """
