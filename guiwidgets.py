@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/18/23, 5:50 AM by stephen.
+#  Last modified 12/16/23, 7:04 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -519,7 +519,8 @@ class MovieTreeview:
 
         # Populate the treeview
         for item in self.items:
-            tree.insert("", "end", item, text=item, tags="tags")
+            if item:
+                tree.insert("", "end", item, text=item, tags="tags")
         tree.selection_add(self.initial_selection)
 
         return self.observer

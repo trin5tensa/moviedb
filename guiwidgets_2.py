@@ -3,7 +3,7 @@
 This module includes windows for presenting data and returning entered data to its callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/18/23, 6:15 AM by stephen.
+#  Last modified 12/16/23, 7:04 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -55,6 +55,17 @@ NO_MATCH_DETAIL = "There are no matching tags in the database."
 ParentType = TypeVar("ParentType", tk.Tk, tk.Toplevel, ttk.Frame)
 DefaultLiteral = Literal["normal", "active", "disabled"]
 StateFlags = Optional[list[Literal["active", "normal", "disabled", "!disabled"]]]
+
+# todo Create issue to re-engineer neurons with a formal API:
+#  Neuron class state includes:
+#  upstream(?) and downstream neurons.
+#  watched attributes and, for each, their truthiness rules
+#  truthiness of relationship between each watched attribute.
+#   NO! Need a class for nodes (neurons) and edges.
+#   Observers: Connected to 1 external event and generate a boolean.
+#   Actuators: Connected to 1 or more external functions and send a boolean.
+#   Neurons: Respond to a pair of neurons or external observers and send the logical conjunction of the pair to
+#   another neuron or an actuator.
 
 
 @dataclass
@@ -471,6 +482,7 @@ class EditMovieGUI(MovieGUI):
             for internal_name, movie_field in self.entry_fields.items()
         }
         self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get("1.0", "end")
+        # todo Check possible bug when user deletes name of movie and clicks delete.
 
         try:
             # noinspection PyArgumentList
@@ -563,8 +575,16 @@ class AddTagGUI:
 
     def commit(self):
         """The user clicked the 'Commit' button."""
-        self.add_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
-        self.destroy()
+        # todo unittest
+        # todo INSTALL BLACK
+        # todo can tmdb simple use a safer update of requests?
+        tag = self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get()
+        print()
+        print(f'{tag=}')
+        print(f'{self.entry_fields=}')
+        if tag:
+            self.add_tag_callback(tag)
+            self.destroy()
 
     # noinspection PyUnusedLocal
     def destroy(self, *args):
@@ -726,8 +746,13 @@ class EditTagGUI:
 
     def commit(self):
         """The user clicked the 'Commit' button."""
-        self.edit_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
-        self.destroy()
+        # todo unittest
+        tag = self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get()
+        if tag:
+            self.edit_tag_callback(tag)
+            self.destroy()
+        else:
+            self.delete()
 
     def delete(self):
         """The user clicked the 'Delete' button.
@@ -742,6 +767,10 @@ class EditTagGUI:
         ):
             self.delete_tag_callback()
             self.destroy()
+        # todo unittest
+        else:
+            self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.set(self.tag)
+            _focus_set(self.entry_fields[TAG_FIELD_NAMES[0]].widget)
 
     def destroy(self):
         """Destroy this instance's widgets."""
@@ -1021,7 +1050,9 @@ class _MovieTagTreeview:
 
         # Populate the treeview
         for item in self.items:
-            self.treeview.insert("", "end", item, text=item, tags="tags")
+            # todo unittest
+            if item:
+                self.treeview.insert("", "end", item, text=item, tags="tags")
         # noinspection PyTypeChecker
         self.treeview.selection_add(self.initial_selection)
 
