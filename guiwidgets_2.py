@@ -575,13 +575,7 @@ class AddTagGUI:
 
     def commit(self):
         """The user clicked the 'Commit' button."""
-        # todo unittest
-        # todo INSTALL BLACK
-        # todo can tmdb simple use a safer update of requests?
         tag = self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get()
-        print()
-        print(f'{tag=}')
-        print(f'{self.entry_fields=}')
         if tag:
             self.add_tag_callback(tag)
             self.destroy()

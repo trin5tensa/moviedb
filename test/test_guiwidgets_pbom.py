@@ -775,27 +775,31 @@ class TestAddTagGUI:
 
     def test_commit(self, monkeypatch, create_entry_fields):
         mock_destroy_calls = []
+        dummy_tag = 'dummy tag'
 
         with self.addtaggui(monkeypatch) as cut:
             monkeypatch.setattr(
                 cut,
                 "destroy",
                 lambda: mock_destroy_calls.append(True),
-            )
+                )
+            cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].textvariable.get.return_value = dummy_tag
 
             cut.commit()
             with check:
-                cut.add_tag_callback.assert_called_once_with(
-                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].textvariable.get()
-                )
+                cut.add_tag_callback.assert_called_once_with(dummy_tag)
             with check:
-                check.is_true(mock_destroy_calls)
+                check.equal(mock_destroy_calls, [True])
 
             # test null tag
-            print()
-            print(f"{cut=}")
-            print(f"{cut.entry_fields=}")
-            check.is_true(False)
+            cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].textvariable.get.return_value = ''
+
+            cut.commit()
+            # cut.commit has been called twice but its `if tag` suite was executed once.
+            with check:
+                cut.add_tag_callback.assert_called_once_with(dummy_tag)
+            with check:
+                check.equal(mock_destroy_calls, [True])
 
     def test_destroy(self, monkeypatch, create_entry_fields):
         with self.addtaggui(monkeypatch) as cut:

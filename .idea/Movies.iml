@@ -16,7 +16,7 @@
       <excludeFolder url="file://$MODULE_DIR$/venve_3_12" />
       <excludeFolder url="file://$MODULE_DIR$/venv_3_12_a" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.12 (Movies 2023)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="venv_Python3_latest" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">
