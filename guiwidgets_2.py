@@ -2,6 +2,7 @@
 
 This module includes windows for presenting data and returning entered data to its callers.
 """
+
 #  Copyright (c) 2022-2023. Stephen Rigden.
 #  Last modified 12/16/23, 7:04 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
@@ -180,11 +181,12 @@ class MovieGUI:
 
     def call_title_notifees(self, commit_neuron: neurons.Neuron) -> Callable:
         """
-        This function creates the notifee for the title field observer which will be
-        called whenever the user changes the title.
+        Whenever the title field is changed this method will:
+            Invoke a TMDB search if sufficient time has elapsed since the last key press.
+            Activate or deactivate the Commit button.
 
         Args:
-            commit_neuron: The neuron which enable and disables the commit button.
+            commit_neuron: The neuron which enables or disables the commit button.
 
         Returns:
             The notifee function
