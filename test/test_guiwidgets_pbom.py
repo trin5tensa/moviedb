@@ -8,7 +8,7 @@ Detect any changes to calls to other functions and methods and changes to the ar
 Changes in the API of called functions and methods are not part of this test suite.
 """
 #  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 11/18/23, 6:15 AM by stephen.
+#  Last modified 12/16/23, 7:04 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -395,6 +395,8 @@ class TestAddMovieGUI:
                 ]
             )
 
+            """PyCharm bug: False negative PyTestUnpassedFixture introduced with PyCharm 2023.3"""
+            # noinspection PyTestUnpassedFixture
             cut.original_values()
             check.equal(cut.entry_fields[entry].original_value, "")
 
@@ -404,6 +406,8 @@ class TestAddMovieGUI:
                 cut.tags_treeview, "selection_set", mock_selection_set := MagicMock()
             )
 
+            """PyCharm bug: False negative PyTestUnpassedFixture introduced with PyCharm 2023.3"""
+            # noinspection PyTestUnpassedFixture
             cut.set_initial_tag_selection()
             with check:
                 mock_selection_set.assert_not_called()
@@ -545,6 +549,8 @@ class TestEditMovieGUI:
                 ]
             )
 
+            """PyCharm bug: False negative PyTestUnpassedFixture introduced with PyCharm 2023.3"""
+            # noinspection PyTestUnpassedFixture
             cut.original_values()
             check.equal(cut.entry_fields[entry].original_value, ("test tag",))
 
@@ -554,6 +560,8 @@ class TestEditMovieGUI:
                 cut.tags_treeview, "selection_set", mock_selection_set := MagicMock()
             )
 
+            """PyCharm bug: False negative PyTestUnpassedFixture introduced with PyCharm 2023.3"""
+            # noinspection PyTestUnpassedFixture
             cut.set_initial_tag_selection()
             with check:
                 mock_selection_set.assert_called_once_with(cut.old_movie["tags"])
@@ -774,16 +782,36 @@ class TestAddTagGUI:
             )
 
     def test_commit(self, monkeypatch, create_entry_fields):
+        mock_destroy_calls = []
+        dummy_tag = "dummy tag"
+
         with self.addtaggui(monkeypatch) as cut:
-            monkeypatch.setattr(cut, "destroy", mock_destroy := MagicMock())
+            monkeypatch.setattr(
+                cut,
+                "destroy",
+                lambda: mock_destroy_calls.append(True),
+            )
+            cut.entry_fields[
+                guiwidgets_2.TAG_FIELD_NAMES[0]
+            ].textvariable.get.return_value = dummy_tag
 
             cut.commit()
             with check:
-                cut.add_tag_callback.assert_called_once_with(
-                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].textvariable.get()
-                )
+                cut.add_tag_callback.assert_called_once_with(dummy_tag)
             with check:
-                mock_destroy.assert_called_once_with()
+                check.equal(mock_destroy_calls, [True])
+
+            # test null tag
+            cut.entry_fields[
+                guiwidgets_2.TAG_FIELD_NAMES[0]
+            ].textvariable.get.return_value = ""
+
+            cut.commit()
+            # cut.commit has been called twice but its `if tag` suite was executed once.
+            with check:
+                cut.add_tag_callback.assert_called_once_with(dummy_tag)
+            with check:
+                check.equal(mock_destroy_calls, [True])
 
     def test_destroy(self, monkeypatch, create_entry_fields):
         with self.addtaggui(monkeypatch) as cut:
@@ -901,7 +929,9 @@ class TestEditTagGUI:
     def test_commit(self, monkeypatch, create_entry_fields):
         with self.edittaggui(monkeypatch) as cut:
             monkeypatch.setattr(cut, "destroy", mock_destroy := MagicMock())
+            monkeypatch.setattr(cut, "delete", mock_delete := MagicMock())
 
+            # test with non empty tag
             cut.commit()
             with check:
                 cut.edit_tag_callback.assert_called_once_with(
@@ -910,10 +940,23 @@ class TestEditTagGUI:
             with check:
                 mock_destroy.assert_called_once_with()
 
+            # test with empty tag
+            cut.entry_fields[
+                guiwidgets_2.TAG_FIELD_NAMES[0]
+            ].textvariable.get.return_value = ""
+            cut.commit()
+            with check:
+                mock_delete.assert_called_once_with()
+
     # noinspection DuplicatedCode
     def test_delete(self, monkeypatch, create_entry_fields):
         monkeypatch.setattr(
             "guiwidgets_2.gui_askyesno", mock_gui_askyesno := MagicMock()
+        )
+        focus_set_calls = []
+        monkeypatch.setattr(
+            "guiwidgets_2._focus_set",
+            lambda *args: focus_set_calls.append(*args),
         )
         with self.edittaggui(monkeypatch) as cut:
             monkeypatch.setattr(cut, "destroy", mock_destroy := MagicMock())
@@ -928,6 +971,22 @@ class TestEditTagGUI:
                     default="no",
                     parent=cut.parent,
                 )
+            # It's called twice: Once in __post_init__ and secondly if user clicks no in delete dialog.
+            with check:
+                cut.entry_fields[
+                    guiwidgets_2.TAG_FIELD_NAMES[0]
+                ].textvariable.set.assert_has_calls(
+                    [
+                        call(self.dummy_tag),
+                        call(self.dummy_tag),
+                    ]
+                )
+            widget = cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].widget
+            # It's called twice: Once in __post_init__ and secondly if user clicks no in delete dialog.
+            check.equal(
+                focus_set_calls,
+                [widget, widget],
+            )
 
             # User responds 'Yes' - Go ahead and delete movie.
             mock_gui_askyesno.return_value = True
@@ -1355,7 +1414,6 @@ class TestPreferencesGUI:
 
     def test_callback(self):
         def func(*args):
-            print(f"{args=}")
             return args
 
         return func

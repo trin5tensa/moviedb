@@ -3,7 +3,7 @@
 This module includes windows for presenting data and returning entered data to its callers.
 """
 #  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/18/23, 6:15 AM by stephen.
+#  Last modified 12/16/23, 7:04 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -563,8 +563,10 @@ class AddTagGUI:
 
     def commit(self):
         """The user clicked the 'Commit' button."""
-        self.add_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
-        self.destroy()
+        tag = self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get()
+        if tag:
+            self.add_tag_callback(tag)
+            self.destroy()
 
     # noinspection PyUnusedLocal
     def destroy(self, *args):
@@ -726,8 +728,12 @@ class EditTagGUI:
 
     def commit(self):
         """The user clicked the 'Commit' button."""
-        self.edit_tag_callback(self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get())
-        self.destroy()
+        tag = self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.get()
+        if tag:
+            self.edit_tag_callback(tag)
+            self.destroy()
+        else:
+            self.delete()
 
     def delete(self):
         """The user clicked the 'Delete' button.
@@ -742,6 +748,9 @@ class EditTagGUI:
         ):
             self.delete_tag_callback()
             self.destroy()
+        else:
+            self.entry_fields[TAG_FIELD_NAMES[0]].textvariable.set(self.tag)
+            _focus_set(self.entry_fields[TAG_FIELD_NAMES[0]].widget)
 
     def destroy(self):
         """Destroy this instance's widgets."""
@@ -1021,7 +1030,8 @@ class _MovieTagTreeview:
 
         # Populate the treeview
         for item in self.items:
-            self.treeview.insert("", "end", item, text=item, tags="tags")
+            if item:
+                self.treeview.insert("", "end", item, text=item, tags="tags")
         # noinspection PyTypeChecker
         self.treeview.selection_add(self.initial_selection)
 

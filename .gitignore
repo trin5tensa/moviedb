@@ -10,7 +10,6 @@
 /htmlcov/
 /.coverage
 /movie_database.sqlite3
-/venv_3_11/
 /docs/
 /Database Exports/
-/venv_3_12/
+/venv_3_12_a/
