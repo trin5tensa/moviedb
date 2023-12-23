@@ -5,17 +5,9 @@
       <excludeFolder url="file://$MODULE_DIR$/htmlcov" />
       <excludeFolder url="file://$MODULE_DIR$/virtualenv 3.x" />
       <excludeFolder url="file://$MODULE_DIR$/venv_3_11" />
-      <excludeFolder url="file://$MODULE_DIR$/venv" />
-      <excludeFolder url="file://$MODULE_DIR$/venv_3_5" />
-      <excludeFolder url="file://$MODULE_DIR$/venv_3_12_aa" />
-      <excludeFolder url="file://$MODULE_DIR$/old_venv_3_11" />
-      <excludeFolder url="file://$MODULE_DIR$/old_venv_3_12" />
       <excludeFolder url="file://$MODULE_DIR$/venv_3_12" />
-      <excludeFolder url="file://$MODULE_DIR$/venv_3_12_test" />
-      <excludeFolder url="file://$MODULE_DIR$/venv_3_12_test-1" />
-      <excludeFolder url="file://$MODULE_DIR$/venve_3_12" />
-      <excludeFolder url="file://$MODULE_DIR$/venv_3_12_a" />
     </content>
+    <orderEntry type="jdk" jdkName="Python 3.12 (venv_Python3_latest) (2)" jdkType="Python SDK" />
     <orderEntry type="jdk" jdkName="venv_Python3_latest" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>

@@ -786,7 +786,13 @@ class SelectTagGUI:
         # Populate the treeview rows
         for tag in self.tags_to_show:
             tree.insert(
-                "", "end", iid=tag, text=tag, values=[], tags=TAG_FIELD_NAMES[0]
+                "",
+                "end",
+                iid=tag,
+                text=tag,
+                values=[],
+                tags=TAG_FIELD_NAMES[0],
+                open=True,
             )
 
         # Bind the treeview callback

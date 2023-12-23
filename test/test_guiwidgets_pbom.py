@@ -395,7 +395,7 @@ class TestAddMovieGUI:
                 ]
             )
 
-            """PyCharm bug: False negative PyTestUnpassedFixture introduced with PyCharm 2023.3"""
+            # PyCharm false negative PyTestUnpassedFixture introduced in 2023.3
             # noinspection PyTestUnpassedFixture
             cut.original_values()
             check.equal(cut.entry_fields[entry].original_value, "")
@@ -1187,6 +1187,7 @@ class TestSelectTagGUI:
                             text=self.TAGS_TO_SHOW[0],
                             values=[],
                             tags=guiwidgets_2.TAG_FIELD_NAMES[0],
+                            open=True,
                         ),
                         call(
                             "",
@@ -1195,6 +1196,7 @@ class TestSelectTagGUI:
                             text=self.TAGS_TO_SHOW[1],
                             values=[],
                             tags=guiwidgets_2.TAG_FIELD_NAMES[0],
+                            open=True,
                         ),
                     ]
                 )
