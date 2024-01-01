@@ -179,38 +179,6 @@ class MovieGUI:
         """
         raise NotImplementedError
 
-    def call_title_notifees(self, commit_neuron: neurons.Neuron) -> Callable:
-        """
-        Whenever the title field is changed this method will:
-            Invoke a TMDB search if sufficient time has elapsed since the last key press.
-            Activate or deactivate the Commit button.
-
-        Args:
-            commit_neuron: The neuron which enables or disables the commit button.
-
-        Returns:
-            The notifee function
-        """
-
-        # noinspection PyUnusedLocal
-        def func(*args):
-            """This function responds to a change in the title field.
-
-            Args:
-                *args: Not used. This is required to match unused arguments from the
-                caller.
-            """
-            text = self.entry_fields[self.title].textvariable.get()
-            old_text = self.entry_fields[self.title].original_value
-
-            # Invoke a TMDB search
-            self.tmdb_search(text)
-
-            # Notify the commit button neuron
-            commit_neuron(self.title, bool(text != old_text))
-
-        return func
-
     def tmdb_search(self, substring: str):
         """Initiate a TMDB search for matching movies titles when the user has finished
         typing.
@@ -396,6 +364,38 @@ class AddMovieGUI(MovieGUI):
         _link_field_to_neuron(
             self.entry_fields, self.title, self.commit_neuron, title_observer.notify
         )
+
+    def call_title_notifees(self, commit_neuron: neurons.Neuron) -> Callable:
+        """
+        Whenever the title field is changed this method will:
+            Invoke a TMDB search if sufficient time has elapsed since the last key press.
+            Activate or deactivate the Commit button.
+
+        Args:
+            commit_neuron: The neuron which enables or disables the commit button.
+
+        Returns:
+            The notifee function
+        """
+
+        # noinspection PyUnusedLocal
+        def func(*args):
+            """This function responds to a change in the title field.
+
+            Args:
+                *args: Not used. This is required to match unused arguments from the
+                caller.
+            """
+            text = self.entry_fields[self.title].textvariable.get()
+            old_text = self.entry_fields[self.title].original_value
+
+            # Invoke a TMDB search
+            self.tmdb_search(text)
+
+            # Notify the commit button neuron
+            commit_neuron(self.title, bool(text != old_text))
+
+        return func
 
     def commit(self):
         """Commit a new movie to the database."""

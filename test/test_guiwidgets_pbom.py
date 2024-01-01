@@ -189,27 +189,6 @@ class TestMovieGUI:
             with self.moviegui(monkeypatch):
                 pass
 
-    def test_call_title_notifees(self, monkeypatch, movie_patches):
-        with self.moviegui(monkeypatch) as cut:
-            func = cut.call_title_notifees(mock_commit_neuron := MagicMock())
-            monkeypatch.setattr(
-                "guiwidgets_2.MovieGUI.tmdb_search", mock_tmdb_search := MagicMock()
-            )
-            cut.entry_fields[
-                cut.title
-            ].textvariable.get.return_value = mock_text = "mock text"
-            cut.entry_fields[
-                cut.title
-            ].original_value = mock_original_text = "mock original text"
-            func(mock_commit_neuron)
-
-            with check:
-                mock_tmdb_search.assert_called_once_with(mock_text)
-            with check:
-                mock_commit_neuron.assert_called_once_with(
-                    cut.title, mock_text != mock_original_text
-                )
-
     def test_tmdb_search(self, monkeypatch, movie_patches):
         with self.moviegui(monkeypatch) as cut:
             substring = "mock substring"
@@ -448,6 +427,27 @@ class TestAddMovieGUI:
                         call().register_event(year),
                         call().register_event(title),
                     ]
+                )
+
+    def test_call_title_notifees(self, monkeypatch, movie_patches):
+        with self.addmoviegui(monkeypatch) as cut:
+            func = cut.call_title_notifees(mock_commit_neuron := MagicMock())
+            monkeypatch.setattr(
+                "guiwidgets_2.MovieGUI.tmdb_search", mock_tmdb_search := MagicMock()
+            )
+            cut.entry_fields[
+                cut.title
+            ].textvariable.get.return_value = mock_text = "mock text"
+            cut.entry_fields[
+                cut.title
+            ].original_value = mock_original_text = "mock original text"
+            func(mock_commit_neuron)
+
+            with check:
+                mock_tmdb_search.assert_called_once_with(mock_text)
+            with check:
+                mock_commit_neuron.assert_called_once_with(
+                    cut.title, mock_text != mock_original_text
                 )
 
     # noinspection DuplicatedCode
