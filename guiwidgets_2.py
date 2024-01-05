@@ -1223,6 +1223,72 @@ class _InputZone:
         label.grid(column=0, row=row_ix, sticky="ne", padx=5)
 
 
+@dataclass
+class Observer:
+    """The classic observer pattern.
+
+    Usage.
+    1) Instantiate Observer.
+    2) Call the method register to register one or more callables.
+    3) Call the method notify to call all the notifees. This will call each registered
+        callable with the arguments supplied to the notify method.
+    4) Call the method deregister to remove an observer and stop it from being called.
+
+    Notes for use with tkinter widgets.
+        Each operation within a GUI class such as button enablement or TMDB searches
+        should be controlled by a single function. That function will be responsible
+        for such things as button enablement or invocation of external callbacks. The
+        function will registered by calling the register method of every relevant
+        Observer and will be consequently called whenever the notify method of any
+        relevant observer is called.
+
+        Example for AddMovieGUI's Commit button.
+        The Commit button should be enabled if text is present in both title and year
+        fields and disabled otherwise. Any change to the text of the title field should
+        cause a call to the notify method of the title observer. Similarly, changes
+        to the text of the year field should cause a call to the notify method of the
+        year observer. The calls to the notify method should be made directly without
+        any modification of tkinter's arguments. A receiving method of AddMovieGUI
+        will receive the notification from either the title observer or the year
+        observer. It is responsible for retrieving the current value of both the title
+        and the year field. If text is present in both then it should enable the Commit
+        button otherwise it should disable the Commit button.
+    """
+
+    notifees: list[Callable] = field(default_factory=list, init=False, repr=False)
+
+    def register(self, notifee: Callable):
+        """Register a notifee.
+
+        Each registered notifee: Callable will be called whenever the notify method of
+        this class is called. The registered notifees will be invoked using the same
+        arguments as were supplied to the notify method.
+
+        Args:
+            notifee: This callable will be invoked by the notify method with the
+            arguments supplied to that method.
+        """
+        self.notifees.append(notifee)
+
+    def deregister(self, notifee):
+        """Remove a notifee.
+
+        Args:
+            notifee:
+        """
+        self.notifees.remove(notifee)
+
+    def notify(self, *args, **kwargs):
+        """Call every notifee.
+
+        Args:
+            *args: Passed through from triggering event.
+            **kwargs: Passed through from triggering event.
+        """
+        for observer in self.notifees:
+            observer(*args, **kwargs)
+
+
 def _create_entry_fields(
     internal_names: Sequence[str],
     label_texts: Sequence[str],

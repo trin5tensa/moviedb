@@ -1502,6 +1502,43 @@ class TestCreateEntryFields:
 
 
 # noinspection PyMissingOrEmptyDocstring
+class TestObserver:
+    def test_observer(self):
+        foo1_calls = []
+        foo2_calls = []
+        argus = ("arg1", "arg2")
+        kwargus = {"kwarg1": "kwarg1", "kwarg2": "kwarg2"}
+
+        def foo1(*args, **kwargs):
+            foo1_calls.append((args, kwargs))
+
+        def foo2(*args, **kwargs):
+            foo2_calls.append((args, kwargs))
+
+        observer = guiwidgets_2.Observer()
+        observer.register(foo1)
+        observer.register(foo2)
+
+        observer.notify(*argus, **kwargus)
+        observer.deregister(foo2)
+        observer.notify(*argus, **kwargus)
+
+        #  Test correct registration and notification.
+        check.equal(
+            foo1_calls,
+            [
+                (("arg1", "arg2"), {"kwarg1": "kwarg1", "kwarg2": "kwarg2"}),
+                (("arg1", "arg2"), {"kwarg1": "kwarg1", "kwarg2": "kwarg2"}),
+            ],
+        )
+        #  Test correct deregistration.
+        check.equal(
+            foo2_calls,
+            [(("arg1", "arg2"), {"kwarg1": "kwarg1", "kwarg2": "kwarg2"})],
+        )
+
+
+# noinspection PyMissingOrEmptyDocstring
 def patch_config(monkeypatch):
     dummy_current_config = guiwidgets_2.config.CurrentConfig()
     dummy_current_config.tk_root = MagicMock(name=TEST_TK_ROOT)
