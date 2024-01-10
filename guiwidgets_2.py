@@ -156,8 +156,10 @@ class MovieGUI:
             default="active",
         )
 
-        # # Start the tmdb_work_queue polling
+        # TMDB
         self.tmdb_consumer()
+        # todo test next line
+        self.entry_fields[self.title].observer.register(self.tmdb_search)
 
     def original_values(self):
         """Initialize the original field values."""
@@ -179,15 +181,19 @@ class MovieGUI:
         """
         raise NotImplementedError
 
-    def tmdb_search(self, substring: str):
-        """Initiate a TMDB search for matching movies titles when the user has finished
-        typing.
+    def tmdb_search(self, *args, **kwargs):
+        """
+        Search TMDB for matching movies titles.
+
+        A delayed search event is placed in the Tk/Tcl event queue. An earlier call awaiting
+        execution will be removed.
 
         Args:
-            substring: The current content of the title field.
+            *args: Unused argument supplied by tkinter.
+            **kwargs: Unused argument supplied by tkinter.
         """
-        # Delete the previous call to tmdb_search_callback if it's still in the event
-        # queue. It will only be in the event queue if it is still waiting to be executed.
+        # todo Test following line
+        substring = self.entry_fields[self.title].textvariable.get()
         if substring:  # pragma no branch
             if self.last_text_event_id:
                 self.parent.after_cancel(self.last_text_event_id)
@@ -342,28 +348,53 @@ class AddMovieGUI(MovieGUI):
             default="normal",
         )
 
-        # Link commit button to new commit button neuron.
-        commit_button_enabler = _enable_button(commit_button)
-        commit_button_enabler(False)
-        self.commit_neuron = _create_buttons_andneuron(commit_button_enabler)
+        # Register callbacks with the field observers.
+        # The commit button is only enabled if title and year fields contain text.
+        # todo test this suite
+        title_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[0]]
+        year_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[1]]
+        title_entry_field.observer.register(
+            self.enable_commit_button(
+                commit_button, title_entry_field, year_entry_field
+            )
+        )
+        year_entry_field.observer.register(
+            self.enable_commit_button(
+                commit_button, title_entry_field, year_entry_field
+            )
+        )
 
-        # Link commit neuron to year field.
-        year = MOVIE_FIELD_NAMES[1]
-        year_observer = _create_the_fields_observer(
-            self.entry_fields, year, self.commit_neuron
-        )
-        self.entry_fields[year].observer = year_observer
-        _link_field_to_neuron(
-            self.entry_fields, year, self.commit_neuron, year_observer
-        )
+    @staticmethod
+    def enable_commit_button(
+        commit_button: ttk.Button, title: "_EntryField", year: "_EntryField"
+    ) -> Callable:
+        """Manages the enabled or disabled state of the commit button.
 
-        # Link a new observer to the title field.
-        title_observer = neurons.Observer()
-        self.entry_fields[self.title].observer = title_observer
-        title_observer.register(self.call_title_notifees(self.commit_neuron))
-        _link_field_to_neuron(
-            self.entry_fields, self.title, self.commit_neuron, title_observer.notify
-        )
+        Args:
+            commit_button:
+            title:
+            year:
+
+        Returns:
+            A callable which will be invoked by tkinter whenever the title or year field
+            contents are changed by the user,
+        """
+
+        # todo test this function
+        # noinspection PyUnusedLocal
+        def func(*args, **kwargs):
+            """Enable or disable the button depending on state.
+
+            Args:
+                *args: Sent by tkinter callback but not used.
+                **kwargs: Sent by tkinter callback but not used.
+            """
+            state = all(
+                name.textvariable.get() != name.original_value for name in (title, year)
+            )
+            enable_button(commit_button, state)
+
+        return func
 
     def call_title_notifees(self, commit_neuron: neurons.Neuron) -> Callable:
         """
@@ -378,7 +409,9 @@ class AddMovieGUI(MovieGUI):
             The notifee function
         """
 
-        # noinspection PyUnusedLocal
+        # todo Remove this obsolete method which was called by a notification from the title field
+        #  observer. It then called a neuron which notified the Commit button and invoked
+        #  tmdb_search.
         def func(*args):
             """This function responds to a change in the title field.
 
@@ -914,6 +947,7 @@ class PreferencesGUI:
         self.entry_fields[self.api_key_name].observer = _create_the_fields_observer(
             self.entry_fields, self.api_key_name, save_neuron
         )
+        # noinspection PyTypeChecker
         _link_field_to_neuron(
             self.entry_fields,
             self.api_key_name,
@@ -925,6 +959,7 @@ class PreferencesGUI:
         self.entry_fields[self.use_tmdb_name].observer = _create_the_fields_observer(
             self.entry_fields, self.use_tmdb_name, save_neuron
         )
+        # noinspection PyTypeChecker
         _link_field_to_neuron(
             self.entry_fields,
             self.use_tmdb_name,
@@ -1088,6 +1123,73 @@ class _MovieTagTreeview:
 
 
 @dataclass
+class Observer:
+    """The classic observer pattern.
+
+    Usage.
+    1) Instantiate Observer.
+    2) Call the method register to register one or more callables.
+    3) Call the method notify to call all the notifees. This will call each registered
+        callable with the arguments supplied to the notify method.
+    4) Call the method deregister to remove an observer and stop it from being called.
+
+    Notes for use with tkinter widgets.
+        # todo Rewrite this section
+        Each operation within a GUI class such as button enablement or TMDB searches
+        should be controlled by a single function. That function will be responsible
+        for such things as button enablement or invocation of external callbacks. The
+        function will registered by calling the register method of every relevant
+        Observer and will be consequently called whenever the notify method of any
+        relevant observer is called.
+
+        Example for AddMovieGUI's Commit button.
+        The Commit button should be enabled if text is present in both title and year
+        fields and disabled otherwise. Any change to the text of the title field should
+        cause a call to the notify method of the title observer. Similarly, changes
+        to the text of the year field should cause a call to the notify method of the
+        year observer. The calls to the notify method should be made directly without
+        any modification of tkinter's arguments. A receiving method of AddMovieGUI
+        will receive the notification from either the title observer or the year
+        observer. It is responsible for retrieving the current value of both the title
+        and the year field. If text is present in both then it should enable the Commit
+        button otherwise it should disable the Commit button.
+    """
+
+    notifees: list[Callable] = field(default_factory=list, init=False, repr=False)
+
+    def register(self, notifee: Callable):
+        """Register a notifee.
+
+        Each registered notifee: Callable will be called whenever the notify method of
+        this class is called. The registered notifees will be invoked using the same
+        arguments as were supplied to the notify method.
+
+        Args:
+            notifee: This callable will be invoked by the notify method with the
+            arguments supplied to that method.
+        """
+        self.notifees.append(notifee)
+
+    def deregister(self, notifee):
+        """Remove a notifee.
+
+        Args:
+            notifee:
+        """
+        self.notifees.remove(notifee)
+
+    def notify(self, *args, **kwargs):
+        """Call every notifee.
+
+        Args:
+            *args: Passed through from triggering event.
+            **kwargs: Passed through from triggering event.
+        """
+        for observer in self.notifees:
+            observer(*args, **kwargs)
+
+
+@dataclass
 class _EntryField:
     """
     A support class for the attributes of a GUI entry field.
@@ -1107,11 +1209,13 @@ class _EntryField:
     #   textvariable is initialized as:
     #   textvariable: tk.StringVar = field(default_factory=tk.StringVar, init=False, repr=False)
     textvariable: tk.StringVar = None
-    observer: Callable = field(default=None, init=False, repr=False)
+    observer: Observer = field(default_factory=Observer, init=False, repr=False)
 
     def __post_init__(self):
         self.textvariable = tk.StringVar()
         self.textvariable.set(self.original_value)
+        # todo Test next line
+        self.textvariable.trace_add("write", self.observer.notify)
 
 
 @dataclass
@@ -1195,6 +1299,7 @@ class _InputZone:
             width=self.col_1_width,
         )
         entry_field.widget.grid(column=1, row=row_ix)
+        # todo This is not updating the text variable with the current_value. Should it?
 
     def add_treeview_row(
         self, label_text, items, callers_callback
@@ -1221,72 +1326,6 @@ class _InputZone:
 
         label = ttk.Label(self.parent, text=text)
         label.grid(column=0, row=row_ix, sticky="ne", padx=5)
-
-
-@dataclass
-class Observer:
-    """The classic observer pattern.
-
-    Usage.
-    1) Instantiate Observer.
-    2) Call the method register to register one or more callables.
-    3) Call the method notify to call all the notifees. This will call each registered
-        callable with the arguments supplied to the notify method.
-    4) Call the method deregister to remove an observer and stop it from being called.
-
-    Notes for use with tkinter widgets.
-        Each operation within a GUI class such as button enablement or TMDB searches
-        should be controlled by a single function. That function will be responsible
-        for such things as button enablement or invocation of external callbacks. The
-        function will registered by calling the register method of every relevant
-        Observer and will be consequently called whenever the notify method of any
-        relevant observer is called.
-
-        Example for AddMovieGUI's Commit button.
-        The Commit button should be enabled if text is present in both title and year
-        fields and disabled otherwise. Any change to the text of the title field should
-        cause a call to the notify method of the title observer. Similarly, changes
-        to the text of the year field should cause a call to the notify method of the
-        year observer. The calls to the notify method should be made directly without
-        any modification of tkinter's arguments. A receiving method of AddMovieGUI
-        will receive the notification from either the title observer or the year
-        observer. It is responsible for retrieving the current value of both the title
-        and the year field. If text is present in both then it should enable the Commit
-        button otherwise it should disable the Commit button.
-    """
-
-    notifees: list[Callable] = field(default_factory=list, init=False, repr=False)
-
-    def register(self, notifee: Callable):
-        """Register a notifee.
-
-        Each registered notifee: Callable will be called whenever the notify method of
-        this class is called. The registered notifees will be invoked using the same
-        arguments as were supplied to the notify method.
-
-        Args:
-            notifee: This callable will be invoked by the notify method with the
-            arguments supplied to that method.
-        """
-        self.notifees.append(notifee)
-
-    def deregister(self, notifee):
-        """Remove a notifee.
-
-        Args:
-            notifee:
-        """
-        self.notifees.remove(notifee)
-
-    def notify(self, *args, **kwargs):
-        """Call every notifee.
-
-        Args:
-            *args: Passed through from triggering event.
-            **kwargs: Passed through from triggering event.
-        """
-        for observer in self.notifees:
-            observer(*args, **kwargs)
 
 
 def _create_entry_fields(
@@ -1442,6 +1481,7 @@ def _enable_button(button: ttk.Button) -> Callable:
         registered notifees will then be called with the argument given to the neuron.
     """
 
+    # todo Is this function obsolete? If so, remove.
     def func(state: bool):
         """Enable or disable the button.
 
@@ -1460,6 +1500,27 @@ def _enable_button(button: ttk.Button) -> Callable:
             button.configure(default="disabled")
 
     return func
+
+
+def enable_button(button: ttk.Button, state: bool):
+    """
+    Enable or disable a button.
+
+    Args:
+        button:
+        state:
+    """
+    # todo test this function
+    if state:
+        # Enable the button
+        button.state(["!disabled"])
+        # Highlight the button to show it is enabled
+        button.configure(default="active")
+    else:
+        # Disable the button
+        button.state(["disabled"])
+        # Remove the button highlight
+        button.configure(default="disabled")
 
 
 def _focus_set(entry: ttk.Entry):

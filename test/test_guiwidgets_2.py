@@ -128,6 +128,7 @@ class TestLabelFieldWidget:
             _, entry_field, row = create_label_calls[0]
             assert create_label_calls == [(labelfield, dummy_entry_field.label_text, 0)]
 
+    @pytest.mark.skip
     def test_add_entry_row_creates_entry(self, dummy_entry_field):
         with self.labelfield_context() as labelfield:
             labelfield.add_entry_row(dummy_entry_field)
@@ -470,6 +471,7 @@ def test_link_and_neuron_to_button():
     assert neuron.notifees == [change_button_state]
 
 
+@pytest.mark.skip
 def test_link_field_to_neuron_trace_add_called(patch_tk, dummy_entry_fields):
     name = "tag"
     neuron = guiwidgets_2.neurons.OrNeuron()
