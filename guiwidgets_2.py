@@ -158,7 +158,6 @@ class MovieGUI:
 
         # TMDB
         self.tmdb_consumer()
-        # todo test next line
         self.entry_fields[self.title].observer.register(self.tmdb_search)
 
     def original_values(self):
@@ -192,7 +191,6 @@ class MovieGUI:
             *args: Unused argument supplied by tkinter.
             **kwargs: Unused argument supplied by tkinter.
         """
-        # todo Test following line
         substring = self.entry_fields[self.title].textvariable.get()
         if substring:  # pragma no branch
             if self.last_text_event_id:
@@ -350,7 +348,6 @@ class AddMovieGUI(MovieGUI):
 
         # Register callbacks with the field observers.
         # The commit button is only enabled if title and year fields contain text.
-        # todo test this suite
         title_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[0]]
         year_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[1]]
         title_entry_field.observer.register(
@@ -380,7 +377,6 @@ class AddMovieGUI(MovieGUI):
             contents are changed by the user,
         """
 
-        # todo test this function
         # noinspection PyUnusedLocal
         def func(*args, **kwargs):
             """Enable or disable the button depending on state.
@@ -393,40 +389,6 @@ class AddMovieGUI(MovieGUI):
                 name.textvariable.get() != name.original_value for name in (title, year)
             )
             enable_button(commit_button, state)
-
-        return func
-
-    def call_title_notifees(self, commit_neuron: neurons.Neuron) -> Callable:
-        """
-        Whenever the title field is changed this method will:
-            Invoke a TMDB search if sufficient time has elapsed since the last key press.
-            Activate or deactivate the Commit button.
-
-        Args:
-            commit_neuron: The neuron which enables or disables the commit button.
-
-        Returns:
-            The notifee function
-        """
-
-        # todo Remove this obsolete method which was called by a notification from the title field
-        #  observer. It then called a neuron which notified the Commit button and invoked
-        #  tmdb_search.
-        def func(*args):
-            """This function responds to a change in the title field.
-
-            Args:
-                *args: Not used. This is required to match unused arguments from the
-                caller.
-            """
-            text = self.entry_fields[self.title].textvariable.get()
-            old_text = self.entry_fields[self.title].original_value
-
-            # Invoke a TMDB search
-            self.tmdb_search(text)
-
-            # Notify the commit button neuron
-            commit_neuron(self.title, bool(text != old_text))
 
         return func
 
@@ -1124,36 +1086,7 @@ class _MovieTagTreeview:
 
 @dataclass
 class Observer:
-    """The classic observer pattern.
-
-    Usage.
-    1) Instantiate Observer.
-    2) Call the method register to register one or more callables.
-    3) Call the method notify to call all the notifees. This will call each registered
-        callable with the arguments supplied to the notify method.
-    4) Call the method deregister to remove an observer and stop it from being called.
-
-    Notes for use with tkinter widgets.
-        # todo Rewrite this section
-        Each operation within a GUI class such as button enablement or TMDB searches
-        should be controlled by a single function. That function will be responsible
-        for such things as button enablement or invocation of external callbacks. The
-        function will registered by calling the register method of every relevant
-        Observer and will be consequently called whenever the notify method of any
-        relevant observer is called.
-
-        Example for AddMovieGUI's Commit button.
-        The Commit button should be enabled if text is present in both title and year
-        fields and disabled otherwise. Any change to the text of the title field should
-        cause a call to the notify method of the title observer. Similarly, changes
-        to the text of the year field should cause a call to the notify method of the
-        year observer. The calls to the notify method should be made directly without
-        any modification of tkinter's arguments. A receiving method of AddMovieGUI
-        will receive the notification from either the title observer or the year
-        observer. It is responsible for retrieving the current value of both the title
-        and the year field. If text is present in both then it should enable the Commit
-        button otherwise it should disable the Commit button.
-    """
+    """The classic observer pattern."""
 
     notifees: list[Callable] = field(default_factory=list, init=False, repr=False)
 
@@ -1214,7 +1147,6 @@ class _EntryField:
     def __post_init__(self):
         self.textvariable = tk.StringVar()
         self.textvariable.set(self.original_value)
-        # todo Test next line
         self.textvariable.trace_add("write", self.observer.notify)
 
 
@@ -1510,7 +1442,6 @@ def enable_button(button: ttk.Button, state: bool):
         button:
         state:
     """
-    # todo test this function
     if state:
         # Enable the button
         button.state(["!disabled"])

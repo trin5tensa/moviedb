@@ -161,6 +161,10 @@ class TestMovieGUI:
             # Test start the tmdb_work_queue polling
             with check:
                 mock_tmdb_consumer.assert_called_once_with()
+            with check:
+                cut.entry_fields[cut.title].observer.register.assert_called_once_with(
+                    cut.tmdb_search
+                )
 
     def test_original_values(self, monkeypatch, create_entry_fields):
         with pytest.raises(NotImplementedError):
@@ -189,11 +193,11 @@ class TestMovieGUI:
             with self.moviegui(monkeypatch):
                 pass
 
-    @pytest.mark.skip
     def test_tmdb_search(self, monkeypatch, movie_patches):
         with self.moviegui(monkeypatch) as cut:
             substring = "mock substring"
-            cut.tmdb_search(substring)
+            cut.entry_fields[cut.title].textvariable.get.return_value = substring
+            cut.tmdb_search()
             with check:
                 assert cut.parent.after.mock_calls[1] == call(
                     cut.last_text_queue_timer,
@@ -398,11 +402,8 @@ class TestAddMovieGUI:
                 "guiwidgets_2._create_button", mock_create_button := MagicMock()
             )
             monkeypatch.setattr(
-                "guiwidgets_2._create_buttons_andneuron",
-                mock_create_buttons_andneuron := MagicMock(),
-            )
-            monkeypatch.setattr(
-                "guiwidgets_2._enable_button", mock_enable_button := MagicMock()
+                "guiwidgets_2.AddMovieGUI.enable_commit_button",
+                mock_enable_commit_button := MagicMock(),
             )
             column_num = guiwidgets_2.itertools.count()
 
@@ -415,42 +416,36 @@ class TestAddMovieGUI:
                     command=cut.commit,
                     default="normal",
                 )
-            # todo restore, rewrite or remove tests
-            # with check:
-            #     mock_enable_button.assert_has_calls(
-            #         [call(mock_create_button()), call()(False)]
-            #     )
-            # title = guiwidgets_2.MOVIE_FIELD_NAMES[0]
-            # year = guiwidgets_2.MOVIE_FIELD_NAMES[1]
-            # with check:
-            #     mock_create_buttons_andneuron.assert_has_calls(
-            #         [
-            #             call(mock_enable_button()),
-            #             call().register_event(year),
-            #             call().register_event(title),
-            #         ]
-            #     )
-
-    def test_call_title_notifees(self, monkeypatch, movie_patches):
-        with self.addmoviegui(monkeypatch) as cut:
-            func = cut.call_title_notifees(mock_commit_neuron := MagicMock())
-            monkeypatch.setattr(
-                "guiwidgets_2.MovieGUI.tmdb_search", mock_tmdb_search := MagicMock()
-            )
-            cut.entry_fields[
-                cut.title
-            ].textvariable.get.return_value = mock_text = "mock text"
-            cut.entry_fields[
-                cut.title
-            ].original_value = mock_original_text = "mock original text"
-            func(mock_commit_neuron)
 
             with check:
-                mock_tmdb_search.assert_called_once_with(mock_text)
-            with check:
-                mock_commit_neuron.assert_called_once_with(
-                    cut.title, mock_text != mock_original_text
+                check.equal(
+                    cut.entry_fields[
+                        guiwidgets_2.MOVIE_FIELD_NAMES[0]
+                    ].observer.register.call_count,
+                    5,
                 )
+                cut.entry_fields[
+                    guiwidgets_2.MOVIE_FIELD_NAMES[0]
+                ].observer.register.assert_has_calls(
+                    [
+                        call(mock_enable_commit_button()),
+                        call(mock_enable_commit_button()),
+                    ]
+                )
+
+    def test_enable_commit_button(self, monkeypatch, movie_patches):
+        monkeypatch.setattr("guiwidgets_2.ttk.Button", mock_button := MagicMock())
+        monkeypatch.setattr(
+            "guiwidgets_2.enable_button", mock_enable_button := MagicMock()
+        )
+        with self.addmoviegui(monkeypatch) as cut:
+            title = cut.entry_fields[guiwidgets_2.MOVIE_FIELD_NAMES[0]]
+            year = cut.entry_fields[guiwidgets_2.MOVIE_FIELD_NAMES[1]]
+
+            callback = cut.enable_commit_button(mock_button, title, year)
+            callback()
+            with check:
+                mock_enable_button.assert_called_once_with(mock_button, True)
 
     # noinspection DuplicatedCode
     def test_commit(self, monkeypatch, movie_patches):
@@ -1491,16 +1486,19 @@ class TestGUIAskYesNo:
 
 class TestCreateEntryFields:
     def test_create_entry_fields(self, monkeypatch):
-        dummy_name = "dummy name"
-        internal_names = (dummy_name,)
-        dummy_text = "dummy text"
-        label_texts = (dummy_text,)
-        monkeypatch.setattr("guiwidgets_2.tk", MagicMock())
-        monkeypatch.setattr("guiwidgets_2.ttk", MagicMock())
-        dummy_entry_field = guiwidgets_2._EntryField(dummy_text)
+        monkeypatch.setattr("guiwidgets_2.tk", mock_tk := MagicMock())
+        mock_stringvar = mock_tk.StringVar()
+        entry_field = guiwidgets_2._EntryField("label text")
 
-        result = guiwidgets_2._create_entry_fields(internal_names, label_texts)
-        check.equal(result, {dummy_name: dummy_entry_field})
+        check.equal(entry_field.label_text, "label text")
+        check.equal(entry_field.original_value, "")
+        check.equal(entry_field.widget, None)
+        check.equal(entry_field.textvariable, mock_stringvar)
+        check.equal(entry_field.observer, guiwidgets_2.Observer())
+        with check:
+            mock_stringvar.trace_add.assert_called_with(
+                "write", entry_field.observer.notify
+            )
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -1538,6 +1536,24 @@ class TestObserver:
             foo2_calls,
             [(("arg1", "arg2"), {"kwarg1": "kwarg1", "kwarg2": "kwarg2"})],
         )
+
+
+class TestEnableButton:
+    def test_enable_button(self, monkeypatch):
+        monkeypatch.setattr("guiwidgets_2.tk", MagicMock())
+        monkeypatch.setattr("guiwidgets_2.ttk", mock_ttk := MagicMock())
+
+        guiwidgets_2.enable_button(mock_ttk.Button, True)
+        guiwidgets_2.enable_button(mock_ttk.Button, False)
+        with check:
+            mock_ttk.Button.assert_has_calls(
+                [
+                    call.state(["!disabled"]),
+                    call.configure(default="active"),
+                    call.state(["disabled"]),
+                    call.configure(default="disabled"),
+                ]
+            )
 
 
 # noinspection PyMissingOrEmptyDocstring
