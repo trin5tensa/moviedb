@@ -1262,20 +1262,9 @@ class TestPreferencesGUI:
             "guiwidgets_2._create_button", mock_create_button := MagicMock()
         )
         monkeypatch.setattr(
-            "guiwidgets_2._create_button_orneuron",
-            mock_create_button_orneuron := MagicMock(),
+            "guiwidgets_2.PreferencesGUI.enable_save_button", MagicMock()
         )
-        monkeypatch.setattr(
-            "guiwidgets_2._enable_button", mock_enable_button := MagicMock()
-        )
-        monkeypatch.setattr(
-            "guiwidgets_2._create_the_fields_observer",
-            mock_create_the_fields_observer := MagicMock(),
-        )
-        monkeypatch.setattr(
-            "guiwidgets_2._link_field_to_neuron",
-            mock_link_field_to_neuron := MagicMock(),
-        )
+
         _, body_frame, mock_buttonbox = general_framing()
 
         with self.preferencesgui(monkeypatch) as cut:
@@ -1295,7 +1284,7 @@ class TestPreferencesGUI:
                     {cut.api_key_name: cut.api_key, cut.use_tmdb_name: cut.do_not_ask},
                 )
 
-            # Test create outer frames t hold fields and buttons.
+            # Test create outer frames to hold fields and buttons.
             check.equal(general_framing.call_count, 2)
             with check:
                 general_framing.assert_has_calls(
@@ -1341,43 +1330,38 @@ class TestPreferencesGUI:
                     ]
                 )
 
-            # Test link save button to save neuron
+            # Test field observer registration
+            # cut.entry_fields has been mocked so cut.entry_fields[<Any>] will always return
+            # the same value.
+            api_key_field = cut.entry_fields[cut.api_key_name]
+            use_tmdb_field = cut.entry_fields[cut.use_tmdb_name]
+            check.equal(api_key_field, use_tmdb_field)
+            check.equal(use_tmdb_field.observer.register.call_count, 2)
             with check:
-                mock_enable_button.assert_called_once_with(mock_create_button())
-            with check:
-                mock_create_button_orneuron.assert_called_once_with(
-                    mock_enable_button()
+                use_tmdb_field.assert_has_calls(
+                    [
+                        call.observer.register(cut.enable_save_button()),
+                        call.observer.register(cut.enable_save_button()),
+                    ]
                 )
 
-            # Test link api key field and 'tmdb don't ask' field to save neuron
-            mock_neuron = mock_create_button_orneuron()
+    def test_enable_save_button(self, monkeypatch, movie_patches):
+        monkeypatch.setattr(guiwidgets_2.tk, "Toplevel", MagicMock())
+        monkeypatch.setattr("guiwidgets_2._focus_set", MagicMock())
+        monkeypatch.setattr("guiwidgets_2.ttk.Button", mock_button := MagicMock())
+        monkeypatch.setattr(
+            "guiwidgets_2.enable_button", mock_enable_button := MagicMock()
+        )
+        with self.preferencesgui(monkeypatch) as cut:
+            api_key = cut.entry_fields["dummy"]
+            use_tmdb = cut.entry_fields["dummy"]
+            callback = cut.enable_save_button(mock_button, api_key, use_tmdb)
+            callback()
             with check:
-                mock_create_the_fields_observer.assert_has_calls(
-                    [
-                        call(cut.entry_fields, cut.api_key_name, mock_neuron),
-                        call(cut.entry_fields, cut.use_tmdb_name, mock_neuron),
-                    ]
-                )
-            with check:
-                mock_link_field_to_neuron.assert_has_calls(
-                    [
-                        call(
-                            cut.entry_fields,
-                            cut.api_key_name,
-                            mock_neuron,
-                            cut.entry_fields[cut.api_key_name].observer,
-                        ),
-                        call(
-                            cut.entry_fields,
-                            cut.use_tmdb_name,
-                            mock_neuron,
-                            cut.entry_fields[cut.use_tmdb_name].observer,
-                        ),
-                    ]
-                )
+                mock_enable_button.assert_called_once_with(mock_button, True)
 
     def test_save(self, monkeypatch, create_entry_fields, general_framing):
-        monkeypatch.setattr(guiwidgets_2.tk, "Toplevel", MagicMock())
+        monkeypatch.setattr(guiwidgets_2.tk, "Toplevel", mock_toplevel := MagicMock())
         monkeypatch.setattr("guiwidgets_2._focus_set", MagicMock())
 
         with self.preferencesgui(monkeypatch) as cut:

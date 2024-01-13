@@ -373,7 +373,7 @@ class AddMovieGUI(MovieGUI):
             year:
 
         Returns:
-            A callable which will be invoked by tkinter whenever the title or year field
+            A callable which will be invoked by tkinter whenever the title and year field
             contents are changed by the user,
         """
 
@@ -385,9 +385,9 @@ class AddMovieGUI(MovieGUI):
                 *args: Sent by tkinter callback but not used.
                 **kwargs: Sent by tkinter callback but not used.
             """
-            state = all(
-                name.textvariable.get() != name.original_value for name in (title, year)
-            )
+            title_changed = title.textvariable.get() != title.original_value
+            year_changed = year.textvariable.get() != year.original_value
+            state = title_changed and year_changed
             enable_button(commit_button, state)
 
         return func
@@ -460,6 +460,9 @@ class EditMovieGUI(MovieGUI):
             command=self.delete,
             default="active",
         )
+
+        # todo EditMovieGUI: Set up entry field notifications.
+        # todo EditMovieGUI: Set up tag field notifications.
 
     def commit(self):
         """Commit an edited movie to the database."""
@@ -901,33 +904,49 @@ class PreferencesGUI:
             default="active",
         )
 
-        # # Link save button to save neuron
-        save_button_enabler = _enable_button(save_button)
-        save_neuron = _create_button_orneuron(save_button_enabler)
-
-        # # Link 'api key' field to save neuron
-        self.entry_fields[self.api_key_name].observer = _create_the_fields_observer(
-            self.entry_fields, self.api_key_name, save_neuron
+        # Register callbacks with the field observers.
+        # The save button is only enabled if either the api_key field or the use_tmdb
+        # checkbutton has changed.
+        api_key_field = self.entry_fields[self.api_key_name]
+        use_tmdb_field = self.entry_fields[self.use_tmdb_name]
+        api_key_field.observer.register(
+            self.enable_save_button(save_button, api_key_field, use_tmdb_field)
         )
-        # noinspection PyTypeChecker
-        _link_field_to_neuron(
-            self.entry_fields,
-            self.api_key_name,
-            save_neuron,
-            self.entry_fields[self.api_key_name].observer,
+        use_tmdb_field.observer.register(
+            self.enable_save_button(save_button, api_key_field, use_tmdb_field)
         )
 
-        # # Link 'tmdb don't ask' field to save neuron
-        self.entry_fields[self.use_tmdb_name].observer = _create_the_fields_observer(
-            self.entry_fields, self.use_tmdb_name, save_neuron
-        )
-        # noinspection PyTypeChecker
-        _link_field_to_neuron(
-            self.entry_fields,
-            self.use_tmdb_name,
-            save_neuron,
-            self.entry_fields[self.use_tmdb_name].observer,
-        )
+    @staticmethod
+    def enable_save_button(
+        save_button: ttk.Button, api_key: "_EntryField", use_tmdb: "_EntryField"
+    ) -> Callable:
+        """Manages the enabled or disabled state of the save button.
+
+        Args:
+            save_button:
+            api_key:
+            use_tmdb:
+
+        Returns:
+            A callable which will be invoked by tkinter whenever the api_key or
+            use_tmdb field contents are changed by the user,
+        """
+
+        # noinspection PyUnusedLocal
+        def func(*args, **kwargs):
+            """Enable or disable the button depending on state.
+
+            Args:
+                *args: Sent by tkinter callback but not used.
+                **kwargs: Sent by tkinter callback but not used.
+            """
+            api_key_changed = api_key.textvariable.get() != api_key.original_value
+            use_tmdb_set = use_tmdb.textvariable.get() == "1"
+            use_tmdb_changed = use_tmdb_set != use_tmdb.original_value
+            state = api_key_changed or use_tmdb_changed
+            enable_button(save_button, state)
+
+        return func
 
     def save(self):
         """Save the edited preference values to the config file."""
@@ -1231,7 +1250,7 @@ class _InputZone:
             width=self.col_1_width,
         )
         entry_field.widget.grid(column=1, row=row_ix)
-        # todo This is not updating the text variable with the current_value. Should it?
+        entry_field.textvariable.set(entry_field.original_value)
 
     def add_treeview_row(
         self, label_text, items, callers_callback
