@@ -1019,20 +1019,10 @@ class TestSearchTagGUI:
         monkeypatch.setattr("guiwidgets_2._InputZone", mock_inputzone := MagicMock())
         monkeypatch.setattr("guiwidgets_2._focus_set", mock_focus_set := MagicMock())
         monkeypatch.setattr(
-            "guiwidgets_2._create_button", mock_create_button := MagicMock()
+            "guiwidgets_2.SearchTagGUI.create_buttons",
+            mock_create_buttons := MagicMock(),
         )
-        monkeypatch.setattr(
-            "guiwidgets_2._create_button_orneuron",
-            mock_create_button_orneuron := MagicMock(),
-        )
-        monkeypatch.setattr(
-            "guiwidgets_2._link_field_to_neuron",
-            mock_link_field_to_neuron := MagicMock(),
-        )
-        monkeypatch.setattr(
-            "guiwidgets_2._create_the_fields_observer",
-            mock_create_the_fields_observer := MagicMock(),
-        )
+
         _, body_frame, mock_buttonbox = general_framing()
 
         with self.searchtaggui(monkeypatch) as cut:
@@ -1059,8 +1049,20 @@ class TestSearchTagGUI:
                 mock_focus_set.assert_called_once_with(
                     cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].widget
                 )
+            with check:
+                mock_create_buttons.assert_called_once_with(mock_buttonbox)
 
-            # Test populate buttonbox with commit and cancel buttons
+    def test_create_buttons(self, monkeypatch, create_entry_fields, general_framing):
+        monkeypatch.setattr(
+            "guiwidgets_2._create_button", mock_create_button := MagicMock()
+        )
+        monkeypatch.setattr("guiwidgets_2.ttk.Button", mock_button := MagicMock())
+        monkeypatch.setattr(
+            "guiwidgets_2.SearchTagGUI.enable_search_button", MagicMock()
+        )
+        _, _, mock_buttonbox = general_framing()
+
+        with self.searchtaggui(monkeypatch) as cut:
             column_num = guiwidgets_2.itertools.count()
             with check:
                 mock_create_button.assert_has_calls(
@@ -1082,18 +1084,23 @@ class TestSearchTagGUI:
                     ]
                 )
 
-            # Test link commit button to tag field
+            tag_field = cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]]
             with check:
-                mock_link_field_to_neuron.assert_called_once_with(
-                    cut.entry_fields,
-                    guiwidgets_2.TAG_FIELD_NAMES[0],
-                    mock_create_button_orneuron(),
-                    mock_create_the_fields_observer(),
+                tag_field.observer.register.assert_called_once_with(
+                    cut.enable_search_button(mock_button, tag_field)
                 )
-            check.equal(
-                cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].observer,
-                mock_create_button_orneuron(),
-            )
+
+    def test_enable_search_button(self, monkeypatch, movie_patches):
+        monkeypatch.setattr("guiwidgets_2.ttk.Button", mock_button := MagicMock())
+        monkeypatch.setattr(
+            "guiwidgets_2.enable_button", mock_enable_button := MagicMock()
+        )
+        with self.searchtaggui(monkeypatch) as cut:
+            tag_field = cut.entry_fields["dummy"]
+            callback = cut.enable_search_button(mock_button, tag_field)
+            callback()
+            with check:
+                mock_enable_button.assert_called_once_with(mock_button, True)
 
     def test_search(self, monkeypatch, create_entry_fields):
         monkeypatch.setattr(

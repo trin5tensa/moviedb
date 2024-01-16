@@ -56,6 +56,7 @@ NO_MATCH_DETAIL = "There are no matching tags in the database."
 ParentType = TypeVar("ParentType", tk.Tk, tk.Toplevel, ttk.Frame)
 DefaultLiteral = Literal["normal", "active", "disabled"]
 StateFlags = Optional[list[Literal["active", "normal", "disabled", "!disabled"]]]
+# todo Review all suppressed duplicated code warnings
 
 
 @dataclass
@@ -535,9 +536,9 @@ class AddTagGUI:
         _focus_set(self.entry_fields[TAG_FIELD_NAMES[0]].widget)
 
         # Populate buttonbox with commit and cancel buttons
-        # todo test next line
         self.create_buttons(buttonbox)
 
+    # noinspection DuplicatedCode
     def create_buttons(self, buttonbox: ttk.Frame):
         """
         Creates the commit and cancel buttons.
@@ -545,7 +546,6 @@ class AddTagGUI:
         Args:
             buttonbox:
         """
-        # todo test this method
         # noinspection DuplicatedCode
         column_num = itertools.count()
         commit_button = _create_button(
@@ -569,12 +569,12 @@ class AddTagGUI:
 
     @staticmethod
     def enable_commit_button(
-        save_button: ttk.Button, tag_field: "_EntryField"
+        commit_button: ttk.Button, tag_field: "_EntryField"
     ) -> Callable:
-        """Manages the enabled or disabled state of the save button.
+        """Manages the enabled or disabled state of the commit button.
 
         Args:
-            save_button:
+            commit_button:
             tag_field:
 
         Returns:
@@ -591,7 +591,7 @@ class AddTagGUI:
                 **kwargs: Sent by tkinter callback but not used.
             """
             state = tag_field.textvariable.get() != tag_field.original_value
-            enable_button(save_button, state)
+            enable_button(commit_button, state)
 
         return func
 
@@ -647,7 +647,17 @@ class SearchTagGUI:
             label_field.add_entry_row(self.entry_fields[movie_field_name])
         _focus_set(self.entry_fields[TAG_FIELD_NAMES[0]].widget)
 
-        # Populate buttonbox with the search and cancel buttons.
+        # Populate buttonbox with commit and cancel buttons
+        self.create_buttons(buttonbox)
+
+    def create_buttons(self, buttonbox: ttk.Frame):
+        """
+        Creates the commit and cancel buttons.
+
+        Args:
+            buttonbox:
+        """
+        # noinspection DuplicatedCode
         column_num = itertools.count()
         search_button = _create_button(
             buttonbox,
@@ -664,16 +674,37 @@ class SearchTagGUI:
             default="active",
         )
 
-        # Link the search button to the tag field.
-        button_enabler = _enable_button(search_button)
-        neuron = _create_button_orneuron(button_enabler)
-        notify_neuron = _create_the_fields_observer(
-            self.entry_fields, TAG_FIELD_NAMES[0], neuron
-        )
-        _link_field_to_neuron(
-            self.entry_fields, TAG_FIELD_NAMES[0], neuron, notify_neuron
-        )
-        self.entry_fields[TAG_FIELD_NAMES[0]].observer = neuron
+        # Link commit button to tag field
+        tag_field = self.entry_fields[TAG_FIELD_NAMES[0]]
+        tag_field.observer.register(self.enable_search_button(search_button, tag_field))
+
+    @staticmethod
+    def enable_search_button(
+        search_button: ttk.Button, tag_field: "_EntryField"
+    ) -> Callable:
+        """Manages the enabled or disabled state of the search button.
+
+        Args:
+            search_button:
+            tag_field:
+
+        Returns:
+            A callable which will be invoked by tkinter whenever the tag field
+            contents are changed by the user,
+        """
+
+        # noinspection PyUnusedLocal
+        def func(*args, **kwargs):
+            """Enable or disable the button depending on state.
+
+            Args:
+                *args: Sent by tkinter callback but not used.
+                **kwargs: Sent by tkinter callback but not used.
+            """
+            state = tag_field.textvariable.get() != tag_field.original_value
+            enable_button(search_button, state)
+
+        return func
 
     def search(self):
         """Respond to the user's click of the 'Search' button."""
