@@ -180,6 +180,7 @@ class MovieGUI:
         """
         raise NotImplementedError
 
+    # noinspection PyUnusedLocal
     def tmdb_search(self, *args, **kwargs):
         """
         Search TMDB for matching movies titles.
@@ -534,6 +535,18 @@ class AddTagGUI:
         _focus_set(self.entry_fields[TAG_FIELD_NAMES[0]].widget)
 
         # Populate buttonbox with commit and cancel buttons
+        # todo test next line
+        self.create_buttons(buttonbox)
+
+    def create_buttons(self, buttonbox: ttk.Frame):
+        """
+        Creates the commit and cancel buttons.
+
+        Args:
+            buttonbox:
+        """
+        # todo test this method
+        # noinspection DuplicatedCode
         column_num = itertools.count()
         commit_button = _create_button(
             buttonbox,
@@ -551,15 +564,36 @@ class AddTagGUI:
         )
 
         # Link commit button to tag field
-        button_enabler = _enable_button(commit_button)
-        neuron = _create_button_orneuron(button_enabler)
-        _link_field_to_neuron(
-            self.entry_fields,
-            TAG_FIELD_NAMES[0],
-            neuron,
-            _create_the_fields_observer(self.entry_fields, TAG_FIELD_NAMES[0], neuron),
-        )
-        self.entry_fields[TAG_FIELD_NAMES[0]].observer = neuron
+        tag_field = self.entry_fields[TAG_FIELD_NAMES[0]]
+        tag_field.observer.register(self.enable_commit_button(commit_button, tag_field))
+
+    @staticmethod
+    def enable_commit_button(
+        save_button: ttk.Button, tag_field: "_EntryField"
+    ) -> Callable:
+        """Manages the enabled or disabled state of the save button.
+
+        Args:
+            save_button:
+            tag_field:
+
+        Returns:
+            A callable which will be invoked by tkinter whenever the tag field
+            contents are changed by the user,
+        """
+
+        # noinspection PyUnusedLocal
+        def func(*args, **kwargs):
+            """Enable or disable the button depending on state.
+
+            Args:
+                *args: Sent by tkinter callback but not used.
+                **kwargs: Sent by tkinter callback but not used.
+            """
+            state = tag_field.textvariable.get() != tag_field.original_value
+            enable_button(save_button, state)
+
+        return func
 
     def commit(self):
         """The user clicked the 'Commit' button."""
