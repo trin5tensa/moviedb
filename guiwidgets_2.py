@@ -757,6 +757,16 @@ class EditTagGUI:
         _focus_set(self.entry_fields[TAG_FIELD_NAMES[0]].widget)
 
         # Populate buttonbox with commit, delete, and cancel buttons
+        self.create_buttons(buttonbox)
+
+    # noinspection DuplicatedCode
+    def create_buttons(self, buttonbox: ttk.Frame):
+        """
+        Creates the commit and cancel buttons.
+
+        Args:
+            buttonbox:
+        """
         column_num = itertools.count()
         commit_button = _create_button(
             buttonbox,
@@ -781,15 +791,36 @@ class EditTagGUI:
         )
 
         # Link commit button to tag field
-        button_enabler = _enable_button(commit_button)
-        neuron = _create_button_orneuron(button_enabler)
-        notify_neuron = _create_the_fields_observer(
-            self.entry_fields, TAG_FIELD_NAMES[0], neuron
-        )
-        _link_field_to_neuron(
-            self.entry_fields, TAG_FIELD_NAMES[0], neuron, notify_neuron
-        )
-        self.entry_fields[TAG_FIELD_NAMES[0]].observer = neuron
+        tag_field = self.entry_fields[TAG_FIELD_NAMES[0]]
+        tag_field.observer.register(self.enable_commit_button(commit_button, tag_field))
+
+    @staticmethod
+    def enable_commit_button(
+        commit_button: ttk.Button, tag_field: "_EntryField"
+    ) -> Callable:
+        """Manages the enabled or disabled state of the commit button.
+
+        Args:
+            commit_button:
+            tag_field:
+
+        Returns:
+            A callable which will be invoked by tkinter whenever the tag field
+            contents are changed by the user,
+        """
+
+        # noinspection PyUnusedLocal
+        def func(*args, **kwargs):
+            """Enable or disable the button depending on state.
+
+            Args:
+                *args: Sent by tkinter callback but not used.
+                **kwargs: Sent by tkinter callback but not used.
+            """
+            state = tag_field.textvariable.get() != tag_field.original_value
+            enable_button(commit_button, state)
+
+        return func
 
     def commit(self):
         """The user clicked the 'Commit' button."""
