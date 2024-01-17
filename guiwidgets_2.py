@@ -388,7 +388,7 @@ class AddMovieGUI(MovieGUI):
                 **kwargs: Sent by tkinter callback but not used.
             """
             title_changed = title.textvariable.get() != title.original_value
-            year_changed = year.textvariable.get() != year.original_value
+            year_changed = int(year.textvariable.get()) != year.original_value
             state = title_changed and year_changed
             enable_button(commit_button, state)
 
@@ -448,12 +448,12 @@ class EditMovieGUI(MovieGUI):
         self.selected_tags = self.old_movie["tags"]
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
-        _create_button(
+        commit_button = _create_button(
             buttonbox,
             COMMIT_TEXT,
             column=next(column_num),
             command=self.commit,
-            default="active",
+            default="disabled",
         )
         _create_button(
             buttonbox,
@@ -463,8 +463,78 @@ class EditMovieGUI(MovieGUI):
             default="active",
         )
 
-        # todo EditMovieGUI: Set up entry field notifications.
-        # todo EditMovieGUI: Set up tag field notifications.
+        # Register the commit callback with its many observers.
+        title_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[0]]
+        year_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[1]]
+        director_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[2]]
+        length_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[3]]
+        notes_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[4]]
+        args = (
+            commit_button,
+            title_entry_field,
+            year_entry_field,
+            director_entry_field,
+            length_entry_field,
+            notes_entry_field,
+        )
+        title_entry_field.observer.register(self.enable_commit_button(*args))
+        year_entry_field.observer.register(self.enable_commit_button(*args))
+        director_entry_field.observer.register(self.enable_commit_button(*args))
+        length_entry_field.observer.register(self.enable_commit_button(*args))
+        notes_entry_field.observer.register(self.enable_commit_button(*args))
+
+    @staticmethod
+    def enable_commit_button(
+        commit_button: ttk.Button,
+        title: "_EntryField",
+        year: "_EntryField",
+        director: "_EntryField",
+        length: "_EntryField",
+        notes: "_EntryField",
+    ) -> Callable:
+        """This manages the enabled or disabled state of the commit button.
+
+        Args:
+            commit_button:
+            title:
+            year:
+            director:
+            length:
+            notes:
+
+        Returns:
+            A callable which will be invoked by tkinter whenever the title and year field
+            contents are changed by the user,
+        """
+
+        # noinspection PyUnusedLocal
+        def func(*args, **kwargs):
+            """Enable or disable the button depending on state.
+
+            Args:
+                *args: Sent by tkinter callback but not used.
+                **kwargs: Sent by tkinter callback but not used.
+            """
+            title_changed = title.textvariable.get() != title.original_value
+            year_changed = int(year.textvariable.get()) != year.original_value
+            director_changed = director.textvariable.get() != director.original_value
+            length_changed = int(length.textvariable.get()) != length.original_value
+            # todo fix notes
+            notes_changed = False
+            # notes_changed = notes.textvariable.get() != notes.original_value
+            # todo add movie tag treeview
+            state = any(
+                (
+                    title_changed,
+                    year_changed,
+                    director_changed,
+                    length_changed,
+                    notes_changed,
+                )
+            )
+            enable_button(commit_button, state)
+
+        return func
 
     def commit(self):
         """Commit an edited movie to the database."""

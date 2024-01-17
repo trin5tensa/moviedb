@@ -417,13 +417,13 @@ class TestAddMovieGUI:
                     default="normal",
                 )
 
+            check.equal(
+                cut.entry_fields[
+                    guiwidgets_2.MOVIE_FIELD_NAMES[0]
+                ].observer.register.call_count,
+                5,
+            )
             with check:
-                check.equal(
-                    cut.entry_fields[
-                        guiwidgets_2.MOVIE_FIELD_NAMES[0]
-                    ].observer.register.call_count,
-                    5,
-                )
                 cut.entry_fields[
                     guiwidgets_2.MOVIE_FIELD_NAMES[0]
                 ].observer.register.assert_has_calls(
@@ -439,10 +439,9 @@ class TestAddMovieGUI:
             "guiwidgets_2.enable_button", mock_enable_button := MagicMock()
         )
         with self.addmoviegui(monkeypatch) as cut:
-            title = cut.entry_fields[guiwidgets_2.MOVIE_FIELD_NAMES[0]]
-            year = cut.entry_fields[guiwidgets_2.MOVIE_FIELD_NAMES[1]]
+            mock_field = cut.entry_fields[guiwidgets_2.MOVIE_FIELD_NAMES[0]]
 
-            callback = cut.enable_commit_button(mock_button, title, year)
+            callback = cut.enable_commit_button(mock_button, mock_field, mock_field)
             callback()
             with check:
                 mock_enable_button.assert_called_once_with(mock_button, True)
@@ -569,6 +568,10 @@ class TestEditMovieGUI:
             monkeypatch.setattr(
                 "guiwidgets_2._create_button", mock_create_button := MagicMock()
             )
+            monkeypatch.setattr(
+                "guiwidgets_2.EditMovieGUI.enable_commit_button",
+                mock_enable_commit_button := MagicMock(),
+            )
             column_num = guiwidgets_2.itertools.count()
 
             cut._create_buttons(ttk_frame, column_num)
@@ -580,7 +583,7 @@ class TestEditMovieGUI:
                             guiwidgets_2.COMMIT_TEXT,
                             column=0,
                             command=cut.commit,
-                            default="active",
+                            default="disabled",
                         ),
                         call(
                             ttk_frame,
@@ -591,6 +594,41 @@ class TestEditMovieGUI:
                         ),
                     ]
                 )
+
+            check.equal(
+                cut.entry_fields[
+                    guiwidgets_2.MOVIE_FIELD_NAMES[0]
+                ].observer.register.call_count,
+                11,
+            )
+            with check:
+                cut.entry_fields[
+                    guiwidgets_2.MOVIE_FIELD_NAMES[0]
+                ].observer.register.assert_has_calls(
+                    [
+                        call(mock_enable_commit_button()),
+                        call(mock_enable_commit_button()),
+                        call(mock_enable_commit_button()),
+                        call(mock_enable_commit_button()),
+                        call(mock_enable_commit_button()),
+                    ]
+                )
+
+    # noinspection DuplicatedCode
+    def test_enable_commit_button(self, monkeypatch, movie_patches):
+        monkeypatch.setattr("guiwidgets_2.ttk.Button", mock_button := MagicMock())
+        monkeypatch.setattr(
+            "guiwidgets_2.enable_button", mock_enable_button := MagicMock()
+        )
+        with self.editmoviegui(monkeypatch) as cut:
+            mock_field = cut.entry_fields[guiwidgets_2.MOVIE_FIELD_NAMES[0]]
+
+            callback = cut.enable_commit_button(
+                mock_button, mock_field, mock_field, mock_field, mock_field, mock_field
+            )
+            callback()
+            with check:
+                mock_enable_button.assert_called_once_with(mock_button, True)
 
     # noinspection DuplicatedCode
     def test_commit(self, monkeypatch, movie_patches):
