@@ -388,7 +388,7 @@ class AddMovieGUI(MovieGUI):
                 **kwargs: Sent by tkinter callback but not used.
             """
             title_changed = title.textvariable.get() != title.original_value
-            year_changed = int(year.textvariable.get()) != year.original_value
+            year_changed = year.textvariable.get() != year.original_value
             state = title_changed and year_changed
             enable_button(commit_button, state)
 
@@ -492,10 +492,10 @@ class EditMovieGUI(MovieGUI):
         length: "_EntryField",
         notes: "_EntryField",
     ) -> Callable:
-        """This manages the enabled or disabled state of the commit button.
+        """This method manages the enabled or disabled state of the commit button.
 
         Args:
-            commit_button:
+            commit_button: The button
             title:
             year:
             director:
@@ -503,26 +503,39 @@ class EditMovieGUI(MovieGUI):
             notes:
 
         Returns:
-            A callable which will be invoked by tkinter whenever the title and year field
-            contents are changed by the user,
+            A callable which will be invoked by tkinter whenever registered fields
+            are changed by the user.,
         """
 
         # noinspection PyUnusedLocal
         def func(*args, **kwargs):
-            """Enable or disable the button depending on state.
+            """This function enables or disables the commit button depending on the
+            state of fields compared to their original values.
+
+            If the user clears a field textvariable.get() will return an empty string.
+            This poses a problem for the year and the duration fields. A blank year
+            will disable the Commit button. A blank duration will enable the Commit
+            button only if the original value is not blank. This is consistent with
+            that of AddMovieGUI.
 
             Args:
                 *args: Sent by tkinter callback but not used.
                 **kwargs: Sent by tkinter callback but not used.
             """
+            # todo Update tests of this function
             title_changed = title.textvariable.get() != title.original_value
-            year_changed = int(year.textvariable.get()) != year.original_value
             director_changed = director.textvariable.get() != director.original_value
-            length_changed = int(length.textvariable.get()) != length.original_value
+            length_changed = length.textvariable.get() != str(length.original_value)
+            if (tk_year := year.textvariable.get()) == "":
+                enable_button(commit_button, False)
+                return
+            else:
+                year_changed = int(tk_year) != year.original_value
+
             # todo fix notes
             notes_changed = False
-            # notes_changed = notes.textvariable.get() != notes.original_value
             # todo add movie tag treeview
+
             state = any(
                 (
                     title_changed,
@@ -1323,6 +1336,8 @@ class _EntryField:
     label_text: str
     original_value: str = ""
     widget: ttk.Entry = None
+    # tkinter offers StringVar, IntVar, and DoubleVar. Only StringVar is used here to enable
+    #   code generalization.
     # There is an uninvestigated problem with pytest's monkey patching of tk.StringVar if
     #   textvariable is initialized as:
     #   textvariable: tk.StringVar = field(default_factory=tk.StringVar, init=False, repr=False)
