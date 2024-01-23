@@ -70,7 +70,6 @@ class TestMovieGUI:
                 create_entry_fields.assert_called_once_with(
                     guiwidgets_2.MOVIE_FIELD_NAMES, guiwidgets_2.MOVIE_FIELD_TEXTS
                 )
-            check.equal(cut.title, guiwidgets_2.MOVIE_FIELD_NAMES[0])
             with check:
                 original_values.assert_called_once_with()
             cut.entry_fields.fromkeys(guiwidgets_2.MOVIE_FIELD_NAMES)
@@ -90,7 +89,7 @@ class TestMovieGUI:
                 )
             with check:
                 mock_focus_set.assert_called_once_with(
-                    cut.entry_fields[cut.title].widget
+                    cut.entry_fields[guiwidgets_2.TITLE].widget
                 )
 
             # Test create label and text widget.
@@ -162,9 +161,9 @@ class TestMovieGUI:
             with check:
                 mock_tmdb_consumer.assert_called_once_with()
             with check:
-                cut.entry_fields[cut.title].observer.register.assert_called_once_with(
-                    cut.tmdb_search
-                )
+                cut.entry_fields[
+                    guiwidgets_2.TITLE
+                ].observer.register.assert_called_once_with(cut.tmdb_search)
 
     def test_original_values(self, monkeypatch, create_entry_fields):
         with pytest.raises(NotImplementedError):
@@ -196,7 +195,9 @@ class TestMovieGUI:
     def test_tmdb_search(self, monkeypatch, movie_patches):
         with self.moviegui(monkeypatch) as cut:
             substring = "mock substring"
-            cut.entry_fields[cut.title].textvariable.get.return_value = substring
+            cut.entry_fields[
+                guiwidgets_2.TITLE
+            ].textvariable.get.return_value = substring
             cut.tmdb_search()
             with check:
                 assert cut.parent.after.mock_calls[1] == call(
@@ -286,8 +287,8 @@ class TestMovieGUI:
     def test_tmdb_treeview_callback(self, monkeypatch, movie_patches):
         dummy_item_id = "dummy_item_id"
         dummy_entry_fields = {
-            guiwidgets_2.MOVIE_FIELD_NAMES[-1]: (mock_notes := MagicMock()),
-            guiwidgets_2.MOVIE_FIELD_NAMES[0]: (mock_title := MagicMock()),
+            guiwidgets_2.NOTES: (mock_notes := MagicMock()),
+            guiwidgets_2.TITLE: (mock_title := MagicMock()),
         }
 
         with self.moviegui(monkeypatch) as cut:
@@ -466,7 +467,7 @@ class TestAddMovieGUI:
                 mock_showinfo.assert_not_called()
             with check:
                 cut.notes_widget.assert_has_calls(
-                    [call.get("1.0", "end"), call.delete("1.0", "end")]
+                    [call.get("1.0", "end-1c"), call.delete("1.0", "end")]
                 )
             with check:
                 cut.tags_treeview.clear_selection.assert_called_once_with()

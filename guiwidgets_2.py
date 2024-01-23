@@ -38,7 +38,10 @@ import config
 import exception
 import neurons
 
-MOVIE_FIELD_NAMES = ("title", "year", "director", "minutes", "notes")
+TITLE = "title"
+NOTES = "notes"
+YEAR = "year"
+MOVIE_FIELD_NAMES = (TITLE, YEAR, "director", "minutes", NOTES)
 MOVIE_FIELD_TEXTS = ("Title", "Year", "Director", "Length (minutes)", "Notes")
 TAG_FIELD_NAMES = ("tag",)
 TAG_FIELD_TEXTS = ("Tag",)
@@ -74,10 +77,6 @@ class MovieGUI:
     entry_fields: Dict[str, "_EntryField"] = field(
         default_factory=dict, init=False, repr=False
     )
-    title: str = field(default=None, init=False, repr=False)
-
-    # Notes field
-    notes_widget: tk.Text = field(default=None, init=False, repr=False)
 
     # Treeviews for tags and TMDB
     tags_treeview: "_MovieTagTreeview" = field(default=None, init=False, repr=False)
@@ -98,11 +97,11 @@ class MovieGUI:
 
     # Local variables exposed for testing
     return_fields: dict = field(default=None, init=False, repr=False)
+    notes_widget: tk.Text = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = _create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
-        self.title = MOVIE_FIELD_NAMES[0]
         self.original_values()
 
         # Create frames to hold fields and buttons.
@@ -114,12 +113,10 @@ class MovieGUI:
         # Create labels and entry widgets.
         for movie_field_name in MOVIE_FIELD_NAMES[:-1]:
             input_zone.add_entry_row(self.entry_fields[movie_field_name])
-        _focus_set(self.entry_fields[self.title].widget)
+        _focus_set(self.entry_fields[TITLE].widget)
 
         # Create label and text widget.
-        self.notes_widget = input_zone.add_text_row(
-            self.entry_fields[MOVIE_FIELD_NAMES[-1]]
-        )
+        self.notes_widget = input_zone.add_text_row(self.entry_fields[NOTES])
 
         # Create a label and treeview for movie tags.
         self.tags_treeview = input_zone.add_treeview_row(
@@ -159,7 +156,7 @@ class MovieGUI:
 
         # TMDB
         self.tmdb_consumer()
-        self.entry_fields[self.title].observer.register(self.tmdb_search)
+        self.entry_fields[TITLE].observer.register(self.tmdb_search)
 
     def original_values(self):
         """Initialize the original field values."""
@@ -193,7 +190,7 @@ class MovieGUI:
             *args: Unused argument supplied by tkinter.
             **kwargs: Unused argument supplied by tkinter.
         """
-        substring = self.entry_fields[self.title].textvariable.get()
+        substring = self.entry_fields[TITLE].textvariable.get()
         if substring:  # pragma no branch
             if self.last_text_event_id:
                 self.parent.after_cancel(self.last_text_event_id)
@@ -260,7 +257,7 @@ class MovieGUI:
             return
 
         for k, v in self.tmdb_movies[item_id].items():
-            if k == MOVIE_FIELD_NAMES[-1]:
+            if k == NOTES:
                 self.notes_widget.delete("1.0", "end")
                 self.notes_widget.insert("1.0", v, ("font_tag",))
 
@@ -350,8 +347,8 @@ class AddMovieGUI(MovieGUI):
 
         # Register callbacks with the field observers.
         # The commit button is only enabled if title and year fields contain text.
-        title_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[0]]
-        year_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[1]]
+        title_entry_field = self.entry_fields[TITLE]
+        year_entry_field = self.entry_fields[YEAR]
         title_entry_field.observer.register(
             self.enable_commit_button(
                 commit_button, title_entry_field, year_entry_field
@@ -400,7 +397,7 @@ class AddMovieGUI(MovieGUI):
             internal_name: movie_field.textvariable.get()  # pragma no cover
             for internal_name, movie_field in self.entry_fields.items()
         }
-        self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get("1.0", "end")
+        self.return_fields[NOTES] = self.notes_widget.get("1.0", "end-1c")
 
         try:
             self.add_movie_callback(self.return_fields, self.selected_tags)
@@ -464,11 +461,11 @@ class EditMovieGUI(MovieGUI):
         )
 
         # Register the commit callback with its many observers.
-        title_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[0]]
-        year_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[1]]
+        title_entry_field = self.entry_fields[TITLE]
+        year_entry_field = self.entry_fields[YEAR]
         director_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[2]]
         length_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[3]]
-        notes_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[4]]
+        notes_entry_field = self.entry_fields[NOTES]
         args = (
             commit_button,
             title_entry_field,
@@ -555,7 +552,7 @@ class EditMovieGUI(MovieGUI):
             internal_name: movie_field.textvariable.get()  # pragma no cover
             for internal_name, movie_field in self.entry_fields.items()
         }
-        self.return_fields[MOVIE_FIELD_NAMES[-1]] = self.notes_widget.get("1.0", "end")
+        self.return_fields[NOTES] = self.notes_widget.get("1.0", "end-1c")
 
         try:
             # noinspection PyArgumentList
@@ -733,6 +730,7 @@ class SearchTagGUI:
         # Populate buttonbox with commit and cancel buttons
         self.create_buttons(buttonbox)
 
+    # noinspection DuplicatedCode
     def create_buttons(self, buttonbox: ttk.Frame):
         """
         Creates the commit and cancel buttons.
@@ -1282,6 +1280,7 @@ class _MovieTagTreeview:
         self.treeview.selection_set(list(new_selection))
 
 
+# noinspection DuplicatedCode
 @dataclass
 class Observer:
     """The classic observer pattern."""
@@ -1402,15 +1401,19 @@ class _InputZone:
         """
         row_ix = next(self.row)
         self._create_label(entry_field.label_text, row_ix)
-        widget = tk.Text(self.parent, width=45, height=8, wrap="word", padx=10, pady=10)
-        widget.grid(column=1, row=row_ix, sticky="e")
-        widget.tag_configure("font_tag", font="TkTextFont")
-        widget.insert("1.0", entry_field.original_value, ("font_tag",))
+        entry_field.widget = tk.Text(
+            self.parent, width=45, height=8, wrap="word", padx=10, pady=10
+        )
+        entry_field.widget.grid(column=1, row=row_ix, sticky="e")
+        entry_field.widget.tag_configure("font_tag", font="TkTextFont")
+        entry_field.widget.insert("1.0", entry_field.original_value, ("font_tag",))
 
-        scrollbar = ttk.Scrollbar(self.parent, orient="vertical", command=widget.yview)
-        widget.configure(yscrollcommand=scrollbar.set)
+        scrollbar = ttk.Scrollbar(
+            self.parent, orient="vertical", command=entry_field.widget.yview
+        )
+        entry_field.widget.configure(yscrollcommand=scrollbar.set)
         scrollbar.grid(column=2, row=row_ix, sticky="ns")
-        return widget
+        return entry_field.widget
 
     def add_checkbox_row(self, entry_field: _EntryField):
         """
