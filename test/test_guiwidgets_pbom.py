@@ -63,6 +63,9 @@ class TestMovieGUI:
         monkeypatch.setattr(
             "guiwidgets_2.MovieGUI.tmdb_consumer", mock_tmdb_consumer := MagicMock()
         )
+        monkeypatch.setattr(
+            "guiwidgets_2.MovieGUI.tmdb_treeview_callback", lambda *args, **kwargs: None
+        )
 
         with self.moviegui(monkeypatch) as cut:
             # Test initialize an internal dictionary.
@@ -294,15 +297,18 @@ class TestMovieGUI:
         with self.moviegui(monkeypatch) as cut:
             monkeypatch.setattr(cut, "tmdb_treeview", mock_tmdb_treeview := MagicMock())
             mock_tmdb_treeview.selection.return_value = [dummy_item_id]
-            monkeypatch.setattr(cut, "notes_widget", mock_notes_widget := MagicMock())
             cut.entry_fields = dummy_entry_fields
             cut.tmdb_movies = {dummy_item_id: dummy_entry_fields}
 
             cut.tmdb_treeview_callback()
             with check:
-                mock_notes_widget.delete.assert_called_once_with("1.0", "end")
+                dummy_entry_fields[
+                    guiwidgets_2.NOTES
+                ].widget.delete.assert_called_once_with("1.0", "end")
             with check:
-                mock_notes_widget.insert.assert_called_once_with(
+                dummy_entry_fields[
+                    guiwidgets_2.NOTES
+                ].widget.insert.assert_called_once_with(
                     "1.0", mock_notes, ("font_tag",)
                 )
             textvariable_set = cut.entry_fields[
@@ -353,7 +359,7 @@ class TestMovieGUI:
     @contextmanager
     def moviegui(self, monkeypatch):
         # noinspection PyTypeChecker
-        yield guiwidgets_2.MovieGUI(
+        cut = guiwidgets_2.MovieGUI(
             patch_config(monkeypatch).current.tk_root,
             tmdb_search_callback=MagicMock(),
             all_tags=[
@@ -362,6 +368,7 @@ class TestMovieGUI:
                 "test tag 3",
             ],
         )
+        yield cut
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -453,7 +460,9 @@ class TestAddMovieGUI:
             "guiwidgets_2.messagebox.showinfo", mock_showinfo := MagicMock()
         )
         with self.addmoviegui(monkeypatch) as cut:
-            monkeypatch.setattr(cut, "notes_widget", MagicMock())
+            monkeypatch.setattr(
+                cut.entry_fields[guiwidgets_2.NOTES], "widget", MagicMock()
+            )
             monkeypatch.setattr(cut, "tags_treeview", MagicMock())
             monkeypatch.setattr(cut, "tmdb_treeview", MagicMock())
 
@@ -466,7 +475,7 @@ class TestAddMovieGUI:
             with check:
                 mock_showinfo.assert_not_called()
             with check:
-                cut.notes_widget.assert_has_calls(
+                cut.entry_fields[guiwidgets_2.NOTES].widget.assert_has_calls(
                     [call.get("1.0", "end-1c"), call.delete("1.0", "end")]
                 )
             with check:

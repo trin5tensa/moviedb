@@ -97,7 +97,6 @@ class MovieGUI:
 
     # Local variables exposed for testing
     return_fields: dict = field(default=None, init=False, repr=False)
-    notes_widget: tk.Text = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
         # Initialize an internal dictionary to simplify field data management.
@@ -116,7 +115,7 @@ class MovieGUI:
         _focus_set(self.entry_fields[TITLE].widget)
 
         # Create label and text widget.
-        self.notes_widget = input_zone.add_text_row(self.entry_fields[NOTES])
+        input_zone.add_text_row(self.entry_fields[NOTES])
 
         # Create a label and treeview for movie tags.
         self.tags_treeview = input_zone.add_treeview_row(
@@ -258,8 +257,8 @@ class MovieGUI:
 
         for k, v in self.tmdb_movies[item_id].items():
             if k == NOTES:
-                self.notes_widget.delete("1.0", "end")
-                self.notes_widget.insert("1.0", v, ("font_tag",))
+                self.entry_fields[NOTES].widget.delete("1.0", "end")
+                self.entry_fields[NOTES].widget.insert("1.0", v, ("font_tag",))
 
             # Update tkinter entry widgets.
             else:
@@ -397,7 +396,7 @@ class AddMovieGUI(MovieGUI):
             internal_name: movie_field.textvariable.get()  # pragma no cover
             for internal_name, movie_field in self.entry_fields.items()
         }
-        self.return_fields[NOTES] = self.notes_widget.get("1.0", "end-1c")
+        self.return_fields[NOTES] = self.entry_fields[NOTES].widget.get("1.0", "end-1c")
 
         try:
             self.add_movie_callback(self.return_fields, self.selected_tags)
@@ -415,7 +414,7 @@ class AddMovieGUI(MovieGUI):
         # Clear fields ready for next entry.
         else:
             _clear_input_form_fields(self.entry_fields)
-            self.notes_widget.delete("1.0", "end")
+            self.entry_fields[NOTES].widget.delete("1.0", "end")
             self.tags_treeview.clear_selection()
             items = self.tmdb_treeview.get_children()
             self.tmdb_treeview.delete(*items)
@@ -552,7 +551,7 @@ class EditMovieGUI(MovieGUI):
             internal_name: movie_field.textvariable.get()  # pragma no cover
             for internal_name, movie_field in self.entry_fields.items()
         }
-        self.return_fields[NOTES] = self.notes_widget.get("1.0", "end-1c")
+        self.return_fields[NOTES] = self.entry_fields[NOTES].widget.get("1.0", "end-1c")
 
         try:
             # noinspection PyArgumentList
@@ -1334,7 +1333,7 @@ class _EntryField:
 
     label_text: str
     original_value: str = ""
-    widget: ttk.Entry = None
+    widget: ttk.Entry | ttk.Checkbutton | tk.Text = None
     # tkinter offers StringVar, IntVar, and DoubleVar. Only StringVar is used here to enable
     #   code generalization.
     # There is an uninvestigated problem with pytest's monkey patching of tk.StringVar if
@@ -1389,7 +1388,7 @@ class _InputZone:
         entry_field.widget.grid(column=1, row=row_ix)
         entry_field.textvariable.set(entry_field.original_value)
 
-    def add_text_row(self, entry_field: _EntryField) -> tk.Text:
+    def add_text_row(self, entry_field: _EntryField):
         """
         Add label and text widgets as the bottom row.
 
@@ -1413,7 +1412,6 @@ class _InputZone:
         )
         entry_field.widget.configure(yscrollcommand=scrollbar.set)
         scrollbar.grid(column=2, row=row_ix, sticky="ns")
-        return entry_field.widget
 
     def add_checkbox_row(self, entry_field: _EntryField):
         """
