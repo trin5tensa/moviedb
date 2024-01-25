@@ -1398,20 +1398,38 @@ class _InputZone:
         Returns:
             text widget
         """
+        # todo test the whole of this method
         row_ix = next(self.row)
         self._create_label(entry_field.label_text, row_ix)
         entry_field.widget = tk.Text(
-            self.parent, width=45, height=8, wrap="word", padx=10, pady=10
+            self.parent,
+            width=self.col_1_width - 2,
+            height=8,
+            wrap="word",
+            font="TkTextFont",
+            padx=15,
+            pady=10,
         )
         entry_field.widget.grid(column=1, row=row_ix, sticky="e")
-        entry_field.widget.tag_configure("font_tag", font="TkTextFont")
-        entry_field.widget.insert("1.0", entry_field.original_value, ("font_tag",))
+        entry_field.widget.bind("<<Modified>>", self.text_modified(entry_field.widget))
+        entry_field.widget.insert("1.0", entry_field.original_value)
 
         scrollbar = ttk.Scrollbar(
             self.parent, orient="vertical", command=entry_field.widget.yview
         )
         entry_field.widget.configure(yscrollcommand=scrollbar.set)
         scrollbar.grid(column=2, row=row_ix, sticky="ns")
+
+    def text_modified(self, widget: tk.Text) -> Callable:
+        # todo document this method
+        # todo test the whole of this method
+        def func(*args, **kwargs):
+            # todo document this function
+            # Tk/Tcl will not generate the next <<Modified>> virtual event if this flag is left
+            #   set.
+            widget.edit_modified(False)
+
+        return func
 
     def add_checkbox_row(self, entry_field: _EntryField):
         """
