@@ -520,16 +520,14 @@ class EditMovieGUI(MovieGUI):
             """
             # todo Update tests of this function
             title_changed = title.textvariable.get() != title.original_value
-            director_changed = director.textvariable.get() != director.original_value
-            length_changed = length.textvariable.get() != str(length.original_value)
             if (tk_year := year.textvariable.get()) == "":
                 enable_button(commit_button, False)
                 return
             else:
                 year_changed = int(tk_year) != year.original_value
-
-            # todo fix notes
-            notes_changed = False
+            director_changed = director.textvariable.get() != director.original_value
+            length_changed = length.textvariable.get() != str(length.original_value)
+            notes_changed = notes.widget.get("1.0", "end-1c") != notes.original_value
             # todo add movie tag treeview
 
             state = any(
@@ -1411,7 +1409,7 @@ class _InputZone:
             pady=10,
         )
         entry_field.widget.grid(column=1, row=row_ix, sticky="e")
-        entry_field.widget.bind("<<Modified>>", self.text_modified(entry_field.widget))
+        entry_field.widget.bind("<<Modified>>", self.text_modified(entry_field))
         entry_field.widget.insert("1.0", entry_field.original_value)
 
         scrollbar = ttk.Scrollbar(
@@ -1420,14 +1418,32 @@ class _InputZone:
         entry_field.widget.configure(yscrollcommand=scrollbar.set)
         scrollbar.grid(column=2, row=row_ix, sticky="ns")
 
-    def text_modified(self, widget: tk.Text) -> Callable:
-        # todo document this method
+    @staticmethod
+    def text_modified(entry_field: _EntryField) -> Callable:
+        """
+        test_modified sets up a callback closure which notifies the notes observer whenever
+        the contents of the notes field change.
+        Args:
+            entry_field:
+
+        Returns:
+
+        """
+
         # todo test the whole of this method
         def func(*args, **kwargs):
-            # todo document this function
+            """
+            This closure notifies the notes observer whenever the contents of the notes field
+            change.
+
+            Args:
+                *args: Not used but needed for compatibility with Tk?Tcl caller
+                **kwargs: Not used but needed for compatibility with Tk?Tcl caller
+            """
             # Tk/Tcl will not generate the next <<Modified>> virtual event if this flag is left
             #   set.
-            widget.edit_modified(False)
+            entry_field.widget.edit_modified(False)
+            entry_field.observer.notify()
 
         return func
 
