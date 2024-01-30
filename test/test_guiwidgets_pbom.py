@@ -304,13 +304,7 @@ class TestMovieGUI:
             with check:
                 dummy_entry_fields[
                     guiwidgets_2.NOTES
-                ].widget.delete.assert_called_once_with("1.0", "end")
-            with check:
-                dummy_entry_fields[
-                    guiwidgets_2.NOTES
-                ].widget.insert.assert_called_once_with(
-                    "1.0", mock_notes, ("font_tag",)
-                )
+                ].widget.replace.assert_called_once_with("1.0", "end", mock_notes)
             textvariable_set = cut.entry_fields[
                 guiwidgets_2.MOVIE_FIELD_NAMES[0]
             ].textvariable.set
@@ -374,6 +368,7 @@ class TestMovieGUI:
 # noinspection PyMissingOrEmptyDocstring
 class TestAddMovieGUI:
     def test_original_values(self, monkeypatch, movie_patches, ttk_stringvar):
+        original_value = "original_value"
         with self.addmoviegui(monkeypatch) as cut:
             entry = "tags"
             cut.entry_fields = dict(
@@ -381,7 +376,7 @@ class TestAddMovieGUI:
                     (
                         entry,
                         guiwidgets_2._EntryField(
-                            "dummy label", original_value="garbage"
+                            "dummy label", original_value=original_value
                         ),
                     ),
                 ]
@@ -390,7 +385,7 @@ class TestAddMovieGUI:
             # PyCharm false negative PyTestUnpassedFixture introduced in 2023.3
             # noinspection PyTestUnpassedFixture
             cut.original_values()
-            check.equal(cut.entry_fields[entry].original_value, "")
+            check.equal(cut.entry_fields[entry].original_value, original_value)
 
     def test_set_initial_tag_selection(self, monkeypatch, movie_patches):
         with self.addmoviegui(monkeypatch) as cut:

@@ -420,7 +420,7 @@ def test_clear_input_form_fields_calls_textvariable_set():
         "label", "original value", textvariable=textvariable
     )
     entry_fields = dict(test_entry=entry_field)
-    guiwidgets_2._clear_input_form_fields(entry_fields)
+    guiwidgets_2.clear_textvariables(entry_fields)
     # noinspection PyUnresolvedReferences
     assert entry_fields["test_entry"].textvariable.set_calls == [
         ("original value",),

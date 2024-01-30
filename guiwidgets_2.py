@@ -39,9 +39,11 @@ import exception
 import neurons
 
 TITLE = "title"
-NOTES = "notes"
 YEAR = "year"
-MOVIE_FIELD_NAMES = (TITLE, YEAR, "director", "minutes", NOTES)
+DIRECTOR = "director"
+DURATION = "minutes"
+NOTES = "notes"
+MOVIE_FIELD_NAMES = (TITLE, YEAR, DIRECTOR, DURATION, NOTES)
 MOVIE_FIELD_TEXTS = ("Title", "Year", "Director", "Length (minutes)", "Notes")
 TAG_FIELD_NAMES = ("tag",)
 TAG_FIELD_TEXTS = ("Tag",)
@@ -109,8 +111,8 @@ class MovieGUI:
         )
         input_zone = _InputZone(body_frame)
 
-        # Create labels and entry widgets.
-        for movie_field_name in MOVIE_FIELD_NAMES[:-1]:
+        # Create entry rows for title, year, director, and duration.
+        for movie_field_name in MOVIE_FIELD_NAMES[0:4]:
             input_zone.add_entry_row(self.entry_fields[movie_field_name])
         _focus_set(self.entry_fields[TITLE].widget)
 
@@ -168,8 +170,8 @@ class MovieGUI:
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         """Create buttons within the buttonbox.
 
-        Subclasses may call _create_button to place a button in the buttonbox from left
-        to right. The Iterator is defined and used in __post_init__.
+        Subclasses may call _create_button to place a button in the buttonbox at
+        next(column_num).
 
         Args:
             buttonbox:
@@ -257,12 +259,15 @@ class MovieGUI:
 
         for k, v in self.tmdb_movies[item_id].items():
             if k == NOTES:
-                self.entry_fields[NOTES].widget.delete("1.0", "end")
-                self.entry_fields[NOTES].widget.insert("1.0", v, ("font_tag",))
+                self.entry_fields[NOTES].widget.replace("1.0", "end", v)
 
             # Update tkinter entry widgets.
-            else:
+            elif k in (TITLE, YEAR, DIRECTOR, DURATION):
                 self.entry_fields[k].textvariable.set(v)
+
+            else:
+                # todo test this branch
+                raise InvalidBranch(f"Unrecognized key in tmdb_movies {k=}.")
 
     # noinspection PyUnusedLocal
     def destroy(self, *args):
@@ -327,9 +332,8 @@ class AddMovieGUI(MovieGUI):
     )
 
     def original_values(self):
-        """Initialize the original field values."""
-        for k in self.entry_fields.keys():
-            self.entry_fields[k].original_value = ""
+        """Accept the default values."""
+        pass
 
     def set_initial_tag_selection(self):
         """No prior tags."""
@@ -393,8 +397,9 @@ class AddMovieGUI(MovieGUI):
     def commit(self):
         """Commit a new movie to the database."""
         self.return_fields = {
-            internal_name: movie_field.textvariable.get()  # pragma no cover
-            for internal_name, movie_field in self.entry_fields.items()
+            name: entry_field.textvariable.get()  # pragma no cover
+            for name, entry_field in self.entry_fields.items()
+            if name in (TITLE, YEAR, DIRECTOR, DURATION)
         }
         self.return_fields[NOTES] = self.entry_fields[NOTES].widget.get("1.0", "end-1c")
 
@@ -413,7 +418,7 @@ class AddMovieGUI(MovieGUI):
 
         # Clear fields ready for next entry.
         else:
-            _clear_input_form_fields(self.entry_fields)
+            clear_textvariables(self.entry_fields)
             self.entry_fields[NOTES].widget.delete("1.0", "end")
             self.tags_treeview.clear_selection()
             items = self.tmdb_treeview.get_children()
@@ -434,6 +439,7 @@ class EditMovieGUI(MovieGUI):
 
     def original_values(self):
         """Initialize the original field values."""
+        # todo fix unsafe entry_fields usage
         for k in self.entry_fields.keys():
             # noinspection PyTypedDict
             self.entry_fields[k].original_value = self.old_movie[k]
@@ -462,7 +468,9 @@ class EditMovieGUI(MovieGUI):
         # Register the commit callback with its many observers.
         title_entry_field = self.entry_fields[TITLE]
         year_entry_field = self.entry_fields[YEAR]
+        # todo fix unsafe entry_fields usage
         director_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[2]]
+        # todo fix unsafe entry_fields usage
         length_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[3]]
         notes_entry_field = self.entry_fields[NOTES]
         args = (
@@ -547,8 +555,10 @@ class EditMovieGUI(MovieGUI):
         """Commit an edited movie to the database."""
         self.return_fields = {
             internal_name: movie_field.textvariable.get()  # pragma no cover
+            # todo fix unsafe entry_fields usage
             for internal_name, movie_field in self.entry_fields.items()
         }
+        # todo fix unsafe entry_fields usage
         self.return_fields[NOTES] = self.entry_fields[NOTES].widget.get("1.0", "end-1c")
 
         try:
@@ -574,7 +584,9 @@ class EditMovieGUI(MovieGUI):
             message=MOVIE_DELETE_MESSAGE, icon="question", parent=self.parent
         ):
             movie = config.FindMovieTypedDict(
+                # todo fix unsafe entry_fields usage
                 title=self.entry_fields["title"].original_value,
+                # todo fix unsafe entry_fields usage
                 year=[self.entry_fields["year"].original_value],
             )
             self.delete_movie_callback(movie)
@@ -1427,7 +1439,7 @@ class _InputZone:
             entry_field:
 
         Returns:
-
+            The closure.
         """
 
         # todo test the whole of this method
@@ -1493,6 +1505,10 @@ class _InputZone:
 
         label = ttk.Label(self.parent, text=text)
         label.grid(column=0, row=row_ix, sticky="ne", padx=5)
+
+
+class InvalidBranch(Exception):
+    """The program took an invalid logic branch."""
 
 
 def _create_entry_fields(
@@ -1597,7 +1613,7 @@ def _create_input_form_framing(
     return outer_frame, body_frame, buttonbox
 
 
-def _clear_input_form_fields(entry_fields: Mapping[str, "_EntryField"]):
+def clear_textvariables(entry_fields: Mapping[str, "_EntryField"]):
     """Clear entry fields ready for fresh user input.
 
     Args:
