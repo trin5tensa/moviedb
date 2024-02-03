@@ -3,8 +3,8 @@
 This module includes windows for presenting data and returning entered data to its callers.
 """
 
-#  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 12/16/23, 7:04 AM by stephen.
+#  Copyright (c) 2022-2024. Stephen Rigden.
+#  Last modified 2/2/24, 1:37 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,9 +18,8 @@ This module includes windows for presenting data and returning entered data to i
 import itertools
 import queue
 import tkinter as tk
-import tkinter.ttk as ttk
+from tkinter import ttk, filedialog, messagebox
 from dataclasses import dataclass, field
-from tkinter import filedialog, messagebox
 from typing import (
     Callable,
     Dict,
@@ -32,19 +31,28 @@ from typing import (
     TypeVar,
     Literal,
     Optional,
+    Union,
 )
 
 import config
 import exception
 import neurons
+import guivisitor
+
+# todo Turn on duplicate inspection
 
 TITLE = "title"
+TITLE_TEXT = "Title"
 YEAR = "year"
+YEAR_TEXT = "Year"
 DIRECTOR = "director"
+DIRECTOR_TEXT = "Director"
 DURATION = "minutes"
+DURATION_TEXT = "Length (minutes)"
 NOTES = "notes"
+NOTES_TEXT = "Notes"
 MOVIE_FIELD_NAMES = (TITLE, YEAR, DIRECTOR, DURATION, NOTES)
-MOVIE_FIELD_TEXTS = ("Title", "Year", "Director", "Length (minutes)", "Notes")
+MOVIE_FIELD_TEXTS = (TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, DURATION_TEXT, NOTES_TEXT)
 TAG_FIELD_NAMES = ("tag",)
 TAG_FIELD_TEXTS = ("Tag",)
 SELECT_TAGS_TEXT = "Tags"
@@ -76,7 +84,7 @@ class MovieGUI:
     # All widgets created by this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
     # A more convenient data structure for entry fields.
-    entry_fields: Dict[str, "_EntryField"] = field(
+    entry_fields: Dict[str, Union["_EntryField", guivisitor.InputWidgetBase]] = field(
         default_factory=dict, init=False, repr=False
     )
 
@@ -101,25 +109,41 @@ class MovieGUI:
     return_fields: dict = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
-        # Initialize an internal dictionary to simplify field data management.
-        self.entry_fields = _create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
-        self.original_values()
+        self.outer_frame, body_frame, buttonbox, tmdb_frame = self.framing(self.parent)
+        self.user_input_frame(body_frame)
+        self.fill_buttonbox(buttonbox)
+        self.tmdb_results_frame(tmdb_frame)
 
-        # Create frames to hold fields and buttons.
-        self.outer_frame, body_frame, buttonbox, internet_frame = self.framing(
-            self.parent
-        )
+    def user_input_frame(self, body_frame: tk.Frame):
+        """
+        This creates the widgets which will be used to enter data an display data
+        retrieved from the user's database.
+
+        Args:
+            body_frame:The frame into which the widgets will be placed.
+        """
+        # todo migrate to new guivisitor module
+        #   Note OLD _EntryField = NEW subclass of InputWidgetBase
+
         input_zone = _InputZone(body_frame)
 
         # Create entry rows for title, year, director, and duration.
-        for movie_field_name in MOVIE_FIELD_NAMES[0:4]:
-            input_zone.add_entry_row(self.entry_fields[movie_field_name])
+        for name, text in zip(
+            (TITLE, YEAR, DIRECTOR, DURATION),
+            (TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, DURATION_TEXT),
+        ):
+            self.entry_fields[name] = guivisitor.TextVariableWidget(text)
+            self.entry_fields[name].original_value = ""
+            input_zone.add_entry_row(self.entry_fields[name])
         _focus_set(self.entry_fields[TITLE].widget)
 
         # Create label and text widget.
+        self.entry_fields[NOTES] = guivisitor.GetTextWidget(NOTES_TEXT)
         input_zone.add_text_row(self.entry_fields[NOTES])
 
         # Create a label and treeview for movie tags.
+        # todo Suite 3) MOVIE TAGS
+        # Daybreak Write the new visitor class TBDWidget
         self.tags_treeview = input_zone.add_treeview_row(
             SELECT_TAGS_TEXT,
             items=self.all_tags,
@@ -127,9 +151,18 @@ class MovieGUI:
         )
         self.set_initial_tag_selection()
 
-        # Create a treeview for movies retrieved from tmdb.
+    def tmdb_results_frame(self, tmdb_frame: tk.Frame):
+        """
+        This creates a treeview which will display movies retrieved from TMDB. It also sets up
+        the queue for the producer and consumer pattern used to retrieve the on-line data from
+        TMDB.
+
+        Args:
+            tmdb_frame: The frame into which the widgets will be placed.
+        """
+
         self.tmdb_treeview = ttk.Treeview(
-            internet_frame,
+            tmdb_frame,
             columns=("title", "year", "director"),
             show=["headings"],
             height=20,
@@ -144,7 +177,21 @@ class MovieGUI:
         self.tmdb_treeview.grid(column=0, row=0, sticky="nsew")
         self.tmdb_treeview.bind("<<TreeviewSelect>>", func=self.tmdb_treeview_callback)
 
-        # Populate buttonbox with buttons.
+        # TMDB Producer and consumer queue
+        self.tmdb_consumer()
+        self.entry_fields[TITLE].observer.register(self.tmdb_search)
+
+    def fill_buttonbox(self, buttonbox: tk.Frame):
+        """
+        This adds one default Cancel button after any buttons added by subclasses. It calls
+        the abstract class method _create_button which must be overridden by subclasses.
+
+        Args:
+            buttonbox: The frame into which the widgets will be placed.
+
+        Returns:
+
+        """
         column_num = itertools.count()
         self._create_buttons(buttonbox, column_num)
         _create_button(
@@ -154,10 +201,6 @@ class MovieGUI:
             command=self.destroy,
             default="active",
         )
-
-        # TMDB
-        self.tmdb_consumer()
-        self.entry_fields[TITLE].observer.register(self.tmdb_search)
 
     def original_values(self):
         """Initialize the original field values."""
@@ -418,8 +461,8 @@ class AddMovieGUI(MovieGUI):
 
         # Clear fields ready for next entry.
         else:
-            clear_textvariables(self.entry_fields)
-            self.entry_fields[NOTES].widget.delete("1.0", "end")
+            for v in self.entry_fields.values():
+                v.clear()
             self.tags_treeview.clear_selection()
             items = self.tmdb_treeview.get_children()
             self.tmdb_treeview.delete(*items)
@@ -437,9 +480,14 @@ class EditMovieGUI(MovieGUI):
         default=None, kw_only=True
     )
 
+    def __post_init__(self):
+        super().__post_init__()
+        for k in self.entry_fields.keys():
+            # noinspection PyTypedDict
+            self.entry_fields[k].original_value = self.old_movie[k]
+
     def original_values(self):
         """Initialize the original field values."""
-        # todo fix unsafe entry_fields usage
         for k in self.entry_fields.keys():
             # noinspection PyTypedDict
             self.entry_fields[k].original_value = self.old_movie[k]
@@ -468,10 +516,8 @@ class EditMovieGUI(MovieGUI):
         # Register the commit callback with its many observers.
         title_entry_field = self.entry_fields[TITLE]
         year_entry_field = self.entry_fields[YEAR]
-        # todo fix unsafe entry_fields usage
-        director_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[2]]
-        # todo fix unsafe entry_fields usage
-        length_entry_field = self.entry_fields[MOVIE_FIELD_NAMES[3]]
+        director_entry_field = self.entry_fields[DIRECTOR]
+        length_entry_field = self.entry_fields[DURATION]
         notes_entry_field = self.entry_fields[NOTES]
         args = (
             commit_button,
@@ -555,10 +601,8 @@ class EditMovieGUI(MovieGUI):
         """Commit an edited movie to the database."""
         self.return_fields = {
             internal_name: movie_field.textvariable.get()  # pragma no cover
-            # todo fix unsafe entry_fields usage
             for internal_name, movie_field in self.entry_fields.items()
         }
-        # todo fix unsafe entry_fields usage
         self.return_fields[NOTES] = self.entry_fields[NOTES].widget.get("1.0", "end-1c")
 
         try:
@@ -584,10 +628,8 @@ class EditMovieGUI(MovieGUI):
             message=MOVIE_DELETE_MESSAGE, icon="question", parent=self.parent
         ):
             movie = config.FindMovieTypedDict(
-                # todo fix unsafe entry_fields usage
-                title=self.entry_fields["title"].original_value,
-                # todo fix unsafe entry_fields usage
-                year=[self.entry_fields["year"].original_value],
+                title=self.entry_fields[TITLE].original_value,
+                year=[self.entry_fields[YEAR].original_value],
             )
             self.delete_movie_callback(movie)
             self.destroy()
@@ -991,8 +1033,8 @@ class SelectTagGUI:
         )
 
     def selection_callback(self, tree: ttk.Treeview) -> Callable:
-        """Call the callback provided by the caller and destroy all Tk widgets associated with this
-        class.
+        """Call the callback provided by the caller and destroy all Tk widgets
+        associated with this class.
 
         Args:
             tree:
@@ -1021,7 +1063,8 @@ class SelectTagGUI:
 
 @dataclass
 class PreferencesGUI:
-    """Create and manage a Tk input form which allows the user to update program preferences."""
+    """Create and manage a Tk input form which allows the user to update
+    program preferences."""
 
     parent: tk.Tk
 
@@ -1192,9 +1235,9 @@ def gui_askopenfilename(
 class _MovieTagTreeview:
     """Create and manage a treeview and a descriptive label.
 
-    The user callback will be called whenever the user has changes the selection. The observer will
-    also be notified with a boolean message stating if the current selection differs from the original
-    selection.
+    The user callback will be called whenever the user has changes the
+    selection. The observer will also be notified with a boolean message
+    stating if the current selection differs from the original selection.
     """
 
     # The frame which contains the treeview.
@@ -1335,10 +1378,10 @@ class _EntryField:
 
     This is typically used for an input form with static data using
     _create_entry_fields and dynamic data using _set_original_value.
-    _create_entry_fields creates a dictionary of EntryField objects using lists of internal names and
-    label texts. These values are usually derived from static text.
-    _set_original_value adds the original value of fields if not blank. This dynamic data is usually
-    supplied by the external caller.
+    _create_entry_fields creates a dictionary of EntryField objects using lists of
+    internal names and label texts. These values are usually derived from static text.
+    _set_original_value adds the original value of fields if not blank. This dynamic
+    data is usually supplied by the external caller.
     """
 
     label_text: str
@@ -1360,10 +1403,12 @@ class _EntryField:
 
 @dataclass
 class _InputZone:
-    """Configure the parent frame with two columns to contain labels and widgets for user input.
+    """Configure the parent frame with two columns to contain labels and widgets for
+    user input.
 
-    Widgets are added by calling the various methods `add_<widget>_row`, for example, add_entry_row. Each call will
-    grid the row as the last row in the zone and will align the labels and the widget.
+    Widgets are added by calling the various methods `add_<widget>_row`, for example,
+    add_entry_row. Each call will grid the row as the last row in the zone and will
+    align the labels and the widget.
     """
 
     parent: ParentType
@@ -1396,7 +1441,6 @@ class _InputZone:
             self.parent, textvariable=entry_field.textvariable, width=self.col_1_width
         )
         entry_field.widget.grid(column=1, row=row_ix)
-        entry_field.textvariable.set(entry_field.original_value)
 
     def add_text_row(self, entry_field: _EntryField):
         """
@@ -1422,7 +1466,6 @@ class _InputZone:
         )
         entry_field.widget.grid(column=1, row=row_ix, sticky="e")
         entry_field.widget.bind("<<Modified>>", self.text_modified(entry_field))
-        entry_field.widget.insert("1.0", entry_field.original_value)
 
         scrollbar = ttk.Scrollbar(
             self.parent, orient="vertical", command=entry_field.widget.yview
@@ -1433,8 +1476,9 @@ class _InputZone:
     @staticmethod
     def text_modified(entry_field: _EntryField) -> Callable:
         """
-        test_modified sets up a callback closure which notifies the notes observer whenever
-        the contents of the notes field change.
+        test_modified sets up a callback closure which notifies the notes observer
+        whenever the contents of the notes field change.
+
         Args:
             entry_field:
 
@@ -1443,17 +1487,18 @@ class _InputZone:
         """
 
         # todo test the whole of this method
+        # noinspection PyUnusedLocal
         def func(*args, **kwargs):
             """
-            This closure notifies the notes observer whenever the contents of the notes field
-            change.
+            This closure notifies the notes observer whenever the contents of the notes
+            field change.
 
             Args:
                 *args: Not used but needed for compatibility with Tk?Tcl caller
                 **kwargs: Not used but needed for compatibility with Tk?Tcl caller
             """
-            # Tk/Tcl will not generate the next <<Modified>> virtual event if this flag is left
-            #   set.
+            # Tk/Tcl will not generate the next <<Modified>> virtual event if this
+            # flag is left set.
             entry_field.widget.edit_modified(False)
             entry_field.observer.notify()
 
@@ -1527,6 +1572,7 @@ def _create_entry_fields(
         key: The internal name of the field.
         value: An EntryField instance.
     """
+    # raise DeprecationWarning
     return {
         internal_name: _EntryField(
             label_text
@@ -1591,9 +1637,11 @@ def _create_input_form_framing(
 ) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
     """Create the outer frames for an input form.
 
-    An input body frame has two columns, one for the field labels and one for the entry fields.
+    An input body frame has two columns, one for the field labels and one for the
+    entry fields.
 
-    Note: For a plain form without columns call the lower level function create_body_and_button_frames.
+    Note: For a plain form without columns call the lower level function
+    create_body_and_button_frames.
 
     Args:
         parent: The Tk parent frame.
@@ -1658,10 +1706,11 @@ def _enable_button(button: ttk.Button) -> Callable:
         A callable which will set the enabled state of the button.
 
     Use case:
-        This callback is intended for use as the notifee of a neuron. For example, if an observed
-        field is changed from its original value the neuron is notified with a 'True' argument. If it
-        is changed back to its original value the neuron is notified with a 'False' argument. All
-        registered notifees will then be called with the argument given to the neuron.
+        This callback is intended for use as the notifee of a neuron. For example, if
+        an observed field is changed from its original value the neuron is notified
+        with a 'True' argument. If it is changed back to its original value the
+        neuron is notified with a 'False' argument. All registered notifees will
+        then be called with the argument given to the neuron.
     """
 
     # todo Is this function obsolete? If so, remove.

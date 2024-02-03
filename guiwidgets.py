@@ -28,6 +28,16 @@ import exception
 import neurons
 from guiwidgets_2 import (
     CANCEL_TEXT,
+    TITLE,
+    TITLE_TEXT,
+    YEAR,
+    YEAR_TEXT,
+    DIRECTOR,
+    DIRECTOR_TEXT,
+    DURATION,
+    DURATION_TEXT,
+    NOTES,
+    NOTES_TEXT,
     MOVIE_FIELD_NAMES,
     MOVIE_FIELD_TEXTS,
     SEARCH_TEXT,
@@ -83,7 +93,10 @@ class MovieGUIBase:
         """
 
         # Initialize an internal dictionary to simplify field data management.
-        self.entry_fields = _create_entry_fields(MOVIE_FIELD_NAMES, MOVIE_FIELD_TEXTS)
+        self.entry_fields = _create_entry_fields(
+            (TITLE, YEAR, DIRECTOR, DURATION, NOTES),
+            (TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, DURATION_TEXT, NOTES_TEXT),
+        )
 
         body_frame = ttk.Frame(outerframe, padding=(10, 25, 10, 0))
         body_frame.grid(column=0, row=0, sticky="n")
@@ -398,17 +411,27 @@ class SelectMovieGUI(MovieGUIBase):
 
         # Create and grid treeview
         self.treeview = ttk.Treeview(
-            body_frame, columns=MOVIE_FIELD_NAMES[1:], height=25, selectmode="browse"
+            body_frame,
+            columns=[YEAR, DIRECTOR, DURATION, NOTES],
+            height=25,
+            selectmode="browse",
         )
         self.treeview.grid(column=0, row=0, sticky="w")
 
         # Set up column widths and titles
         column_widths = (350, 50, 100, 50, 350)
-        for column_ix, internal_name in enumerate(MOVIE_FIELD_NAMES):
+        for column_ix, internal_name in enumerate(
+            (TITLE, YEAR, DIRECTOR, DURATION, NOTES)
+        ):
             if column_ix == 0:
                 internal_name = "#0"
             self.treeview.column(internal_name, width=column_widths[column_ix])
-            self.treeview.heading(internal_name, text=MOVIE_FIELD_TEXTS[column_ix])
+            self.treeview.heading(
+                internal_name,
+                text=(TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, DURATION_TEXT, NOTES_TEXT)[
+                    column_ix
+                ],
+            )
 
         # Populate rows with movies and build a lookup dictionary.
         for movie in self.movies:
