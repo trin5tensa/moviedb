@@ -116,7 +116,6 @@ class TestLabelFieldWidget:
             assert args == (1,)
             assert kwargs == dict(weight=1)
 
-    @pytest.mark.skip
     def test_add_entry_row_calls_create_label(self, dummy_entry_field, monkeypatch):
         create_label_calls = []
         monkeypatch.setattr(
@@ -139,7 +138,6 @@ class TestLabelFieldWidget:
                 width=36,
             )
 
-    @pytest.mark.skip
     def test_add_entry_row_grids_entry(self, dummy_entry_field):
         with self.labelfield_context() as labelfield:
             labelfield.add_entry_row(dummy_entry_field)
@@ -233,7 +231,7 @@ class TestLabelFieldWidget:
 
     @pytest.fixture()
     def dummy_entry_field(self):
-        return guiwidgets_2._EntryField(
+        return guiwidgets_2.TextVariableWidget(
             "dummy field", original_value="dummy field value"
         )
 
@@ -418,7 +416,7 @@ def test_gui_askopenfilename(monkeypatch):
 def test_clear_input_form_fields_calls_textvariable_set():
     textvariable = guiwidgets_2.tk.StringVar()
     # noinspection PyTypeChecker
-    entry_field = guiwidgets_2._EntryField(
+    entry_field = guiwidgets_2.TextVariableWidget(
         "label", "original value", textvariable=textvariable
     )
     entry_fields = dict(test_entry=entry_field)
@@ -435,7 +433,7 @@ def test_set_original_value(patch_tk):
     test_label_text = "test label text"
     test_original_value = "test original value"
 
-    entry_field = guiwidgets_2._EntryField(test_label_text)
+    entry_field = guiwidgets_2.TextVariableWidget(test_label_text)
     entry_fields = {entry: entry_field}
     original_values = {entry: test_original_value}
     guiwidgets_2._set_original_value(entry_fields, original_values)
@@ -525,7 +523,7 @@ def test_notify_neuron_wrapper(patch_tk, dummy_entry_fields):
 @pytest.fixture
 def dummy_entry_fields():
     # noinspection PyProtectedMember
-    return dict(tag=guiwidgets_2._EntryField("Tag", ""))
+    return dict(tag=guiwidgets_2.TextVariableWidget("Tag", ""))
 
 
 # noinspection PyMissingOrEmptyDocstring

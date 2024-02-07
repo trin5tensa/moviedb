@@ -36,7 +36,6 @@ TEST_VERSION = "Test version"
 
 
 # noinspection PyMissingOrEmptyDocstring
-@pytest.mark.skip
 class TestMovieGUI:
     def test_post_init(
         self,
@@ -72,30 +71,12 @@ class TestMovieGUI:
             # Test initialize an internal dictionary.
             with check:
                 create_entry_fields.assert_called_once_with(
-                    (
-                        guiwidgets_2.TITLE,
-                        guiwidgets_2.YEAR,
-                        guiwidgets_2.DIRECTOR,
-                        guiwidgets_2.DURATION,
-                        guiwidgets_2.NOTES,
-                    ),
-                    (
-                        guiwidgets_2.TITLE_TEXT,
-                        guiwidgets_2.YEAR_TEXT,
-                        guiwidgets_2.DIRECTOR_TEXT,
-                        guiwidgets_2.DURATION_TEXT,
-                        guiwidgets_2.NOTES_TEXT,
-                    ),
+                    guiwidgets_2.MOVIE_FIELD_NAMES,
+                    guiwidgets_2.MOVIE_FIELD_TEXTS,
                 )
             with check:
                 original_values.assert_called_once_with()
-            cut.entry_fields.fromkeys(
-                guiwidgets_2.TITLE,
-                guiwidgets_2.YEAR,
-                guiwidgets_2.DIRECTOR,
-                guiwidgets_2.DURATION,
-                guiwidgets_2.NOTES,
-            )
+            cut.entry_fields.fromkeys(guiwidgets_2.MOVIE_FIELD_NAMES)
 
             # Test create frames.
             with check:
@@ -325,7 +306,9 @@ class TestMovieGUI:
                 dummy_entry_fields[
                     guiwidgets_2.NOTES
                 ].widget.replace.assert_called_once_with("1.0", "end", mock_notes)
-            textvariable_set = cut.entry_fields[guiwidgets_2.TITLE].textvariable.set
+            textvariable_set = cut.entry_fields[
+                guiwidgets_2.MOVIE_FIELD_NAMES[0]
+            ].textvariable.set
             with check:
                 textvariable_set.assert_called_once_with(mock_title)
 
@@ -384,7 +367,6 @@ class TestMovieGUI:
 
 
 # noinspection PyMissingOrEmptyDocstring
-@pytest.mark.skip
 class TestAddMovieGUI:
     def test_original_values(self, monkeypatch, movie_patches, ttk_stringvar):
         original_value = "original_value"
@@ -394,7 +376,7 @@ class TestAddMovieGUI:
                 [
                     (
                         entry,
-                        guiwidgets_2._EntryField(
+                        guiwidgets_2.TextVariableWidget(
                             "dummy label", original_value=original_value
                         ),
                     ),
@@ -440,11 +422,15 @@ class TestAddMovieGUI:
                 )
 
             check.equal(
-                cut.entry_fields[guiwidgets_2.TITLE].observer.register.call_count,
+                cut.entry_fields[
+                    guiwidgets_2.MOVIE_FIELD_NAMES[0]
+                ].observer.register.call_count,
                 5,
             )
             with check:
-                cut.entry_fields[guiwidgets_2.TITLE].observer.register.assert_has_calls(
+                cut.entry_fields[
+                    guiwidgets_2.MOVIE_FIELD_NAMES[0]
+                ].observer.register.assert_has_calls(
                     [
                         call(mock_enable_commit_button()),
                         call(mock_enable_commit_button()),
@@ -457,7 +443,7 @@ class TestAddMovieGUI:
             "guiwidgets_2.enable_button", mock_enable_button := MagicMock()
         )
         with self.addmoviegui(monkeypatch) as cut:
-            mock_field = cut.entry_fields[guiwidgets_2.TITLE]
+            mock_field = cut.entry_fields[guiwidgets_2.MOVIE_FIELD_NAMES[0]]
 
             callback = cut.enable_commit_button(mock_button, mock_field, mock_field)
             callback()
@@ -550,7 +536,6 @@ class TestAddMovieGUI:
 
 
 # noinspection PyMissingOrEmptyDocstring
-@pytest.mark.skip
 class TestEditMovieGUI:
     def test_original_values(self, monkeypatch, movie_patches, ttk_stringvar):
         with self.editmoviegui(monkeypatch) as cut:
@@ -559,7 +544,7 @@ class TestEditMovieGUI:
                 [
                     (
                         entry,
-                        guiwidgets_2._EntryField(
+                        guiwidgets_2.TextVariableWidget(
                             "dummy label", original_value="garbage"
                         ),
                     ),
@@ -617,11 +602,15 @@ class TestEditMovieGUI:
                 )
 
             check.equal(
-                cut.entry_fields[guiwidgets_2.TITLE].observer.register.call_count,
+                cut.entry_fields[
+                    guiwidgets_2.MOVIE_FIELD_NAMES[0]
+                ].observer.register.call_count,
                 11,
             )
             with check:
-                cut.entry_fields[guiwidgets_2.TITLE].observer.register.assert_has_calls(
+                cut.entry_fields[
+                    guiwidgets_2.MOVIE_FIELD_NAMES[0]
+                ].observer.register.assert_has_calls(
                     [
                         call(mock_enable_commit_button()),
                         call(mock_enable_commit_button()),
@@ -638,7 +627,7 @@ class TestEditMovieGUI:
             "guiwidgets_2.enable_button", mock_enable_button := MagicMock()
         )
         with self.editmoviegui(monkeypatch) as cut:
-            mock_field = cut.entry_fields[guiwidgets_2.TITLE]
+            mock_field = cut.entry_fields[guiwidgets_2.MOVIE_FIELD_NAMES[0]]
 
             callback = cut.enable_commit_button(
                 mock_button, mock_field, mock_field, mock_field, mock_field, mock_field
@@ -824,7 +813,6 @@ class TestAddTagGUI:
                     cut.enable_commit_button(mock_button, tag_field)
                 )
 
-    @pytest.mark.skip
     def test_enable_save_button(self, monkeypatch, movie_patches):
         monkeypatch.setattr("guiwidgets_2.ttk.Button", mock_button := MagicMock())
         monkeypatch.setattr(
@@ -974,7 +962,6 @@ class TestEditTagGUI:
                 )
 
     # noinspection DuplicatedCode
-    @pytest.mark.skip
     def test_enable_save_button(self, monkeypatch, movie_patches):
         monkeypatch.setattr("guiwidgets_2.ttk.Button", mock_button := MagicMock())
         monkeypatch.setattr(
@@ -1011,7 +998,6 @@ class TestEditTagGUI:
                 mock_delete.assert_called_once_with()
 
     # noinspection DuplicatedCode
-    @pytest.mark.skip
     def test_delete(self, monkeypatch, create_entry_fields):
         monkeypatch.setattr(
             "guiwidgets_2.gui_askyesno", mock_gui_askyesno := MagicMock()
@@ -1153,7 +1139,6 @@ class TestSearchTagGUI:
                     cut.enable_search_button(mock_button, tag_field)
                 )
 
-    @pytest.mark.skip
     def test_enable_search_button(self, monkeypatch, movie_patches):
         monkeypatch.setattr("guiwidgets_2.ttk.Button", mock_button := MagicMock())
         monkeypatch.setattr(
@@ -1419,7 +1404,6 @@ class TestPreferencesGUI:
                     ]
                 )
 
-    @pytest.mark.skip
     def test_enable_save_button(self, monkeypatch, movie_patches):
         monkeypatch.setattr(guiwidgets_2.tk, "Toplevel", MagicMock())
         monkeypatch.setattr("guiwidgets_2._focus_set", MagicMock())
@@ -1547,7 +1531,7 @@ class TestCreateEntryFields:
     def test_create_entry_fields(self, monkeypatch):
         monkeypatch.setattr("guiwidgets_2.tk", mock_tk := MagicMock())
         mock_stringvar = mock_tk.StringVar()
-        entry_field = guiwidgets_2._EntryField("label text")
+        entry_field = guiwidgets_2.TextVariableWidget("label text")
 
         check.equal(entry_field.label_text, "label text")
         check.equal(entry_field.original_value, "")
