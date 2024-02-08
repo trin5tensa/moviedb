@@ -87,7 +87,13 @@ class MovieGUI:
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
     # A more convenient data structure for entry fields.
     entry_fields: Dict[
-        str, Union["_EntryField", patterns.TextVariableWidget, patterns.GetTextWidget]
+        str,
+        Union[
+            "_EntryField",
+            patterns.TextVariableWidget,
+            patterns.GetTextWidget,
+            patterns.SelectionWidget,
+        ],
     ] = field(default_factory=dict, init=False, repr=False)
 
     # Treeviews for tags and TMDB
@@ -146,7 +152,10 @@ class MovieGUI:
 
         # Create a label and treeview for movie tags.
         # todo Suite 3) MOVIE TAGS
-        # Daybreak Write the new patterns class TBDWidget
+        # Daybreak 1 Write the new patterns class TBDWidget
+        # widget = ttk.Treeview(body_frame)
+        # self.entry_fields[MOVIE_TAG] = patterns.SelectionWidget(MOVIE_TAG_TEXT, widget)
+
         self.tags_treeview = input_zone.add_treeview_row(
             SELECT_TAGS_TEXT,
             items=self.all_tags,

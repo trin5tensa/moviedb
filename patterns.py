@@ -18,6 +18,8 @@ from typing import Any
 import tkinter as tk
 from tkinter import ttk
 
+type TkSequence = (list[str] | tuple[str, ...])
+
 
 @dataclass
 class Observer:
@@ -75,8 +77,7 @@ class TkinterFacade:
 
     label_text: str
     widget: Any
-    _original_value: str = None
-    _current_value: str = None
+    _original_value: Any = None
     observer: Observer = field(default_factory=Observer, init=False, repr=False)
 
     @property
@@ -116,6 +117,7 @@ class TextVariableWidget(TkinterFacade):
     """
 
     widget: ttk.Entry | ttk.Checkbutton
+    _original_value: str = ""
     _textvariable: tk.StringVar = field(
         default_factory=tk.StringVar, init=False, repr=False
     )
@@ -124,7 +126,6 @@ class TextVariableWidget(TkinterFacade):
         self.widget.configure(textvariable=self._textvariable)
         self._textvariable.trace_add("write", self.observer.notify)
         self.original_value = ""
-        self.current_value = ""
 
     @property
     def original_value(self) -> str:
@@ -132,8 +133,7 @@ class TextVariableWidget(TkinterFacade):
 
     @original_value.setter
     def original_value(self, value: str):
-        self._original_value = str(value)
-        self.current_value = str(value)
+        self._original_value = self.current_value = str(value)
 
     @property
     def current_value(self) -> str:
@@ -144,6 +144,7 @@ class TextVariableWidget(TkinterFacade):
         self._textvariable.set(value)
 
     def clear_current_value(self):
+        """Clears the current value of the tkinter widget"""
         self.current_value = ""
 
 
@@ -155,10 +156,11 @@ class GetTextWidget(TkinterFacade):
     """
 
     widget: tk.Text
+    _original_value: str = ""
 
     def __post_init__(self):
+        self.widget.bind("<<Modified>>", self.modified())
         self.original_value = ""
-        self.widget.bind("<<Modified>>", self.changed_callback())
 
     @property
     def original_value(self) -> str:
@@ -167,8 +169,7 @@ class GetTextWidget(TkinterFacade):
     # noinspection PyMissingOrEmptyDocstring
     @original_value.setter
     def original_value(self, value: str):
-        self._original_value = str(value)
-        self.current_value = value
+        self._original_value = self.current_value = value
 
     @property
     def current_value(self) -> str:
@@ -179,12 +180,13 @@ class GetTextWidget(TkinterFacade):
         self.widget.replace("1.0", "end", value)
 
     def clear_current_value(self):
+        """Clears the current value of the tkinter widget"""
         self.current_value = ""
 
-    def changed_callback(self) -> Callable:
+    def modified(self) -> Callable:
         """
-        test_modified sets up a callback closure which notifies the notes observer
-        whenever the contents of the notes field change.
+        Sets up a callback closure which notifies the observer
+        whenever the current value changes.
         """
 
         # noinspection PyUnusedLocal
@@ -197,9 +199,44 @@ class GetTextWidget(TkinterFacade):
                 *args: Not used but needed for compatibility with Tk?Tcl caller
                 **kwargs: Not used but needed for compatibility with Tk?Tcl caller
             """
-            # Tk/Tcl will not generate subsequent <<Modified>> virtual events if edit_modified is
-            # not reset.
+            # Tk/Tcl will not generate subsequent <<Modified>> virtual events if
+            # the edit_modified flag is not reset.
             self.widget.edit_modified(False)
             self.observer.notify()
 
         return func
+
+
+@dataclass
+class SelectionWidget(TkinterFacade):
+    """
+    This is a visitor pattern subclass which handles the tkinter widgets which use tkinter's
+    replace and get methods for the field contents.
+    """
+
+    widget: ttk.Treeview
+    _original_value: TkSequence = field(default_factory=list, init=False, repr=False)
+
+    def __post_init__(self):
+        self.widget.bind("<<Modified>>", lambda *args, **kwargs: self.observer.notify())
+        self.original_value = []
+
+    @property
+    def original_value(self) -> TkSequence:
+        return self._original_value
+
+    # noinspection PyMissingOrEmptyDocstring
+    @original_value.setter
+    def original_value(self, value: TkSequence):
+        self._original_value = self.current_value = value
+
+    @property
+    def current_value(self) -> TkSequence:
+        return self.widget.selection()
+
+    @current_value.setter
+    def current_value(self, values: TkSequence):
+        self.widget.selection_set(values)
+
+    def clear_current_value(self):
+        self.current_value = []
