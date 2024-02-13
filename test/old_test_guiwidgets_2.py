@@ -50,13 +50,11 @@ class TestSelectMovieGUI:
         )
     ]
 
-    @pytest.mark.skip
     def test_selected_movie_becomes_argument_for_callback(self):
         with self.select_movie() as cm:
             args, kwargs = cm.treeview.bind_calls[0]
             treeview_callback = kwargs["func"]
-            # # Method has been removed
-            # cm.treeview.selection_set("I001")
+            cm.treeview.selection_set("I001")
             treeview_callback()
 
             expected = {
@@ -118,11 +116,10 @@ class TestLabelFieldWidget:
             assert args == (1,)
             assert kwargs == dict(weight=1)
 
-    @pytest.mark.skip
     def test_add_entry_row_calls_create_label(self, dummy_entry_field, monkeypatch):
         create_label_calls = []
         monkeypatch.setattr(
-            guiwidgets_2.InputZone,
+            guiwidgets_2._InputZone,
             "_create_label",
             lambda *args: create_label_calls.append(args),
         )
@@ -141,7 +138,6 @@ class TestLabelFieldWidget:
                 width=36,
             )
 
-    @pytest.mark.skip
     def test_add_entry_row_grids_entry(self, dummy_entry_field):
         with self.labelfield_context() as labelfield:
             labelfield.add_entry_row(dummy_entry_field)
@@ -156,7 +152,7 @@ class TestLabelFieldWidget:
                 parent=TtkFrame(parent=DummyTk()),
                 text=dummy_entry_field.label_text,
                 variable=dummy_entry_field.textvariable,
-                width=guiwidgets_2.InputZone.col_1_width,
+                width=guiwidgets_2._InputZone.col_1_width,
             )
 
     def test_add_entry_row_grids_checkbutton(self, dummy_entry_field):
@@ -165,13 +161,12 @@ class TestLabelFieldWidget:
             # noinspection PyUnresolvedReferences
             assert dummy_entry_field.widget.grid_calls == [dict(column=1, row=0)]
 
-    @pytest.mark.skip
     def test_add_treeview_row_calls_create_label(self, monkeypatch):
         items = ["tag 1", "tag 2"]
         with self.labelfield_context() as labelfield:
             calls = []
             monkeypatch.setattr(
-                guiwidgets_2.InputZone,
+                guiwidgets_2._InputZone,
                 "_create_label",
                 lambda *args: calls.append(args),
             )
@@ -181,7 +176,6 @@ class TestLabelFieldWidget:
             assert calls == [(labelfield, guiwidgets_2.SELECT_TAGS_TEXT, 0)]
 
     # noinspection PyPep8Naming
-    @pytest.mark.skip
     def test_add_treeview_row_creates_MovieTagTreeview_object(self, monkeypatch):
         items = ["tag 1", "tag 2"]
 
@@ -199,7 +193,6 @@ class TestLabelFieldWidget:
             assert calls == [(labelfield.parent, 0, items, dummy_callback)]
 
     # noinspection PyPep8Naming
-    @pytest.mark.skip
     def test_add_treeview_row_returns_MovieTagTreeview_object(self, monkeypatch):
         items = ["tag 1", "tag 2"]
         with self.labelfield_context() as labelfield:
@@ -234,17 +227,16 @@ class TestLabelFieldWidget:
     def labelfield_context(self):
         parent_frame = TtkFrame(DummyTk())
         # noinspection PyTypeChecker
-        yield guiwidgets_2.InputZone(parent_frame)
+        yield guiwidgets_2._InputZone(parent_frame)
 
     @pytest.fixture()
     def dummy_entry_field(self):
-        return guiwidgets_2._EntryField(
+        return guiwidgets_2.TextVariableWidget(
             "dummy field", original_value="dummy field value"
         )
 
 
 @pytest.mark.usefixtures("patch_tk")
-@pytest.mark.skip
 class TestMovieTagTreeview:
     def test_treeview_created(self):
         with self.movie_tag_treeview_context() as cm:
@@ -424,7 +416,7 @@ def test_gui_askopenfilename(monkeypatch):
 def test_clear_input_form_fields_calls_textvariable_set():
     textvariable = guiwidgets_2.tk.StringVar()
     # noinspection PyTypeChecker
-    entry_field = guiwidgets_2._EntryField(
+    entry_field = guiwidgets_2.TextVariableWidget(
         "label", "original value", textvariable=textvariable
     )
     entry_fields = dict(test_entry=entry_field)
@@ -441,7 +433,7 @@ def test_set_original_value(patch_tk):
     test_label_text = "test label text"
     test_original_value = "test original value"
 
-    entry_field = guiwidgets_2._EntryField(test_label_text)
+    entry_field = guiwidgets_2.TextVariableWidget(test_label_text)
     entry_fields = {entry: entry_field}
     original_values = {entry: test_original_value}
     guiwidgets_2._set_original_value(entry_fields, original_values)
@@ -531,7 +523,7 @@ def test_notify_neuron_wrapper(patch_tk, dummy_entry_fields):
 @pytest.fixture
 def dummy_entry_fields():
     # noinspection PyProtectedMember
-    return dict(tag=guiwidgets_2._EntryField("Tag", ""))
+    return dict(tag=guiwidgets_2.TextVariableWidget("Tag", ""))
 
 
 # noinspection PyMissingOrEmptyDocstring

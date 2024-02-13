@@ -38,9 +38,11 @@ from guiwidgets_2 import (
     DURATION_TEXT,
     NOTES,
     NOTES_TEXT,
+    MOVIE_FIELD_NAMES,
+    MOVIE_FIELD_TEXTS,
     SEARCH_TEXT,
     SELECT_TAGS_TEXT,
-    _EntryField,
+    TextVariableWidget,
     _create_entry_fields,
     _focus_set,
     gui_messagebox,
@@ -66,7 +68,7 @@ class MovieGUIBase:
     # All widgets of this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
     # A more convenient data structure for entry fields.
-    entry_fields: Dict[str, "_EntryField"] = field(
+    entry_fields: Dict[str, "TextVariableWidget"] = field(
         default_factory=dict, init=False, repr=False
     )
     # Observer of treeview selection state
@@ -92,9 +94,11 @@ class MovieGUIBase:
 
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = _create_entry_fields(
-            (TITLE, YEAR, DIRECTOR, DURATION, NOTES),
-            (TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, DURATION_TEXT, NOTES_TEXT),
+            (TITLE, YEAR, DIRECTOR, DURATION),
+            (TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, DURATION_TEXT),
         )
+        for k in self.entry_fields.keys():
+            self.entry_fields[k].original_value = ""
 
         body_frame = ttk.Frame(outerframe, padding=(10, 25, 10, 0))
         body_frame.grid(column=0, row=0, sticky="n")
@@ -121,7 +125,7 @@ class MovieGUIBase:
 
     def neuron_linker(
         self,
-        internal_name: str,
+        name: str,
         neuron: neurons.Neuron,
         neuron_callback: Callable,
         initial_state: bool = False,
@@ -129,7 +133,7 @@ class MovieGUIBase:
         """Set a neuron callback which will be called whenever the field is changed by the user.
 
         Args:
-            internal_name: Name of widget. The neuron will be notified whenever this widget is
+            name: Name of widget. The neuron will be notified whenever this widget is
             changed by the user.
             neuron:
             neuron_callback: This will be set as the trace_add method of the field's textvariable.
@@ -138,10 +142,10 @@ class MovieGUIBase:
         Returns:
 
         """
-        self.entry_fields[internal_name].textvariable.trace_add(
-            "write", neuron_callback(internal_name, neuron)
+        self.entry_fields[name].textvariable.trace_add(
+            "write", neuron_callback(name, neuron)
         )
-        neuron.register_event(internal_name, initial_state)
+        neuron.register_event(name, initial_state)
 
     def neuron_callback(self, internal_name: str, neuron: neurons.Neuron) -> Callable:
         """Create the callback for an observed field.
@@ -327,7 +331,7 @@ class SearchMovieGUI(MovieGUIBase):
             row: The tk grid row of the item within the frame's grid.
             width: The tk character width of the entry widget.
         """
-        entry_field = self.entry_fields[internal_name] = _EntryField("", "")
+        entry_field = self.entry_fields[internal_name] = TextVariableWidget("", "")
         entry = ttk.Entry(
             body_frame, textvariable=entry_field.textvariable, width=width
         )
@@ -410,7 +414,7 @@ class SelectMovieGUI(MovieGUIBase):
         # Create and grid treeview
         self.treeview = ttk.Treeview(
             body_frame,
-            columns=[YEAR, DIRECTOR, DURATION, NOTES],
+            columns=MOVIE_FIELD_NAMES[1:],
             height=25,
             selectmode="browse",
         )
@@ -418,18 +422,11 @@ class SelectMovieGUI(MovieGUIBase):
 
         # Set up column widths and titles
         column_widths = (350, 50, 100, 50, 350)
-        for column_ix, internal_name in enumerate(
-            (TITLE, YEAR, DIRECTOR, DURATION, NOTES)
-        ):
+        for column_ix, internal_name in enumerate(MOVIE_FIELD_NAMES):
             if column_ix == 0:
                 internal_name = "#0"
             self.treeview.column(internal_name, width=column_widths[column_ix])
-            self.treeview.heading(
-                internal_name,
-                text=(TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, DURATION_TEXT, NOTES_TEXT)[
-                    column_ix
-                ],
-            )
+            self.treeview.heading(internal_name, text=MOVIE_FIELD_TEXTS[column_ix])
 
         # Populate rows with movies and build a lookup dictionary.
         for movie in self.movies:
