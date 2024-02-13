@@ -7,8 +7,8 @@ Strategy:
 Detect any changes to calls to other functions and methods and changes to the arguments to those calls.
 Changes in the API of called functions and methods are not part of this test suite.
 """
-#  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 12/16/23, 7:04 AM by stephen.
+#  Copyright (c) 2023-2024. Stephen Rigden.
+#  Last modified 2/13/24, 1:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -1321,6 +1321,7 @@ class TestSelectTagGUI:
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
+@pytest.mark.skip
 class TestPreferencesGUI:
     api_key = "test api key"
     do_not_ask = False

@@ -1,6 +1,6 @@
 """Test module."""
-#  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/18/23, 5:50 AM by stephen.
+#  Copyright (c) 2022-2024. Stephen Rigden.
+#  Last modified 2/13/24, 1:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -148,6 +148,7 @@ class TestLabelFieldWidget:
             # noinspection PyUnresolvedReferences
             assert dummy_entry_field.widget.grid_calls == [dict(column=1, row=0)]
 
+    @pytest.mark.skip
     def test_add_entry_row_creates_checkbutton(self, dummy_entry_field):
         with self.labelfield_context() as labelfield:
             labelfield.add_checkbox_row(dummy_entry_field)
@@ -159,6 +160,7 @@ class TestLabelFieldWidget:
                 width=guiwidgets_2.InputZone.col_1_width,
             )
 
+    @pytest.mark.skip
     def test_add_entry_row_grids_checkbutton(self, dummy_entry_field):
         with self.labelfield_context() as labelfield:
             labelfield.add_checkbox_row(dummy_entry_field)

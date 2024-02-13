@@ -1,18 +1,18 @@
 """Menu handlers.
 
 This module is the glue between the user's selection of a menu item and the gui."""
-#  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/18/23, 10:10 AM by stephen.
-#  This program_name is free software: you can redistribute it and/or modify
+#  Copyright (c) 2022-2024. Stephen Rigden.
+#  Last modified 2/13/24, 1:59 PM by stephen.
+#  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#  This program_name is distributed in the hope that it will be useful,
+#  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
-#  along with this program_name.  If not, see <https://www.gnu.org/licenses/>.
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import concurrent.futures
 import logging
@@ -76,7 +76,7 @@ class EscapeKeyDict(UserDict):
 
     def escape(
         self,
-        parent: guiwidgets_2.ParentType,
+        parent: guiwidgets_2.TkParentType,
         accelerator: Literal["<Escape>", "<Command-.>"],
     ):
         """Sets up the callback which will destroy a moviedb logical window.

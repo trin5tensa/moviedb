@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 2/2/24, 1:37 PM by stephen.
+#  Last modified 2/13/24, 1:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -27,7 +27,6 @@ from typing import (
     Iterator,
     Mapping,
     Tuple,
-    TypeVar,
     Literal,
     Optional,
     Union,
@@ -37,9 +36,11 @@ import config
 import exception
 import neurons
 import patterns
+from patterns import TkParentType
 from globalconstants import *
 
 # todo Turn on PyCharm's duplicate inspection
+# todo Check all functions, methods, and classes to see if they are still in use.
 
 TITLE_TEXT = "Title"
 YEAR_TEXT = "Year"
@@ -60,10 +61,8 @@ MOVIE_DELETE_MESSAGE = "Do you want to delete this movie?"
 NO_MATCH_MESSAGE = "No matches"
 NO_MATCH_DETAIL = "There are no matching tags in the database."
 
-ParentType = TypeVar("ParentType", tk.Tk, tk.Toplevel, ttk.Frame)
 DefaultLiteral = Literal["normal", "active", "disabled"]
 StateFlags = Optional[list[Literal["active", "normal", "disabled", "!disabled"]]]
-# todo Review all suppressed duplicated code warnings
 
 
 @dataclass
@@ -82,9 +81,9 @@ class MovieGUI:
         str,
         Union[
             "_EntryField",
-            patterns.TextVariableWidget,
-            patterns.GetTextWidget,
-            patterns.SelectionWidget,
+            patterns.Entry,
+            patterns.Text,
+            patterns.Treeview,
         ],
     ] = field(default_factory=dict, init=False, repr=False)
 
@@ -128,21 +127,16 @@ class MovieGUI:
             (TITLE, YEAR, DIRECTOR, DURATION),
             (TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, DURATION_TEXT),
         ):
-            widget = ttk.Entry(body_frame)
-            self.entry_fields[name] = patterns.TextVariableWidget(text, widget)
+            self.entry_fields[name] = patterns.Entry(text, body_frame)
             input_zone.add_entry_row(self.entry_fields[name])
         _focus_set(self.entry_fields[TITLE].widget)
 
         # Create label and text widget.
-        widget = tk.Text(body_frame)
-        self.entry_fields[NOTES] = patterns.GetTextWidget(NOTES_TEXT, widget)
+        self.entry_fields[NOTES] = patterns.Text(NOTES_TEXT, body_frame)
         input_zone.add_text_row(self.entry_fields[NOTES])
 
         # Create a label and treeview for movie tags.
-        widget = ttk.Treeview(body_frame)
-        self.entry_fields[MOVIE_TAGS] = patterns.SelectionWidget(
-            MOVIE_TAGS_TEXT, widget
-        )
+        self.entry_fields[MOVIE_TAGS] = patterns.Treeview(MOVIE_TAGS_TEXT, body_frame)
         input_zone.add_treeview_row(self.entry_fields[MOVIE_TAGS], self.all_tags)
 
     def tmdb_results_frame(self, tmdb_frame: tk.Frame):
@@ -297,7 +291,7 @@ class MovieGUI:
         self.outer_frame.destroy()
 
     def framing(
-        self, parent: ParentType
+        self, parent: TkParentType
     ) -> tuple[ttk.Frame, ttk.Frame, ttk.Frame, ttk.Frame]:
         """Create framing.
 
@@ -376,8 +370,8 @@ class AddMovieGUI(MovieGUI):
     @staticmethod
     def enable_commit_button(
         commit_button: ttk.Button,
-        title: patterns.TextVariableWidget,
-        year: patterns.TextVariableWidget,
+        title: patterns.Entry,
+        year: patterns.Entry,
     ) -> Callable:
         """Manages the enabled or disabled state of the commit button.
 
@@ -390,6 +384,7 @@ class AddMovieGUI(MovieGUI):
             A callable which will be invoked by tkinter whenever the title and year field
             contents are changed by the user,
         """
+        # todo common enable_???_button code
 
         # noinspection PyUnusedLocal
         def func(*args, **kwargs):
@@ -483,6 +478,7 @@ class EditMovieGUI(MovieGUI):
             A callable which will be invoked by tkinter whenever registered fields
             are changed by the user.,
         """
+        # todo common enable_???_button code
 
         # noinspection PyUnusedLocal
         def func(*args, **kwargs):
@@ -994,7 +990,7 @@ class PreferencesGUI:
 
     toplevel: tk.Toplevel = None
     # A more convenient data structure for entry fields.
-    entry_fields: Dict[str, "_EntryField"] = field(
+    entry_fields: Dict[str, Union[patterns.Entry, patterns.Checkbutton]] = field(
         default_factory=dict, init=False, repr=False
     )
 
@@ -1009,24 +1005,30 @@ class PreferencesGUI:
             self.toplevel, type(self).__name__.lower(), self.destroy
         )
         self.outer_frame, body_frame, buttonbox = frames
+        input_zone = InputZone(body_frame)
 
-        # Initialize an internal dictionary to simplify field data management.
-        self.entry_fields = _create_entry_fields(
-            (self.api_key_name, self.use_tmdb_name),
-            (self.api_key_text, self.use_tmdb_text),
+        ################################
+        # Unlike regular buttons, checkbuttons also hold a value. We've seen how the
+        # textvariable option links the label of a widget to a variable. The variable
+        # option for checkbuttons behaves similarly, except it links a variable to the
+        # widget's current value. The variable is updated whenever the widget is toggled.
+        # By default, checkbuttons use a value of 1 when checked and 0 when not checked.
+        # These can be changed to something else using the onvalue and offvalue options.
+        ################################
+
+        # TMDB API key field
+        self.entry_fields[self.api_key_name] = patterns.Entry(
+            self.api_key_text, body_frame
         )
-        original_values = {
-            self.api_key_name: self.api_key,
-            self.use_tmdb_name: self.do_not_ask,
-        }
-        _set_original_value(self.entry_fields, original_values)
+        self.entry_fields[self.api_key_name].original_value = self.api_key
+        input_zone.add_entry_row(self.entry_fields[self.api_key_name])
 
-        # Create labels and fields
-        label_field = InputZone(body_frame)
-        # noinspection PyTypeChecker
-        label_field.add_entry_row(self.entry_fields[self.api_key_name])
-        label_field.add_checkbox_row(self.entry_fields[self.use_tmdb_name])
-        _focus_set(self.entry_fields[self.api_key_name].widget)
+        # 'Use TMDB' checkbutton
+        self.entry_fields[self.use_tmdb_name] = patterns.Checkbutton(
+            self.use_tmdb_text, body_frame
+        )
+        self.entry_fields[self.use_tmdb_name].original_value = self.do_not_ask
+        input_zone.add_checkbox_row(self.entry_fields[self.use_tmdb_name])
 
         # # Create buttons
         column_num = itertools.count()
@@ -1045,56 +1047,45 @@ class PreferencesGUI:
             default="active",
         )
 
-        # Register callbacks with the field observers.
-        # The save button is only enabled if either the api_key field or the use_tmdb
-        # checkbutton has changed.
-        api_key_field = self.entry_fields[self.api_key_name]
-        use_tmdb_field = self.entry_fields[self.use_tmdb_name]
-        api_key_field.observer.register(
-            self.enable_save_button(save_button, api_key_field, use_tmdb_field)
-        )
-        use_tmdb_field.observer.register(
-            self.enable_save_button(save_button, api_key_field, use_tmdb_field)
-        )
+        # Register the save button callback with its many observers.
+        for entry_field in self.entry_fields.values():
+            entry_field.observer.register(self.enable_save_button(save_button))
 
-    @staticmethod
-    def enable_save_button(
-        save_button: ttk.Button, api_key: "_EntryField", use_tmdb: "_EntryField"
-    ) -> Callable:
+    def enable_save_button(self, save_button: ttk.Button) -> Callable:
         """Manages the enabled or disabled state of the save button.
 
         Args:
             save_button:
-            api_key:
-            use_tmdb:
 
         Returns:
             A callable which will be invoked by tkinter whenever the api_key or
             use_tmdb field contents are changed by the user,
         """
+        # todo common enable_???_button code
 
         # noinspection PyUnusedLocal
         def func(*args, **kwargs):
-            """Enable or disable the button depending on state.
+            """This function enables or disables the save button depending on the
+            state of fields compared to their original values.
 
             Args:
                 *args: Sent by tkinter callback but not used.
                 **kwargs: Sent by tkinter callback but not used.
             """
-            api_key_changed = api_key.textvariable.get() != api_key.original_value
-            use_tmdb_set = use_tmdb.textvariable.get() == "1"
-            use_tmdb_changed = use_tmdb_set != use_tmdb.original_value
-            state = api_key_changed or use_tmdb_changed
+            state = any(
+                [entry_field.changed() for entry_field in self.entry_fields.values()]
+            )
             enable_button(save_button, state)
 
         return func
 
     def save(self):
         """Save the edited preference values to the config file."""
-        tmdb_api_key: str = self.entry_fields[self.api_key_name].textvariable.get()
-        tmdb_do_not_ask_again: bool = (
-            self.entry_fields[self.use_tmdb_name].textvariable.get() == "1"
-        )
+        tmdb_api_key: str = self.entry_fields[self.api_key_name].current_value
+        # noinspection PyTypeChecker
+        tmdb_do_not_ask_again: bool = self.entry_fields[
+            self.use_tmdb_name
+        ].current_value
         self.save_callback(tmdb_api_key, tmdb_do_not_ask_again)
         self.destroy()
 
@@ -1104,14 +1095,15 @@ class PreferencesGUI:
 
 
 def gui_messagebox(
-    parent: ParentType, message: str, detail: str = "", icon: str = "info"
+    parent: TkParentType, message: str, detail: str = "", icon: str = "info"
 ):
     """Present a Tk messagebox."""
+    # noinspection PyTypeChecker
     messagebox.showinfo(parent, message, detail=detail, icon=icon)
 
 
 def gui_askyesno(
-    parent: ParentType,
+    parent: TkParentType,
     message: str,
     detail: str = "",
     icon: str = "question",
@@ -1130,13 +1122,14 @@ def gui_askyesno(
     Returns:
         True if user clicks 'Yes', False if user clicks 'No'
     """
+    # noinspection PyTypeChecker
     return messagebox.askyesno(
         parent, message, detail=detail, icon=icon, default=default
     )
 
 
 def gui_askopenfilename(
-    parent: ParentType,
+    parent: TkParentType,
     filetypes: Iterable[tuple[str, str | list[str] | tuple[str, ...]]] | None,
 ):
     """Present a Tk askopenfilename."""
@@ -1154,7 +1147,7 @@ def gui_askopenfilename(
 #
 #     # todo Delete this class entirely.
 #     # Façade object for treeview widget.
-#     entry_field: patterns.SelectionWidget
+#     entry_field: patterns.Treeview
 #
 #     # The frame which contains the treeview.
 #     parent: ttk.Frame
@@ -1264,6 +1257,8 @@ def gui_askopenfilename(
 class Observer:
     """The classic observer pattern."""
 
+    # todo Remove this class. In this location it is only used by _EntryField and tests.
+
     notifees: list[Callable] = field(default_factory=list, init=False, repr=False)
 
     def register(self, notifee: Callable):
@@ -1340,7 +1335,7 @@ class InputZone:
     align the labels and the widget.
     """
 
-    parent: ParentType
+    parent: TkParentType
     row: Iterator = field(default=None, init=False, repr=False)
 
     col_0_width: int = 30
@@ -1357,7 +1352,7 @@ class InputZone:
         # Create a column for scrollbars.
         self.parent.columnconfigure(2, weight=1)
 
-    def add_entry_row(self, entry_field: patterns.TextVariableWidget):
+    def add_entry_row(self, entry_field: patterns.Entry):
         """
         Add label and entry widgets as the bottom row.
 
@@ -1369,7 +1364,7 @@ class InputZone:
         entry_field.widget.configure(width=self.col_1_width)
         entry_field.widget.grid(column=1, row=row_ix)
 
-    def add_text_row(self, entry_field: patterns.GetTextWidget):
+    def add_text_row(self, entry_field: patterns.Text):
         """
         Add label and text widgets as the bottom row.
 
@@ -1398,7 +1393,7 @@ class InputZone:
         entry_field.widget.configure(yscrollcommand=scrollbar.set)
         scrollbar.grid(column=2, row=row_ix, sticky="ns")
 
-    def add_checkbox_row(self, entry_field: _EntryField):
+    def add_checkbox_row(self, entry_field: patterns.Checkbutton):
         """
         Add a label and a checkbox as the bottom row.
 
@@ -1410,18 +1405,12 @@ class InputZone:
             entry_field:
         """
         row_ix = next(self.row)
-        entry_field.widget = ttk.Checkbutton(
-            self.parent,
-            text=entry_field.label_text,
-            variable=entry_field.textvariable,
-            width=self.col_1_width,
+        entry_field.widget.configure(
+            text=entry_field.label_text, width=self.col_1_width
         )
         entry_field.widget.grid(column=1, row=row_ix)
-        entry_field.textvariable.set(entry_field.original_value)
 
-    def add_treeview_row(
-        self, entry_field: patterns.SelectionWidget, all_tags: Sequence[str]
-    ):
+    def add_treeview_row(self, entry_field: patterns.Treeview, all_tags: Sequence[str]):
         """
         Add a label and a treeview as the bottom row.
 
@@ -1506,7 +1495,7 @@ def _set_original_value(
 
 
 def _create_body_and_button_frames(
-    parent: ParentType, name: str, destroy: Callable
+    parent: TkParentType, name: str, destroy: Callable
 ) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
     """Create the outer frames for an input form.
 
@@ -1540,7 +1529,7 @@ def _create_body_and_button_frames(
 
 
 def _create_input_form_framing(
-    parent: ParentType, name: str, destroy: Callable
+    parent: TkParentType, name: str, destroy: Callable
 ) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
     """Create the outer frames for an input form.
 

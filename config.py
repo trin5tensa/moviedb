@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 2/12/24, 6:20 AM by stephen.
+#  Last modified 2/13/24, 1:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +17,7 @@ from collections import UserDict
 from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Optional, TypedDict, NotRequired
+from typing import Optional, TypedDict
 
 CONFIG_JSON_SUFFIX = "_config.json"
 

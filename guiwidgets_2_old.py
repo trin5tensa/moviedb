@@ -3,8 +3,8 @@
 This module includes windows for presenting data and returning entered data to its callers.
 """
 
-#  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 12/16/23, 7:04 AM by stephen.
+#  Copyright (c) 2022-2024. Stephen Rigden.
+#  Last modified 2/13/24, 1:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -65,7 +65,7 @@ MOVIE_DELETE_MESSAGE = "Do you want to delete this movie?"
 NO_MATCH_MESSAGE = "No matches"
 NO_MATCH_DETAIL = "There are no matching tags in the database."
 
-ParentType = TypeVar("ParentType", tk.Tk, tk.Toplevel, ttk.Frame)
+ParentType = TypeVar("TkParentType", tk.Tk, tk.Toplevel, ttk.Frame)
 DefaultLiteral = Literal["normal", "active", "disabled"]
 StateFlags = Optional[list[Literal["active", "normal", "disabled", "!disabled"]]]
 
@@ -82,7 +82,7 @@ class MovieGUI:
     # All widgets created by this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
     # A more convenient data structure for entry fields.
-    entry_fields: Dict[str, Union["TextVariableWidget", "GetTextWidget"]] = field(
+    entry_fields: Dict[str, Union["TextVariableWidget", "Gettextwidget"]] = field(
         default_factory=dict, init=False, repr=False
     )
 
