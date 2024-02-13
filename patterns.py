@@ -87,7 +87,7 @@ class TkinterFacade:
 
     @original_value.setter
     def original_value(self, value):
-        """Sets the original value of the tkinter widget."""
+        """Sets the original and current value of the tkinter widget."""
         raise NotImplementedError
 
     @property
@@ -211,28 +211,31 @@ class GetTextWidget(TkinterFacade):
 class SelectionWidget(TkinterFacade):
     """
     This is a visitor pattern subclass which handles the tkinter widgets which use tkinter's
-    replace and get methods for the field contents.
+    set and selection methods for the field contents.
     """
 
     widget: ttk.Treeview
-    _original_value: TkSequence = field(default_factory=list, init=False, repr=False)
+    _original_value: set = field(default_factory=set, init=False, repr=False)
 
     def __post_init__(self):
-        self.widget.bind("<<Modified>>", lambda *args, **kwargs: self.observer.notify())
+        self.widget.bind(
+            "<<TreeviewSelect>>", lambda *args, **kwargs: self.observer.notify()
+        )
         self.original_value = []
 
     @property
-    def original_value(self) -> TkSequence:
-        return self._original_value
+    def original_value(self) -> set:
+        return set(self._original_value)
 
     # noinspection PyMissingOrEmptyDocstring
     @original_value.setter
     def original_value(self, value: TkSequence):
-        self._original_value = self.current_value = value
+        self._original_value = set(value)
+        self.current_value = value
 
     @property
-    def current_value(self) -> TkSequence:
-        return self.widget.selection()
+    def current_value(self) -> set:
+        return set(self.widget.selection())
 
     @current_value.setter
     def current_value(self, values: TkSequence):

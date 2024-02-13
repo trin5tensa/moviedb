@@ -26,7 +26,6 @@ from typing import (
     Iterable,
     Iterator,
     Mapping,
-    Sequence,
     Tuple,
     TypeVar,
     Literal,
@@ -38,25 +37,18 @@ import config
 import exception
 import neurons
 import patterns
+from globalconstants import *
 
 # todo Turn on PyCharm's duplicate inspection
 
-TITLE = "title"
 TITLE_TEXT = "Title"
-YEAR = "year"
 YEAR_TEXT = "Year"
-DIRECTOR = "director"
 DIRECTOR_TEXT = "Director"
-DURATION = "minutes"
 DURATION_TEXT = "Length (minutes)"
-NOTES = "notes"
 NOTES_TEXT = "Notes"
-MOVIE_FIELD_NAMES = (TITLE, YEAR, DIRECTOR, DURATION, NOTES)
-MOVIE_FIELD_TEXTS = (TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, DURATION_TEXT, NOTES_TEXT)
-MOVIE_TAG = "tag"
-MOVIE_TAG_TEXT = "Tag"
-TAG_FIELD_NAMES = (MOVIE_TAG,)
-TAG_FIELD_TEXTS = (MOVIE_TAG_TEXT,)
+MOVIE_TAGS_TEXT = "Tags"
+TAG_FIELD_NAMES = (MOVIE_TAGS,)
+TAG_FIELD_TEXTS = (MOVIE_TAGS_TEXT,)
 SELECT_TAGS_TEXT = "Tags"
 SEARCH_TEXT = "Search"
 COMMIT_TEXT = "Commit"
@@ -96,9 +88,7 @@ class MovieGUI:
         ],
     ] = field(default_factory=dict, init=False, repr=False)
 
-    # Treeviews for tags and TMDB
-    tags_treeview: "_MovieTagTreeview" = field(default=None, init=False, repr=False)
-    selected_tags: Sequence[str] = field(default_factory=tuple, init=False, repr=False)
+    # Treeview for TMDB
     tmdb_treeview: ttk.Treeview = field(default=None, init=False, repr=False)
 
     # These variables are used for the consumer end of the TMDB producer/consumer pattern.
@@ -130,10 +120,8 @@ class MovieGUI:
         Args:
             body_frame:The frame into which the widgets will be placed.
         """
-        # todo convert to using new patterns module
-        #   Note OLD _EntryField = NEW subclass of TkinterFacade
 
-        input_zone = _InputZone(body_frame)
+        input_zone = InputZone(body_frame)
 
         # Create entry rows for title, year, director, and duration.
         for name, text in zip(
@@ -151,17 +139,11 @@ class MovieGUI:
         input_zone.add_text_row(self.entry_fields[NOTES])
 
         # Create a label and treeview for movie tags.
-        # todo Suite 3) MOVIE TAGS
-        # Daybreak 1 Write the new patterns class TBDWidget
-        # widget = ttk.Treeview(body_frame)
-        # self.entry_fields[MOVIE_TAG] = patterns.SelectionWidget(MOVIE_TAG_TEXT, widget)
-
-        self.tags_treeview = input_zone.add_treeview_row(
-            SELECT_TAGS_TEXT,
-            items=self.all_tags,
-            callers_callback=self.tags_treeview_callback,
+        widget = ttk.Treeview(body_frame)
+        self.entry_fields[MOVIE_TAGS] = patterns.SelectionWidget(
+            MOVIE_TAGS_TEXT, widget
         )
-        self.set_initial_tag_selection()
+        input_zone.add_treeview_row(self.entry_fields[MOVIE_TAGS], self.all_tags)
 
     def tmdb_results_frame(self, tmdb_frame: tk.Frame):
         """
@@ -286,14 +268,6 @@ class MovieGUI:
             # Have tkinter call this function again after the poll interval.
             self.recall_id = self.parent.after(self.work_queue_poll, self.tmdb_consumer)
 
-    def tags_treeview_callback(self, reselection: Sequence[str]):
-        """Update selected tags with the user's changes.
-
-        Args:
-            reselection: The user's current tag selection
-        """
-        self.selected_tags = tuple(reselection)
-
     # noinspection PyUnusedLocal
     def tmdb_treeview_callback(self, *args, **kwargs):
         """Populate the input form with data from the selected TMDB movie.
@@ -369,9 +343,7 @@ class MovieGUI:
 class AddMovieGUI(MovieGUI):
     """Create and manage a GUI form for entering a new movie."""
 
-    add_movie_callback: Callable[[config.MovieTypedDict, Sequence[str]], None] = field(
-        default=None, kw_only=True
-    )
+    add_movie_callback: Callable[[MovieTD], None] = field(default=None, kw_only=True)
 
     def set_initial_tag_selection(self):
         """No prior tags."""
@@ -438,7 +410,7 @@ class AddMovieGUI(MovieGUI):
             for name, entry_field in self.entry_fields.items()
         }
         try:
-            self.add_movie_callback(self.return_fields, self.selected_tags)
+            self.add_movie_callback(self.return_fields)
 
         # Alert user to title and year constraint failure.
         except exception.MovieDBConstraintFailure:
@@ -454,7 +426,7 @@ class AddMovieGUI(MovieGUI):
         else:
             for v in self.entry_fields.values():
                 v.clear_current_value()
-            self.tags_treeview.clear_selection()
+            self.entry_fields[MOVIE_TAGS].clear_current_value()
             items = self.tmdb_treeview.get_children()
             self.tmdb_treeview.delete(*items)
 
@@ -479,8 +451,7 @@ class EditMovieGUI(MovieGUI):
 
     def set_initial_tag_selection(self):
         """Set the movie tag selection."""
-        self.tags_treeview.selection_set(self.old_movie["tags"])
-        self.selected_tags = self.old_movie["tags"]
+        self.entry_fields[MOVIE_TAGS].current_value = self.old_movie["tags"]
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         commit_button = _create_button(
@@ -544,7 +515,7 @@ class EditMovieGUI(MovieGUI):
 
         try:
             # noinspection PyArgumentList
-            self.edit_movie_callback(self.return_fields, self.selected_tags)
+            self.edit_movie_callback(self.return_fields)
 
         # Alert user to title and year constraint failure.
         except exception.MovieDBConstraintFailure:
@@ -598,8 +569,9 @@ class AddTagGUI:
         )
 
         # Create label and field
-        label_field = _InputZone(body_frame)
+        label_field = InputZone(body_frame)
         for tag_field_name in TAG_FIELD_NAMES:
+            # noinspection PyTypeChecker
             label_field.add_entry_row(self.entry_fields[tag_field_name])
         _focus_set(self.entry_fields[TAG_FIELD_NAMES[0]].widget)
 
@@ -710,8 +682,9 @@ class SearchTagGUI:
         )
 
         # Create the field label and field entry widgets.
-        label_field = _InputZone(body_frame)
+        label_field = InputZone(body_frame)
         for movie_field_name in TAG_FIELD_NAMES:
+            # noinspection PyTypeChecker
             label_field.add_entry_row(self.entry_fields[movie_field_name])
         _focus_set(self.entry_fields[TAG_FIELD_NAMES[0]].widget)
 
@@ -820,8 +793,9 @@ class EditTagGUI:
         )
 
         # Create field label and field entry widgets.
-        label_field = _InputZone(body_frame)
+        label_field = InputZone(body_frame)
         for tag_field_name in TAG_FIELD_NAMES:
+            # noinspection PyTypeChecker
             label_field.add_entry_row(self.entry_fields[tag_field_name])
         _focus_set(self.entry_fields[TAG_FIELD_NAMES[0]].widget)
 
@@ -1048,7 +1022,8 @@ class PreferencesGUI:
         _set_original_value(self.entry_fields, original_values)
 
         # Create labels and fields
-        label_field = _InputZone(body_frame)
+        label_field = InputZone(body_frame)
+        # noinspection PyTypeChecker
         label_field.add_entry_row(self.entry_fields[self.api_key_name])
         label_field.add_checkbox_row(self.entry_fields[self.use_tmdb_name])
         _focus_set(self.entry_fields[self.api_key_name].widget)
@@ -1168,105 +1143,120 @@ def gui_askopenfilename(
     return filedialog.askopenfilename(parent=parent, filetypes=filetypes)
 
 
-@dataclass
-class _MovieTagTreeview:
-    """Create and manage a treeview and a descriptive label.
-
-    The user callback will be called whenever the user has changes the
-    selection. The observer will also be notified with a boolean message
-    stating if the current selection differs from the original selection.
-    """
-
-    # The frame which contains the treeview.
-    parent: ttk.Frame
-    # The tk grid row of the label and treeview within the frame's grid.
-    row: int
-    # A list of all the items which will be displayed in the treeview.
-    items: Sequence[str]
-    # Caller's callback for notification of reselection.
-    callers_callback: Callable[[Sequence[str]], None]
-    # Items to be selected on opening.
-    initial_selection: Sequence[str] = field(default_factory=list)
-
-    treeview: ttk.Treeview = field(default=None, init=False, repr=False)
-    observer: neurons.Neuron = field(
-        default_factory=neurons.Neuron, init=False, repr=False
-    )
-
-    # noinspection DuplicatedCode
-    def __post_init__(self):
-        # Create the treeview
-        self.treeview = ttk.Treeview(
-            self.parent,
-            columns=("tags",),
-            height=7,
-            selectmode="extended",
-            show="tree",
-            padding=5,
-        )
-        self.treeview.grid(column=1, row=self.row, sticky="e")
-        self.treeview.column("tags", width=127)
-        self.treeview.bind(
-            "<<TreeviewSelect>>",
-            func=self.selection_callback_wrapper(self.treeview, self.callers_callback),
-        )
-
-        # Create the scrollbar
-        scrollbar = ttk.Scrollbar(
-            self.parent, orient="vertical", command=self.treeview.yview
-        )
-        self.treeview.configure(yscrollcommand=scrollbar.set)
-        scrollbar.grid(column=2, row=self.row, sticky="ns")
-
-        # Populate the treeview
-        for item in self.items:
-            if item:
-                self.treeview.insert("", "end", item, text=item, tags="tags")
-        # noinspection PyTypeChecker
-        self.treeview.selection_add(self.initial_selection)
-
-    def selection_callback_wrapper(
-        self, treeview: ttk.Treeview, user_callback: Callable[[Sequence[str]], None]
-    ) -> Callable:
-        """Create a callback which will be called whenever the user selection is changed.
-
-        Args:
-            treeview:
-            user_callback:
-
-        Returns: The callback.
-        """
-
-        # noinspection PyUnusedLocal
-        def selection_callback(*args):
-            """Notify Movie Treeview's caller and observer's notifees.
-
-            Args:
-                *args: Not used. Needed for compatibility with Tk:Tcl caller.
-            """
-            current_selection = treeview.selection()
-            user_callback(current_selection)
-            self.observer.notify(set(current_selection) != set(self.initial_selection))
-
-        return selection_callback
-
-    def clear_selection(self):
-        """Clear the current selection.
-
-        Use Case:
-            When the user enters a record the input form is reused. The treeview selection
-            needs to be cleared ready for the next record entry.
-        """
-        # noinspection PyArgumentList
-        self.treeview.selection_set()
-
-    def selection_set(self, new_selection: Sequence[str]):
-        """Change the current selection.
-
-        Args:
-            new_selection:
-        """
-        self.treeview.selection_set(list(new_selection))
+# @dataclass
+# class _MovieTagTreeview:
+#     """Create and manage a treeview and a descriptive label.
+#
+#     The user callback will be called whenever the user has changes the
+#     selection. The observer will also be notified with a boolean message
+#     stating if the current selection differs from the original selection.
+#     """
+#
+#     # todo Delete this class entirely.
+#     # Façade object for treeview widget.
+#     entry_field: patterns.SelectionWidget
+#
+#     # The frame which contains the treeview.
+#     parent: ttk.Frame
+#     # The tk grid row of the label and treeview within the frame's grid.
+#     row: int
+#     # A list of all the items which will be displayed in the treeview.
+#     items: Sequence[str]
+#     # # Caller's callback for notification of reselection.
+#     # callers_callback: Callable[[Sequence[str]], None]
+#     # Items to be selected on opening.
+#     initial_selection: Sequence[str] = field(default_factory=list)
+#
+#     treeview: ttk.Treeview = field(default=None, init=False, repr=False)
+#     # observer: neurons.Neuron = field(
+#     #     default_factory=neurons.Neuron, init=False, repr=False
+#     # )
+#
+#     # noinspection DuplicatedCode
+#     def __post_init__(self):
+#         # Create the treeview
+#         self.entry_field.widget.configure(
+#             columns=("tags",),
+#             height=7,
+#             selectmode="extended",
+#             show="tree",
+#             padding=5,
+#         )
+#         self.entry_field.widget.grid(column=1, row=self.row, sticky="e")
+#         self.entry_field.widget.column("tags", width=127)
+#
+#         # self.treeview = ttk.Treeview(
+#         #     self.parent,
+#         #     columns=("tags",),
+#         #     height=7,
+#         #     selectmode="extended",
+#         #     show="tree",
+#         #     padding=5,
+#         # )
+#         # self.treeview.grid(column=1, row=self.row, sticky="e")
+#         # self.treeview.column("tags", width=127)
+#         # self.treeview.bind(
+#         #     "<<TreeviewSelect>>",
+#         #     func=self.selection_callback_wrapper(self.treeview, self.callers_callback),
+#         # )
+#
+#         # Create the scrollbar
+#         scrollbar = ttk.Scrollbar(
+#             self.parent, orient="vertical", command=self.treeview.yview
+#         )
+#         self.treeview.configure(yscrollcommand=scrollbar.set)
+#         scrollbar.grid(column=2, row=self.row, sticky="ns")
+#
+#         # Populate the treeview
+#         for item in self.items:
+#             if item:
+#                 self.treeview.insert("", "end", item, text=item, tags="tags")
+#
+#         # noinspection PyTypeChecker
+#         self.treeview.selection_add(self.initial_selection)
+#
+#     # def selection_callback_wrapper(
+#     #     self, treeview: ttk.Treeview, user_callback: Callable[[Sequence[str]], None]
+#     # ) -> Callable:
+#     #     """Create a callback which will be called whenever the user selection is changed.
+#     #
+#     #     Args:
+#     #         treeview:
+#     #         user_callback:
+#     #
+#     #     Returns: The callback.
+#     #     """
+#     #
+#     #     # noinspection PyUnusedLocal
+#     #     def selection_callback(*args):
+#     #         """Notify Movie Treeview's caller and observer's notifees.
+#     #
+#     #         Args:
+#     #             *args: Not used. Needed for compatibility with Tk:Tcl caller.
+#     #         """
+#     #         current_selection = treeview.selection()
+#     #         user_callback(current_selection)
+#     #         self.observer.notify(set(current_selection) != set(self.initial_selection))
+#     #
+#     #     return selection_callback
+#
+#     # def clear_selection(self):
+#     #     """Clear the current selection.
+#     #
+#     #     Use Case:
+#     #         When the user enters a record the input form is reused. The treeview selection
+#     #         needs to be cleared ready for the next record entry.
+#     #     """
+#     #     # noinspection PyArgumentList
+#     #     self.entry_field.current_value = []
+#
+#     # def selection_set(self, new_selection: Sequence[str]):
+#     #     """Change the current selection.
+#     #
+#     #     Args:
+#     #         new_selection:
+#     #     """
+#     #     self.entry_field.current_value = list(new_selection)
 
 
 # noinspection DuplicatedCode
@@ -1332,6 +1322,8 @@ class _EntryField:
     textvariable: tk.StringVar = None
     observer: Observer = field(default_factory=Observer, init=False, repr=False)
 
+    # todo _EntryField should fall completely out of use
+
     def __post_init__(self):
         self.textvariable = tk.StringVar()
         self.textvariable.set(self.original_value)
@@ -1339,7 +1331,7 @@ class _EntryField:
 
 
 @dataclass
-class _InputZone:
+class InputZone:
     """Configure the parent frame with two columns to contain labels and widgets for
     user input.
 
@@ -1377,7 +1369,7 @@ class _InputZone:
         entry_field.widget.configure(width=self.col_1_width)
         entry_field.widget.grid(column=1, row=row_ix)
 
-    def add_text_row(self, entry_field: _EntryField):
+    def add_text_row(self, entry_field: patterns.GetTextWidget):
         """
         Add label and text widgets as the bottom row.
 
@@ -1428,19 +1420,36 @@ class _InputZone:
         entry_field.textvariable.set(entry_field.original_value)
 
     def add_treeview_row(
-        self, label_text, items, callers_callback
-    ) -> _MovieTagTreeview:
+        self, entry_field: patterns.SelectionWidget, all_tags: Sequence[str]
+    ):
         """
         Add a label and a treeview as the bottom row.
 
         Args:
-            label_text:
-            items: A list of all the items which will be displayed in the treeview.
-            callers_callback: Caller's callback for notification of reselection.
+            entry_field:
+            all_tags
         """
         row_ix = next(self.row)
-        self._create_label(label_text, row_ix)
-        return _MovieTagTreeview(self.parent, row_ix, items, callers_callback)
+        self._create_label(entry_field.label_text, row_ix)
+
+        entry_field.widget.configure(
+            columns=("tags",),
+            height=7,
+            selectmode="extended",
+            show="tree",
+            padding=5,
+        )
+        entry_field.widget.column("tags", width=127)
+        for item in all_tags:
+            if item:
+                entry_field.widget.insert("", "end", item, text=item, tags="tags")
+        entry_field.widget.grid(column=1, row=row_ix, sticky="e")
+
+        scrollbar = ttk.Scrollbar(
+            self.parent, orient="vertical", command=entry_field.widget.yview
+        )
+        entry_field.widget.configure(yscrollcommand=scrollbar.set)
+        scrollbar.grid(column=2, row=row_ix, sticky="ns")
 
     def _create_label(self, text: str, row_ix: int):
         """Create a label for the current row.
@@ -1611,7 +1620,8 @@ def _enable_button(button: ttk.Button) -> Callable:
         then be called with the argument given to the neuron.
     """
 
-    # todo Is this function obsolete? If so, remove.
+    # todo Is this function obsolete? If so, remove and adapt tests to use the
+    #  simplified `enable_button`.
     def func(state: bool):
         """Enable or disable the button.
 

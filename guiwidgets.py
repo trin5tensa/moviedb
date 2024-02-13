@@ -38,8 +38,6 @@ from guiwidgets_2 import (
     DURATION_TEXT,
     NOTES,
     NOTES_TEXT,
-    MOVIE_FIELD_NAMES,
-    MOVIE_FIELD_TEXTS,
     SEARCH_TEXT,
     SELECT_TAGS_TEXT,
     _EntryField,
