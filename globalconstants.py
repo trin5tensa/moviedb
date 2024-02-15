@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
 #  Copyright (c) 2024-2024. Stephen Rigden.
-#  Last modified 2/12/24, 6:20 AM by stephen.
+#  Last modified 2/15/24, 11:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,6 +20,7 @@ YEAR = "year"
 DIRECTOR = "director"
 DURATION = "minutes"
 NOTES = "notes"
+MOVIE_TAG = "tag"
 MOVIE_TAGS = "tags"
 
 

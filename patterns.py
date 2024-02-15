@@ -1,7 +1,7 @@
 """Facade pattern for tkinter widgets."""
 
 #  Copyright (c) 2024-2024. Stephen Rigden.
-#  Last modified 2/13/24, 1:59 PM by stephen.
+#  Last modified 2/15/24, 11:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -105,6 +105,10 @@ class TkinterFacade:
         """Clears the current value of the tkinter widget"""
         raise NotImplementedError
 
+    def has_data(self) -> bool:
+        """Returns True if the current_value contains data."""
+        raise NotImplementedError
+
     def changed(self) -> bool:
         """Compares the original and current value of the tkinter widget."""
         return self.original_value != self.current_value
@@ -145,6 +149,9 @@ class Entry(TkinterFacade):
     def clear_current_value(self):
         """Clears the current value of the tkinter widget"""
         self.current_value = ""
+
+    def has_data(self) -> bool:
+        return self.current_value != ""
 
 
 @dataclass
@@ -203,6 +210,9 @@ class Text(TkinterFacade):
 
         return func
 
+    def has_data(self) -> bool:
+        return self.current_value != ""
+
 
 @dataclass
 class Treeview(TkinterFacade):
@@ -220,7 +230,7 @@ class Treeview(TkinterFacade):
 
     @property
     def original_value(self) -> set:
-        return set(self._original_value)
+        return self._original_value
 
     # noinspection PyMissingOrEmptyDocstring
     @original_value.setter
@@ -238,6 +248,9 @@ class Treeview(TkinterFacade):
 
     def clear_current_value(self):
         self.current_value = []
+
+    def has_data(self) -> bool:
+        return self.current_value != set()
 
 
 @dataclass

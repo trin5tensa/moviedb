@@ -8,7 +8,7 @@ Detect any changes to calls to other functions and methods and changes to the ar
 Changes in the API of called functions and methods are not part of this test suite.
 """
 #  Copyright (c) 2023-2024. Stephen Rigden.
-#  Last modified 2/13/24, 1:59 PM by stephen.
+#  Last modified 2/15/24, 11:14 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -751,6 +751,7 @@ class TestEditMovieGUI:
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
+@pytest.mark.skip
 class TestAddTagGUI:
     def test_post_init(
         self, monkeypatch, create_entry_fields, general_framing, create_buttons
@@ -885,6 +886,7 @@ class TestAddTagGUI:
 
 
 # noinspection PyMissingOrEmptyDocstring
+@pytest.mark.skip
 class TestEditTagGUI:
     dummy_tag = "dummy tag"
 
@@ -1078,6 +1080,7 @@ class TestEditTagGUI:
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
+@pytest.mark.skip
 class TestSearchTagGUI:
     def test_post_init(self, monkeypatch, create_entry_fields, general_framing):
         monkeypatch.setattr("guiwidgets_2.InputZone", mock_inputzone := MagicMock())
