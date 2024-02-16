@@ -4,8 +4,8 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 
-#  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 12/16/23, 7:04 AM by stephen.
+#  Copyright (c) 2022-2024. Stephen Rigden.
+#  Last modified 2/16/24, 9:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -39,10 +39,8 @@ from guiwidgets_2 import (
     NOTES,
     NOTES_TEXT,
     SEARCH_TEXT,
-    SELECT_TAGS_TEXT,
-    _EntryField,
-    _create_entry_fields,
-    _focus_set,
+    MOVIE_TAGS_TEXT,
+    focus_set,
     gui_messagebox,
 )
 
@@ -254,13 +252,13 @@ class SearchMovieGUI(MovieGUIBase):
             body_frame,
             row=next(row),
             column=0,
-            label_text=SELECT_TAGS_TEXT,
+            label_text=MOVIE_TAGS_TEXT,
             items=self.all_tags,
             user_callback=self.treeview_callback,
         )()
         self.tag_treeview_observer.register(self.search_button_neuron)
 
-        _focus_set(self.entry_fields["title"].widget)
+        focus_set(self.entry_fields["title"].widget)
 
     def create_body_item(
         self, body_frame: ttk.Frame, internal_name: str, text: str, row: int
@@ -573,3 +571,60 @@ class MovieTreeview:
             )
 
         return update_tag_selection
+
+
+@dataclass
+class _EntryField:
+    """
+    A support class for the attributes of a GUI entry field.
+
+    This is typically used for an input form with static data using
+    _create_entry_fields and dynamic data using _set_original_value.
+    _create_entry_fields creates a dictionary of EntryField objects using lists of
+    internal names and label texts. These values are usually derived from static text.
+    _set_original_value adds the original value of fields if not blank. This dynamic
+    data is usually supplied by the external caller.
+    """
+
+    label_text: str
+    original_value: str = ""
+    widget: ttk.Entry | ttk.Checkbutton | tk.Text = None
+    # tkinter offers StringVar, IntVar, and DoubleVar. Only StringVar is used here to enable
+    #   code generalization.
+    # There is an uninvestigated problem with pytest's monkey patching of tk.StringVar if
+    #   textvariable is initialized as:
+    #   textvariable: tk.StringVar = field(default_factory=tk.StringVar, init=False, repr=False)
+    textvariable: tk.StringVar = None
+    observer: neurons.Observer = field(
+        default_factory=neurons.Observer, init=False, repr=False
+    )
+
+    def __post_init__(self):
+        self.textvariable = tk.StringVar()
+        self.textvariable.set(self.original_value)
+        self.textvariable.trace_add("write", self.observer.notify)
+
+
+def _create_entry_fields(
+    internal_names: Sequence[str],
+    label_texts: Sequence[str],
+) -> Dict[str, _EntryField]:
+    """
+    Create an internal dictionary to simplify field data management. See usage note in the
+    associated EntryField docs.
+
+    Args:
+        internal_names: A sequence of internal_names of the fields
+        label_texts: A sequence of internal internal_names, label text, original values
+
+    Returns:
+        key: The internal name of the field.
+        value: An EntryField instance.
+    """
+
+    return {
+        internal_name: _EntryField(
+            label_text
+        )  # pragma no cover (coverage cannot handle this code)
+        for internal_name, label_text in zip(internal_names, label_texts)
+    }

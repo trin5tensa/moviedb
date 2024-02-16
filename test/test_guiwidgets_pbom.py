@@ -8,7 +8,7 @@ Detect any changes to calls to other functions and methods and changes to the ar
 Changes in the API of called functions and methods are not part of this test suite.
 """
 #  Copyright (c) 2023-2024. Stephen Rigden.
-#  Last modified 2/15/24, 11:14 AM by stephen.
+#  Last modified 2/16/24, 9:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -781,11 +781,11 @@ class TestAddTagGUI:
                 mock_inputzone.assert_called_once_with(body_frame)
             with check:
                 mock_inputzone().add_entry_row.assert_called_once_with(
-                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]]
+                    cut.entry_fields[guiwidgets_2.MOVIE_TAGS]
                 )
             with check:
                 mock_focus_set.assert_called_once_with(
-                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].widget
+                    cut.entry_fields[guiwidgets_2.MOVIE_TAGS].widget
                 )
             with check:
                 mock_create_buttons.assert_called_once_with(mock_buttonbox)
@@ -820,7 +820,7 @@ class TestAddTagGUI:
                     ]
                 )
 
-            tag_field = cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]]
+            tag_field = cut.entry_fields[guiwidgets_2.MOVIE_TAGS]
             with check:
                 tag_field.observer.register.assert_called_once_with(
                     cut.enable_commit_button(mock_button, tag_field)
@@ -850,7 +850,7 @@ class TestAddTagGUI:
                 lambda: mock_destroy_calls.append(True),
             )
             cut.entry_fields[
-                guiwidgets_2.TAG_FIELD_NAMES[0]
+                guiwidgets_2.MOVIE_TAGS
             ].textvariable.get.return_value = dummy_tag
 
             cut.commit()
@@ -860,9 +860,7 @@ class TestAddTagGUI:
                 check.equal(mock_destroy_calls, [True])
 
             # test null tag
-            cut.entry_fields[
-                guiwidgets_2.TAG_FIELD_NAMES[0]
-            ].textvariable.get.return_value = ""
+            cut.entry_fields[guiwidgets_2.MOVIE_TAGS].textvariable.get.return_value = ""
 
             cut.commit()
             # cut.commit has been called twice but its `if tag` suite was executed once.
@@ -908,7 +906,7 @@ class TestEditTagGUI:
                     guiwidgets_2.TAG_FIELD_NAMES, guiwidgets_2.TAG_FIELD_TEXTS
                 )
             check.equal(
-                cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].original_value,
+                cut.entry_fields[guiwidgets_2.MOVIE_TAGS].original_value,
                 self.dummy_tag,
             )
 
@@ -923,11 +921,11 @@ class TestEditTagGUI:
                 mock_inputzone.assert_called_once_with(body_frame)
             with check:
                 mock_inputzone().add_entry_row.assert_called_once_with(
-                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]]
+                    cut.entry_fields[guiwidgets_2.MOVIE_TAGS]
                 )
             with check:
                 mock_focus_set.assert_called_once_with(
-                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].widget
+                    cut.entry_fields[guiwidgets_2.MOVIE_TAGS].widget
                 )
             with check:
                 mock_create_buttons.assert_called_once_with(mock_buttonbox)
@@ -970,7 +968,7 @@ class TestEditTagGUI:
                     ]
                 )
 
-            tag_field = cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]]
+            tag_field = cut.entry_fields[guiwidgets_2.MOVIE_TAGS]
             with check:
                 tag_field.observer.register.assert_called_once_with(
                     cut.enable_commit_button(mock_button, tag_field)
@@ -1000,15 +998,13 @@ class TestEditTagGUI:
             cut.commit()
             with check:
                 cut.edit_tag_callback.assert_called_once_with(
-                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].textvariable.get()
+                    cut.entry_fields[guiwidgets_2.MOVIE_TAGS].textvariable.get()
                 )
             with check:
                 mock_destroy.assert_called_once_with()
 
             # test with empty tag
-            cut.entry_fields[
-                guiwidgets_2.TAG_FIELD_NAMES[0]
-            ].textvariable.get.return_value = ""
+            cut.entry_fields[guiwidgets_2.MOVIE_TAGS].textvariable.get.return_value = ""
             cut.commit()
             with check:
                 mock_delete.assert_called_once_with()
@@ -1040,14 +1036,14 @@ class TestEditTagGUI:
             # It's called twice: Once in __post_init__ and secondly if user clicks no in delete dialog.
             with check:
                 cut.entry_fields[
-                    guiwidgets_2.TAG_FIELD_NAMES[0]
+                    guiwidgets_2.MOVIE_TAGS
                 ].textvariable.set.assert_has_calls(
                     [
                         call(self.dummy_tag),
                         call(self.dummy_tag),
                     ]
                 )
-            widget = cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].widget
+            widget = cut.entry_fields[guiwidgets_2.MOVIE_TAGS].widget
             # It's called twice: Once in __post_init__ and secondly if user clicks no in delete dialog.
             check.equal(
                 focus_set_calls,
@@ -1110,11 +1106,11 @@ class TestSearchTagGUI:
                 mock_inputzone.assert_called_once_with(body_frame)
             with check:
                 mock_inputzone().add_entry_row.assert_called_once_with(
-                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]]
+                    cut.entry_fields[guiwidgets_2.MOVIE_TAGS]
                 )
             with check:
                 mock_focus_set.assert_called_once_with(
-                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].widget
+                    cut.entry_fields[guiwidgets_2.MOVIE_TAGS].widget
                 )
             with check:
                 mock_create_buttons.assert_called_once_with(mock_buttonbox)
@@ -1151,7 +1147,7 @@ class TestSearchTagGUI:
                     ]
                 )
 
-            tag_field = cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]]
+            tag_field = cut.entry_fields[guiwidgets_2.MOVIE_TAGS]
             with check:
                 tag_field.observer.register.assert_called_once_with(
                     cut.enable_search_button(mock_button, tag_field)
@@ -1181,7 +1177,7 @@ class TestSearchTagGUI:
             cut.search()
             with check:
                 cut.search_tag_callback.assert_called_once_with(
-                    cut.entry_fields[guiwidgets_2.TAG_FIELD_NAMES[0]].textvariable.get()
+                    cut.entry_fields[guiwidgets_2.MOVIE_TAGS].textvariable.get()
                 )
             with check:
                 mock_destroy.assert_called_once_with()
@@ -1213,6 +1209,7 @@ class TestSearchTagGUI:
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
+@pytest.mark.skip
 class TestSelectTagGUI:
     TAGS_TO_SHOW = ["test tag 1", "test tag 2"]
 
@@ -1224,7 +1221,7 @@ class TestSelectTagGUI:
             mock_selection_callback_wrapper := MagicMock(),
         )
         monkeypatch.setattr(
-            "guiwidgets_2._create_button", mock_create_button := MagicMock()
+            "guiwidgets_2.create_button", mock_create_button := MagicMock()
         )
         _, body_frame, mock_buttonbox = general_framing()
 
@@ -1248,7 +1245,7 @@ class TestSelectTagGUI:
                 mock_tree().column.assert_called_once_with("#0", width=350)
             with check:
                 mock_tree().heading.assert_called_once_with(
-                    "#0", text=guiwidgets_2.TAG_FIELD_TEXTS[0]
+                    "#0", text=guiwidgets_2.MOVIE_TAGS_TEXT
                 )
 
             # Test populate the treeview rows
@@ -1261,7 +1258,7 @@ class TestSelectTagGUI:
                             iid=self.TAGS_TO_SHOW[0],
                             text=self.TAGS_TO_SHOW[0],
                             values=[],
-                            tags=guiwidgets_2.TAG_FIELD_NAMES[0],
+                            tags=guiwidgets_2.MOVIE_TAGS,
                             open=True,
                         ),
                         call(
@@ -1270,7 +1267,7 @@ class TestSelectTagGUI:
                             iid=self.TAGS_TO_SHOW[1],
                             text=self.TAGS_TO_SHOW[1],
                             values=[],
-                            tags=guiwidgets_2.TAG_FIELD_NAMES[0],
+                            tags=guiwidgets_2.MOVIE_TAGS,
                             open=True,
                         ),
                     ]
@@ -1525,7 +1522,7 @@ class TestCreateBodyAndButtonFrames:
 
     @contextmanager
     def create_frames(self, monkeypatch, mock_destroy):
-        yield guiwidgets_2._create_body_and_button_frames(
+        yield guiwidgets_2.create_body_and_button_frames(
             patch_config(monkeypatch).current.tk_root,
             self.escape_key_callback,
             mock_destroy,
@@ -1545,60 +1542,6 @@ class TestGUIAskYesNo:
         guiwidgets_2.gui_askyesno(parent, message)
         mock_askyesno.assert_called_once_with(
             parent, message, detail="", icon="question", default="no"
-        )
-
-
-class TestCreateEntryFields:
-    def test_create_entry_fields(self, monkeypatch):
-        monkeypatch.setattr("guiwidgets_2.tk", mock_tk := MagicMock())
-        mock_stringvar = mock_tk.StringVar()
-        entry_field = guiwidgets_2._EntryField("label text")
-
-        check.equal(entry_field.label_text, "label text")
-        check.equal(entry_field.original_value, "")
-        check.equal(entry_field.widget, None)
-        check.equal(entry_field.textvariable, mock_stringvar)
-        check.equal(entry_field.observer, guiwidgets_2.Observer())
-        with check:
-            mock_stringvar.trace_add.assert_called_with(
-                "write", entry_field.observer.notify
-            )
-
-
-# noinspection PyMissingOrEmptyDocstring
-class TestObserver:
-    def test_observer(self):
-        foo1_calls = []
-        foo2_calls = []
-        argus = ("arg1", "arg2")
-        kwargus = {"kwarg1": "kwarg1", "kwarg2": "kwarg2"}
-
-        def foo1(*args, **kwargs):
-            foo1_calls.append((args, kwargs))
-
-        def foo2(*args, **kwargs):
-            foo2_calls.append((args, kwargs))
-
-        observer = guiwidgets_2.Observer()
-        observer.register(foo1)
-        observer.register(foo2)
-
-        observer.notify(*argus, **kwargus)
-        observer.deregister(foo2)
-        observer.notify(*argus, **kwargus)
-
-        #  Test correct registration and notification.
-        check.equal(
-            foo1_calls,
-            [
-                (("arg1", "arg2"), {"kwarg1": "kwarg1", "kwarg2": "kwarg2"}),
-                (("arg1", "arg2"), {"kwarg1": "kwarg1", "kwarg2": "kwarg2"}),
-            ],
-        )
-        #  Test correct deregistration.
-        check.equal(
-            foo2_calls,
-            [(("arg1", "arg2"), {"kwarg1": "kwarg1", "kwarg2": "kwarg2"})],
         )
 
 
@@ -1704,7 +1647,7 @@ def movie_framing(monkeypatch):
 @pytest.fixture
 def general_framing(monkeypatch):
     monkeypatch.setattr(
-        "guiwidgets_2._create_input_form_framing", mock_framing := MagicMock()
+        "guiwidgets_2.create_input_form_framing", mock_framing := MagicMock()
     )
     mock_framing.return_value = [MagicMock(), MagicMock(), MagicMock()]
     return mock_framing

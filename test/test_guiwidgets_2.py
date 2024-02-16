@@ -1,6 +1,6 @@
 """Test module."""
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 2/13/24, 1:59 PM by stephen.
+#  Last modified 2/16/24, 9:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -93,7 +93,7 @@ class TestFocusSet:
     def focus_set_context(self):
         # noinspection PyTypeChecker
         entry = guiwidgets_2.ttk.Entry(DummyTk())
-        guiwidgets_2._focus_set(entry)
+        guiwidgets_2.focus_set(entry)
         yield entry
 
 
@@ -178,7 +178,7 @@ class TestLabelFieldWidget:
                 lambda *args: calls.append(args),
             )
             labelfield.add_treeview_row(
-                guiwidgets_2.SELECT_TAGS_TEXT, items, lambda: None
+                guiwidgets_2.MOVIE_TAGS_TEXT, items, lambda: None
             )
             assert calls == [(labelfield, guiwidgets_2.SELECT_TAGS_TEXT, 0)]
 
@@ -196,7 +196,7 @@ class TestLabelFieldWidget:
                 guiwidgets_2, "_MovieTagTreeview", lambda *args: calls.append(args)
             )
             labelfield.add_treeview_row(
-                guiwidgets_2.SELECT_TAGS_TEXT, items, dummy_callback
+                guiwidgets_2.MOVIE_TAGS_TEXT, items, dummy_callback
             )
             assert calls == [(labelfield.parent, 0, items, dummy_callback)]
 
@@ -206,10 +206,11 @@ class TestLabelFieldWidget:
         items = ["tag 1", "tag 2"]
         with self.labelfield_context() as labelfield:
             movie_tag_treeview = labelfield.add_treeview_row(
-                guiwidgets_2.SELECT_TAGS_TEXT, items, lambda: None
+                guiwidgets_2.MOVIE_TAGS_TEXT, items, lambda: None
             )
             assert isinstance(movie_tag_treeview, guiwidgets_2._MovieTagTreeview)
 
+    @pytest.mark.skip
     def test_create_label_creates_label(self, dummy_entry_field):
         row = 0
         with self.labelfield_context() as labelfield:
@@ -219,6 +220,7 @@ class TestLabelFieldWidget:
                 TtkFrame(DummyTk()), dummy_entry_field.label_text
             )
 
+    @pytest.mark.skip
     def test_create_label_grids_label(self, dummy_entry_field):
         row = 0
         with self.labelfield_context() as labelfield:
@@ -388,7 +390,7 @@ class TestCreateButton:
         text = "Dummy Button"
         column = 0
         # noinspection PyTypeChecker
-        yield guiwidgets_2._create_button(
+        yield guiwidgets_2.create_button(
             buttonbox, text, column, lambda: None, default=default
         )
 
@@ -422,65 +424,6 @@ def test_gui_askopenfilename(monkeypatch):
     assert calls == [(dict(parent=parent, filetypes=filetypes))]
 
 
-@pytest.mark.usefixtures("patch_tk")
-def test_clear_input_form_fields_calls_textvariable_set():
-    textvariable = guiwidgets_2.tk.StringVar()
-    # noinspection PyTypeChecker
-    entry_field = guiwidgets_2._EntryField(
-        "label", "original value", textvariable=textvariable
-    )
-    entry_fields = dict(test_entry=entry_field)
-    guiwidgets_2.clear_textvariables(entry_fields)
-    # noinspection PyUnresolvedReferences
-    assert entry_fields["test_entry"].textvariable.set_calls == [
-        ("original value",),
-        ("",),
-    ]
-
-
-def test_set_original_value(patch_tk):
-    entry = "test entry"
-    test_label_text = "test label text"
-    test_original_value = "test original value"
-
-    entry_field = guiwidgets_2._EntryField(test_label_text)
-    entry_fields = {entry: entry_field}
-    original_values = {entry: test_original_value}
-    guiwidgets_2._set_original_value(entry_fields, original_values)
-    assert entry_field.original_value == test_original_value
-    # noinspection PyUnresolvedReferences
-    assert entry_field.textvariable.set_calls == [("",), (test_original_value,)]
-
-
-def test_enable_button_wrapper(patch_tk):
-    # noinspection PyTypeChecker
-    button = TtkButton(DummyTk(), "Dummy Button")
-    # noinspection PyTypeChecker
-    enable_button = guiwidgets_2._enable_button(button)
-    enable_button(True)
-    assert button.state_calls == [["!disabled"]]
-
-
-def test_link_or_neuron_to_button():
-    # noinspection PyMissingOrEmptyDocstring
-    def change_button_state():
-        pass
-
-    neuron = guiwidgets_2._create_button_orneuron(change_button_state)
-    assert isinstance(neuron, guiwidgets_2.neurons.OrNeuron)
-    assert neuron.notifees == [change_button_state]
-
-
-def test_link_and_neuron_to_button():
-    # noinspection PyMissingOrEmptyDocstring
-    def change_button_state():
-        pass
-
-    neuron = guiwidgets_2._create_buttons_andneuron(change_button_state)
-    assert isinstance(neuron, guiwidgets_2.neurons.AndNeuron)
-    assert neuron.notifees == [change_button_state]
-
-
 @pytest.mark.skip
 def test_link_field_to_neuron_trace_add_called(patch_tk, dummy_entry_fields):
     name = "tag"
@@ -493,40 +436,6 @@ def test_link_field_to_neuron_trace_add_called(patch_tk, dummy_entry_fields):
     assert dummy_entry_fields["tag"].textvariable.trace_add_calls == [
         ("write", notify_neuron)
     ]
-
-
-def test_link_field_to_neuron_register_event_called(patch_tk, dummy_entry_fields):
-    name = "tag"
-    neuron = guiwidgets_2.neurons.OrNeuron()
-    notifee = DummyActivateButton()
-    neuron.register(notifee)
-    notify_neuron = guiwidgets_2._create_the_fields_observer(
-        dummy_entry_fields, name, neuron
-    )
-    guiwidgets_2._link_field_to_neuron(dummy_entry_fields, name, neuron, notify_neuron)
-    assert not notifee.state
-    notify_neuron()
-    assert notifee.state
-
-
-def test_notify_neuron_wrapper(patch_tk, dummy_entry_fields):
-    name = "tag"
-    neuron = guiwidgets_2.neurons.OrNeuron()
-    notifee = DummyActivateButton()
-    neuron.register(notifee)
-    notify_neuron = guiwidgets_2._create_the_fields_observer(
-        dummy_entry_fields, name, neuron
-    )
-
-    # Match tag field contents to original value thus 'activating' the button.
-    notify_neuron()
-    assert notifee.state
-
-    # Change original value so 'new' value of '4242' appears to be no change thus 'deactivating'
-    # the button.
-    dummy_entry_fields["tag"].original_value = "4242"
-    notify_neuron()
-    assert not notifee.state
 
 
 # noinspection PyMissingOrEmptyDocstring

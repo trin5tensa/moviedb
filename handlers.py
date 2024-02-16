@@ -2,7 +2,7 @@
 
 This module is the glue between the user's selection of a menu item and the gui."""
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 2/13/24, 1:59 PM by stephen.
+#  Last modified 2/16/24, 9:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -350,7 +350,7 @@ def _edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
 
         # Edit links
         old_tags = database.movie_tags(old_movie)
-        new_movie = MovieTD(title=new_movie[TITLE], year=new_movie[YEAR])
+        new_movie = MovieTD(TITLE=new_movie[TITLE], YEAR=new_movie[YEAR])
 
         try:
             database.edit_movie_tag_links(new_movie, old_tags, selected_tags)

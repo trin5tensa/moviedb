@@ -1,7 +1,7 @@
 """Facade pattern for tkinter widgets."""
 
 #  Copyright (c) 2024-2024. Stephen Rigden.
-#  Last modified 2/15/24, 11:14 AM by stephen.
+#  Last modified 2/16/24, 9:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,6 +17,8 @@ from dataclasses import dataclass, field
 from typing import Any
 import tkinter as tk
 from tkinter import ttk
+
+# todo Test whole module
 
 type TkParentType = tk.Tk | tk.Toplevel | ttk.Frame
 type TkSequence = list[str] | tuple[str, ...]

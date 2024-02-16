@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 2/15/24, 11:14 AM by stephen.
+#  Last modified 2/16/24, 9:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,7 +25,6 @@ from typing import (
     Dict,
     Iterable,
     Iterator,
-    Mapping,
     Tuple,
     Literal,
     Optional,
@@ -34,12 +33,11 @@ from typing import (
 
 import config
 import exception
-import neurons
 import patterns
 from patterns import TkParentType
 from globalconstants import *
 
-# todo Check all functions, methods, and classes to see if they are still in use.
+
 # todo Turn on PyCharm's duplicate inspection
 
 TITLE_TEXT = "Title"
@@ -49,10 +47,6 @@ DURATION_TEXT = "Length (minutes)"
 NOTES_TEXT = "Notes"
 MOVIE_TAG_TEXT = "Tag"
 MOVIE_TAGS_TEXT = "Tags"
-# todo Remove tuples if not in use
-TAG_FIELD_NAMES = (MOVIE_TAGS,)
-TAG_FIELD_TEXTS = (MOVIE_TAGS_TEXT,)
-SELECT_TAGS_TEXT = "Tags"
 SEARCH_TEXT = "Search"
 COMMIT_TEXT = "Commit"
 SAVE_TEXT = "Save"
@@ -130,7 +124,7 @@ class MovieGUI:
         ):
             self.entry_fields[name] = patterns.Entry(text, body_frame)
             input_zone.add_entry_row(self.entry_fields[name])
-        _focus_set(self.entry_fields[TITLE].widget)
+        focus_set(self.entry_fields[TITLE].widget)
 
         # Create label and text widget.
         self.entry_fields[NOTES] = patterns.Text(NOTES_TEXT, body_frame)
@@ -173,7 +167,7 @@ class MovieGUI:
     def fill_buttonbox(self, buttonbox: tk.Frame):
         """
         This adds one default Cancel button after any buttons added by subclasses. It calls
-        the abstract class method _create_button which must be overridden by subclasses.
+        the abstract class method create_button which must be overridden by subclasses.
 
         Args:
             buttonbox: The frame into which the widgets will be placed.
@@ -183,7 +177,7 @@ class MovieGUI:
         """
         column_num = itertools.count()
         self._create_buttons(buttonbox, column_num)
-        _create_button(
+        create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_num),
@@ -198,7 +192,7 @@ class MovieGUI:
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         """Create buttons within the buttonbox.
 
-        Subclasses may call _create_button to place a button in the buttonbox at
+        Subclasses may call create_button to place a button in the buttonbox at
         next(column_num).
 
         Args:
@@ -345,7 +339,7 @@ class AddMovieGUI(MovieGUI):
         pass
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
-        commit_button = _create_button(
+        commit_button = create_button(
             buttonbox,
             COMMIT_TEXT,
             column=next(column_num),
@@ -450,14 +444,14 @@ class EditMovieGUI(MovieGUI):
         self.entry_fields[MOVIE_TAGS].current_value = self.old_movie["tags"]
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
-        commit_button = _create_button(
+        commit_button = create_button(
             buttonbox,
             COMMIT_TEXT,
             column=next(column_num),
             command=self.commit,
             default="disabled",
         )
-        delete_button = _create_button(
+        delete_button = create_button(
             buttonbox,
             DELETE_TEXT,
             column=next(column_num),
@@ -565,7 +559,7 @@ class AddTagGUI:
     def __post_init__(self):
         """Create the Tk widget."""
         # Create outer frames to hold fields and buttons.
-        self.outer_frame, body_frame, buttonbox = _create_input_form_framing(
+        self.outer_frame, body_frame, buttonbox = create_input_form_framing(
             self.parent, type(self).__name__.lower(), self.destroy
         )
 
@@ -585,7 +579,7 @@ class AddTagGUI:
         # Tag field
         self.entry_fields[MOVIE_TAG] = patterns.Entry(MOVIE_TAG_TEXT, body_frame)
         input_zone.add_entry_row(self.entry_fields[MOVIE_TAG])
-        _focus_set(self.entry_fields[MOVIE_TAG].widget)
+        focus_set(self.entry_fields[MOVIE_TAG].widget)
 
     # noinspection DuplicatedCode
     def create_buttons(self, buttonbox: ttk.Frame):
@@ -597,14 +591,14 @@ class AddTagGUI:
         """
         # noinspection DuplicatedCode
         column_num = itertools.count()
-        commit_button = _create_button(
+        commit_button = create_button(
             buttonbox,
             COMMIT_TEXT,
             column=next(column_num),
             command=self.commit,
             default="disabled",
         )
-        _create_button(
+        create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_num),
@@ -686,7 +680,7 @@ class SearchTagGUI:
     def __post_init__(self):
         """Create the Tk widget."""
         # Create the outer frames to hold fields and buttons.
-        self.outer_frame, body_frame, buttonbox = _create_input_form_framing(
+        self.outer_frame, body_frame, buttonbox = create_input_form_framing(
             self.parent, type(self).__name__.lower(), self.destroy
         )
 
@@ -706,7 +700,7 @@ class SearchTagGUI:
         # Tag field
         self.entry_fields[MOVIE_TAG] = patterns.Entry(MOVIE_TAG_TEXT, body_frame)
         input_zone.add_entry_row(self.entry_fields[MOVIE_TAG])
-        _focus_set(self.entry_fields[MOVIE_TAG].widget)
+        focus_set(self.entry_fields[MOVIE_TAG].widget)
 
     # noinspection DuplicatedCode
     def create_buttons(self, buttonbox: ttk.Frame):
@@ -718,14 +712,14 @@ class SearchTagGUI:
         """
         # noinspection DuplicatedCode
         column_num = itertools.count()
-        search_button = _create_button(
+        search_button = create_button(
             buttonbox,
             SEARCH_TEXT,
             column=next(column_num),
             command=self.search,
             default="disabled",
         )
-        _create_button(
+        create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_num),
@@ -804,7 +798,7 @@ class EditTagGUI:
     # noinspection DuplicatedCode
     def __post_init__(self):
         # Create outer frames to hold fields and buttons.
-        self.outer_frame, body_frame, buttonbox = _create_input_form_framing(
+        self.outer_frame, body_frame, buttonbox = create_input_form_framing(
             self.parent, type(self).__name__.lower(), self.destroy
         )
         self.user_input_frame(body_frame)
@@ -825,7 +819,7 @@ class EditTagGUI:
         self.entry_fields[MOVIE_TAG] = patterns.Entry(MOVIE_TAG_TEXT, body_frame)
         self.entry_fields[MOVIE_TAG].original_value = self.tag
         input_zone.add_entry_row(self.entry_fields[MOVIE_TAG])
-        _focus_set(self.entry_fields[MOVIE_TAG].widget)
+        focus_set(self.entry_fields[MOVIE_TAG].widget)
 
     # noinspection DuplicatedCode
     def create_buttons(self, buttonbox: ttk.Frame):
@@ -836,21 +830,21 @@ class EditTagGUI:
             buttonbox:
         """
         column_num = itertools.count()
-        commit_button = _create_button(
+        commit_button = create_button(
             buttonbox,
             COMMIT_TEXT,
             column=next(column_num),
             command=self.commit,
             default="disabled",
         )
-        _create_button(
+        create_button(
             buttonbox,
             DELETE_TEXT,
             column=next(column_num),
             command=self.delete,
             default="active",
         )
-        _create_button(
+        create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_num),
@@ -915,7 +909,7 @@ class EditTagGUI:
             self.destroy()
         else:
             self.entry_fields[MOVIE_TAG].original_value = self.tag
-            _focus_set(self.entry_fields[MOVIE_TAG].widget)
+            focus_set(self.entry_fields[MOVIE_TAG].widget)
 
     def destroy(self):
         """Destroy this instance's widgets."""
@@ -935,7 +929,7 @@ class SelectTagGUI:
 
     def __post_init__(self):
         # Create outer frames to hold fields and buttons.
-        frames = _create_input_form_framing(
+        frames = create_input_form_framing(
             self.parent, type(self).__name__.lower(), self.destroy
         )
         self.outer_frame, body_frame, buttonbox = frames
@@ -965,7 +959,7 @@ class SelectTagGUI:
 
         # Create the button
         column_num = 0
-        _create_button(
+        create_button(
             buttonbox, CANCEL_TEXT, column_num, self.destroy, default="active"
         )
 
@@ -1031,7 +1025,7 @@ class PreferencesGUI:
         self.toplevel = tk.Toplevel(self.parent)
 
         # Create outer frames to hold fields and buttons.
-        frames = _create_input_form_framing(
+        frames = create_input_form_framing(
             self.toplevel, type(self).__name__.lower(), self.destroy
         )
         self.outer_frame, body_frame, buttonbox = frames
@@ -1053,14 +1047,14 @@ class PreferencesGUI:
 
         # # Create buttons
         column_num = itertools.count()
-        save_button = _create_button(
+        save_button = create_button(
             buttonbox,
             SAVE_TEXT,
             column=next(column_num),
             command=self.save,
             default="disabled",
         )
-        _create_button(
+        create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_num),
@@ -1154,195 +1148,6 @@ def gui_askopenfilename(
 ):
     """Present a Tk askopenfilename."""
     return filedialog.askopenfilename(parent=parent, filetypes=filetypes)
-
-
-# @dataclass
-# class _MovieTagTreeview:
-#     """Create and manage a treeview and a descriptive label.
-#
-#     The user callback will be called whenever the user has changes the
-#     selection. The observer will also be notified with a boolean message
-#     stating if the current selection differs from the original selection.
-#     """
-#
-#     # todo Delete this class entirely.
-#     # Façade object for treeview widget.
-#     entry_field: patterns.Treeview
-#
-#     # The frame which contains the treeview.
-#     parent: ttk.Frame
-#     # The tk grid row of the label and treeview within the frame's grid.
-#     row: int
-#     # A list of all the items which will be displayed in the treeview.
-#     items: Sequence[str]
-#     # # Caller's callback for notification of reselection.
-#     # callers_callback: Callable[[Sequence[str]], None]
-#     # Items to be selected on opening.
-#     initial_selection: Sequence[str] = field(default_factory=list)
-#
-#     treeview: ttk.Treeview = field(default=None, init=False, repr=False)
-#     # observer: neurons.Neuron = field(
-#     #     default_factory=neurons.Neuron, init=False, repr=False
-#     # )
-#
-#     # noinspection DuplicatedCode
-#     def __post_init__(self):
-#         # Create the treeview
-#         self.entry_field.widget.configure(
-#             columns=("tags",),
-#             height=7,
-#             selectmode="extended",
-#             show="tree",
-#             padding=5,
-#         )
-#         self.entry_field.widget.grid(column=1, row=self.row, sticky="e")
-#         self.entry_field.widget.column("tags", width=127)
-#
-#         # self.treeview = ttk.Treeview(
-#         #     self.parent,
-#         #     columns=("tags",),
-#         #     height=7,
-#         #     selectmode="extended",
-#         #     show="tree",
-#         #     padding=5,
-#         # )
-#         # self.treeview.grid(column=1, row=self.row, sticky="e")
-#         # self.treeview.column("tags", width=127)
-#         # self.treeview.bind(
-#         #     "<<TreeviewSelect>>",
-#         #     func=self.selection_callback_wrapper(self.treeview, self.callers_callback),
-#         # )
-#
-#         # Create the scrollbar
-#         scrollbar = ttk.Scrollbar(
-#             self.parent, orient="vertical", command=self.treeview.yview
-#         )
-#         self.treeview.configure(yscrollcommand=scrollbar.set)
-#         scrollbar.grid(column=2, row=self.row, sticky="ns")
-#
-#         # Populate the treeview
-#         for item in self.items:
-#             if item:
-#                 self.treeview.insert("", "end", item, text=item, tags="tags")
-#
-#         # noinspection PyTypeChecker
-#         self.treeview.selection_add(self.initial_selection)
-#
-#     # def selection_callback_wrapper(
-#     #     self, treeview: ttk.Treeview, user_callback: Callable[[Sequence[str]], None]
-#     # ) -> Callable:
-#     #     """Create a callback which will be called whenever the user selection is changed.
-#     #
-#     #     Args:
-#     #         treeview:
-#     #         user_callback:
-#     #
-#     #     Returns: The callback.
-#     #     """
-#     #
-#     #     # noinspection PyUnusedLocal
-#     #     def selection_callback(*args):
-#     #         """Notify Movie Treeview's caller and observer's notifees.
-#     #
-#     #         Args:
-#     #             *args: Not used. Needed for compatibility with Tk:Tcl caller.
-#     #         """
-#     #         current_selection = treeview.selection()
-#     #         user_callback(current_selection)
-#     #         self.observer.notify(set(current_selection) != set(self.initial_selection))
-#     #
-#     #     return selection_callback
-#
-#     # def clear_selection(self):
-#     #     """Clear the current selection.
-#     #
-#     #     Use Case:
-#     #         When the user enters a record the input form is reused. The treeview selection
-#     #         needs to be cleared ready for the next record entry.
-#     #     """
-#     #     # noinspection PyArgumentList
-#     #     self.entry_field.current_value = []
-#
-#     # def selection_set(self, new_selection: Sequence[str]):
-#     #     """Change the current selection.
-#     #
-#     #     Args:
-#     #         new_selection:
-#     #     """
-#     #     self.entry_field.current_value = list(new_selection)
-
-
-# noinspection DuplicatedCode
-@dataclass
-class Observer:
-    """The classic observer pattern."""
-
-    # todo Remove this class. In this location it is only used by _EntryField and tests.
-
-    notifees: list[Callable] = field(default_factory=list, init=False, repr=False)
-
-    def register(self, notifee: Callable):
-        """Register a notifee.
-
-        Each registered notifee: Callable will be called whenever the notify method of
-        this class is called. The registered notifees will be invoked using the same
-        arguments as were supplied to the notify method.
-
-        Args:
-            notifee: This callable will be invoked by the notify method with the
-            arguments supplied to that method.
-        """
-        self.notifees.append(notifee)
-
-    def deregister(self, notifee):
-        """Remove a notifee.
-
-        Args:
-            notifee:
-        """
-        self.notifees.remove(notifee)
-
-    def notify(self, *args, **kwargs):
-        """Call every notifee.
-
-        Args:
-            *args: Passed through from triggering event.
-            **kwargs: Passed through from triggering event.
-        """
-        for observer in self.notifees:
-            observer(*args, **kwargs)
-
-
-@dataclass
-class _EntryField:
-    """
-    A support class for the attributes of a GUI entry field.
-
-    This is typically used for an input form with static data using
-    _create_entry_fields and dynamic data using _set_original_value.
-    _create_entry_fields creates a dictionary of EntryField objects using lists of
-    internal names and label texts. These values are usually derived from static text.
-    _set_original_value adds the original value of fields if not blank. This dynamic
-    data is usually supplied by the external caller.
-    """
-
-    label_text: str
-    original_value: str = ""
-    widget: ttk.Entry | ttk.Checkbutton | tk.Text = None
-    # tkinter offers StringVar, IntVar, and DoubleVar. Only StringVar is used here to enable
-    #   code generalization.
-    # There is an uninvestigated problem with pytest's monkey patching of tk.StringVar if
-    #   textvariable is initialized as:
-    #   textvariable: tk.StringVar = field(default_factory=tk.StringVar, init=False, repr=False)
-    textvariable: tk.StringVar = None
-    observer: Observer = field(default_factory=Observer, init=False, repr=False)
-
-    # todo _EntryField should fall completely out of use
-
-    def __post_init__(self):
-        self.textvariable = tk.StringVar()
-        self.textvariable.set(self.original_value)
-        self.textvariable.trace_add("write", self.observer.notify)
 
 
 @dataclass
@@ -1472,52 +1277,11 @@ class InputZone:
         label.grid(column=0, row=row_ix, sticky="ne", padx=5)
 
 
-def _create_entry_fields(
-    internal_names: Sequence[str],
-    label_texts: Sequence[str],
-) -> Dict[str, _EntryField]:
-    """
-    Create an internal dictionary to simplify field data management. See usage note in the
-    associated EntryField docs.
-
-    Args:
-        internal_names: A sequence of internal_names of the fields
-        label_texts: A sequence of internal internal_names, label text, original values
-
-    Returns:
-        key: The internal name of the field.
-        value: An EntryField instance.
-    """
-    # raise DeprecationWarning
-    return {
-        internal_name: _EntryField(
-            label_text
-        )  # pragma no cover (coverage cannot handle this code)
-        for internal_name, label_text in zip(internal_names, label_texts)
-    }
-
-
-def _set_original_value(
-    entry_fields: Dict[str, _EntryField], original_values: Dict[str, str]
-) -> None:
-    """
-    Update entry fields with original values. See usage note in the associated EntryField docs.
-
-    Args:
-        entry_fields: A dictionary of input fields.
-        original_values: A dictionary of the original values of none or more of the fields.
-            key: internal name
-            value: original value
-    """
-    for internal_name, original_value in original_values.items():
-        entry_fields[internal_name].original_value = original_value
-        entry_fields[internal_name].textvariable.set(original_value)
-
-
-def _create_body_and_button_frames(
+def create_body_and_button_frames(
     parent: TkParentType, name: str, destroy: Callable
 ) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
-    """Create the outer frames for an input form.
+    """
+    Create the outer frames for an input form.
 
     This consists of an upper body and a lower buttonbox frame.
 
@@ -1534,6 +1298,7 @@ def _create_body_and_button_frames(
         Body frame
         Buttonbox frame
     """
+
     outer_frame = ttk.Frame(parent, name=name)
     outer_frame.grid(column=0, row=0, sticky="nsew")
     outer_frame.columnconfigure(0, weight=1)
@@ -1548,7 +1313,7 @@ def _create_body_and_button_frames(
     return outer_frame, body_frame, buttonbox
 
 
-def _create_input_form_framing(
+def create_input_form_framing(
     parent: TkParentType, name: str, destroy: Callable
 ) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
     """Create the outer frames for an input form.
@@ -1569,7 +1334,7 @@ def _create_input_form_framing(
         Body frame
         Buttonbox frame
     """
-    outer_frame, body_frame, buttonbox = _create_body_and_button_frames(
+    outer_frame, body_frame, buttonbox = create_body_and_button_frames(
         parent, name, destroy
     )
     outer_frame.rowconfigure(0, weight=1)
@@ -1577,18 +1342,7 @@ def _create_input_form_framing(
     return outer_frame, body_frame, buttonbox
 
 
-def clear_textvariables(entry_fields: Mapping[str, "_EntryField"]):
-    """Clear entry fields ready for fresh user input.
-
-    Args:
-        entry_fields:
-    """
-
-    for entry_field in entry_fields.values():
-        entry_field.textvariable.set("")
-
-
-def _create_button(
+def create_button(
     buttonbox: ttk.Frame,
     text: str,
     column: int,
@@ -1602,6 +1356,8 @@ def _create_button(
         text: The enclosing buttonbox.
         column: The index of the button in the buttonbox. '0' is leftmost position.
         command: The command to be executed when the button is clicked.
+        default: 'normal', 'active', or 'disabled. See 'The Command Callback' in the
+            'Button' section of TkDocs. https://tkdocs.com/tutorial/widgets.html#button
 
     Returns:
         The button
@@ -1610,45 +1366,6 @@ def _create_button(
     button.grid(column=column, row=0)
     button.bind("<Return>", lambda event, b=button: b.invoke())  # pragma nocover
     return button
-
-
-def _enable_button(button: ttk.Button) -> Callable:
-    """Create a callback which can enable or disable a button.
-
-    Args:
-        button:
-
-    Returns:
-        A callable which will set the enabled state of the button.
-
-    Use case:
-        This callback is intended for use as the notifee of a neuron. For example, if
-        an observed field is changed from its original value the neuron is notified
-        with a 'True' argument. If it is changed back to its original value the
-        neuron is notified with a 'False' argument. All registered notifees will
-        then be called with the argument given to the neuron.
-    """
-
-    # todo Is this function obsolete? If so, remove and adapt tests to use the
-    #  simplified `enable_button`.
-    def func(state: bool):
-        """Enable or disable the button.
-
-        Args:
-            state:
-        """
-        if state:
-            # Enable the button
-            button.state(["!disabled"])
-            # Highlight the button to show it is enabled
-            button.configure(default="active")
-        else:
-            # Disable the button
-            button.state(["disabled"])
-            # Remove the button highlight
-            button.configure(default="disabled")
-
-    return func
 
 
 def enable_button(button: ttk.Button, state: bool):
@@ -1671,82 +1388,8 @@ def enable_button(button: ttk.Button, state: bool):
         button.configure(default="disabled")
 
 
-def _focus_set(entry: ttk.Entry):
+def focus_set(entry: ttk.Entry):
     """Set initial focus for this class."""
     entry.focus_set()
     entry.select_range(0, tk.END)
     entry.icursor(tk.END)
-
-
-def _create_button_orneuron(change_button_state: Callable) -> neurons.OrNeuron:
-    """Create an 'Or' neuron and link it to a button.
-
-    Args:
-        change_button_state:
-
-    Returns:
-        Neuron
-    """
-    neuron = neurons.OrNeuron()
-    neuron.register(change_button_state)
-    return neuron
-
-
-def _create_buttons_andneuron(change_button_state: Callable) -> neurons.AndNeuron:
-    """Create an 'And' neuron and link it to a button.
-
-    Args:
-        change_button_state:
-
-    Returns:
-        Neuron
-    """
-    neuron = neurons.AndNeuron()
-    neuron.register(change_button_state)
-    return neuron
-
-
-def _link_field_to_neuron(
-    entry_fields: dict, name: str, neuron: neurons.Neuron, notify_neuron: Callable
-):
-    """Link the fields associated with a button to its neuron.
-
-    Args:
-        entry_fields: A mapping of field names to instances of EntryField.
-        name: …of the field being mapped to the neuron.
-        neuron:
-        notify_neuron:
-    """
-    entry_fields[name].textvariable.trace_add("write", notify_neuron)
-    neuron.register_event(name)
-
-
-def _create_the_fields_observer(
-    entry_fields: dict, name: str, neuron: neurons.Neuron
-) -> Callable:
-    """Creates the callback for an observed field.
-
-        The returned function will ba called whenever the field content is changed by the user.
-
-    Args:
-        entry_fields: A mapping of the field names to instances of EntryField.
-        name: Field name.
-        neuron: The neuron which will be notified of the field's state.
-
-    Returns:
-        object: The callback which will be called when the field is changed.
-    """
-
-    # noinspection PyUnusedLocal
-    def func(*args):
-        """Calls the neuron when the field changes.
-
-        Args:
-            *args: Not used. Required to match unused arguments from caller.
-        """
-        state = (
-            entry_fields[name].textvariable.get() != entry_fields[name].original_value
-        )
-        neuron(name, state)
-
-    return func
