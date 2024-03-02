@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 2/16/24, 9:16 AM by stephen.
+#  Last modified 3/2/24, 10:51 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -106,6 +106,50 @@ class MovieGUI:
         self.fill_buttonbox(buttonbox)
         self.tmdb_results_frame(tmdb_frame)
 
+    def framing(
+        self, parent: TkParentType
+    ) -> tuple[ttk.Frame, ttk.Frame, ttk.Frame, ttk.Frame]:
+        """Create framing.
+
+        Structure:
+            outer_frame: Frame
+                input_zone: Frame
+                    input_form: Frame
+                    buttonbox: Frame
+                internet_zone: Frame
+
+        Args:
+            parent:
+
+        Returns:
+            outer_frame, fields, buttonbox, internet
+        """
+        name = type(self).__name__.lower()
+        outer_frame = ttk.Frame(parent, padding=10, name=name)
+        outer_frame.grid(column=0, row=0, sticky="nsew")
+        outer_frame.columnconfigure(0, weight=1)
+        outer_frame.columnconfigure(1, weight=1000)
+        outer_frame.rowconfigure(0)
+        # todo new issue: escape key should be a tuple of self.id and name for correct deletion of
+        #  multiple windows with same name.
+        config.current.escape_key_dict[name] = self.destroy
+
+        input_zone = ttk.Frame(outer_frame, padding=10)
+        input_zone.grid(column=0, row=0, sticky="nw")
+        input_zone.columnconfigure(0, weight=1, minsize=25)
+
+        internet_zone = ttk.Frame(outer_frame, padding=10)
+        internet_zone.grid(column=1, row=0, sticky="nw")
+        internet_zone.columnconfigure(0, weight=1, minsize=25)
+
+        input_form = ttk.Frame(input_zone, padding=10)
+        input_form.grid(column=0, row=0, sticky="new")
+
+        buttonbox = ttk.Frame(input_zone, padding=(5, 5, 10, 10))
+        buttonbox.grid(column=0, row=1, sticky="ne")
+
+        return outer_frame, input_form, buttonbox, internet_zone
+
     def user_input_frame(self, body_frame: tk.Frame):
         """
         This creates the widgets which will be used to enter data an display data
@@ -143,7 +187,6 @@ class MovieGUI:
         Args:
             tmdb_frame: The frame into which the widgets will be placed.
         """
-
         self.tmdb_treeview = ttk.Treeview(
             tmdb_frame,
             columns=("title", "year", "director"),
@@ -284,48 +327,6 @@ class MovieGUI:
         """
         self.parent.after_cancel(self.recall_id)
         self.outer_frame.destroy()
-
-    def framing(
-        self, parent: TkParentType
-    ) -> tuple[ttk.Frame, ttk.Frame, ttk.Frame, ttk.Frame]:
-        """Create framing.
-
-        Structure:
-            outer_frame: Frame
-                input_zone: Frame
-                    input_form: Frame
-                    buttonbox: Frame
-                internet_zone: Frame
-
-        Args:
-            parent:
-
-        Returns:
-            outer_frame, fields, buttonbox, internet
-        """
-        name = type(self).__name__.lower()
-        outer_frame = ttk.Frame(parent, padding=10, name=name)
-        outer_frame.grid(column=0, row=0, sticky="nsew")
-        outer_frame.columnconfigure(0, weight=1)
-        outer_frame.columnconfigure(1, weight=1000)
-        outer_frame.rowconfigure(0)
-        config.current.escape_key_dict[name] = self.destroy
-
-        input_zone = ttk.Frame(outer_frame, padding=10)
-        input_zone.grid(column=0, row=0, sticky="nw")
-        input_zone.columnconfigure(0, weight=1, minsize=25)
-
-        internet_zone = ttk.Frame(outer_frame, padding=10)
-        internet_zone.grid(column=1, row=0, sticky="nw")
-        internet_zone.columnconfigure(0, weight=1, minsize=25)
-
-        input_form = ttk.Frame(input_zone, padding=10)
-        input_form.grid(column=0, row=0, sticky="new")
-
-        buttonbox = ttk.Frame(input_zone, padding=(5, 5, 10, 10))
-        buttonbox.grid(column=0, row=1, sticky="ne")
-
-        return outer_frame, input_form, buttonbox, internet_zone
 
 
 @dataclass
