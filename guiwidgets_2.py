@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/2/24, 10:51 AM by stephen.
+#  Last modified 3/5/24, 10:19 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,8 +17,12 @@ This module includes windows for presenting data and returning entered data to i
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import itertools
 import queue
+
+# This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+import tkinter.ttk as ttk
+
+from tkinter import filedialog, messagebox
 from dataclasses import dataclass, field
 from typing import (
     Callable,
@@ -417,7 +421,6 @@ class AddMovieGUI(MovieGUI):
         else:
             for v in self.entry_fields.values():
                 v.clear_current_value()
-            self.entry_fields[MOVIE_TAGS].clear_current_value()
             items = self.tmdb_treeview.get_children()
             self.tmdb_treeview.delete(*items)
 

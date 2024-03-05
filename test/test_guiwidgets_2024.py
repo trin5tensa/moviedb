@@ -1,7 +1,7 @@
 """ Test patterns.py """
 
 #  Copyright (c) 2024-2024. Stephen Rigden.
-#  Last modified 3/2/24, 10:51 AM by stephen.
+#  Last modified 3/5/24, 10:19 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,21 +12,7 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 from contextlib import contextmanager
-
-#  Copyright (c) 2024-2024. Stephen Rigden.
-#  Last modified 3/1/24, 3:13 PM by stephen.
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from unittest.mock import MagicMock, call
 
 import pytest
@@ -34,13 +20,19 @@ from pytest_check import check
 
 import guiwidgets_2
 from globalconstants import *
-from guiwidgets_2 import TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT
+from guiwidgets_2 import TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, COMMIT_TEXT
 
 
 # noinspection PyMissingOrEmptyDocstring
 class TestMovieGUI:
     def test_post_init(
-        self, mock_tk, framing, user_input_frame, fill_buttonbox, tmdb_results_frame
+        self,
+        mock_tk,
+        ttk,
+        framing,
+        user_input_frame,
+        fill_buttonbox,
+        tmdb_results_frame,
     ):
         # noinspection PyTypeChecker
         guiwidgets_2.MovieGUI(mock_tk, tmdb_search_callback=lambda: None, all_tags=None)
@@ -166,9 +158,7 @@ class TestMovieGUI:
         framing,
         fill_buttonbox,
         input_zone,
-        patterns_entry,
-        patterns_text,
-        patterns_treeview,
+        patterns,
         focus_set,
         tmdb_consumer,
         tmdb_search,
@@ -266,7 +256,7 @@ class TestMovieGUI:
         fill_buttonbox,
         tmdb_results_frame,
         input_zone,
-        patterns_entry,
+        patterns,
     ):
         dummy_last_event_id = "42"
         dummy_substring = "substring"
@@ -438,6 +428,176 @@ class TestMovieGUI:
 
 
 # noinspection PyMissingOrEmptyDocstring
+class TestAddMovieGUI:
+    def test_create_buttons(
+        self,
+        mock_tk,
+        framing,
+        fill_buttonbox,
+        tmdb_results_frame,
+        input_zone,
+        patterns,
+        create_button,
+        enable_commit_button,
+    ):
+        # noinspection PyTypeChecker
+        cut = guiwidgets_2.AddMovieGUI(
+            mock_tk, tmdb_search_callback=lambda: None, all_tags=None
+        )
+        column_num = guiwidgets_2.itertools.count()
+        cut._create_buttons(fill_buttonbox, column_num)
+
+        with check:
+            create_button.assert_called_once_with(
+                fill_buttonbox,
+                COMMIT_TEXT,
+                column=0,
+                command=cut.commit,
+                default="normal",
+            )
+        with check:
+            # noinspection PyUnresolvedReferences
+            cut.enable_commit_button.assert_has_calls(
+                [
+                    call(
+                        create_button(), cut.entry_fields[TITLE], cut.entry_fields[YEAR]
+                    ),
+                    call(
+                        create_button(), cut.entry_fields[TITLE], cut.entry_fields[YEAR]
+                    ),
+                ]
+            )
+
+    def test_enable_commit_button(
+        self,
+        mock_tk,
+        framing,
+        fill_buttonbox,
+        tmdb_results_frame,
+        input_zone,
+        patterns,
+        create_button,
+        enable_button,
+        monkeypatch,
+    ):
+        # noinspection PyTypeChecker
+        cut = guiwidgets_2.AddMovieGUI(
+            mock_tk, tmdb_search_callback=lambda: None, all_tags=None
+        )
+
+        monkeypatch.setitem(cut.entry_fields, TITLE, MagicMock())
+        monkeypatch.setitem(cut.entry_fields, YEAR, MagicMock())
+        callback = cut.enable_commit_button(
+            create_button(), cut.entry_fields[TITLE], cut.entry_fields[YEAR]
+        )
+
+        # noinspection PyUnresolvedReferences
+        cut.entry_fields[TITLE].has_data.return_value = False
+        # noinspection PyUnresolvedReferences
+        cut.entry_fields[YEAR].has_data.return_value = False
+        callback()
+
+        # noinspection PyUnresolvedReferences
+        cut.entry_fields[YEAR].has_data.return_value = True
+        callback()
+
+        # noinspection PyUnresolvedReferences
+        cut.entry_fields[TITLE].has_data.return_value = True
+        # noinspection PyUnresolvedReferences
+        cut.entry_fields[YEAR].has_data.return_value = False
+        callback()
+
+        # noinspection PyUnresolvedReferences
+        cut.entry_fields[YEAR].has_data.return_value = True
+        callback()
+
+        with check:
+            enable_button.assert_has_calls(
+                [
+                    call(create_button(), False),
+                    call(create_button(), False),
+                    call(create_button(), False),
+                    call(create_button(), True),
+                ]
+            )
+
+    def test_commit(
+        self,
+        mock_tk,
+        ttk,
+        framing,
+        fill_buttonbox,
+        tmdb_results_frame,
+        input_zone,
+        patterns,
+        messagebox,
+    ):
+        dummy_current_values = iter("abcdef")
+        dummy_tmdb_treeview_children = ("x", "y", "z")
+        dummy_msg = "dummy message"
+        add_movie_callback = MagicMock()
+
+        # noinspection PyTypeChecker
+        cut = guiwidgets_2.AddMovieGUI(
+            mock_tk,
+            tmdb_search_callback=lambda: None,
+            all_tags=None,
+            add_movie_callback=add_movie_callback,
+        )
+        for k in cut.entry_fields.keys():
+            cut.entry_fields[k] = MagicMock()
+            cut.entry_fields[k].current_value = next(dummy_current_values)
+        cut.tmdb_treeview = MagicMock()
+        cut.tmdb_treeview.get_children.return_value = dummy_tmdb_treeview_children
+
+        cut.commit()
+        with check:
+            # noinspection PyUnresolvedReferences
+            cut.add_movie_callback.assert_called_once_with(
+                {
+                    TITLE: "a",
+                    YEAR: "b",
+                    DIRECTOR: "c",
+                    DURATION: "d",
+                    NOTES: "e",
+                    MOVIE_TAGS: "f",
+                }
+            )
+        for v in cut.entry_fields.values():
+            with check:
+                # noinspection PyUnresolvedReferences
+                v.clear_current_value.assert_called_once_with()
+        with check:
+            cut.tmdb_treeview.delete.assert_called_once_with(
+                *dummy_tmdb_treeview_children
+            )
+
+        # Exception tests
+        cut.add_movie_callback.side_effect = [
+            guiwidgets_2.exception.MovieDBConstraintFailure
+        ]
+        cut.commit()
+        cut.add_movie_callback.side_effect = (
+            guiwidgets_2.exception.MovieYearConstraintFailure(
+                dummy_msg,
+            )
+        )
+        cut.commit()
+        with check:
+            messagebox.showinfo.assert_has_calls(
+                [
+                    call(
+                        parent=cut.parent,
+                        message="Database constraint failure.",
+                        detail="A movie with this title and year is already "
+                        "present in the database.",
+                    ),
+                    call(parent=cut.parent, message=dummy_msg),
+                ]
+            )
+
+
+# noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def mock_tk(monkeypatch):
     monkeypatch.setattr(guiwidgets_2, "tk", mock := MagicMock())
@@ -494,6 +654,12 @@ def tmdb_results_frame(monkeypatch):
 def input_zone(monkeypatch):
     monkeypatch.setattr(guiwidgets_2, "InputZone", mock := MagicMock())
     return mock
+
+
+# noinspection PyMissingOrEmptyDocstring
+@pytest.fixture
+def patterns(patterns_entry, patterns_text, patterns_treeview):
+    pass
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -556,4 +722,27 @@ def tmdb_consumer(monkeypatch):
 @pytest.fixture
 def tmdb_search(monkeypatch):
     monkeypatch.setattr(guiwidgets_2.MovieGUI, "tmdb_search", mock := MagicMock())
+    return mock
+
+
+# noinspection PyMissingOrEmptyDocstring
+@pytest.fixture
+def enable_commit_button(monkeypatch):
+    monkeypatch.setattr(
+        guiwidgets_2.AddMovieGUI, "enable_commit_button", mock := MagicMock()
+    )
+    return mock
+
+
+# noinspection PyMissingOrEmptyDocstring
+@pytest.fixture
+def enable_button(monkeypatch):
+    monkeypatch.setattr(guiwidgets_2, "enable_button", mock := MagicMock())
+    return mock
+
+
+# noinspection PyMissingOrEmptyDocstring
+@pytest.fixture
+def messagebox(monkeypatch):
+    monkeypatch.setattr(guiwidgets_2, "messagebox", mock := MagicMock())
     return mock
