@@ -1,7 +1,7 @@
 """ Test patterns.py """
 
 #  Copyright (c) 2024-2024. Stephen Rigden.
-#  Last modified 3/5/24, 10:19 AM by stephen.
+#  Last modified 3/8/24, 10:12 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +20,14 @@ from pytest_check import check
 
 import guiwidgets_2
 from globalconstants import *
-from guiwidgets_2 import TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, COMMIT_TEXT
+from guiwidgets_2 import (
+    TITLE_TEXT,
+    YEAR_TEXT,
+    DIRECTOR_TEXT,
+    COMMIT_TEXT,
+    DELETE_TEXT,
+    MOVIE_DELETE_MESSAGE,
+)
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -227,16 +234,6 @@ class TestMovieGUI:
                 command=cut.destroy,
                 default="active",
             )
-
-    def test_set_initial_tag_selection(
-        self, mock_tk, framing, user_input_frame, fill_buttonbox, tmdb_results_frame
-    ):
-        # noinspection PyTypeChecker
-        cut = guiwidgets_2.MovieGUI(
-            mock_tk, tmdb_search_callback=lambda: None, all_tags=None
-        )
-        with check.raises(NotImplementedError):
-            cut.set_initial_tag_selection()
 
     def test_create_buttons(
         self, mock_tk, framing, user_input_frame, fill_buttonbox, tmdb_results_frame
@@ -595,6 +592,309 @@ class TestAddMovieGUI:
                     call(parent=cut.parent, message=dummy_msg),
                 ]
             )
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestEditMovieGUI:
+    title = "dummy old title"
+    year = 42
+    director = "dummy old director"
+    minutes = 142
+    notes = "dummy old notes"
+    tags = ("test tag 1", "test tag 2")
+
+    def test_post_init(
+        self,
+        mock_tk,
+        ttk,
+        framing,
+        fill_buttonbox,
+        tmdb_results_frame,
+        input_zone,
+        patterns,
+    ):
+        # noinspection PyTypeChecker
+        cut = guiwidgets_2.EditMovieGUI(
+            mock_tk,
+            tmdb_search_callback=lambda: None,
+            all_tags=None,
+            old_movie=(self.old_movie()),
+        )
+
+        # patterns.Entry is mocked once and used four times. mock.original_value retains the last
+        # update which is `minutes`.
+        check.equal(
+            [cut.entry_fields[v].original_value for v in self.old_movie().keys()],
+            [
+                self.minutes,
+                self.minutes,
+                self.minutes,
+                self.minutes,
+                self.notes,
+                self.tags,
+            ],
+        )
+
+    def test_create_buttons(
+        self,
+        mock_tk,
+        framing,
+        fill_buttonbox,
+        tmdb_results_frame,
+        input_zone,
+        patterns,
+        create_button,
+        enable_commit_button,
+        monkeypatch,
+    ):
+        # noinspection PyTypeChecker
+        cut = guiwidgets_2.EditMovieGUI(
+            mock_tk,
+            tmdb_search_callback=lambda: None,
+            all_tags=None,
+            old_movie=self.old_movie(),
+        )
+        column_num = guiwidgets_2.itertools.count()
+        for k in cut.entry_fields.keys():
+            cut.entry_fields[k] = MagicMock()
+        monkeypatch.setattr(cut, "enable_buttons", mock_enable_buttons := MagicMock())
+
+        cut._create_buttons(fill_buttonbox, column_num)
+
+        with check:
+            create_button.assert_has_calls(
+                [
+                    call(
+                        fill_buttonbox,
+                        COMMIT_TEXT,
+                        column=0,
+                        command=cut.commit,
+                        default="disabled",
+                    ),
+                    call(
+                        fill_buttonbox,
+                        DELETE_TEXT,
+                        column=1,
+                        command=cut.delete,
+                        default="active",
+                    ),
+                ]
+            )
+
+        for v in cut.entry_fields.values():
+            with check:
+                # noinspection PyUnresolvedReferences
+                v.observer.register.assert_called_once_with(mock_enable_buttons())
+            with check:
+                mock_enable_buttons.assert_has_calls(
+                    [
+                        call(create_button(), create_button()),
+                        call(create_button(), create_button()),
+                        call(create_button(), create_button()),
+                        call(create_button(), create_button()),
+                        call(create_button(), create_button()),
+                        call(create_button(), create_button()),
+                    ]
+                )
+
+    # noinspection PyUnresolvedReferences
+    def test_enable_buttons(
+        self,
+        mock_tk,
+        framing,
+        fill_buttonbox,
+        tmdb_results_frame,
+        input_zone,
+        patterns,
+        enable_button,
+        monkeypatch,
+    ):
+        monkeypatch.setattr(guiwidgets_2, "create_button", commit_button := MagicMock())
+        monkeypatch.setattr(guiwidgets_2, "create_button", delete_button := MagicMock())
+
+        # noinspection PyTypeChecker
+        cut = guiwidgets_2.EditMovieGUI(
+            mock_tk,
+            tmdb_search_callback=lambda: None,
+            all_tags=None,
+            old_movie=self.old_movie(),
+        )
+        for k in cut.entry_fields.keys():
+            cut.entry_fields[k] = MagicMock()
+            cut.entry_fields[k].changed.return_value = False
+            cut.entry_fields[k].has_data.return_value = True
+        callback = cut.enable_buttons(commit_button, delete_button)
+
+        # No changes and database keys present: cb = False, db = True
+        callback()
+
+        # No changes and database keys missing: cb = False, db = True
+        cut.entry_fields[TITLE].has_data.return_value = False
+        callback()
+
+        # Changes and database keys present: cb = True, db = False
+        cut.entry_fields[TITLE].changed.return_value = True
+        cut.entry_fields[TITLE].has_data.return_value = True
+        callback()
+
+        # Changes and database keys missing: cb = False, db = True
+        cut.entry_fields[TITLE].changed.return_value = True
+        cut.entry_fields[TITLE].has_data.return_value = False
+        callback()
+
+        with check:
+            enable_button.assert_has_calls(
+                [
+                    # No changes and database keys present: cb = False, db = True
+                    call(commit_button, False),
+                    call(delete_button, True),
+                    # No changes and database keys missing: cb = False, db = True
+                    call(commit_button, False),
+                    call(delete_button, True),
+                    # Changes and database keys present: cb = True, db = False
+                    call(commit_button, True),
+                    call(delete_button, False),
+                    # Changes and database keys missing: cb = False, db = True
+                    call(commit_button, False),
+                    call(delete_button, False),
+                ]
+            )
+
+    def test_commit(
+        self,
+        mock_tk,
+        ttk,
+        framing,
+        fill_buttonbox,
+        tmdb_results_frame,
+        input_zone,
+        patterns,
+        messagebox,
+        monkeypatch,
+    ):
+        dummy_current_values = iter("abcdef")
+        dummy_msg = "dummy message"
+        edit_movie_callback = MagicMock()
+        delete_movie_callback = MagicMock()
+
+        # noinspection PyTypeChecker
+        cut = guiwidgets_2.EditMovieGUI(
+            mock_tk,
+            tmdb_search_callback=lambda: None,
+            all_tags=None,
+            old_movie=self.old_movie(),
+            edit_movie_callback=edit_movie_callback,
+            delete_movie_callback=delete_movie_callback,
+        )
+        monkeypatch.setattr(cut, "destroy", mock_destroy := MagicMock())
+        for k in cut.entry_fields.keys():
+            cut.entry_fields[k] = MagicMock()
+            cut.entry_fields[k].current_value = next(dummy_current_values)
+
+        cut.commit()
+        with check:
+            # noinspection PyUnresolvedReferences
+            cut.edit_movie_callback.assert_called_once_with(
+                {
+                    TITLE: "a",
+                    YEAR: "b",
+                    DIRECTOR: "c",
+                    DURATION: "d",
+                    NOTES: "e",
+                    MOVIE_TAGS: "f",
+                }
+            )
+        with check:
+            mock_destroy.assert_called_once_with()
+
+        # Exception tests
+        cut.edit_movie_callback.side_effect = [
+            guiwidgets_2.exception.MovieDBConstraintFailure
+        ]
+        cut.commit()
+        cut.edit_movie_callback.side_effect = (
+            guiwidgets_2.exception.MovieYearConstraintFailure(
+                dummy_msg,
+            )
+        )
+        cut.commit()
+        with check:
+            messagebox.showinfo.assert_has_calls(
+                [
+                    call(
+                        parent=cut.parent,
+                        message="Database constraint failure.",
+                        detail="A movie with this title and year is already "
+                        "present in the database.",
+                    ),
+                    call(parent=cut.parent, message=dummy_msg),
+                ]
+            )
+
+    def test_delete(
+        self,
+        mock_tk,
+        ttk,
+        framing,
+        fill_buttonbox,
+        tmdb_results_frame,
+        input_zone,
+        patterns,
+        monkeypatch,
+    ):
+        dummy_original_values = iter(("Mock Title", "4242"))
+        monkeypatch.setattr(
+            guiwidgets_2, "gui_askyesno", mock_gui_askyesno := MagicMock()
+        )
+        delete_movie_callback = MagicMock()
+        # noinspection PyTypeChecker
+        cut = guiwidgets_2.EditMovieGUI(
+            mock_tk,
+            tmdb_search_callback=lambda: None,
+            all_tags=None,
+            old_movie=self.old_movie(),
+            delete_movie_callback=delete_movie_callback,
+        )
+        monkeypatch.setattr(cut, "destroy", MagicMock())
+        movie = guiwidgets_2.config.FindMovieTypedDict()
+        for k in [TITLE, YEAR]:
+            cut.entry_fields[k] = MagicMock()
+            cut.entry_fields[k].original_value = next(dummy_original_values)
+            # noinspection PyTypedDict
+            movie[k] = cut.entry_fields[k].original_value
+        # noinspection PyTypedDict
+        movie[YEAR] = [movie[YEAR]]
+
+        # gui_askyesno returns False: destroy NOT called.
+        mock_gui_askyesno.return_value = False
+        cut.delete()
+        with check:
+            mock_gui_askyesno.assert_called_once_with(
+                message=MOVIE_DELETE_MESSAGE, icon="question", parent=cut.parent
+            )
+        with check:
+            # noinspection PyUnresolvedReferences
+            cut.destroy.assert_not_called()
+
+        # gui_askyesno returns True: destroy is called.
+        mock_gui_askyesno.return_value = True
+        cut.delete()
+        with check:
+            # noinspection PyUnresolvedReferences
+            cut.delete_movie_callback.assert_called_once_with(movie)
+        with check:
+            # noinspection PyUnresolvedReferences
+            cut.destroy.assert_called_once_with()
+
+    def old_movie(self):
+        return guiwidgets_2.config.MovieUpdateDef(
+            title=self.title,
+            year=self.year,
+            director=self.director,
+            minutes=self.minutes,
+            notes=self.notes,
+            tags=self.tags,
+        )
 
 
 # noinspection PyMissingOrEmptyDocstring

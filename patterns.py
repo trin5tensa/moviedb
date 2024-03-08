@@ -1,7 +1,7 @@
 """Facade pattern for tkinter widgets."""
 
 #  Copyright (c) 2024-2024. Stephen Rigden.
-#  Last modified 2/24/24, 1:51 PM by stephen.
+#  Last modified 3/8/24, 10:12 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -252,6 +252,7 @@ class Treeview(TkinterFacade):
         self.current_value = []
 
     def has_data(self) -> bool:
+        """The current selection is inspected and True is returned if any items are selected."""
         return self.current_value != set()
 
 

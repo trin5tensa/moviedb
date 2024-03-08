@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/5/24, 10:19 AM by stephen.
+#  Last modified 3/8/24, 10:12 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -232,10 +232,6 @@ class MovieGUI:
             default="active",
         )
 
-    def set_initial_tag_selection(self):
-        """Override this method to set the movie tag selection"""
-        raise NotImplementedError
-
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         """Create buttons within the buttonbox.
 
@@ -339,10 +335,6 @@ class AddMovieGUI(MovieGUI):
 
     add_movie_callback: Callable[[MovieTD], None] = field(default=None, kw_only=True)
 
-    def set_initial_tag_selection(self):
-        """No prior tags."""
-        pass
-
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         commit_button = create_button(
             buttonbox,
@@ -442,10 +434,6 @@ class EditMovieGUI(MovieGUI):
         for k in self.entry_fields.keys():
             # noinspection PyTypedDict
             self.entry_fields[k].original_value = self.old_movie[k]
-
-    def set_initial_tag_selection(self):
-        """Set the movie tag selection."""
-        self.entry_fields[MOVIE_TAGS].current_value = self.old_movie["tags"]
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         commit_button = create_button(
