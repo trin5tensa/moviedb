@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/8/24, 10:12 AM by stephen.
+#  Last modified 3/9/24, 9:39 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -37,8 +37,8 @@ from typing import (
 
 import config
 import exception
-import patterns
-from patterns import TkParentType
+import tk_facade
+from tk_facade import TkParentType
 from globalconstants import *
 
 
@@ -80,9 +80,9 @@ class MovieGUI:
     entry_fields: Dict[
         str,
         Union[
-            patterns.Entry,
-            patterns.Text,
-            patterns.Treeview,
+            tk_facade.Entry,
+            tk_facade.Text,
+            tk_facade.Treeview,
         ],
     ] = field(default_factory=dict, init=False, repr=False)
 
@@ -170,16 +170,16 @@ class MovieGUI:
             (TITLE, YEAR, DIRECTOR, DURATION),
             (TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, DURATION_TEXT),
         ):
-            self.entry_fields[name] = patterns.Entry(text, body_frame)
+            self.entry_fields[name] = tk_facade.Entry(text, body_frame)
             input_zone.add_entry_row(self.entry_fields[name])
         focus_set(self.entry_fields[TITLE].widget)
 
         # Create label and text widget.
-        self.entry_fields[NOTES] = patterns.Text(NOTES_TEXT, body_frame)
+        self.entry_fields[NOTES] = tk_facade.Text(NOTES_TEXT, body_frame)
         input_zone.add_text_row(self.entry_fields[NOTES])
 
         # Create a label and treeview for movie tags.
-        self.entry_fields[MOVIE_TAGS] = patterns.Treeview(MOVIE_TAGS_TEXT, body_frame)
+        self.entry_fields[MOVIE_TAGS] = tk_facade.Treeview(MOVIE_TAGS_TEXT, body_frame)
         input_zone.add_treeview_row(self.entry_fields[MOVIE_TAGS], self.all_tags)
 
     def tmdb_results_frame(self, tmdb_frame: tk.Frame):
@@ -361,8 +361,8 @@ class AddMovieGUI(MovieGUI):
     @staticmethod
     def enable_commit_button(
         commit_button: ttk.Button,
-        title: patterns.Entry,
-        year: patterns.Entry,
+        title: tk_facade.Entry,
+        year: tk_facade.Entry,
     ) -> Callable:
         """
         The returned function may be registered with any observer of widgets that need to
@@ -543,7 +543,7 @@ class AddTagGUI:
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
 
     # An internal dictionary to simplify field data management.
-    entry_fields: Dict[str, patterns.Entry] = field(
+    entry_fields: Dict[str, tk_facade.Entry] = field(
         default_factory=dict, init=False, repr=False
     )
 
@@ -569,7 +569,7 @@ class AddTagGUI:
         input_zone = InputZone(body_frame)
 
         # Tag field
-        self.entry_fields[MOVIE_TAG] = patterns.Entry(MOVIE_TAG_TEXT, body_frame)
+        self.entry_fields[MOVIE_TAG] = tk_facade.Entry(MOVIE_TAG_TEXT, body_frame)
         input_zone.add_entry_row(self.entry_fields[MOVIE_TAG])
         focus_set(self.entry_fields[MOVIE_TAG].widget)
 
@@ -606,7 +606,7 @@ class AddTagGUI:
 
     @staticmethod
     def enable_commit_button(
-        commit_button: ttk.Button, tag_field: patterns.Entry
+        commit_button: ttk.Button, tag_field: tk_facade.Entry
     ) -> Callable:
         """
         The returned function may be registered with any observer of widgets that need to
@@ -664,7 +664,7 @@ class SearchTagGUI:
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
 
     # An internal dictionary to simplify field data management.
-    entry_fields: Dict[str, patterns.Entry] = field(
+    entry_fields: Dict[str, tk_facade.Entry] = field(
         default_factory=dict, init=False, repr=False
     )
 
@@ -690,7 +690,7 @@ class SearchTagGUI:
         input_zone = InputZone(body_frame)
 
         # Tag field
-        self.entry_fields[MOVIE_TAG] = patterns.Entry(MOVIE_TAG_TEXT, body_frame)
+        self.entry_fields[MOVIE_TAG] = tk_facade.Entry(MOVIE_TAG_TEXT, body_frame)
         input_zone.add_entry_row(self.entry_fields[MOVIE_TAG])
         focus_set(self.entry_fields[MOVIE_TAG].widget)
 
@@ -727,7 +727,7 @@ class SearchTagGUI:
 
     @staticmethod
     def enable_search_button(
-        search_button: ttk.Button, tag_field: patterns.Entry
+        search_button: ttk.Button, tag_field: tk_facade.Entry
     ) -> Callable:
         """
         The returned function may be registered with any observer of widgets that need to
@@ -783,7 +783,7 @@ class EditTagGUI:
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
 
     # An internal dictionary to simplify field data management.
-    entry_fields: Dict[str, patterns.Entry] = field(
+    entry_fields: Dict[str, tk_facade.Entry] = field(
         default_factory=dict, init=False, repr=False
     )
 
@@ -808,7 +808,7 @@ class EditTagGUI:
         input_zone = InputZone(body_frame)
 
         # Tag field
-        self.entry_fields[MOVIE_TAG] = patterns.Entry(MOVIE_TAG_TEXT, body_frame)
+        self.entry_fields[MOVIE_TAG] = tk_facade.Entry(MOVIE_TAG_TEXT, body_frame)
         self.entry_fields[MOVIE_TAG].original_value = self.tag
         input_zone.add_entry_row(self.entry_fields[MOVIE_TAG])
         focus_set(self.entry_fields[MOVIE_TAG].widget)
@@ -852,7 +852,7 @@ class EditTagGUI:
 
     @staticmethod
     def enable_commit_button(
-        commit_button: ttk.Button, tag_field: patterns.Entry
+        commit_button: ttk.Button, tag_field: tk_facade.Entry
     ) -> Callable:
         """
         The returned function may be registered with any observer of widgets that need to
@@ -1006,7 +1006,7 @@ class PreferencesGUI:
 
     toplevel: tk.Toplevel = None
     # A more convenient data structure for entry fields.
-    entry_fields: Dict[str, Union[patterns.Entry, patterns.Checkbutton]] = field(
+    entry_fields: Dict[str, Union[tk_facade.Entry, tk_facade.Checkbutton]] = field(
         default_factory=dict, init=False, repr=False
     )
 
@@ -1024,14 +1024,14 @@ class PreferencesGUI:
         input_zone = InputZone(body_frame)
 
         # TMDB API key field
-        self.entry_fields[self.api_key_name] = patterns.Entry(
+        self.entry_fields[self.api_key_name] = tk_facade.Entry(
             self.api_key_text, body_frame
         )
         self.entry_fields[self.api_key_name].original_value = self.api_key
         input_zone.add_entry_row(self.entry_fields[self.api_key_name])
 
         # 'Use TMDB' checkbutton
-        self.entry_fields[self.use_tmdb_name] = patterns.Checkbutton(
+        self.entry_fields[self.use_tmdb_name] = tk_facade.Checkbutton(
             self.use_tmdb_text, body_frame
         )
         self.entry_fields[self.use_tmdb_name].original_value = self.do_not_ask
@@ -1169,7 +1169,7 @@ class InputZone:
         # Create a column for scrollbars.
         self.parent.columnconfigure(2, weight=1)
 
-    def add_entry_row(self, entry_field: patterns.Entry):
+    def add_entry_row(self, entry_field: tk_facade.Entry):
         """
         Add label and entry widgets as the bottom row.
 
@@ -1181,7 +1181,7 @@ class InputZone:
         entry_field.widget.configure(width=self.col_1_width)
         entry_field.widget.grid(column=1, row=row_ix)
 
-    def add_text_row(self, entry_field: patterns.Text):
+    def add_text_row(self, entry_field: tk_facade.Text):
         """
         Add label and text widgets as the bottom row.
 
@@ -1210,7 +1210,7 @@ class InputZone:
         entry_field.widget.configure(yscrollcommand=scrollbar.set)
         scrollbar.grid(column=2, row=row_ix, sticky="ns")
 
-    def add_checkbox_row(self, entry_field: patterns.Checkbutton):
+    def add_checkbox_row(self, entry_field: tk_facade.Checkbutton):
         """
         Add a label and a checkbox as the bottom row.
 
@@ -1227,7 +1227,9 @@ class InputZone:
         )
         entry_field.widget.grid(column=1, row=row_ix)
 
-    def add_treeview_row(self, entry_field: patterns.Treeview, all_tags: Sequence[str]):
+    def add_treeview_row(
+        self, entry_field: tk_facade.Treeview, all_tags: Sequence[str]
+    ):
         """
         Add a label and a treeview as the bottom row.
 

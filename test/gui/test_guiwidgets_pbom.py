@@ -7,8 +7,9 @@ Strategy:
 Detect any changes to calls to other functions and methods and changes to the arguments to those calls.
 Changes in the API of called functions and methods are not part of this test suite.
 """
+
 #  Copyright (c) 2023-2024. Stephen Rigden.
-#  Last modified 2/16/24, 9:16 AM by stephen.
+#  Last modified 3/9/24, 9:39 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -218,9 +219,9 @@ class TestMovieGUI:
     def test_tmdb_search(self, monkeypatch, movie_patches):
         with self.moviegui(monkeypatch) as cut:
             substring = "mock substring"
-            cut.entry_fields[
-                guiwidgets_2.TITLE
-            ].textvariable.get.return_value = substring
+            cut.entry_fields[guiwidgets_2.TITLE].textvariable.get.return_value = (
+                substring
+            )
             cut.tmdb_search()
             with check:
                 assert cut.parent.after.mock_calls[1] == call(
@@ -849,9 +850,9 @@ class TestAddTagGUI:
                 "destroy",
                 lambda: mock_destroy_calls.append(True),
             )
-            cut.entry_fields[
-                guiwidgets_2.MOVIE_TAGS
-            ].textvariable.get.return_value = dummy_tag
+            cut.entry_fields[guiwidgets_2.MOVIE_TAGS].textvariable.get.return_value = (
+                dummy_tag
+            )
 
             cut.commit()
             with check:

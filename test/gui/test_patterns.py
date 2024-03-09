@@ -1,6 +1,7 @@
-""" Test patterns.py """
+""" Test module"""
+
 #  Copyright (c) 2024-2024. Stephen Rigden.
-#  Last modified 2/24/24, 1:51 PM by stephen.
+#  Last modified 3/9/24, 9:39 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +18,7 @@ from unittest.mock import MagicMock, call
 import pytest
 from pytest_check import check
 
-import patterns
+import tk_facade
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -34,7 +35,7 @@ class TestObserver:
         def foo2(*args, **kwargs):
             foo2_calls.append((args, kwargs))
 
-        observer = patterns.Observer()
+        observer = tk_facade.Observer()
         observer.register(foo1)
         observer.register(foo2)
 
@@ -67,7 +68,7 @@ class TestEntry:
         with self.entry(tk) as cut:
             check.equal(cut.label_text, self.label_text)
             check.equal(cut.parent, tk)
-            check.is_instance(cut.observer, patterns.Observer)
+            check.is_instance(cut.observer, tk_facade.Observer)
             check.equal(cut.widget, ttk.Entry())
             check.equal(cut._textvariable, tk.StringVar())
             check.equal(cut._original_value, "")
@@ -125,7 +126,7 @@ class TestEntry:
     @contextmanager
     def entry(self, tk):
         # noinspection PyTypeChecker
-        cut = patterns.Entry(self.label_text, tk)
+        cut = tk_facade.Entry(self.label_text, tk)
         yield cut
 
 
@@ -136,11 +137,11 @@ class TestText:
     test_value = "test True"
 
     def test_all_init(self, tk, ttk, tk_parent_type, monkeypatch):
-        monkeypatch.setattr(patterns.Text, "modified", mock_modified := MagicMock())
+        monkeypatch.setattr(tk_facade.Text, "modified", mock_modified := MagicMock())
         with self.text(tk) as cut:
             check.equal(cut.label_text, self.label_text)
             check.equal(cut.parent, tk)
-            check.is_instance(cut.observer, patterns.Observer)
+            check.is_instance(cut.observer, tk_facade.Observer)
             check.equal(cut.widget, tk.Text())
             check.equal(cut._original_value, "")
             with check:
@@ -192,7 +193,7 @@ class TestText:
     @contextmanager
     def text(self, tk):
         # noinspection PyTypeChecker
-        cut = patterns.Text(self.label_text, tk)
+        cut = tk_facade.Text(self.label_text, tk)
         yield cut
 
 
@@ -206,7 +207,7 @@ class TestTreeview:
         with self.treeview(tk) as cut:
             check.equal(cut.label_text, self.label_text)
             check.equal(cut.parent, tk)
-            check.is_instance(cut.observer, patterns.Observer)
+            check.is_instance(cut.observer, tk_facade.Observer)
             check.equal(cut.widget, ttk.Treeview())
             with check:
                 # This has a lambda parameter
@@ -252,7 +253,7 @@ class TestTreeview:
     @contextmanager
     def treeview(self, tk):
         # noinspection PyTypeChecker
-        cut = patterns.Treeview(self.label_text, tk)
+        cut = tk_facade.Treeview(self.label_text, tk)
         yield cut
 
 
@@ -267,7 +268,7 @@ class TestCheckbutton:
         with self.checkbutton(tk) as cut:
             check.equal(cut.label_text, self.label_text)
             check.equal(cut.parent, tk)
-            check.is_instance(cut.observer, patterns.Observer)
+            check.is_instance(cut.observer, tk_facade.Observer)
             check.equal(cut.widget, ttk.Checkbutton())
             check.equal(cut._variable, tk.IntVar())
             check.equal(cut._original_value, self.initial_value)
@@ -310,26 +311,26 @@ class TestCheckbutton:
     @contextmanager
     def checkbutton(self, tk):
         # noinspection PyTypeChecker
-        cut = patterns.Checkbutton(self.label_text, tk)
+        cut = tk_facade.Checkbutton(self.label_text, tk)
         yield cut
 
 
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def tk(monkeypatch):
-    monkeypatch.setattr(patterns, "tk", tk := MagicMock())
+    monkeypatch.setattr(tk_facade, "tk", tk := MagicMock())
     return tk
 
 
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def ttk(monkeypatch):
-    monkeypatch.setattr(patterns, "ttk", ttk := MagicMock())
+    monkeypatch.setattr(tk_facade, "ttk", ttk := MagicMock())
     return ttk
 
 
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def tk_parent_type(monkeypatch):
-    monkeypatch.setattr(patterns, "TkParentType", tk_parent_type := MagicMock)
+    monkeypatch.setattr(tk_facade, "TkParentType", tk_parent_type := MagicMock)
     return tk_parent_type
