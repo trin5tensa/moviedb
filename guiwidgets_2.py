@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/9/24, 9:39 AM by stephen.
+#  Last modified 3/13/24, 8:40 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -109,6 +109,12 @@ class MovieGUI:
         self.user_input_frame(body_frame)
         self.fill_buttonbox(buttonbox)
         self.tmdb_results_frame(tmdb_frame)
+
+        # Set the enabled state of the buttons
+        # todo Move to separate method - See TagGUI for model.
+        # todo unittest next line
+        for v in self.entry_fields.values():
+            v.observer.notify()
 
     def framing(
         self, parent: TkParentType
@@ -533,11 +539,11 @@ class EditMovieGUI(MovieGUI):
 
 
 @dataclass
-class AddTagGUI:
-    """Present a form for adding a tag to the user."""
+class TagGUI:
+    """A base class for tag widgets"""
 
     parent: tk.Tk
-    add_tag_callback: Callable[[str], None]
+    tag: str = ""
 
     # The main outer frame of this class.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
@@ -554,13 +560,14 @@ class AddTagGUI:
         self.outer_frame, body_frame, buttonbox = create_input_form_framing(
             self.parent, type(self).__name__.lower(), self.destroy
         )
-
         self.user_input_frame(body_frame)
         self.create_buttons(buttonbox)
+        self.init_button_enablements()
 
     def user_input_frame(self, body_frame: tk.Frame):
         """
-        Input frame creation
+        This creates the widgets which will be used to enter data an display data
+        retrieved from the user's database.
 
         Args:
             body_frame:The frame into which the widgets will be placed.
@@ -570,8 +577,29 @@ class AddTagGUI:
 
         # Tag field
         self.entry_fields[MOVIE_TAG] = tk_facade.Entry(MOVIE_TAG_TEXT, body_frame)
+        self.entry_fields[MOVIE_TAG].original_value = self.tag
         input_zone.add_entry_row(self.entry_fields[MOVIE_TAG])
         focus_set(self.entry_fields[MOVIE_TAG].widget)
+
+    def create_buttons(self, body_frame: tk.Frame):
+        """Creates the buttons for this widget."""
+        raise NotImplementedError  # pragma nocover
+
+    def init_button_enablements(self):
+        """Set the initial enabled state of the buttons"""
+        for v in self.entry_fields.values():
+            v.observer.notify()
+
+    def destroy(self):
+        """Destroy this instance's widgets."""
+        self.outer_frame.destroy()
+
+
+@dataclass
+class AddTagGUI(TagGUI):
+    """Present a form for adding a tag to the user."""
+
+    add_tag_callback: Callable[[str], None] = None
 
     # noinspection DuplicatedCode
     def create_buttons(self, buttonbox: ttk.Frame):
@@ -583,6 +611,7 @@ class AddTagGUI:
         """
         # noinspection DuplicatedCode
         column_num = itertools.count()
+
         commit_button = create_button(
             buttonbox,
             COMMIT_TEXT,
@@ -640,59 +669,14 @@ class AddTagGUI:
         self.add_tag_callback(tag)
         self.destroy()
 
-    # noinspection PyUnusedLocal
-    def destroy(self, *args):
-        """
-        Destroy all widgets of this class.
-
-        Args:
-            *args: Not used but needed to match external caller.
-        """
-        self.outer_frame.destroy()
-
 
 @dataclass
-class SearchTagGUI:
+class SearchTagGUI(TagGUI):
     """Present a form for creating a search pattern which may be used to search the
     database for matching tags.
     """
 
-    parent: tk.Tk
-    search_tag_callback: Callable[[str], None]
-
-    # The main outer frame of this class.
-    outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
-
-    # An internal dictionary to simplify field data management.
-    entry_fields: Dict[str, tk_facade.Entry] = field(
-        default_factory=dict, init=False, repr=False
-    )
-
-    # noinspection DuplicatedCode,DuplicatedCode
-    def __post_init__(self):
-        """Create the Tk widget."""
-        # Create the outer frames to hold fields and buttons.
-        self.outer_frame, body_frame, buttonbox = create_input_form_framing(
-            self.parent, type(self).__name__.lower(), self.destroy
-        )
-
-        self.user_input_frame(body_frame)
-        self.create_buttons(buttonbox)
-
-    def user_input_frame(self, body_frame: tk.Frame):
-        """
-        Input frame creation
-
-        Args:
-            body_frame:The frame into which the widgets will be placed.
-        """
-
-        input_zone = InputZone(body_frame)
-
-        # Tag field
-        self.entry_fields[MOVIE_TAG] = tk_facade.Entry(MOVIE_TAG_TEXT, body_frame)
-        input_zone.add_entry_row(self.entry_fields[MOVIE_TAG])
-        focus_set(self.entry_fields[MOVIE_TAG].widget)
+    search_tag_callback: Callable[[str], None] = None
 
     # noinspection DuplicatedCode
     def create_buttons(self, buttonbox: ttk.Frame):
@@ -765,53 +749,13 @@ class SearchTagGUI:
         else:
             self.destroy()
 
-    def destroy(self):
-        """Destroy the Tk widgets of this class."""
-        self.outer_frame.destroy()
-
 
 @dataclass
-class EditTagGUI:
+class EditTagGUI(TagGUI):
     """Present a form for editing or deleting a tag to the user."""
 
-    parent: tk.Tk
-    tag: str
-    delete_tag_callback: Callable[[], None]
-    edit_tag_callback: Callable[[str], None]
-
-    # The main outer frame of this class.
-    outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
-
-    # An internal dictionary to simplify field data management.
-    entry_fields: Dict[str, tk_facade.Entry] = field(
-        default_factory=dict, init=False, repr=False
-    )
-
-    # noinspection DuplicatedCode
-    def __post_init__(self):
-        # Create outer frames to hold fields and buttons.
-        self.outer_frame, body_frame, buttonbox = create_input_form_framing(
-            self.parent, type(self).__name__.lower(), self.destroy
-        )
-        self.user_input_frame(body_frame)
-        self.create_buttons(buttonbox)
-
-    def user_input_frame(self, body_frame: tk.Frame):
-        """
-        This creates the widgets which will be used to enter data an display data
-        retrieved from the user's database.
-
-        Args:
-            body_frame:The frame into which the widgets will be placed.
-        """
-
-        input_zone = InputZone(body_frame)
-
-        # Tag field
-        self.entry_fields[MOVIE_TAG] = tk_facade.Entry(MOVIE_TAG_TEXT, body_frame)
-        self.entry_fields[MOVIE_TAG].original_value = self.tag
-        input_zone.add_entry_row(self.entry_fields[MOVIE_TAG])
-        focus_set(self.entry_fields[MOVIE_TAG].widget)
+    delete_tag_callback: Callable[[], None] = None
+    edit_tag_callback: Callable[[str], None] = None
 
     # noinspection DuplicatedCode
     def create_buttons(self, buttonbox: ttk.Frame):
@@ -829,7 +773,7 @@ class EditTagGUI:
             command=self.commit,
             default="disabled",
         )
-        create_button(
+        delete_button = create_button(
             buttonbox,
             DELETE_TEXT,
             column=next(column_num),
@@ -847,12 +791,12 @@ class EditTagGUI:
         # Commit button registration
         tag_entry_field = self.entry_fields[MOVIE_TAG]
         tag_entry_field.observer.register(
-            self.enable_commit_button(commit_button, tag_entry_field)
+            self.enable_buttons(commit_button, delete_button, tag_entry_field)
         )
 
     @staticmethod
-    def enable_commit_button(
-        commit_button: ttk.Button, tag_field: tk_facade.Entry
+    def enable_buttons(
+        commit_button: ttk.Button, delete_button: ttk.Button, tag_field: tk_facade.Entry
     ) -> Callable:
         """
         The returned function may be registered with any observer of widgets that need to
@@ -860,6 +804,7 @@ class EditTagGUI:
 
         Args:
             commit_button:
+            delete_button:
             tag_field:
 
         Returns:
@@ -877,6 +822,9 @@ class EditTagGUI:
                 **kwargs: Sent by tkinter but not used.
             """
             enable_button(commit_button, tag_field.has_data() and tag_field.changed())
+            enable_button(
+                delete_button, tag_field.has_data() and not tag_field.changed()
+            )
 
         return func
 
@@ -902,10 +850,6 @@ class EditTagGUI:
         else:
             self.entry_fields[MOVIE_TAG].original_value = self.tag
             focus_set(self.entry_fields[MOVIE_TAG].widget)
-
-    def destroy(self):
-        """Destroy this instance's widgets."""
-        self.outer_frame.destroy()
 
 
 @dataclass

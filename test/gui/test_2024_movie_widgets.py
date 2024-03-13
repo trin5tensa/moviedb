@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright (c) 2024-2024. Stephen Rigden.
-#  Last modified 3/9/24, 9:39 AM by stephen.
+#  Last modified 3/13/24, 8:40 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -104,6 +104,7 @@ class TestMovieGUI:
     def test_user_input_frame(
         self,
         mock_tk,
+        ttk,
         moviegui_framing,
         movie_fill_buttonbox,
         movie_tmdb_results_frame,
@@ -213,6 +214,7 @@ class TestMovieGUI:
     def test_fill_buttonbox(
         self,
         mock_tk,
+        ttk,
         moviegui_framing,
         movie_user_input_frame,
         movie_tmdb_results_frame,
@@ -243,6 +245,7 @@ class TestMovieGUI:
     def test_create_buttons(
         self,
         mock_tk,
+        ttk,
         moviegui_framing,
         movie_user_input_frame,
         movie_fill_buttonbox,
@@ -259,6 +262,7 @@ class TestMovieGUI:
     def test_tmdb_search(
         self,
         mock_tk,
+        ttk,
         moviegui_framing,
         movie_fill_buttonbox,
         movie_tmdb_results_frame,
@@ -291,6 +295,7 @@ class TestMovieGUI:
     def test_tmdb_consumer_with_empty_queue(
         self,
         mock_tk,
+        ttk,
         moviegui_framing,
         movie_user_input_frame,
         movie_fill_buttonbox,
@@ -320,6 +325,7 @@ class TestMovieGUI:
     def test_tmdb_consumer_with_items_in_queue(
         self,
         mock_tk,
+        ttk,
         moviegui_framing,
         movie_user_input_frame,
         movie_fill_buttonbox,
@@ -370,6 +376,7 @@ class TestMovieGUI:
     def test_tmdb_treeview_callback_with_selection(
         self,
         mock_tk,
+        ttk,
         moviegui_framing,
         movie_user_input_frame,
         movie_fill_buttonbox,
@@ -402,6 +409,7 @@ class TestMovieGUI:
     def test_tmdb_treeview_callback_without_selection(
         self,
         mock_tk,
+        ttk,
         moviegui_framing,
         movie_user_input_frame,
         movie_fill_buttonbox,
@@ -432,6 +440,7 @@ class TestMovieGUI:
     def test_destroy(
         self,
         mock_tk,
+        ttk,
         moviegui_framing,
         movie_user_input_frame,
         movie_fill_buttonbox,
@@ -464,6 +473,7 @@ class TestAddMovieGUI:
     def test_create_buttons(
         self,
         mock_tk,
+        ttk,
         moviegui_framing,
         movie_fill_buttonbox,
         movie_tmdb_results_frame,
@@ -673,6 +683,7 @@ class TestEditMovieGUI:
     def test_create_buttons(
         self,
         mock_tk,
+        ttk,
         moviegui_framing,
         movie_fill_buttonbox,
         movie_tmdb_results_frame,

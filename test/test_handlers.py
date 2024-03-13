@@ -1,6 +1,7 @@
 """Menu handlers test module."""
-#  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/18/23, 10:10 AM by stephen.
+
+#  Copyright (c) 2022-2024. Stephen Rigden.
+#  Last modified 3/13/24, 8:40 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -647,28 +648,36 @@ class TestTags:
         monkeypatch.setattr(
             handlers.guiwidgets_2,
             "AddTagGUI",
-            lambda parent, commit_callback: tag_gui_args.append(
-                (parent, commit_callback)
-            ),
+            lambda *args, **kwargs: tag_gui_args.append((args, kwargs)),
         )
 
         tk_parent = DummyParent()
         add_tag_callback = handlers._add_tag_callback
         with self.tag_func_context(handlers.add_tag):
-            assert tag_gui_args == [(tk_parent, add_tag_callback)]
+            assert tag_gui_args == [
+                (
+                    (tk_parent,),
+                    {"add_tag_callback": add_tag_callback},
+                )
+            ]
 
     def test_edit_tag(self, monkeypatch):
         edit_tag_args = []
         monkeypatch.setattr(
             handlers.guiwidgets_2,
             "SearchTagGUI",
-            lambda *args: edit_tag_args.append(args),
+            lambda *args, **kwargs: edit_tag_args.append((args, kwargs)),
         )
 
         tk_parent = DummyParent()
         search_tag_callback = handlers._search_tag_callback
         with self.tag_func_context(handlers.edit_tag):
-            assert edit_tag_args == [(tk_parent, search_tag_callback)]
+            assert edit_tag_args == [
+                (
+                    (tk_parent,),
+                    {"search_tag_callback": search_tag_callback},
+                ),
+            ]
 
     @contextmanager
     def tag_func_context(self, tag_func):

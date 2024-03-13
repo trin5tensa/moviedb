@@ -1,8 +1,9 @@
 """Menu handlers.
 
 This module is the glue between the user's selection of a menu item and the gui."""
+
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 2/24/24, 1:51 PM by stephen.
+#  Last modified 3/13/24, 8:40 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -205,13 +206,15 @@ def edit_movie():
 
 def add_tag():
     """Add a new tag to the database."""
-    guiwidgets_2.AddTagGUI(config.current.tk_root, _add_tag_callback)
+    guiwidgets_2.AddTagGUI(config.current.tk_root, add_tag_callback=_add_tag_callback)
 
 
 # noinspection PyMissingOrEmptyDocstring
 def edit_tag():
     """Get tag string pattern from the user and search for compliant records."""
-    guiwidgets_2.SearchTagGUI(config.current.tk_root, _search_tag_callback)
+    guiwidgets_2.SearchTagGUI(
+        config.current.tk_root, search_tag_callback=_search_tag_callback
+    )
 
 
 def import_movies():
@@ -420,10 +423,17 @@ def _search_tag_callback(tag_pattern: str):
         delete_callback = _delete_tag_callback_wrapper(tag)
         edit_callback = _edit_tag_callback_wrapper(tag)
         guiwidgets_2.EditTagGUI(
-            config.current.tk_root, tag, delete_callback, edit_callback
+            config.current.tk_root,
+            delete_tag_callback=delete_callback,
+            edit_tag_callback=edit_callback,
+            tag=tag,
         )
     else:
-        guiwidgets_2.SelectTagGUI(config.current.tk_root, _select_tag_callback, tags)
+        guiwidgets_2.SelectTagGUI(
+            config.current.tk_root,
+            select_tag_callback=_select_tag_callback,
+            tags_to_show=tags,
+        )
 
 
 def _edit_tag_callback_wrapper(old_tag: str) -> Callable:
@@ -496,7 +506,10 @@ def _select_tag_callback(old_tag: str):
     delete_callback = _delete_tag_callback_wrapper(old_tag)
     edit_callback = _edit_tag_callback_wrapper(old_tag)
     guiwidgets_2.EditTagGUI(
-        config.current.tk_root, old_tag, delete_callback, edit_callback
+        config.current.tk_root,
+        delete_tag_callback=delete_callback,
+        edit_tag_callback=edit_callback,
+        tag=old_tag,
     )
 
 
