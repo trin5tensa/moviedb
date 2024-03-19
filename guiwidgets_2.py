@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/19/24, 8:23 AM by stephen.
+#  Last modified 3/19/24, 1:17 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -1117,7 +1117,7 @@ class InputZone:
             entry_field:
         """
         row_ix = next(self.row)
-        self._create_label(entry_field.label_text, row_ix)
+        self.create_label(entry_field.label_text, row_ix)
         entry_field.widget.configure(width=self.col_1_width)
         entry_field.widget.grid(column=1, row=row_ix)
 
@@ -1131,8 +1131,9 @@ class InputZone:
         Returns:
             text widget
         """
+
         row_ix = next(self.row)
-        self._create_label(entry_field.label_text, row_ix)
+        self.create_label(entry_field.label_text, row_ix)
 
         entry_field.widget.configure(
             width=self.col_1_width - 2,
@@ -1177,8 +1178,9 @@ class InputZone:
             entry_field:
             all_tags
         """
+
         row_ix = next(self.row)
-        self._create_label(entry_field.label_text, row_ix)
+        self.create_label(entry_field.label_text, row_ix)
 
         entry_field.widget.configure(
             columns=("tags",),
@@ -1199,7 +1201,7 @@ class InputZone:
         entry_field.widget.configure(yscrollcommand=scrollbar.set)
         scrollbar.grid(column=2, row=row_ix, sticky="ns")
 
-    def _create_label(self, text: str, row_ix: int):
+    def create_label(self, text: str, row_ix: int):
         """Create a label for the current row.
 
         Args:
@@ -1268,6 +1270,7 @@ def create_input_form_framing(
         Body frame
         Buttonbox frame
     """
+    # todo Test this function
     outer_frame, body_frame, buttonbox = create_body_and_button_frames(
         parent, name, destroy
     )
