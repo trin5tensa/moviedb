@@ -1,7 +1,7 @@
 """ Test module. """
 
 #  Copyright (c) 2023-2024. Stephen Rigden.
-#  Last modified 3/19/24, 1:17 PM by stephen.
+#  Last modified 3/19/24, 1:19 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -181,7 +181,6 @@ class TestCreateInputFormFraming:
             outer_frame.rowconfigure.assert_has_calls(
                 [call(0, weight=1), call(1, minsize=35)]
             )
-        assert False
 
 
 # noinspection PyMissingOrEmptyDocstring
