@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/13/24, 8:40 AM by stephen.
+#  Last modified 3/19/24, 8:23 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -58,6 +58,7 @@ DELETE_TEXT = "Delete"
 CANCEL_TEXT = "Cancel"
 
 MOVIE_DELETE_MESSAGE = "Do you want to delete this movie?"
+TAG_DELETE_MESSAGE = "Do you want to delete this tag?"
 NO_MATCH_MESSAGE = "No matches"
 NO_MATCH_DETAIL = "There are no matching tags in the database."
 
@@ -572,7 +573,6 @@ class TagGUI:
         Args:
             body_frame:The frame into which the widgets will be placed.
         """
-
         input_zone = InputZone(body_frame)
 
         # Tag field
@@ -840,7 +840,7 @@ class EditTagGUI(TagGUI):
         Get the user's confirmation of deletion with a dialog window. Either exit the
         method or call the registered deletion callback."""
         if gui_askyesno(
-            message=f"Do you want to delete tag '{self.tag}'?",
+            message=f"{TAG_DELETE_MESSAGE}",
             icon="question",
             default="no",
             parent=self.parent,
@@ -881,13 +881,7 @@ class SelectTagGUI:
         # Populate the treeview rows
         for tag in self.tags_to_show:
             tree.insert(
-                "",
-                "end",
-                iid=tag,
-                text=tag,
-                values=[],
-                tags=MOVIE_TAGS,
-                open=True,
+                "", "end", iid=tag, text=tag, values=[], tags=MOVIE_TAGS, open=True
             )
 
         # Bind the treeview callback
@@ -981,7 +975,7 @@ class PreferencesGUI:
         self.entry_fields[self.use_tmdb_name].original_value = self.do_not_ask
         input_zone.add_checkbox_row(self.entry_fields[self.use_tmdb_name])
 
-        # # Create buttons
+        # Create buttons
         column_num = itertools.count()
         save_button = create_button(
             buttonbox,
@@ -1000,7 +994,9 @@ class PreferencesGUI:
 
         # Register the save button callback with its many observers.
         for entry_field in self.entry_fields.values():
-            entry_field.observer.register(self.enable_save_button(save_button))
+            entry_field.observer.register(
+                self.enable_save_button(save_button),
+            )
 
     def enable_save_button(self, save_button: ttk.Button) -> Callable:
         """Manages the enabled or disabled state of the save button.
