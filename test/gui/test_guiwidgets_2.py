@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/19/24, 1:17 PM by stephen.
+#  Last modified 3/20/24, 2:31 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -39,41 +39,6 @@ Exc = Type[Optional[guiwidgets_2.exception.DatabaseSearchFoundNothing]]
 
 # noinspection PyMissingOrEmptyDocstring
 @pytest.mark.usefixtures("patch_tk")
-class TestSelectMovieGUI:
-    handlers_callback = Mock()
-    movies = [
-        guiwidgets.config.MovieUpdateDef(
-            title="Select Movie Test TItle",
-            year=4242,
-            director="test director",
-            minutes=42,
-            notes="test notes",
-        )
-    ]
-
-    @pytest.mark.skip
-    def test_selected_movie_becomes_argument_for_callback(self):
-        with self.select_movie() as cm:
-            args, kwargs = cm.treeview.bind_calls[0]
-            treeview_callback = kwargs["func"]
-            # # Method has been removed
-            # cm.treeview.selection_set("I001")
-            treeview_callback()
-
-            expected = {
-                k: v for k, v in self.movies[0].items() if k in {"title", "year"}
-            }
-            self.handlers_callback.assert_called_once_with(expected)
-
-    @contextmanager
-    def select_movie(self):
-        # noinspection PyTypeChecker
-        gui = guiwidgets.SelectMovieGUI(DummyTk(), self.movies, self.handlers_callback)
-        yield gui
-
-
-# noinspection PyMissingOrEmptyDocstring
-@pytest.mark.usefixtures("patch_tk")
 class TestFocusSet:
     def test_focus_set_calls_focus_set_on_entry(self, patch_tk):
         with self.focus_set_context() as entry:
@@ -96,156 +61,6 @@ class TestFocusSet:
         entry = guiwidgets_2.ttk.Entry(DummyTk())
         guiwidgets_2.focus_set(entry)
         yield entry
-
-
-# noinspection PyMissingOrEmptyDocstring
-@pytest.mark.usefixtures("patch_tk")
-class TestLabelFieldWidget:
-    def test_label_field_widget_created(self):
-        with self.labelfield_context() as labelfield:
-            assert labelfield.parent == TtkFrame(DummyTk())
-            assert labelfield.col_0_width == 30
-            assert labelfield.col_1_width == 36
-
-    def test_column_0_configure_called(self):
-        with self.labelfield_context() as labelfield:
-            args, kwargs = labelfield.parent.columnconfigure_calls[0]
-            assert args == (0,)
-            assert kwargs == dict(weight=1, minsize=labelfield.col_0_width)
-
-    def test_column_1_configure_called(self):
-        with self.labelfield_context() as labelfield:
-            args, kwargs = labelfield.parent.columnconfigure_calls[1]
-            assert args == (1,)
-            assert kwargs == dict(weight=1)
-
-    @pytest.mark.skip
-    def test_add_entry_row_calls_create_label(self, dummy_entry_field, monkeypatch):
-        create_label_calls = []
-        monkeypatch.setattr(
-            guiwidgets_2.InputZone,
-            "create_label",
-            lambda *args: create_label_calls.append(args),
-        )
-        with self.labelfield_context() as labelfield:
-            labelfield.add_entry_row(dummy_entry_field)
-            _, entry_field, row = create_label_calls[0]
-            assert create_label_calls == [(labelfield, dummy_entry_field.label_text, 0)]
-
-    @pytest.mark.skip
-    def test_add_entry_row_creates_entry(self, dummy_entry_field):
-        with self.labelfield_context() as labelfield:
-            labelfield.add_entry_row(dummy_entry_field)
-            assert dummy_entry_field.widget == TtkEntry(
-                parent=TtkFrame(parent=DummyTk()),
-                textvariable=TkStringVar(value="4242"),
-                width=36,
-            )
-
-    @pytest.mark.skip
-    def test_add_entry_row_grids_entry(self, dummy_entry_field):
-        with self.labelfield_context() as labelfield:
-            labelfield.add_entry_row(dummy_entry_field)
-            # noinspection PyUnresolvedReferences
-            assert dummy_entry_field.widget.grid_calls == [dict(column=1, row=0)]
-
-    @pytest.mark.skip
-    def test_add_entry_row_creates_checkbutton(self, dummy_entry_field):
-        with self.labelfield_context() as labelfield:
-            labelfield.add_checkbox_row(dummy_entry_field)
-            # noinspection PyTypeChecker
-            assert dummy_entry_field.widget == TtkCheckbutton(
-                parent=TtkFrame(parent=DummyTk()),
-                text=dummy_entry_field.label_text,
-                variable=dummy_entry_field.textvariable,
-                width=guiwidgets_2.InputZone.col_1_width,
-            )
-
-    @pytest.mark.skip
-    def test_add_entry_row_grids_checkbutton(self, dummy_entry_field):
-        with self.labelfield_context() as labelfield:
-            labelfield.add_checkbox_row(dummy_entry_field)
-            # noinspection PyUnresolvedReferences
-            assert dummy_entry_field.widget.grid_calls == [dict(column=1, row=0)]
-
-    @pytest.mark.skip
-    def test_add_treeview_row_calls_create_label(self, monkeypatch):
-        items = ["tag 1", "tag 2"]
-        with self.labelfield_context() as labelfield:
-            calls = []
-            monkeypatch.setattr(
-                guiwidgets_2.InputZone,
-                "create_label",
-                lambda *args: calls.append(args),
-            )
-            labelfield.add_treeview_row(
-                guiwidgets_2.MOVIE_TAGS_TEXT, items, lambda: None
-            )
-            assert calls == [(labelfield, guiwidgets_2.SELECT_TAGS_TEXT, 0)]
-
-    # noinspection PyPep8Naming
-    @pytest.mark.skip
-    def test_add_treeview_row_creates_MovieTagTreeview_object(self, monkeypatch):
-        items = ["tag 1", "tag 2"]
-
-        def dummy_callback():
-            pass
-
-        with self.labelfield_context() as labelfield:
-            calls = []
-            monkeypatch.setattr(
-                guiwidgets_2, "_MovieTagTreeview", lambda *args: calls.append(args)
-            )
-            labelfield.add_treeview_row(
-                guiwidgets_2.MOVIE_TAGS_TEXT, items, dummy_callback
-            )
-            assert calls == [(labelfield.parent, 0, items, dummy_callback)]
-
-    # noinspection PyPep8Naming
-    @pytest.mark.skip
-    def test_add_treeview_row_returns_MovieTagTreeview_object(self, monkeypatch):
-        items = ["tag 1", "tag 2"]
-        with self.labelfield_context() as labelfield:
-            movie_tag_treeview = labelfield.add_treeview_row(
-                guiwidgets_2.MOVIE_TAGS_TEXT, items, lambda: None
-            )
-            assert isinstance(movie_tag_treeview, guiwidgets_2._MovieTagTreeview)
-
-    @pytest.mark.skip
-    def test_create_label_creates_label(self, dummy_entry_field):
-        row = 0
-        with self.labelfield_context() as labelfield:
-            labelfield._create_label(dummy_entry_field.label_text, row)
-            # noinspection PyTypeChecker
-            assert labelfield.parent.children[0] == TtkLabel(
-                TtkFrame(DummyTk()), dummy_entry_field.label_text
-            )
-
-    @pytest.mark.skip
-    def test_create_label_grids_label(self, dummy_entry_field):
-        row = 0
-        with self.labelfield_context() as labelfield:
-            labelfield._create_label(dummy_entry_field, row)
-            assert labelfield.parent.children[0].grid_calls == [
-                {
-                    "column": 0,
-                    "row": row,
-                    "sticky": "ne",
-                    "padx": 5,
-                }
-            ]
-
-    @contextmanager
-    def labelfield_context(self):
-        parent_frame = TtkFrame(DummyTk())
-        # noinspection PyTypeChecker
-        yield guiwidgets_2.InputZone(parent_frame)
-
-    @pytest.fixture()
-    def dummy_entry_field(self):
-        return guiwidgets_2._EntryField(
-            "dummy field", original_value="dummy field value"
-        )
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -302,20 +117,6 @@ def test_gui_askopenfilename(monkeypatch):
     # noinspection PyTypeChecker
     guiwidgets_2.gui_askopenfilename(parent, filetypes)
     assert calls == [(dict(parent=parent, filetypes=filetypes))]
-
-
-@pytest.mark.skip
-def test_link_field_to_neuron_trace_add_called(patch_tk, dummy_entry_fields):
-    name = "tag"
-    neuron = guiwidgets_2.neurons.OrNeuron()
-    notify_neuron = guiwidgets_2._create_the_fields_observer(
-        dummy_entry_fields, name, neuron
-    )
-    guiwidgets_2._link_field_to_neuron(dummy_entry_fields, name, neuron, notify_neuron)
-    # noinspection PyUnresolvedReferences
-    assert dummy_entry_fields["tag"].textvariable.trace_add_calls == [
-        ("write", notify_neuron)
-    ]
 
 
 # noinspection PyMissingOrEmptyDocstring

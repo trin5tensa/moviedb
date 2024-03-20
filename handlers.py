@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/13/24, 8:40 AM by stephen.
+#  Last modified 3/20/24, 2:31 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -29,6 +29,12 @@ import guiwidgets_2
 import impexp
 import tmdb
 from globalconstants import *
+
+MISSING_MOVIE = "Missing movie"
+THE_MOVIE = "The movie"
+MOVIE_DELETED = (
+    "is no longer in the database. It may have been deleted by another process."
+)
 
 
 class EscapeKeyDict(UserDict):
@@ -194,7 +200,7 @@ def add_movie():
         config.current.tk_root,
         _tmdb_io_handler,
         all_tags,
-        add_movie_callback=_add_movie_callback,
+        add_movie_callback=add_movie_callback,
     )
 
 
@@ -250,25 +256,26 @@ def _settings_callback(tmdb_api_key: str, use_tmdb: bool):
     config.persistent.use_tmdb = use_tmdb
 
 
-# PyCharm typing bug suppressed
 # noinspection PyTypedDict
-def _add_movie_callback(movie: MovieTD):
+def add_movie_callback(gui_movie: MovieTD):
     """Add user supplied data to the database.
 
     Args:
-        movie:
+        gui_movie:
     """
 
-    selected_tags = movie[MOVIE_TAGS]
-    del movie[MOVIE_TAGS]
+    selected_tags = gui_movie[MOVIE_TAGS]
+    del gui_movie[MOVIE_TAGS]
 
-    database.add_movie(movie)
-    movie = config.MovieKeyTypedDict(title=movie["title"], year=movie["year"])
+    database.add_movie(gui_movie)
+    db_movie = config.MovieKeyTypedDict(
+        title=gui_movie["title"], year=gui_movie["year"]
+    )
     for tag in selected_tags:
-        database.add_movie_tag_link(tag, movie)
+        database.add_movie_tag_link(tag, db_movie)
 
 
-def _delete_movie_callback(movie: config.FindMovieTypedDict):
+def delete_movie_callback(movie: config.FindMovieTypedDict):
     """Delete a movie.
 
     Args:
@@ -314,8 +321,8 @@ def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[s
             _tmdb_io_handler,
             database.all_tags(),
             old_movie=movie,
-            edit_movie_callback=_edit_movie_callback(movie_key),
-            delete_movie_callback=_delete_movie_callback,
+            edit_movie_callback=edit_movie_callback(movie_key),
+            delete_movie_callback=delete_movie_callback,
         )
 
     else:
@@ -325,7 +332,7 @@ def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[s
         )
 
 
-def _edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
+def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
     """Create the edit movie callback
 
     Args:
@@ -353,18 +360,18 @@ def _edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
 
         # Edit links
         old_tags = database.movie_tags(old_movie)
-        new_movie = MovieTD(title=new_movie[TITLE], year=new_movie[YEAR])
+        db_movie = MovieTD(title=new_movie[TITLE], year=new_movie[YEAR])
 
         try:
-            database.edit_movie_tag_links(new_movie, old_tags, selected_tags)
+            database.edit_movie_tag_links(db_movie, old_tags, selected_tags)
 
         # Can't add tags because new movie has been deleted.
+        # todo This code smells - the whole update should be an atomic transaction.
         except exception.DatabaseSearchFoundNothing:
             missing_movie_args = (
                 config.current.tk_root,
-                "Missing movie",
-                f"The movie {new_movie} is no longer in the database. It may have "
-                f"been deleted by another process. ",
+                MISSING_MOVIE,
+                f"{THE_MOVIE} {db_movie} {MOVIE_DELETED}",
             )
             guiwidgets.gui_messagebox(*missing_movie_args)
 
@@ -390,8 +397,8 @@ def _select_movie_callback(movie_id: config.MovieKeyTypedDict):
         _tmdb_io_handler,
         database.all_tags(),
         old_movie=movie,
-        edit_movie_callback=_edit_movie_callback(movie_key),
-        delete_movie_callback=_delete_movie_callback,
+        edit_movie_callback=edit_movie_callback(movie_key),
+        delete_movie_callback=delete_movie_callback,
     )
 
 

@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/13/24, 8:40 AM by stephen.
+#  Last modified 3/20/24, 2:31 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -234,7 +234,7 @@ class TestAddMovie:
                 DummyParent(),
                 handlers._tmdb_io_handler,
                 self.TAGS,
-                add_movie_callback=handlers._add_movie_callback,
+                add_movie_callback=handlers.add_movie_callback,
             )
 
     # noinspection PyMissingOrEmptyDocstring
@@ -262,7 +262,7 @@ class TestDeleteMovie:
         monkeypatch.setattr(
             handlers.database, "del_movie", lambda *args: calls.append(args)
         )
-        handlers._delete_movie_callback(movie)
+        handlers.delete_movie_callback(movie)
         assert calls == [(movie,)]
 
 
@@ -387,55 +387,6 @@ class TestImportMovies:
 
 
 # noinspection PyMissingOrEmptyDocstring
-class TestAddMovieCallback:
-    @pytest.mark.skip
-    def test_add_movie_called(self, class_patches):
-        self.dummy_add_movie_calls = []
-        with self.callback_context():
-            assert self.dummy_add_movie_calls == [
-                (dict(title="Test Title", year=2020),)
-            ]
-
-    @pytest.mark.skip
-    def test_add_movie_tag_link_called(self, class_patches):
-        self.dummy_add_movie_tag_link_calls = []
-        with self.callback_context():
-            assert self.dummy_add_movie_tag_link_calls == [
-                (
-                    "test 1",
-                    dict(title="Test Title", year=2020),
-                ),
-            ]
-
-    @pytest.fixture
-    def class_patches(self, monkeypatch):
-        monkeypatch.setattr(handlers.database, "add_movie", self.dummy_add_movie)
-        monkeypatch.setattr(handlers.database, "add_tag", self.dummy_add_tag)
-        monkeypatch.setattr(
-            handlers.database, "add_movie_tag_link", self.dummy_add_movie_tag_link
-        )
-
-    @contextmanager
-    def callback_context(self):
-        movie = handlers.config.MovieTypedDict(title="Test Title", year=2020)
-        tags = ["test 1"]
-        yield handlers._add_movie_callback(movie, tags)
-
-    dummy_add_movie_calls = []
-    dummy_add_tag_calls = []
-    dummy_add_movie_tag_link_calls = []
-
-    def dummy_add_movie(self, *args):
-        self.dummy_add_movie_calls.append(args)
-
-    def dummy_add_tag(self, *args):
-        self.dummy_add_tag_calls.append(args)
-
-    def dummy_add_movie_tag_link(self, *args):
-        self.dummy_add_movie_tag_link_calls.append(args)
-
-
-# noinspection PyMissingOrEmptyDocstring
 class TestSearchMovieCallback:
     search_title = "test tsmc"
     year = "4242"
@@ -516,8 +467,8 @@ class TestSearchMovieCallback:
                     self.tags,
                     None,
                     self.movie_key,
-                    "_edit_movie_callback.<locals>.func",
-                    handlers._delete_movie_callback,
+                    "edit_movie_callback.<locals>.func",
+                    handlers.delete_movie_callback,
                 )
             ]
             assert dummy_edit_movie_gui_instance == expected
@@ -532,113 +483,6 @@ class TestSearchMovieCallback:
                 )
             ]
             assert dummy_select_movie_gui_instance == expected
-
-
-# noinspection PyMissingOrEmptyDocstring
-@pytest.mark.skip
-class TestEditMovieCallback:
-    OLD_TITLE = "Old Test Title"
-    OLD_YEAR = 1942
-    OLD_MOVIE = handlers.config.MovieTypedDict(title=OLD_TITLE, year=OLD_YEAR)
-    OLD_TAGS = ["Tag 1", "Tag 2"]
-    NEW_TITLE = "Test Title"
-    NEW_YEAR = 2042
-    NEW_MOVIE = handlers.config.MovieTypedDict(title=NEW_TITLE, year=NEW_YEAR)
-    NEW_TAGS = ["Tag 2", "Tag 3"]
-
-    replace_movie_calls: List = None
-    movie_tags_calls: List = None
-    edit_movie_tag_link_calls: List = None
-    gui_messagebox_calls: List = None
-
-    def test_edit_movie_callback_returned(self):
-        with self.class_context() as cm:
-            assert cm.__name__ == "func"
-
-    def test_replace_movie_called(self, patches):
-        with self.class_context() as cm:
-            cm(self.NEW_MOVIE, self.NEW_TAGS)
-            assert self.replace_movie_calls == [(self.OLD_MOVIE, self.NEW_MOVIE)]
-
-    def test_movie_tags_called(self, patches):
-        with self.class_context() as cm:
-            cm(self.NEW_MOVIE, self.NEW_TAGS)
-            assert self.movie_tags_calls == [(self.OLD_MOVIE,)]
-
-    def test_edit_movie_tag_link_called(self, patches):
-        with self.class_context() as cm:
-            cm(self.NEW_MOVIE, self.NEW_TAGS)
-            assert self.edit_movie_tag_link_calls == [
-                (self.NEW_MOVIE, self.OLD_TAGS, self.NEW_TAGS)
-            ]
-
-    def test_edit_movie_tag_link_raises_found_nothing(self, patches, monkeypatch):
-        with self.class_context() as cm:
-            self.gui_messagebox_calls = []
-
-            # noinspection PyUnusedLocal
-            def dummy_edit_movie_tag_links(*args):
-                raise handlers.exception.DatabaseSearchFoundNothing
-
-            monkeypatch.setattr(
-                handlers.database, "edit_movie_tag_links", dummy_edit_movie_tag_links
-            )
-            monkeypatch.setattr(
-                handlers.guiwidgets,
-                "gui_messagebox",
-                lambda *args: self.gui_messagebox_calls.append(args),
-            )
-
-            hold_persistent = handlers.config.persistent
-            hold_current = handlers.config.current
-            handlers.config.persistent = handlers.config.PersistentConfig(
-                "Test program name", "Test program version"
-            )
-            handlers.config.current = handlers.config.CurrentConfig(
-                tk_root=DummyParent()
-            )
-
-            cm(self.NEW_MOVIE, self.NEW_TAGS)
-            handlers.config.persistent = hold_persistent
-
-            handlers.config.current = hold_current
-
-            assert self.gui_messagebox_calls == [
-                (
-                    DummyParent(),
-                    "Missing movie",
-                    f"The movie {self.NEW_MOVIE} is no longer in the database. It may have "
-                    f"been deleted by another process. ",
-                )
-            ]
-
-    def dummy_movie_tags(self, old_movie):
-        self.movie_tags_calls.append((old_movie,))
-        return self.OLD_TAGS
-
-    @pytest.fixture
-    def patches(self, monkeypatch):
-        self.replace_movie_calls = []
-        self.movie_tags_calls = []
-        self.edit_movie_tag_link_calls = []
-        monkeypatch.setattr(
-            handlers.database,
-            "replace_movie",
-            lambda *args: self.replace_movie_calls.append(args),
-        )
-        monkeypatch.setattr(handlers.database, "movie_tags", self.dummy_movie_tags)
-        monkeypatch.setattr(
-            handlers.database,
-            "edit_movie_tag_links",
-            lambda *args: self.edit_movie_tag_link_calls.append(args),
-        )
-
-    @contextmanager
-    def class_context(self):
-        old_movie: handlers.config.MovieTypedDict = dict(
-            title="Old Test Title", year=1942
-        )
-        yield handlers._edit_movie_callback(old_movie)
 
 
 # noinspection PyMissingOrEmptyDocstring
