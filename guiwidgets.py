@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 2/16/24, 9:16 AM by stephen.
+#  Last modified 3/21/24, 8:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -357,9 +357,11 @@ class SearchMovieGUI(MovieGUIBase):
             internal_name: movie_field.textvariable.get()
             for internal_name, movie_field in self.entry_fields.items()
         }
+        # noinspection PyTypeChecker
         return_fields["year"] = [return_fields["year_min"], return_fields["year_max"]]
         del return_fields["year_min"]
         del return_fields["year_max"]
+        # noinspection PyTypeChecker
         return_fields["minutes"] = [
             return_fields["minutes_min"],
             return_fields["minutes_max"],
@@ -467,6 +469,7 @@ class SelectMovieGUI(MovieGUIBase):
                 *args: Not used. Needed for compatibility with Tk:Tcl caller.
             """
             (item_id,) = tree.selection()
+            # noinspection PyArgumentList
             self.callback(self.treeview_items[item_id])
             self.destroy()
 

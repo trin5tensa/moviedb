@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/20/24, 2:31 PM by stephen.
+#  Last modified 3/21/24, 8:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -272,6 +272,7 @@ def add_movie_callback(gui_movie: MovieTD):
         title=gui_movie["title"], year=gui_movie["year"]
     )
     for tag in selected_tags:
+        # noinspection PyTypeChecker
         database.add_movie_tag_link(tag, db_movie)
 
 
@@ -344,6 +345,7 @@ def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
         edit_movie_callback
     """
 
+    # noinspection PyTypedDict
     def func(new_movie: MovieTD):
         """Change movie and links in database with new user supplied data,
 
@@ -356,17 +358,19 @@ def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
         del new_movie[MOVIE_TAGS]
 
         # Edit the movie
+        # noinspection PyTypeChecker
         database.replace_movie(old_movie, new_movie)
 
         # Edit links
         old_tags = database.movie_tags(old_movie)
+        # noinspection PyArgumentList
         db_movie = MovieTD(title=new_movie[TITLE], year=new_movie[YEAR])
 
         try:
+            # noinspection PyTypeChecker
             database.edit_movie_tag_links(db_movie, old_tags, selected_tags)
 
         # Can't add tags because new movie has been deleted.
-        # todo This code smells - the whole update should be an atomic transaction.
         except exception.DatabaseSearchFoundNothing:
             missing_movie_args = (
                 config.current.tk_root,

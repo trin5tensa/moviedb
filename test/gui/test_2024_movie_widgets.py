@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright (c) 2024-2024. Stephen Rigden.
-#  Last modified 3/13/24, 8:40 AM by stephen.
+#  Last modified 3/21/24, 8:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -40,6 +40,7 @@ class TestMovieGUI:
         movie_user_input_frame,
         movie_fill_buttonbox,
         movie_tmdb_results_frame,
+        tag_init_button_enablements,
     ):
         # noinspection PyTypeChecker
         guiwidgets_2.MovieGUI(mock_tk, tmdb_search_callback=lambda: None, all_tags=None)
@@ -52,6 +53,8 @@ class TestMovieGUI:
             movie_fill_buttonbox.assert_called_once_with(buttonbox)
         with check:
             movie_tmdb_results_frame.assert_called_once_with(tmdb_frame)
+        with check:
+            tag_init_button_enablements.assert_called_once_with({})
 
     def test_framing(
         self,
@@ -1048,6 +1051,13 @@ def movie_create_buttons(monkeypatch):
 @pytest.fixture
 def create_button(monkeypatch):
     monkeypatch.setattr(guiwidgets_2, "create_button", mock := MagicMock())
+    return mock
+
+
+# noinspection PyMissingOrEmptyDocstring
+@pytest.fixture
+def tag_init_button_enablements(monkeypatch):
+    monkeypatch.setattr(guiwidgets_2, "init_button_enablements", mock := MagicMock())
     return mock
 
 

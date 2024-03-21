@@ -1,7 +1,7 @@
 """ Test module. """
 
 #  Copyright (c) 2023-2024. Stephen Rigden.
-#  Last modified 3/19/24, 1:19 PM by stephen.
+#  Last modified 3/21/24, 8:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -181,6 +181,15 @@ class TestCreateInputFormFraming:
             outer_frame.rowconfigure.assert_has_calls(
                 [call(0, weight=1), call(1, minsize=35)]
             )
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestInitButtonEnablements:
+    def test_init_button_enablements(self, monkeypatch):
+        monkeypatch.setattr(guiwidgets_2.tk_facade, "Entry", mock_entry := MagicMock())
+        entry_fields = {"field": mock_entry}
+        guiwidgets_2.init_button_enablements(entry_fields)
+        mock_entry.observer.notify.assert_called_once_with()
 
 
 # noinspection PyMissingOrEmptyDocstring

@@ -1,7 +1,7 @@
 """ Test module. """
 
 #  Copyright (c) 2023-2024. Stephen Rigden.
-#  Last modified 3/19/24, 8:23 AM by stephen.
+#  Last modified 3/21/24, 8:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -46,7 +46,7 @@ class TestTagGui:
         with check:
             tag_create_buttons.assert_called_once_with(buttonbox)
         with check:
-            tag_init_button_enablements.assert_called_once_with()
+            tag_init_button_enablements.assert_called_once_with({})
 
     def test_user_input_frame(
         self,
@@ -73,20 +73,6 @@ class TestTagGui:
             input_zone().add_entry_row.assert_called_once_with(facade_entry())
         with check:
             focus_set.assert_called_once_with(facade_entry().widget)
-
-    def test_init_button_enablements(
-        self,
-        mock_tk,
-        ttk,
-        framing,
-        tag_create_buttons,
-        facade_entry,
-    ):
-        cut = guiwidgets_2.TagGUI(mock_tk)
-        for v in cut.entry_fields.values():
-            with check:
-                # noinspection PyUnresolvedReferences
-                v.observer.notify.assert_called_once_with()
 
     def test_destroy(
         self,
@@ -778,7 +764,6 @@ class TestPreferencesGUI:
         with check:
             mock_destroy.assert_called_once_with()
 
-    # todo test_destroy method
     def test_destroy(
         self,
         mock_tk,
@@ -849,9 +834,7 @@ def create_button(monkeypatch):
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def tag_init_button_enablements(monkeypatch):
-    monkeypatch.setattr(
-        guiwidgets_2.TagGUI, "init_button_enablements", mock := MagicMock()
-    )
+    monkeypatch.setattr(guiwidgets_2, "init_button_enablements", mock := MagicMock())
     return mock
 
 

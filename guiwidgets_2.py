@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/19/24, 1:17 PM by stephen.
+#  Last modified 3/21/24, 8:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -41,8 +41,6 @@ import tk_facade
 from tk_facade import TkParentType
 from globalconstants import *
 
-
-# todo Turn on PyCharm's duplicate inspection
 
 TITLE_TEXT = "Title"
 YEAR_TEXT = "Year"
@@ -110,12 +108,7 @@ class MovieGUI:
         self.user_input_frame(body_frame)
         self.fill_buttonbox(buttonbox)
         self.tmdb_results_frame(tmdb_frame)
-
-        # Set the enabled state of the buttons
-        # todo Move to separate method - See TagGUI for model.
-        # todo unittest next line
-        for v in self.entry_fields.values():
-            v.observer.notify()
+        init_button_enablements(self.entry_fields)
 
     def framing(
         self, parent: TkParentType
@@ -141,8 +134,6 @@ class MovieGUI:
         outer_frame.columnconfigure(0, weight=1)
         outer_frame.columnconfigure(1, weight=1000)
         outer_frame.rowconfigure(0)
-        # todo new issue: escape key should be a tuple of self.id and name for correct deletion of
-        #  multiple windows with same name.
         config.current.escape_key_dict[name] = self.destroy
 
         input_zone = ttk.Frame(outer_frame, padding=10)
@@ -563,7 +554,7 @@ class TagGUI:
         )
         self.user_input_frame(body_frame)
         self.create_buttons(buttonbox)
-        self.init_button_enablements()
+        init_button_enablements(self.entry_fields)
 
     def user_input_frame(self, body_frame: tk.Frame):
         """
@@ -584,11 +575,6 @@ class TagGUI:
     def create_buttons(self, body_frame: tk.Frame):
         """Creates the buttons for this widget."""
         raise NotImplementedError  # pragma nocover
-
-    def init_button_enablements(self):
-        """Set the initial enabled state of the buttons"""
-        for v in self.entry_fields.values():
-            v.observer.notify()
 
     def destroy(self):
         """Destroy this instance's widgets."""
@@ -1270,7 +1256,6 @@ def create_input_form_framing(
         Body frame
         Buttonbox frame
     """
-    # todo Test this function
     outer_frame, body_frame, buttonbox = create_body_and_button_frames(
         parent, name, destroy
     )
@@ -1330,3 +1315,9 @@ def focus_set(entry: ttk.Entry):
     entry.focus_set()
     entry.select_range(0, tk.END)
     entry.icursor(tk.END)
+
+
+def init_button_enablements(entry_fields: dict[str, tk_facade.TkinterFacade]):
+    """Set the initial enabled state of buttons."""
+    for v in entry_fields.values():
+        v.observer.notify()
