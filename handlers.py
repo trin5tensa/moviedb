@@ -1,18 +1,19 @@
 """Menu handlers.
 
 This module is the glue between the user's selection of a menu item and the gui."""
-#  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/18/23, 10:10 AM by stephen.
-#  This program_name is free software: you can redistribute it and/or modify
+
+#  Copyright (c) 2022-2024. Stephen Rigden.
+#  Last modified 3/21/24, 8:24 AM by stephen.
+#  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#  This program_name is distributed in the hope that it will be useful,
+#  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
-#  along with this program_name.  If not, see <https://www.gnu.org/licenses/>.
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import concurrent.futures
 import logging
@@ -28,6 +29,12 @@ import guiwidgets_2
 import impexp
 import tmdb
 from globalconstants import *
+
+MISSING_MOVIE = "Missing movie"
+THE_MOVIE = "The movie"
+MOVIE_DELETED = (
+    "is no longer in the database. It may have been deleted by another process."
+)
 
 
 class EscapeKeyDict(UserDict):
@@ -76,7 +83,7 @@ class EscapeKeyDict(UserDict):
 
     def escape(
         self,
-        parent: guiwidgets_2.ParentType,
+        parent: guiwidgets_2.TkParentType,
         accelerator: Literal["<Escape>", "<Command-.>"],
     ):
         """Sets up the callback which will destroy a moviedb logical window.
@@ -193,7 +200,7 @@ def add_movie():
         config.current.tk_root,
         _tmdb_io_handler,
         all_tags,
-        add_movie_callback=_add_movie_callback,
+        add_movie_callback=add_movie_callback,
     )
 
 
@@ -205,13 +212,15 @@ def edit_movie():
 
 def add_tag():
     """Add a new tag to the database."""
-    guiwidgets_2.AddTagGUI(config.current.tk_root, _add_tag_callback)
+    guiwidgets_2.AddTagGUI(config.current.tk_root, add_tag_callback=_add_tag_callback)
 
 
 # noinspection PyMissingOrEmptyDocstring
 def edit_tag():
     """Get tag string pattern from the user and search for compliant records."""
-    guiwidgets_2.SearchTagGUI(config.current.tk_root, _search_tag_callback)
+    guiwidgets_2.SearchTagGUI(
+        config.current.tk_root, search_tag_callback=_search_tag_callback
+    )
 
 
 def import_movies():
@@ -247,25 +256,27 @@ def _settings_callback(tmdb_api_key: str, use_tmdb: bool):
     config.persistent.use_tmdb = use_tmdb
 
 
-# PyCharm typing bug suppressed
 # noinspection PyTypedDict
-def _add_movie_callback(movie: MovieTD):
+def add_movie_callback(gui_movie: MovieTD):
     """Add user supplied data to the database.
 
     Args:
-        movie:
+        gui_movie:
     """
 
-    selected_tags = movie[MOVIE_TAGS]
-    del movie[MOVIE_TAGS]
+    selected_tags = gui_movie[MOVIE_TAGS]
+    del gui_movie[MOVIE_TAGS]
 
-    database.add_movie(movie)
-    movie = config.MovieKeyTypedDict(title=movie["title"], year=movie["year"])
+    database.add_movie(gui_movie)
+    db_movie = config.MovieKeyTypedDict(
+        title=gui_movie["title"], year=gui_movie["year"]
+    )
     for tag in selected_tags:
-        database.add_movie_tag_link(tag, movie)
+        # noinspection PyTypeChecker
+        database.add_movie_tag_link(tag, db_movie)
 
 
-def _delete_movie_callback(movie: config.FindMovieTypedDict):
+def delete_movie_callback(movie: config.FindMovieTypedDict):
     """Delete a movie.
 
     Args:
@@ -311,8 +322,8 @@ def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[s
             _tmdb_io_handler,
             database.all_tags(),
             old_movie=movie,
-            edit_movie_callback=_edit_movie_callback(movie_key),
-            delete_movie_callback=_delete_movie_callback,
+            edit_movie_callback=edit_movie_callback(movie_key),
+            delete_movie_callback=delete_movie_callback,
         )
 
     else:
@@ -322,7 +333,7 @@ def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[s
         )
 
 
-def _edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
+def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
     """Create the edit movie callback
 
     Args:
@@ -334,6 +345,7 @@ def _edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
         edit_movie_callback
     """
 
+    # noinspection PyTypedDict
     def func(new_movie: MovieTD):
         """Change movie and links in database with new user supplied data,
 
@@ -346,22 +358,24 @@ def _edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
         del new_movie[MOVIE_TAGS]
 
         # Edit the movie
+        # noinspection PyTypeChecker
         database.replace_movie(old_movie, new_movie)
 
         # Edit links
         old_tags = database.movie_tags(old_movie)
-        new_movie = MovieTD(title=new_movie[TITLE], year=new_movie[YEAR])
+        # noinspection PyArgumentList
+        db_movie = MovieTD(title=new_movie[TITLE], year=new_movie[YEAR])
 
         try:
-            database.edit_movie_tag_links(new_movie, old_tags, selected_tags)
+            # noinspection PyTypeChecker
+            database.edit_movie_tag_links(db_movie, old_tags, selected_tags)
 
         # Can't add tags because new movie has been deleted.
         except exception.DatabaseSearchFoundNothing:
             missing_movie_args = (
                 config.current.tk_root,
-                "Missing movie",
-                f"The movie {new_movie} is no longer in the database. It may have "
-                f"been deleted by another process. ",
+                MISSING_MOVIE,
+                f"{THE_MOVIE} {db_movie} {MOVIE_DELETED}",
             )
             guiwidgets.gui_messagebox(*missing_movie_args)
 
@@ -387,8 +401,8 @@ def _select_movie_callback(movie_id: config.MovieKeyTypedDict):
         _tmdb_io_handler,
         database.all_tags(),
         old_movie=movie,
-        edit_movie_callback=_edit_movie_callback(movie_key),
-        delete_movie_callback=_delete_movie_callback,
+        edit_movie_callback=edit_movie_callback(movie_key),
+        delete_movie_callback=delete_movie_callback,
     )
 
 
@@ -420,10 +434,17 @@ def _search_tag_callback(tag_pattern: str):
         delete_callback = _delete_tag_callback_wrapper(tag)
         edit_callback = _edit_tag_callback_wrapper(tag)
         guiwidgets_2.EditTagGUI(
-            config.current.tk_root, tag, delete_callback, edit_callback
+            config.current.tk_root,
+            delete_tag_callback=delete_callback,
+            edit_tag_callback=edit_callback,
+            tag=tag,
         )
     else:
-        guiwidgets_2.SelectTagGUI(config.current.tk_root, _select_tag_callback, tags)
+        guiwidgets_2.SelectTagGUI(
+            config.current.tk_root,
+            select_tag_callback=_select_tag_callback,
+            tags_to_show=tags,
+        )
 
 
 def _edit_tag_callback_wrapper(old_tag: str) -> Callable:
@@ -496,7 +517,10 @@ def _select_tag_callback(old_tag: str):
     delete_callback = _delete_tag_callback_wrapper(old_tag)
     edit_callback = _edit_tag_callback_wrapper(old_tag)
     guiwidgets_2.EditTagGUI(
-        config.current.tk_root, old_tag, delete_callback, edit_callback
+        config.current.tk_root,
+        delete_tag_callback=delete_callback,
+        edit_tag_callback=edit_callback,
+        tag=old_tag,
     )
 
 

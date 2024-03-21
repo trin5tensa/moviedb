@@ -1,7 +1,7 @@
-"""Global constants and type definitions."""
+"""__init__.py"""
 
 #  Copyright (c) 2024-2024. Stephen Rigden.
-#  Last modified 2/16/24, 9:16 AM by stephen.
+#  Last modified 3/21/24, 8:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,24 +12,3 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from collections.abc import Sequence
-from typing import TypedDict, NotRequired
-
-TITLE = "title"
-YEAR = "year"
-DIRECTOR = "director"
-DURATION = "minutes"
-NOTES = "notes"
-MOVIE_TAG = "tag"
-MOVIE_TAGS = "tags"
-
-
-class MovieTD(TypedDict):
-    """Type definition for movie."""
-
-    TITLE: str
-    YEAR: str
-    DIRECTOR: NotRequired[str]
-    DURATION: NotRequired[str]
-    NOTES: NotRequired[str]
-    MOVIE_TAGS: NotRequired[Sequence[str]]

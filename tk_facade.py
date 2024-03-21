@@ -1,7 +1,7 @@
 """Facade pattern for tkinter widgets."""
 
 #  Copyright (c) 2024-2024. Stephen Rigden.
-#  Last modified 2/5/24, 8:55 AM by stephen.
+#  Last modified 3/9/24, 9:39 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,10 +15,13 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
-import tkinter as tk
-from tkinter import ttk
 
-type TkSequence = (list[str] | tuple[str, ...])
+# This tkinter import method supports accurate test mocking of tk and ttk.
+import tkinter as tk
+import tkinter.ttk as ttk
+
+type TkParentType = tk.Tk | tk.Toplevel | ttk.Frame
+type TkSequence = list[str] | tuple[str, ...]
 
 
 @dataclass
@@ -76,33 +79,37 @@ class TkinterFacade:
     """
 
     label_text: str
-    widget: Any
-    _original_value: Any = None
+    parent: TkParentType
+    _original_value: Any = field(default=None, init=False, repr=False)
     observer: Observer = field(default_factory=Observer, init=False, repr=False)
 
     @property
     def original_value(self) -> Any:
         """Returns the original value of the tkinter widget."""
-        raise NotImplementedError
+        raise NotImplementedError  # pragma nocover
 
     @original_value.setter
     def original_value(self, value):
         """Sets the original and current value of the tkinter widget."""
-        raise NotImplementedError
+        raise NotImplementedError  # pragma nocover
 
     @property
     def current_value(self) -> Any:
         """Returns the current value of the tkinter widget."""
-        raise NotImplementedError
+        raise NotImplementedError  # pragma nocover
 
     @current_value.setter
     def current_value(self, value):
         """Sets the current value of the tkinter widget."""
-        raise NotImplementedError
+        raise NotImplementedError  # pragma nocover
 
     def clear_current_value(self):
         """Clears the current value of the tkinter widget"""
-        raise NotImplementedError
+        raise NotImplementedError  # pragma nocover
+
+    def has_data(self) -> bool:
+        """Returns True if the current_value contains data."""
+        raise NotImplementedError  # pragma nocover
 
     def changed(self) -> bool:
         """Compares the original and current value of the tkinter widget."""
@@ -110,19 +117,17 @@ class TkinterFacade:
 
 
 @dataclass
-class TextVariableWidget(TkinterFacade):
-    """
-    This is a visitor pattern subclass which handles tkinter widgets which set and get field
-    contents via tkinter's tk.TextVariable.
-    """
+class Entry(TkinterFacade):
+    """This is a visitor pattern subclass for tkinter's ttk.Entry class."""
 
-    widget: ttk.Entry | ttk.Checkbutton
-    _original_value: str = ""
+    widget: ttk.Entry = None
+    _original_value: str = field(default="", init=False, repr=False)
     _textvariable: tk.StringVar = field(
-        default_factory=tk.StringVar, init=False, repr=False
+        default_factory=lambda: tk.StringVar(), repr=False
     )
 
     def __post_init__(self):
+        self.widget = ttk.Entry(self.parent)
         self.widget.configure(textvariable=self._textvariable)
         self._textvariable.trace_add("write", self.observer.notify)
         self.original_value = ""
@@ -147,18 +152,19 @@ class TextVariableWidget(TkinterFacade):
         """Clears the current value of the tkinter widget"""
         self.current_value = ""
 
+    def has_data(self) -> bool:
+        return self.current_value != ""
+
 
 @dataclass
-class GetTextWidget(TkinterFacade):
-    """
-    This is a visitor pattern subclass which handles the tkinter widgets which use tkinter's
-    replace and get methods for the field contents.
-    """
+class Text(TkinterFacade):
+    """This is a visitor pattern subclass for tkinter's tk.Text class."""
 
-    widget: tk.Text
-    _original_value: str = ""
+    widget: tk.Text = None
+    _original_value: str = field(default="", init=False, repr=False)
 
     def __post_init__(self):
+        self.widget = tk.Text(self.parent)
         self.widget.bind("<<Modified>>", self.modified())
         self.original_value = ""
 
@@ -206,18 +212,19 @@ class GetTextWidget(TkinterFacade):
 
         return func
 
+    def has_data(self) -> bool:
+        return self.current_value != ""
+
 
 @dataclass
-class SelectionWidget(TkinterFacade):
-    """
-    This is a visitor pattern subclass which handles the tkinter widgets which use tkinter's
-    set and selection methods for the field contents.
-    """
+class Treeview(TkinterFacade):
+    """This is a visitor pattern subclass for tkinter's ttk.Treeview class."""
 
-    widget: ttk.Treeview
+    widget: ttk.Treeview = None
     _original_value: set = field(default_factory=set, init=False, repr=False)
 
     def __post_init__(self):
+        self.widget = ttk.Treeview(self.parent)
         self.widget.bind(
             "<<TreeviewSelect>>", lambda *args, **kwargs: self.observer.notify()
         )
@@ -225,13 +232,13 @@ class SelectionWidget(TkinterFacade):
 
     @property
     def original_value(self) -> set:
-        return set(self._original_value)
+        return self._original_value
 
     # noinspection PyMissingOrEmptyDocstring
     @original_value.setter
-    def original_value(self, value: TkSequence):
-        self._original_value = set(value)
-        self.current_value = value
+    def original_value(self, values: TkSequence):
+        self._original_value = set(values)
+        self.current_value = values
 
     @property
     def current_value(self) -> set:
@@ -243,3 +250,44 @@ class SelectionWidget(TkinterFacade):
 
     def clear_current_value(self):
         self.current_value = []
+
+    def has_data(self) -> bool:
+        """The current selection is inspected and True is returned if any items are selected."""
+        return self.current_value != set()
+
+
+@dataclass
+class Checkbutton(TkinterFacade):
+    """This is a visitor pattern subclass for tkinter's ttk.Checkbutton class."""
+
+    widget: ttk.Checkbutton = None
+    _original_value: bool = field(default=None, init=False, repr=False)
+    _variable: tk.IntVar = field(
+        default_factory=lambda: tk.IntVar(), init=False, repr=False
+    )
+
+    def __post_init__(self):
+        self.widget = ttk.Checkbutton(self.parent)
+        self.widget.configure(variable=self._variable)
+        self._variable.trace_add("write", self.observer.notify)
+        self.original_value = False
+
+    @property
+    def original_value(self) -> bool:
+        return self._original_value
+
+    @original_value.setter
+    def original_value(self, value: bool):
+        self._original_value = self.current_value = value
+
+    @property
+    def current_value(self) -> bool:
+        return bool(self._variable.get())
+
+    @current_value.setter
+    def current_value(self, value: bool):
+        self._variable.set(value)
+
+    def clear_current_value(self):
+        """Clears the current value of the tkinter widget"""
+        self.current_value = False

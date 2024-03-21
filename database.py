@@ -1,17 +1,17 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
-#  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/9/23, 8:37 AM by stephen.
-#  This program_name is free software: you can redistribute it and/or modify
+#  Copyright (c) 2022-2024. Stephen Rigden.
+#  Last modified 2/24/24, 1:51 PM by stephen.
+#  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#  This program_name is distributed in the hope that it will be useful,
+#  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
-#  along with this program_name.  If not, see <https://www.gnu.org/licenses/>.
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import datetime
 import logging
@@ -361,7 +361,7 @@ def edit_movie_tag_links(
         with _session_scope() as session:
             movie = (
                 session.query(Movie)
-                .filter(Movie.title == movie["title"], Movie.year == movie["year"])
+                .filter(Movie.title == movie[TITLE], Movie.year == movie[YEAR])
                 .one()
             )
             for name in set(old_tags) - set(new_tags):

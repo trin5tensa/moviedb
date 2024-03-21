@@ -1,6 +1,7 @@
 """Test module."""
-#  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/18/23, 5:44 AM by stephen.
+
+#  Copyright (c) 2022-2024. Stephen Rigden.
+#  Last modified 3/9/24, 9:39 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -43,7 +44,7 @@ class TestSearchMovieGUI:
             "create_body_item",
             lambda *args: calls.append(args),
         )
-        monkeypatch.setattr(guiwidgets, "_focus_set", lambda *args: None)
+        monkeypatch.setattr(guiwidgets, "focus_set", lambda *args: None)
         with self.movie_context() as movie_gui:
             assert calls == [
                 (
@@ -111,7 +112,7 @@ class TestSearchMovieGUI:
 
     def test_focus_set_called(self, patch_tk, monkeypatch):
         calls = []
-        monkeypatch.setattr(guiwidgets, "_focus_set", lambda *args: calls.append(True))
+        monkeypatch.setattr(guiwidgets, "focus_set", lambda *args: calls.append(True))
         with self.movie_context():
             assert calls == [True]
 
@@ -184,7 +185,7 @@ class TestSearchMovieGUI:
         monkeypatch.setattr(
             guiwidgets.SearchMovieGUI, "create_min_max_body_item", lambda *args: None
         )
-        monkeypatch.setattr(guiwidgets, "_focus_set", lambda *args: None)
+        monkeypatch.setattr(guiwidgets, "focus_set", lambda *args: None)
         with self.movie_context() as movie_gui:
             assert calls == [
                 (

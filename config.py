@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 2/12/24, 6:20 AM by stephen.
+#  Last modified 2/24/24, 1:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +17,7 @@ from collections import UserDict
 from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Optional, TypedDict, NotRequired
+from typing import Optional, TypedDict
 
 CONFIG_JSON_SUFFIX = "_config.json"
 
@@ -27,7 +27,6 @@ current: Optional["CurrentConfig"] = None
 persistent: Optional["PersistentConfig"] = None
 
 
-# todo Replace with MovieTD
 class MovieKeyTypedDict(TypedDict):
     """Mandatory field for a movie."""
 
@@ -35,7 +34,6 @@ class MovieKeyTypedDict(TypedDict):
     year: int
 
 
-# todo Replace with MovieTD
 class MovieTypedDict(MovieKeyTypedDict, total=False):
     """Optional fields for a movie."""
 
@@ -44,7 +42,6 @@ class MovieTypedDict(MovieKeyTypedDict, total=False):
     notes: str
 
 
-# todo Replace with MovieTD
 class MovieUpdateDef(MovieTypedDict, total=False):
     """A dictionary of fields for updating.
 
@@ -53,7 +50,6 @@ class MovieUpdateDef(MovieTypedDict, total=False):
     tags: Sequence[str]
 
 
-# todo Move to globalconstants module
 class FindMovieTypedDict(TypedDict, total=False):
     """A dictionary containing none or more of the following keys:
     title: A matching column will be a superstring of this value.
