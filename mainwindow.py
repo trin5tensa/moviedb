@@ -1,7 +1,7 @@
 """Main Window."""
 
-#  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 11/18/23, 5:44 AM by stephen.
+#  Copyright (c) 2022-2024. Stephen Rigden.
+#  Last modified 3/22/24, 7:44 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -209,3 +209,13 @@ class MainWindow:
         config.persistent.geometry = self.parent.winfo_geometry()
         # Destroy all widgets and end mainloop.
         self.parent.destroy()
+
+
+def run_tktcl():
+    """Run the GUI."""
+    config.current.tk_root = tk.Tk()
+    root = config.current.tk_root
+    root.columnconfigure(0, weight=1)
+    root.rowconfigure(0, weight=1)
+    MainWindow(root)
+    root.mainloop()
