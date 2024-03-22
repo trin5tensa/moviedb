@@ -1,6 +1,7 @@
 """Tests for movie database."""
-#  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/7/22, 8:01 AM by stephen.
+
+#  Copyright (c) 2022-2024. Stephen Rigden.
+#  Last modified 3/22/24, 7:44 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,7 +24,7 @@ import pytest
 import config
 import moviedb
 
-TEST_FN = 'test_filename.csv'
+TEST_FN = "test_filename.csv"
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -35,71 +36,92 @@ class TestMain:
         start_up() is called.
         A successful start message is logged.
         The target of the SafePrinter() context manager is stored in config.current.safeprint.
-        The target of the ThreadPoolExecutor() context manager is stored in config.current.executor.
-        gui.run() is called.
+        The target of the ThreadPoolExecutor() context manager is stored in
+        config.current.executor.
+        gui.run_tktcl() is called.
         close_down() is called.
     """
+
     logging_calls = []
     func_calls = set()
-    
+
     def func_call_helper(self, monkeypatch, func):
         monkeypatch.setattr(func, lambda: self.func_calls.add(func))
-    
+
     @pytest.fixture()
     def main_patches(self, monkeypatch):
         """Monkeypatches and instruments all actions within main()."""
-        monkeypatch.setattr('moviedb.config.current', moviedb.config.CurrentConfig())
-        self.func_call_helper(monkeypatch, 'moviedb.start_up')
-        monkeypatch.setattr(moviedb.logging, 'info', lambda msg: self.logging_calls.append(msg))
-        monkeypatch.setattr(moviedb, 'SafePrinter', self.dummy_safe_printer)
-        monkeypatch.setattr(moviedb.concurrent.futures, 'ThreadPoolExecutor', self.dummy_tp_executor)
-        self.func_call_helper(monkeypatch, 'moviedb.gui.run')
-        self.func_call_helper(monkeypatch, 'moviedb.close_down')
-        
+        monkeypatch.setattr("moviedb.config.current", moviedb.config.CurrentConfig())
+        self.func_call_helper(monkeypatch, "moviedb.start_up")
+        monkeypatch.setattr(
+            moviedb.logging, "info", lambda msg: self.logging_calls.append(msg)
+        )
+        monkeypatch.setattr(moviedb, "SafePrinter", self.dummy_safe_printer)
+        monkeypatch.setattr(
+            moviedb.concurrent.futures, "ThreadPoolExecutor", self.dummy_tp_executor
+        )
+        self.func_call_helper(monkeypatch, "moviedb.mainwindow.run_tktcl")
+        self.func_call_helper(monkeypatch, "moviedb.close_down")
+
     @pytest.fixture()
     def main(self, main_patches, monkeypatch):
         moviedb.main()
-        
+
     @contextmanager
     def dummy_safe_printer(self):
-        yield 'dummy safe printer context manager called.'
-        
+        yield "dummy safe printer context manager called."
+
     @contextmanager
     def dummy_tp_executor(self):
-        yield 'dummy threadpool executor context manager called.'
-        
+        yield "dummy threadpool executor context manager called."
+
     def test_start_up_is_called(self, main):
-        assert {'moviedb.start_up'} & self.func_calls == {'moviedb.start_up'}
-        
+        assert {"moviedb.start_up"} & self.func_calls == {"moviedb.start_up"}
+
     def test_successful_start_message_is_logged(self, main):
-        assert 'The program started successfully.' == self.logging_calls.pop()
-        
+        assert "The program started successfully." == self.logging_calls.pop()
+
     def test_safeprint_is_stored_in_config(self, main):
-        assert moviedb.config.current.safeprint == 'dummy safe printer context manager called.'
-        
+        assert (
+            moviedb.config.current.safeprint
+            == "dummy safe printer context manager called."
+        )
+
     def test_tp_executor_is_stored_in_config(self, main):
-        assert moviedb.config.current.threadpool_executor == 'dummy threadpool executor context manager called.'
-        
+        assert (
+            moviedb.config.current.threadpool_executor
+            == "dummy threadpool executor context manager called."
+        )
+
     def test_gui_run_is_called(self, main):
-        assert {'moviedb.gui.run'} & self.func_calls == {'moviedb.gui.run'}
+        assert {"moviedb.mainwindow.run_tktcl"} & self.func_calls == {
+            "moviedb.mainwindow.run_tktcl"
+        }
+        # assert {"moviedb.gui.run_tktcl"} & self.func_calls == {"moviedb.gui.run_tktcl"}
 
     def test_close_down_is_called(self, main):
-        assert {'moviedb.close_down'} & self.func_calls == {'moviedb.close_down'}
+        assert {"moviedb.close_down"} & self.func_calls == {"moviedb.close_down"}
 
 
 class TestStartUp:
-    
+
     # noinspection PyMissingOrEmptyDocstring
     @pytest.fixture()
     def monkeypatch_startup(self, monkeypatch) -> Tuple[list, list, list]:
         logger_calls = []
-        monkeypatch.setattr(moviedb, 'start_logger', lambda *args: logger_calls.append(args))
+        monkeypatch.setattr(
+            moviedb, "start_logger", lambda *args: logger_calls.append(args)
+        )
         load_config_calls = []
-        monkeypatch.setattr(moviedb, 'load_config_file', lambda *args: load_config_calls.append(args))
+        monkeypatch.setattr(
+            moviedb, "load_config_file", lambda *args: load_config_calls.append(args)
+        )
         connect_calls = []
-        monkeypatch.setattr(moviedb.database, 'connect_to_database', lambda: connect_calls.append(True))
+        monkeypatch.setattr(
+            moviedb.database, "connect_to_database", lambda: connect_calls.append(True)
+        )
         return logger_calls, load_config_calls, connect_calls
-    
+
     def test_start_logger_called(self, monkeypatch_startup):
         program_path = moviedb.Path(moviedb.__file__)
         expected_path = program_path.cwd()
@@ -109,16 +131,16 @@ class TestStartUp:
         path, filename = logger_calls[0]
         assert path == expected_path
         assert filename == expected_filename
-    
+
     def test_load_config_file(self, monkeypatch_startup):
         program_path = moviedb.Path(moviedb.__file__)
         expected_filename = program_path
-        
+
         _, load_config_calls, _ = monkeypatch_startup
         moviedb.start_up()
         filename = load_config_calls[0][0]
         assert filename == expected_filename
-    
+
     def test_start_database_called(self, monkeypatch_startup):
         _, _, connect_calls = monkeypatch_startup
         moviedb.start_up()
@@ -127,83 +149,91 @@ class TestStartUp:
 
 # noinspection PyMissingOrEmptyDocstring
 class TestLoadConfigFile:
-    program = 'test_program_name'
-    version = 'test version'
-    
+    program = "test_program_name"
+    version = "test version"
+
     def test_existing_file_loaded_into_config_persistent(self, monkeypatch):
-        expected = config.PersistentConfig(program_name=self.program, program_version=self.version)
+        expected = config.PersistentConfig(
+            program_name=self.program, program_version=self.version
+        )
         data = moviedb.asdict(expected)
         with self.fut_runner(self.program, data, monkeypatch):
             assert config.persistent == expected
-    
+
     def test_absent_file_initializes_config_persistent(self, monkeypatch):
-        expected = moviedb.VERSION = 'test first use'
+        expected = moviedb.VERSION = "test first use"
         data = None
         with self.fut_runner(self.program, data, monkeypatch, file_not_found=True):
             assert config.persistent.program_version == expected
-    
+
     @contextmanager
     def fut_runner(self, program, data, monkeypatch, file_not_found=False):
         if file_not_found:
-            monkeypatch.setattr(moviedb, '_json_load', partial(self.dummy__json_load, program))
+            monkeypatch.setattr(
+                moviedb, "_json_load", partial(self.dummy__json_load, program)
+            )
         else:
-            monkeypatch.setattr(moviedb, '_json_load', lambda: data)
+            monkeypatch.setattr(moviedb, "_json_load", lambda: data)
 
         yield moviedb.load_config_file(program)
-    
+
     def dummy__json_load(self, *args):
         raise FileNotFoundError
 
 
 def test_save_config_file(monkeypatch):
-    persistent = moviedb.config.PersistentConfig(program_name='test_program', program_version='42')
+    persistent = moviedb.config.PersistentConfig(
+        program_name="test_program", program_version="42"
+    )
     path = moviedb._json_path()
     calls = []
-    monkeypatch.setattr(moviedb, '_json_dump', lambda *args: calls.append(args))
+    monkeypatch.setattr(moviedb, "_json_dump", lambda *args: calls.append(args))
     moviedb._json_dump(persistent, path)
-    
+
     assert calls == [(persistent, path)]
 
 
 def test_save_config_file_called(monkeypatch):
     calls = []
-    monkeypatch.setattr(moviedb, 'save_config_file', lambda *args: calls.append(True))
-    monkeypatch.setattr(moviedb.logging, 'info', lambda *args: None)
-    monkeypatch.setattr(moviedb.logging, 'shutdown', lambda: None)
+    monkeypatch.setattr(moviedb, "save_config_file", lambda *args: calls.append(True))
+    monkeypatch.setattr(moviedb.logging, "info", lambda *args: None)
+    monkeypatch.setattr(moviedb.logging, "shutdown", lambda: None)
     moviedb.close_down()
     assert calls == [True]
 
 
 def test_ending_of_program_logged(monkeypatch):
-    monkeypatch.setattr(moviedb, 'save_config_file', lambda *args: None)
+    monkeypatch.setattr(moviedb, "save_config_file", lambda *args: None)
     calls = []
-    monkeypatch.setattr(moviedb.logging, 'info', lambda *args: calls.append(args))
-    monkeypatch.setattr(moviedb.logging, 'shutdown', lambda: None)
+    monkeypatch.setattr(moviedb.logging, "info", lambda *args: calls.append(args))
+    monkeypatch.setattr(moviedb.logging, "shutdown", lambda: None)
     moviedb.close_down()
-    assert calls == [('The program is ending.', )]
+    assert calls == [("The program is ending.",)]
 
 
 def test_start_logger_called(monkeypatch):
-    monkeypatch.setattr(moviedb, 'save_config_file', lambda *args: None)
-    monkeypatch.setattr(moviedb.logging, 'info', lambda *args: None)
+    monkeypatch.setattr(moviedb, "save_config_file", lambda *args: None)
+    monkeypatch.setattr(moviedb.logging, "info", lambda *args: None)
     calls = []
-    monkeypatch.setattr(moviedb.logging, 'shutdown',
-                        lambda: calls.append(True))
+    monkeypatch.setattr(moviedb.logging, "shutdown", lambda: calls.append(True))
     moviedb.close_down()
     assert calls == [True]
 
 
 def test_start_logger(monkeypatch):
-    log_root = moviedb.Path('log dir')
-    log_fn = moviedb.Path('filename')
-    expected = dict(format='{asctime} {levelname:8} {lineno:4d} {module:20} {message}',
-                    style='{',
-                    level='INFO',
-                    filename=f"{log_root}/{log_fn}.log",
-                    filemode='w')
+    log_root = moviedb.Path("log dir")
+    log_fn = moviedb.Path("filename")
+    expected = dict(
+        format="{asctime} {levelname:8} {lineno:4d} {module:20} {message}",
+        style="{",
+        level="INFO",
+        filename=f"{log_root}/{log_fn}.log",
+        filemode="w",
+    )
     calls = []
-    monkeypatch.setattr(moviedb.logging, 'basicConfig',
-                        lambda *args, **kwargs: calls.append(kwargs))
+    monkeypatch.setattr(
+        moviedb.logging, "basicConfig", lambda *args, **kwargs: calls.append(kwargs)
+    )
     moviedb.start_logger(log_root, log_fn)
     format_args = calls[0]
     assert format_args == expected
@@ -211,29 +241,31 @@ def test_start_logger(monkeypatch):
 
 def test__json_load(monkeypatch, tmp_path):
     # Instrument the call to json_load
-    expected_data = 'test json loads data'
+    expected_data = "test json loads data"
     calls = []
 
     # noinspection PyMissingOrEmptyDocstring
     def dummy_json_load(*args):
         calls.append((args, expected_data))
-        
+
     # Create a test dummy file in tmp_path
-    fn = tmp_path / 'dummy_file.text'
-    persistent = moviedb.config.PersistentConfig(program_name='test_program', program_version='42')
+    fn = tmp_path / "dummy_file.text"
+    persistent = moviedb.config.PersistentConfig(
+        program_name="test_program", program_version="42"
+    )
     moviedb._json_dump(moviedb.asdict(persistent), fn)
 
     # Call json_load
-    monkeypatch.setattr(moviedb.json, 'load', partial(dummy_json_load))
-    monkeypatch.setattr(moviedb, '_json_path', lambda: fn)
+    monkeypatch.setattr(moviedb.json, "load", partial(dummy_json_load))
+    monkeypatch.setattr(moviedb, "_json_path", lambda: fn)
     moviedb._json_load()
-    
+
     # Test the calling arguments
     fp = calls[0][0][0]
     assert isinstance(fp, io.TextIOWrapper)
     path = moviedb.Path(fp.name)
-    assert path.name == 'dummy_file.text'
-    
+    assert path.name == "dummy_file.text"
+
     # Test the return value
     data = calls[0][1]
     assert data is expected_data
@@ -243,30 +275,33 @@ def test__json_path():
     program_name = moviedb.Path(moviedb.__file__).stem
     suffix = config.CONFIG_JSON_SUFFIX
     assert moviedb._json_path().name == program_name + suffix
-    
-    
+
+
 def test__json_dump(monkeypatch, tmp_path):
-    persistent = moviedb.config.PersistentConfig(program_name='test_program', program_version='42')
+    persistent = moviedb.config.PersistentConfig(
+        program_name="test_program", program_version="42"
+    )
     json_obj = moviedb.asdict(persistent)
-    path = tmp_path / 'dummy_file.df'
-    
+    path = tmp_path / "dummy_file.df"
+
     calls = []
-    monkeypatch.setattr(moviedb.json, 'dump', lambda *args: calls.append(args))
+    monkeypatch.setattr(moviedb.json, "dump", lambda *args: calls.append(args))
     moviedb._json_dump(json_obj, path)
-    
+
     assert calls[0][0] == json_obj
     fp = calls[0][1]
     assert isinstance(fp, io.TextIOWrapper)
     path = moviedb.Path(fp.name)
-    assert path.name == 'dummy_file.df'
+    assert path.name == "dummy_file.df"
 
-    
+
 @dataclass
 class ArgParser:
     """Test dummy for Argument Parser"""
+
     verbosity: int = 0
     import_csv: str = None
     database: str = None
-    
+
     def __call__(self):
         return self
