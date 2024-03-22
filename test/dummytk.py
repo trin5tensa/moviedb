@@ -1,7 +1,7 @@
 """Test support module for Tk dummies."""
 
-#  Copyright (c) 2022-2023. Stephen Rigden.
-#  Last modified 1/31/23, 1:31 PM by stephen.
+#  Copyright (c) 2022-2024. Stephen Rigden.
+#  Last modified 2/13/24, 1:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,9 +14,9 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import itertools
 from dataclasses import dataclass, field
-from typing import Callable, Literal, Sequence, Tuple, Union, TypeVar
+from typing import Callable, Literal, Sequence, Tuple, Union, TypeVar, Optional
 
-ParentType = TypeVar('ParentType', 'DummyTk', 'TkToplevel', 'TtkFrame')
+ParentType = TypeVar("TkParentType", "DummyTk", "TkToplevel", "TtkFrame", "TkMenu")
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
@@ -26,14 +26,45 @@ class DummyTk:
 
     The dummy Tk/Ttk classes need to mimic Tk's parent/child structure as explicit references are
     not required in the source code."""
+
     children: list = field(default_factory=list, init=False, repr=False, compare=False)
 
-    columnconfigure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    rowconfigure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    bind_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    bell_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    after_calls: dict = field(default_factory=dict, init=False, repr=False, compare=False)
-    after_cancel_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    columnconfigure_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    rowconfigure_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    bind_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    bell_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    after_calls: dict = field(
+        default_factory=dict, init=False, repr=False, compare=False
+    )
+    after_cancel_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    title_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    geometry_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    protocol_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    option_add_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    createcommand_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    config_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
 
     # This is used to generate unique event queue ids
     event_id = itertools.count()
@@ -59,9 +90,27 @@ class DummyTk:
         return event_id
 
     def after_cancel(self, *args):
-        cancel_id, = args
+        (cancel_id,) = args
         del self.after_calls[cancel_id]
         self.after_cancel_calls.append([args])
+
+    def title(self, name: str):
+        self.title_calls.append(name)
+
+    def geometry(self, geometry: str):
+        self.geometry_calls.append(geometry)
+
+    def protocol(self, protocol: str, func: Callable):
+        self.protocol_calls.append((protocol, func))
+
+    def option_add(self, option: str, *args):
+        self.option_add_calls.append((option, args))
+
+    def createcommand(self, command: str, func: Callable):
+        self.createcommand_calls.append((command, func))
+
+    def config(self, **kwargs):
+        self.config_calls.append(kwargs)
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
@@ -73,9 +122,12 @@ class TkToplevel:
     The dummy Tk/Ttk classes need to mimic Tk's parent/child structure as explicit references are
     missing in the source code.
     """
+
     parent: ParentType
     children: list = field(default_factory=list, init=False, repr=False, compare=False)
-    destroy_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    destroy_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
 
     def __post_init__(self):
         self.parent.children.append(self)
@@ -87,7 +139,7 @@ class TkToplevel:
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
 class TkText:
-    parent: 'TtkFrame'
+    parent: "TtkFrame"
     width: str
     height: str
     wrap: str
@@ -95,7 +147,7 @@ class TkText:
     pady: str
     yview: str = None
     yscrollcommand: Callable = None
-    text: str = ''
+    text: str = ""
 
     delete_calls = []
     insert_calls = []
@@ -111,7 +163,7 @@ class TkText:
 
     def delete(self, start: str, end: str):
         self.delete_calls.append((start, end))
-        self.text = ''
+        self.text = ""
 
     def insert(self, pos: str, text: str, tags: tuple[str]):
         self.insert_calls.append((pos, text, tags))
@@ -125,9 +177,11 @@ class TkText:
 # noinspection PyMissingOrEmptyDocstring
 @dataclass
 class TkStringVar:
-    trace_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    trace_add_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
     set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    value: str = '4242'
+    value: str = "4242"
     trace_add_callback: Callable = None
 
     def trace_add(self, *args):
@@ -152,14 +206,24 @@ class TtkFrame:
     The dummy Tk/Ttk classes need to mimic Tk's parent/child structure as explicit references are
     missing in the source code.
     """
+
     parent: ParentType
-    padding: Union[int, Tuple[int, ...], str] = field(default='')
+    padding: Union[int, Tuple[int, ...], str] = field(default="")
+    name: str = ""
 
     children: list = field(default_factory=list, init=False, repr=False, compare=False)
-    grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    columnconfigure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    rowconfigure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    destroy_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    grid_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    columnconfigure_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    rowconfigure_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    destroy_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
 
     def __post_init__(self):
         self.parent.children.append(self)
@@ -185,11 +249,14 @@ class TtkLabel:
     The dummy Tk/Ttk classes need to mimic Tk's parent/child structure as explicit references are
     missing in the source code.
     """
+
     parent: ParentType
     text: str
-    padding: Union[int, Tuple[int, ...], str] = field(default='')
+    padding: Union[int, Tuple[int, ...], str] = field(default="")
 
-    grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    grid_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
 
     def __post_init__(self):
         self.parent.children.append(self)
@@ -206,16 +273,32 @@ class TtkEntry:
     The dummy Tk/Ttk classes need to mimic Tk's parent/child structure as explicit references are
     missing in the source code.
     """
+
     parent: ParentType
     textvariable: TkStringVar = None
     width: int = None
 
-    grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    config_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    register_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    focus_set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    select_range_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    icursor_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    grid_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    config_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    register_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    focus_set_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    select_range_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    icursor_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    bind_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
 
     def __post_init__(self):
         self.parent.children.append(self)
@@ -228,7 +311,7 @@ class TtkEntry:
 
     def register(self, *args):
         self.register_calls.append(args)
-        return 'test registered_callback'
+        return "test registered_callback"
 
     def focus_set(self):
         self.focus_set_calls.append(True)
@@ -239,6 +322,11 @@ class TtkEntry:
     def icursor(self, *args):
         self.icursor_calls.append(args)
 
+    def bind(self, *args):
+        self.bind_calls.append(
+            args,
+        )
+
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @dataclass
@@ -248,12 +336,15 @@ class TtkCheckbutton:
     The dummy Tk/Ttk classes need to mimic Tk's parent/child structure as explicit references are
     missing in the source code.
     """
+
     parent: ParentType
     text: str
     variable: TkStringVar
     width: int = None
 
-    grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    grid_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
 
     def __post_init__(self):
         self.parent.children.append(self)
@@ -268,21 +359,36 @@ class TtkButton:
     parent: ParentType
     text: str
     command: Callable = None
+    default: str = None
 
-    grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    bind_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    state_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    focus_set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    invoke_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    grid_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    bind_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    state_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    focus_set_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    invoke_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
 
     def __post_init__(self):
         self.parent.children.append(self)
 
     def grid(self, **kwargs):
-        self.grid_calls.append(kwargs, )
+        self.grid_calls.append(
+            kwargs,
+        )
 
     def bind(self, *args):
-        self.bind_calls.append(args, )
+        self.bind_calls.append(
+            args,
+        )
 
     def state(self, state):
         self.state_calls.append(state)
@@ -293,6 +399,9 @@ class TtkButton:
     def invoke(self):
         self.invoke_calls.append(True)
 
+    def configure(self, *args, **kwargs):
+        ...
+
 
 # noinspection PyMissingOrEmptyDocstring
 @dataclass
@@ -300,20 +409,38 @@ class TtkTreeview:
     parent: ParentType
     columns: Sequence[str] = field(default_factory=list)
     height: int = field(default=0)
-    selectmode: Literal['browse', 'extended', 'none'] = field(default='extended')
-    show: Literal['tree', 'headings'] = field(default='headings')
+    selectmode: Literal["browse", "extended", "none"] = field(default="extended")
+    show: Literal["tree", "headings"] = field(default="headings")
     padding: int = field(default=0)
     items: list = field(default_factory=list, init=False, repr=False, compare=False)
-    selected: tuple = field(default_factory=tuple, init=False, repr=False, compare=False)
+    selected: tuple = field(
+        default_factory=tuple, init=False, repr=False, compare=False
+    )
 
-    grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    column_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    heading_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    insert_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    bind_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    configure_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    selection_add_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
-    selection_set_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    grid_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    column_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    heading_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    insert_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    bind_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    configure_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    selection_add_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    selection_set_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
 
     def __post_init__(self):
         self.parent.children.append(self)
@@ -329,7 +456,7 @@ class TtkTreeview:
 
     def insert(self, *args, **kwargs):
         self.insert_calls.append((args, kwargs))
-        return 'I001'
+        return "I001"
 
     def bind(self, *args, **kwargs):
         self.bind_calls.append((args, kwargs))
@@ -365,10 +492,12 @@ class TtkTreeview:
 @dataclass
 class TtkScrollbar:
     parent: ParentType
-    orient: Literal['horizontal', 'vertical']
+    orient: Literal["horizontal", "vertical"]
     command: Callable
 
-    grid_calls: list = field(default_factory=list, init=False, repr=False, compare=False)
+    grid_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
 
     def __post_init__(self):
         self.parent.children.append(self)
@@ -378,3 +507,27 @@ class TtkScrollbar:
 
     def set(self):
         pass
+
+
+# noinspection PyMissingOrEmptyDocstring
+@dataclass
+class TkMenu:
+    parent: ParentType
+    name: Optional[str] = None
+
+    add_cascade_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    add_command_calls: list = field(
+        default_factory=list, init=False, repr=False, compare=False
+    )
+    add_separator_count: int = field(default=0, init=False, repr=False, compare=False)
+
+    def add_cascade(self, *args, **kwargs):
+        self.add_cascade_calls.append((args, kwargs))
+
+    def add_command(self, *args, **kwargs):
+        self.add_command_calls.append((args, kwargs))
+
+    def add_separator(self):
+        self.add_separator_count += 1

@@ -1,8 +1,8 @@
 """Exceptions for the modules of moviesdb. """
 
 
-#  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 11/23/22, 8:37 AM by stephen.
+#  Copyright (c) 2022-2023. Stephen Rigden.
+#  Last modified 11/1/23, 8:09 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or

@@ -1,7 +1,7 @@
 """Test module."""
 
-#  Copyright (c) 2020-2022. Stephen Rigden.
-#  Last modified 10/15/22, 12:37 PM by stephen.
+#  Copyright (c) 2020-2024. Stephen Rigden.
+#  Last modified 3/9/24, 10:00 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,27 +21,27 @@ import neurons
 # noinspection PyMissingOrEmptyDocstring
 class TestObserver:
     notify_calls = []
-    
+
     def test_observer_object_created(self):
         with self.observer_context() as observer:
             assert observer == neurons.Observer()
-    
+
     def test_notifee_registered(self):
         with self.observer_context() as observer:
             observer.register(self.notify)
             assert observer.notifees[0] == self.notify
-    
+
     def test_notifee_deregistered(self):
         with self.observer_context() as observer:
             observer.notifees = [self.notify]
             observer.deregister(self.notify)
             assert observer.notifees == []
-    
+
     def test_notifee_notified(self):
         with self.observer_context() as observer:
             observer.register(self.notify)
-            args = ('test arg',)
-            kwargs = dict(test_kwarg='test kwarg')
+            args = ("test arg",)
+            kwargs = dict(test_kwarg="test kwarg")
             observer.notify(*args, **kwargs)
             assert self.notify_calls[0] == (args, kwargs)
 
@@ -51,36 +51,24 @@ class TestObserver:
         yield neurons.Observer()
 
     def notify(self, *args, **kwargs):
-        self.notify_calls.append((args, kwargs), )
+        self.notify_calls.append(
+            (args, kwargs),
+        )
 
 
 class TestBaseNeuron:
-    
     def test_event_registered(self):
         neuron = neurons.Neuron()
-        neuron.register_event('event')
+        neuron.register_event("event")
         assert neuron.events == dict(event=False)
 
 
-class TestAndNeuron:
-    
-    def test_neuron_invocation(self):
-        calls = []
-        neuron = neurons.AndNeuron()
-        neuron.register_event('event1', True)
-        neuron.register_event('event2', False)
-        neuron.register(lambda state: calls.append(state))
-        neuron('event2', True)
-        assert calls[0] is True
-
-
 class TestORNeuron:
-    
     def test_neuron_invocation(self):
         calls = []
         neuron = neurons.OrNeuron()
-        neuron.register_event('event1', False)
-        neuron.register_event('event2', False)
+        neuron.register_event("event1", False)
+        neuron.register_event("event2", False)
         neuron.register(lambda state: calls.append(state))
-        neuron('event2', True)
+        neuron("event2", True)
         assert calls[0] is True
