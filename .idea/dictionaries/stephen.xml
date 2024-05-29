@@ -4,15 +4,19 @@
       <w>addmovie</w>
       <w>addmoviegui</w>
       <w>addtaggui</w>
+      <w>bbbb</w>
       <w>butrew</w>
       <w>deregistration</w>
       <w>editmoviegui</w>
       <w>edittaggui</w>
       <w>enterable</w>
+      <w>globalconstants</w>
       <w>guimessgebox</w>
       <w>guiwidgets</w>
       <w>inputzone</w>
       <w>kwargus</w>
+      <w>maxs</w>
+      <w>mins</w>
       <w>moviedb</w>
       <w>moviedb's</w>
       <w>notifee</w>
