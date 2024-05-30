@@ -1,7 +1,7 @@
 """Main movie database program"""
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/22/24, 7:44 AM by stephen.
+#  Last modified 5/30/24, 7:49 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -139,68 +139,5 @@ def _json_dump(obj: Any, path: Path):
         json.dump(obj, fp)
 
 
-def command_line_args() -> argparse.Namespace:  # pragma: no cover
-    """Parse the command line arguments.
-
-    Returns:
-        Parsed arguments.
-    """
-
-    description_msg = (
-        "Invoke without arguments to run the gui. Invoke with the optional "
-        "'import_csv' argument to import a csv delimited text file."
-    )
-    parser = argparse.ArgumentParser(description=description_msg)
-    parser.add_argument(
-        "-i",
-        "--import_csv",
-        default=None,
-        help="a csv import file. See impexp.py for format requirements.",
-    )
-    parser.add_argument(
-        "-d",
-        "--database",
-        default=None,
-        help="database filename. Enter an empty string to create an in-memory database",
-    )
-    parser.add_argument(
-        "-v", "--verbosity", action="count", default=0, help="verbosity"
-    )
-    return parser.parse_args()
-
-
-def command():  # pragma nocover
-    """Run the program.
-
-    Command line parse and dispatch.
-    """
-    args = command_line_args()
-
-    # Run GUI
-    if not args.import_csv:
-        return main()
-
-    # An empty string is a valid SQLAlchemy non-default value for the database name.
-    non_default_database = args.database == "" or args.database
-
-    if args.verbosity >= 1:
-        print(f"Running {__file__}")
-        print(f"Loading movies from {args.import_csv}")
-        if non_default_database:
-            print(f"Adding movies to database '{args.database}'.")
-        else:
-            print("Adding movies to the default database.")
-
-    if non_default_database:
-        database.connect_to_database(args.database)
-    else:
-        database.connect_to_database()
-
-    try:
-        impexp.import_movies(args.import_csv)
-    except impexp.MoviedbInvalidImportData as exc:
-        print(exc)
-
-
 if __name__ == "__main__":  # pragma: no cover
-    sys.exit(command())
+    sys.exit(main())
