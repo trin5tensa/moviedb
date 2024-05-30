@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 5/30/24, 7:49 AM by stephen.
+#  Last modified 5/30/24, 8:08 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -26,7 +26,6 @@ import database
 import exception
 import guiwidgets
 import guiwidgets_2
-import impexp
 import tmdb
 from globalconstants import *
 
