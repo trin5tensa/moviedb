@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
-#  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 5/29/24, 8:46 AM by stephen.
+#  Copyright ©2024. Stephen Rigden.
+#  Last modified 6/12/24, 6:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -94,7 +94,7 @@ def connect_to_database(filename: str = database_fn):
 
     # Update metadata
     with _session_scope() as session:
-        timestamp = str(datetime.datetime.today())
+        timestamp = str(datetime.today())
         try:
             session.query(MoviesMetaData).filter(
                 MoviesMetaData.name == "date_created"
