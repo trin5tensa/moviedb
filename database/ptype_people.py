@@ -5,7 +5,7 @@ Experiments with the select statement
 """
 
 #  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/12/24, 6:53 AM by stephen.
+#  Last modified 6/14/24, 8:11 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,8 @@ Experiments with the select statement
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import sys
-from sqlalchemy import create_engine, select, Engine
+
+from sqlalchemy import create_engine, select, Engine, union_all
 from sqlalchemy.orm import Session
 
 import schema
@@ -42,64 +43,96 @@ def add_full_movie(engine, movie_bag: MovieBag):
         )
 
         # Identify existing people records.
-        all_people = (stars := movie_bag.get("stars", set())) | (
-            directors := movie_bag.get("directors", set())
+        all_people_names = (stars_names := movie_bag.get("stars", set())) | (
+            directors_names := movie_bag.get("directors", set())
         )
-        stmt = select(schema.Person).where(schema.Person.name.in_(all_people))
+        stmt = select(schema.Person).where(schema.Person.name.in_(all_people_names))
         result = session.execute(stmt)
-        present_objs = {person for person in result.scalars()}
+        xtg_people = set(result.scalars().all())
 
-        # Add new people objects
-        new_people = all_people - {person.name for person in present_objs}
-        new_objs = {
-            schema.Person(name=new_person_name) for new_person_name in new_people
+        # Add new people records
+        new_people_names = all_people_names - {person.name for person in xtg_people}
+        new_people = {
+            schema.Person(name=new_person_name) for new_person_name in new_people_names
         }
-        present_objs |= new_objs
+        all_people = xtg_people | new_people
 
         # Add directors and stars to movie
         movie.directors = {
-            person for person in present_objs if person.name in directors
+            person for person in all_people if person.name in directors_names
         }
-        movie.stars = {person for person in present_objs if person.name in stars}
+        movie.stars = {person for person in all_people if person.name in stars_names}
 
         # Tags
         # todo later: Handle invalid tag texts. Here they are silently dropped.
         if tags := movie_bag.get("movie_tags"):
             stmt = select(schema.Tag).where(schema.Tag.text.in_(tags))
             result = session.execute(stmt)
-            movie.tags = {tag for tag in result.scalars()}
+            movie.tags = set(result.scalars().all())
 
         session.add(movie)
 
 
-def update_movie(engine: Engine, old_movie: MovieBag, new_movie_bag: MovieBag):
+def update_movie(engine: Engine, old_movie: MovieBag, update: MovieBag):
     """..."""
-    # engine.echo = True
-    with Session(engine) as session:
-        with session.begin():
-            # todo Tidy up the 'where' statement
-            stmt = select(schema.Movie).where(
-                schema.Movie.title == old_movie.get("title")
-                and schema.Movie.year == old_movie.get("year")
-            )
-            existing_movie = session.scalar(stmt)
+    with Session(engine) as session, session.begin():
+        # Find 'old' movie
+        # noinspection PyTypeChecker
+        title_year_union = union_all(
+            select(schema.Movie).where(schema.Movie.title == old_movie.get("title")),
+            select(schema.Movie).where(schema.Movie.year == int(old_movie.get("year"))),
+        )
+        stmt = select(schema.Movie).from_statement(title_year_union)
+        movie = session.scalar(stmt)
 
-            existing_movie.title = new_movie_bag["title"]
-            existing_movie.year = int(new_movie_bag["year"])
+        # Update simple fields (not those with relationships)
+        movie.title = update["title"]
+        movie.year = int(update["year"])
 
-            # todo: Identify existing people records.
-            # todo: Add new people objects
-            # todo: Remove orphans
-            # todo: Add directors and stars to movie
+        # Tags
+        # todo later: Handle invalid tag texts. Here they are silently dropped.
+        if movies_tags := update.get("movie_tags"):
+            stmt = select(schema.Tag).where(schema.Tag.text.in_(movies_tags))
+            result = session.execute(stmt)
+            movie.tags = set(result.scalars().all())
 
-            # Tags
-            # todo later: Handle invalid tag texts. Here they are silently dropped.
-            if movies_tags := new_movie_bag.get("movie_tags"):
-                stmt = select(schema.Tag).where(schema.Tag.text.in_(movies_tags))
-                result = session.execute(stmt)
-                existing_movie.tags = {tag for tag in result.scalars()}
+        # Identify existing people records.
+        all_people_names = (new_stars_names := update.get("stars", set())) | (
+            new_directors_names := update.get("directors", set())
+        )
+        stmt = select(schema.Person).where(schema.Person.name.in_(all_people_names))
+        result = session.execute(stmt)
+        xtg_people = set(result.scalars().all())
 
-    engine.echo = False
+        # Add new people records
+        new_people_names = all_people_names - {person.name for person in xtg_people}
+        new_people = {
+            schema.Person(name=new_person_name) for new_person_name in new_people_names
+        }
+        all_people = xtg_people | new_people
+
+        # Identify potential orphans
+        star_orphan_names = {star.name for star in movie.stars} - new_stars_names
+        director_orphan_names = {
+            director.name for director in movie.directors
+        } - new_directors_names
+        orphan_names = star_orphan_names | director_orphan_names
+
+        # Add directors and stars to movie
+        movie.directors = {
+            person for person in all_people if person.name in new_directors_names
+        }
+        movie.stars = {
+            person for person in all_people if person.name in new_stars_names
+        }
+
+        # Remove orphans
+        stmt = select(schema.Person).where(schema.Person.name.in_(orphan_names))
+        result = session.execute(stmt)
+        orphans = {person for person in result.scalars()}
+        for person in orphans:
+            if not person.star_of_movies and not person.director_of_movies:
+                session.delete(person)
 
 
 def print_movies(engine):
@@ -110,11 +143,24 @@ def print_movies(engine):
         for movie in result.scalars():
             print(
                 f"{movie.id=}, {movie.title=}, {movie.year=}, "
-                # f"{movie.directors=}, {movie.stars=}, "
-                f"{movie.tags=}, "
-                # f"{movie.created}, {movie.updated}"
-                f""
+                # f"{movie.created}, {movie.updated}, "
+                # f"{movie.updated.second}, {movie.updated.microsecond}, ",
+                f"",
+                end="",
             )
+            if movie.stars:
+                print("stars = ", end="")
+                for star in movie.stars:
+                    print(star.name, end=", ")
+            if movie.directors:
+                print("directors = ", end="")
+                for director in movie.directors:
+                    print(director.name, end=", ")
+            if movie.tags:
+                print("tags = ", end="")
+                for tag in movie.tags:
+                    print(tag.text, end=", ")
+            print()
 
 
 def print_movie_tags(engine):
@@ -154,12 +200,13 @@ def main():
     add_full_movie(engine, title_year)
     add_movie_tags(engine, movie_tags)
     add_full_movie(engine, tagged_movie)
-    update_movie(engine, old_movie=tagged_movie, new_movie_bag=new_movie)
 
     add_full_movie(engine, star_movie)
     add_full_movie(engine, star_movie_2)
     add_full_movie(engine, director_movie)
     add_full_movie(engine, ego_movie)
+
+    update_movie(engine, old_movie=tagged_movie, update=new_movie)
 
     print_movies(engine)
     print_movie_tags(engine)
