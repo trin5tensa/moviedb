@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/21/24, 8:24 AM by stephen.
+#  Last modified 5/30/24, 8:08 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -26,7 +26,6 @@ import database
 import exception
 import guiwidgets
 import guiwidgets_2
-import impexp
 import tmdb
 from globalconstants import *
 
@@ -221,27 +220,6 @@ def edit_tag():
     guiwidgets_2.SearchTagGUI(
         config.current.tk_root, search_tag_callback=_search_tag_callback
     )
-
-
-def import_movies():
-    """Open a csv file and load the contents into the database."""
-    csv_fn = guiwidgets_2.gui_askopenfilename(
-        parent=config.current.tk_root, filetypes=(("Movie import files", "*.csv"),)
-    )
-
-    # Exit if the user clicked askopenfilename cancel button
-    if csv_fn == "":
-        return
-
-    try:
-        impexp.import_movies(csv_fn)
-    except impexp.MoviedbInvalidImportData as exc:
-        guiwidgets.gui_messagebox(
-            config.current.tk_root,
-            message="Errors were found in the input file.",
-            detail=exc.args[0],
-            icon="warning",
-        )
 
 
 def _settings_callback(tmdb_api_key: str, use_tmdb: bool):

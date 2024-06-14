@@ -1,7 +1,7 @@
 """A module encapsulating the database and all SQLAlchemy based code.."""
 
-#  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 2/24/24, 1:51 PM by stephen.
+#  Copyright ©2024. Stephen Rigden.
+#  Last modified 6/12/24, 6:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,6 +17,7 @@ import datetime
 import logging
 import sys
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Generator, Iterable, List, Optional, Union
 
 import sqlalchemy
@@ -61,7 +62,7 @@ class Base:
 
 Base = sqlalchemy.orm.declarative_base(cls=Base)
 MUYBRIDGE = 1878
-database_fn = "movie_database.sqlite3"
+database_fn = Path("../Movies Database/DBv0/movie_database.sqlite3")
 
 movie_tag = Table(
     "movie_tag",
@@ -93,7 +94,7 @@ def connect_to_database(filename: str = database_fn):
 
     # Update metadata
     with _session_scope() as session:
-        timestamp = str(datetime.datetime.today())
+        timestamp = str(datetime.today())
         try:
             session.query(MoviesMetaData).filter(
                 MoviesMetaData.name == "date_created"

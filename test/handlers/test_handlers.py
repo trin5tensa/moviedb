@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/20/24, 2:31 PM by stephen.
+#  Last modified 5/30/24, 7:49 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -297,93 +297,6 @@ class TestEditMovie:
             yield handlers.edit_movie()
         finally:
             handlers.config.current = hold_app
-
-
-# noinspection PyMissingOrEmptyDocstring
-class TestImportMovies:
-    CSV_TEST_FN = "csv_test_fn"
-    askopenfilename_calls = None
-    import_movies_calls = None
-    messagebox_calls = None
-
-    def test_user_cancellation_of_askopenfilename_dialog(
-        self, class_patches, monkeypatch
-    ):
-        monkeypatch.setattr(
-            handlers.guiwidgets_2, "gui_askopenfilename", lambda **kwargs: ""
-        )
-        with self.import_movies_context():
-            assert self.import_movies_calls == deque([])
-
-    def test_get_filename_dialog_called(self, class_patches):
-        with self.import_movies_context():
-            assert self.askopenfilename_calls == [
-                dict(
-                    parent=handlers.config.current.tk_root,
-                    filetypes=(("Movie import files", "*.csv"),),
-                )
-            ]
-
-    def test_import_movies_called(self, class_patches):
-        with self.import_movies_context():
-            assert self.import_movies_calls.popleft() == self.CSV_TEST_FN
-
-    def test_import_movies_raises_invalid_data_exception(
-        self, class_patches, monkeypatch
-    ):
-        monkeypatch.setattr(
-            handlers.impexp, "import_movies", self.dummy_import_movies_with_exception
-        )
-        with self.import_movies_context():
-            assert self.messagebox_calls == [
-                (
-                    (handlers.config.current.tk_root,),
-                    dict(
-                        message="Errors were found in the input file.",
-                        detail="Test exception message",
-                        icon="warning",
-                    ),
-                )
-            ]
-
-    @pytest.fixture
-    def class_patches(self, monkeypatch):
-        monkeypatch.setattr(
-            handlers.guiwidgets_2, "gui_askopenfilename", self.dummy_askopenfilename
-        )
-        monkeypatch.setattr(handlers.guiwidgets, "gui_messagebox", self.gui_messagebox)
-        monkeypatch.setattr(handlers.impexp, "import_movies", self.dummy_import_movies)
-
-    @contextmanager
-    def import_movies_context(self):
-        self.askopenfilename_calls = []
-        self.import_movies_calls = deque()
-        self.messagebox_calls = []
-        hold_persistent = handlers.config.persistent
-        hold_current = handlers.config.current
-
-        handlers.config.persistent = handlers.config.PersistentConfig(
-            program_name="test moviedb", program_version="test 1.0.0.dev"
-        )
-        handlers.config.current = handlers.config.CurrentConfig(tk_root="tk_root")
-        try:
-            yield handlers.import_movies()
-        finally:
-            handlers.config.persistent = hold_persistent
-            handlers.config.current = hold_current
-
-    def dummy_askopenfilename(self, **kwargs):
-        self.askopenfilename_calls.append(kwargs)
-        return self.CSV_TEST_FN
-
-    def dummy_import_movies(self, csv_fn):
-        self.import_movies_calls.append(csv_fn)
-
-    def dummy_import_movies_with_exception(self, csv_fn):
-        raise handlers.impexp.MoviedbInvalidImportData("Test exception message")
-
-    def gui_messagebox(self, *args, **kwargs):
-        self.messagebox_calls.append((args, kwargs))
 
 
 # noinspection PyMissingOrEmptyDocstring
