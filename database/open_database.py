@@ -5,7 +5,7 @@ Experiments with the select statement
 """
 
 #  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/17/24, 8:49 AM by stephen.
+#  Last modified 6/17/24, 1:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -194,6 +194,13 @@ def print_people(engine):
             )
 
 
+def clean_the_database(database_fn: Path):
+    """..."""
+    # todo Not for production: Use for prototyping only.
+    # Delete the database file
+    database_fn.unlink(missing_ok=True)
+
+
 def start_engine() -> Engine:
     """..."""
     # Create data directory structure if not already present
@@ -202,10 +209,12 @@ def start_engine() -> Engine:
     # todo in production version: Log missing movie_data_path
     movie_data_path.mkdir(exist_ok=True)
     database_dir_path = movie_data_path / DATABASE_DIR
-    # todo in production version:  Log missing database_path
+    # todo in production version: Log missing database_path
     database_dir_path.mkdir(exist_ok=True)
 
     # Get or create metadata file
+    # todo in production version:
+    #  Add schema metadata datetime stamps
     schema_version_fp = movie_data_path / f"{VERSION_FN}.json"
     try:
         with open(schema_version_fp) as fp:
@@ -230,6 +239,7 @@ def start_engine() -> Engine:
 
     # Create engine
     database_fn = database_dir_path / MOVIE_DATABASE_FN
+    clean_the_database(database_fn)
     engine = create_engine(f"sqlite+pysqlite:///{database_fn}", echo=False)
     schema.Base.metadata.create_all(engine)
 
@@ -246,7 +256,13 @@ def main():
     add_movie_tags(engine, movie_tags)
     add_full_movie(engine, tagged_movie)
 
-    print_movies(engine)
+    add_full_movie(engine, star_movie)
+    add_full_movie(engine, star_movie_2)
+    add_full_movie(engine, director_movie)
+    add_full_movie(engine, ego_movie)
+
+    update_movie(engine, old_movie=tagged_movie, update=new_movie)
+
     print_movies(engine)
     print_movie_tags(engine)
     print_people(engine)
