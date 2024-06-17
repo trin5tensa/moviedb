@@ -1,7 +1,7 @@
 """Schema v1"""
 
 #  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/12/24, 6:53 AM by stephen.
+#  Last modified 6/17/24, 8:49 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,13 +24,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+SCHEMA_VERSION = "v1"
 MUYBRIDGE = 1878
 MAX_YEAR = 10000
-
-# todo
-#  What happens when a Tag is deleted?
-#  What happens when a Movie is updated or deleted with a sole reference to a person?
-#  What happens when a Person is deleted?
 
 
 class Base(DeclarativeBase):
