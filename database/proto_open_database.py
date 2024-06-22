@@ -1,11 +1,10 @@
 """Prototype Database
 
-Supports the prototyping of DBv1:
-Experiments with the select statement
+Supports the prototyping of DBv1
 """
 
 #  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/14/24, 8:11 AM by stephen.
+#  Last modified 6/22/24, 6:27 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,14 +16,140 @@ Experiments with the select statement
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import json
 import sys
+from pathlib import Path
 
-from sqlalchemy import create_engine, select, Engine, union_all
+from sqlalchemy import create_engine, select, Engine, union_all, func
 from sqlalchemy.orm import Session
 
 import schema
-from data import *
+from proto_update_database import update_old_database
 from globalconstants import *
+
+MOVIES_DATA_DIR = "Movies Data"
+DATABASE_DIR = "DB" + schema.SCHEMA_VERSION
+VERSION_FN = "schema_version"
+MOVIE_DATABASE_FN = "movie_database.sqlite3"
+
+
+class DatabaseUpdateCheckZeroError(Exception):
+    """A database update cross-check has failed."""
+
+
+def start_engine() -> Engine:
+    """..."""
+    movie_data_path, database_dir_path = create_database_directories()
+    schema_version_fp = movie_data_path / f"{VERSION_FN}.json"
+    database_file_version = create_metadata_file(schema_version_fp)
+    engine = build_engine(database_dir_path)
+
+    # Does database need to be updated to a schema version?
+    if schema.SCHEMA_VERSION != database_file_version:
+        update_database(
+            engine,
+            database_file_version,
+            movie_data_path,
+            schema_version_fp,
+        )
+
+    return engine
+
+
+def create_database_directories() -> tuple[Path, Path]:
+    """..."""
+    # Create data directory structure if not already present
+    program_path = Path(__file__)
+    # todo in production version:  Request user permission for creation of new 'Movies Data' as
+    #  this may be caused by an external environmental problem.
+    #  This is fragile - What happens if the location of this source file changes from
+    #  being 'Coding/M2-Movies-2024/database'?
+    movie_data_path = program_path.parents[2] / MOVIES_DATA_DIR
+    # todo in production version: Log missing movie_data_path
+    movie_data_path.mkdir(exist_ok=True)
+    database_dir_path = movie_data_path / DATABASE_DIR
+    # todo in production version: Log missing database_path
+    database_dir_path.mkdir(exist_ok=True)
+    return movie_data_path, database_dir_path
+
+
+def create_metadata_file(schema_version_fp: Path) -> str:
+    """..."""
+    # Get or create metadata file
+    # todo in production version: Add schema metadata datetime stamps
+    try:
+        with open(schema_version_fp) as fp:
+            from_json = json.load(fp)
+    except FileNotFoundError:
+        # todo in production version:  Log missing metafile
+        database_file_version = schema.SCHEMA_VERSION
+
+        data = {
+            VERSION_FN: database_file_version,
+        }
+        with open(schema_version_fp, "w") as fp:
+            json.dump(data, fp)
+    else:
+        database_file_version = from_json[VERSION_FN]
+    return database_file_version
+
+
+def build_engine(database_dir_path: Path) -> Engine:
+    """..."""
+    # Create engine
+    database_fn = database_dir_path / MOVIE_DATABASE_FN
+    # Make a new clean empty database for prototyping
+    clean_the_database(database_fn)
+    engine = create_engine(f"sqlite+pysqlite:///{database_fn}", echo=False)
+    schema.Base.metadata.create_all(engine)
+    return engine
+
+
+def update_database(
+    engine: Engine,
+    database_file_version: str,
+    movie_data_path: Path,
+    schema_version_fp: Path,
+):
+    """..."""
+    # todo in production version:  Log update requirement.
+    old_tag_count, old_tags, old_movie_count, old_movies = update_old_database(
+        database_file_version, movie_data_path, MOVIE_DATABASE_FN
+    )
+
+    # Add old tags to new tags table.
+    add_movie_tags(engine, old_tags)
+    with Session(engine) as session:
+        stmt = select(func.count()).select_from(schema.Tag)
+        new_tag_count: int = session.execute(stmt).scalar()
+    if old_tag_count != new_tag_count:
+        # todo in production version: Log exception
+        msg = (
+            f"Old and new tag record counts do not agree."
+            f" {old_tag_count} != {new_tag_count}"
+        )
+        raise DatabaseUpdateCheckZeroError(msg)
+
+    # Add old movies to new movies table
+    for movie in old_movies:
+        add_full_movie(engine, movie)
+    with Session(engine) as session:
+        stmt = select(func.count()).select_from(schema.Movie)
+        new_movie_count: int = session.execute(stmt).scalar()
+    if old_movie_count != new_movie_count:
+        # todo in production version: Log exception
+        msg = (
+            f"Old and new movie record counts do not agree."
+            f" {old_movie_count} != {new_movie_count}"
+        )
+        raise DatabaseUpdateCheckZeroError(msg)
+
+    # Update metadata file with new version number.
+    with open(schema_version_fp) as fp:
+        from_json = json.load(fp)
+    from_json[VERSION_FN] = schema.SCHEMA_VERSION
+    with open(schema_version_fp, "w") as fp:
+        json.dump(from_json, fp)
 
 
 def add_movie_tags(engine, tags):
@@ -40,7 +165,14 @@ def add_full_movie(engine, movie_bag: MovieBag):
         movie = schema.Movie(
             title=movie_bag.get("title"),
             year=int(movie_bag.get("year")),
+            duration=int(movie_bag.get("duration")),
+            synopsis=movie_bag.get("synopsis"),
+            notes=movie_bag.get("notes"),
         )
+        # todo Study the distinction between adding a movie to the session and committing it to
+        #  the database, particularly why the movie should be added to the session at this
+        #  point and not at th every end of the context manager.
+        session.add(movie)
 
         # Identify existing people records.
         all_people_names = (stars_names := movie_bag.get("stars", set())) | (
@@ -53,8 +185,11 @@ def add_full_movie(engine, movie_bag: MovieBag):
         # Add new people records
         new_people_names = all_people_names - {person.name for person in xtg_people}
         new_people = {
-            schema.Person(name=new_person_name) for new_person_name in new_people_names
+            schema.Person(name=new_person_name)
+            for new_person_name in new_people_names
+            if new_person_name != ""
         }
+
         all_people = xtg_people | new_people
 
         # Add directors and stars to movie
@@ -63,14 +198,12 @@ def add_full_movie(engine, movie_bag: MovieBag):
         }
         movie.stars = {person for person in all_people if person.name in stars_names}
 
-        # Tags
+        # Add tags to movie.
         # todo later: Handle invalid tag texts. Here they are silently dropped.
-        if tags := movie_bag.get("movie_tags"):
+        if tags := movie_bag.get("movie_tags", set()):
             stmt = select(schema.Tag).where(schema.Tag.text.in_(tags))
             result = session.execute(stmt)
             movie.tags = set(result.scalars().all())
-
-        session.add(movie)
 
 
 def update_movie(engine: Engine, old_movie: MovieBag, update: MovieBag):
@@ -88,6 +221,9 @@ def update_movie(engine: Engine, old_movie: MovieBag, update: MovieBag):
         # Update simple fields (not those with relationships)
         movie.title = update["title"]
         movie.year = int(update["year"])
+        movie.duration = int(update["duration"])
+        movie.synopsis = update["synopsis"]
+        movie.notes = update["notes"]
 
         # Tags
         # todo later: Handle invalid tag texts. Here they are silently dropped.
@@ -138,7 +274,7 @@ def update_movie(engine: Engine, old_movie: MovieBag, update: MovieBag):
 def print_movies(engine):
     """..."""
     print("\nMovies:")
-    with Session(engine) as session, session.begin():
+    with Session(engine) as session:
         result = session.execute(select(schema.Movie))
         for movie in result.scalars():
             print(
@@ -166,7 +302,7 @@ def print_movies(engine):
 def print_movie_tags(engine):
     """..."""
     print("\nMovie Tags:")
-    with Session(engine) as session, session.begin():
+    with Session(engine) as session:
         result = session.execute(select(schema.Tag))
         for tag in result.scalars():
             print(f"{tag=}, {tag.created}, {tag.updated}")
@@ -175,7 +311,7 @@ def print_movie_tags(engine):
 def print_people(engine):
     """..."""
     print("\nPeople:")
-    with Session(engine) as session, session.begin():
+    with Session(engine) as session:
         result = session.execute(select(schema.Person))
         for person in result.scalars():
             print(
@@ -187,30 +323,16 @@ def print_people(engine):
             )
 
 
-def start_engine() -> Engine:
+def clean_the_database(database_fn: Path):
     """..."""
-    engine = create_engine("sqlite+pysqlite:///:memory:", echo=False)
-    schema.Base.metadata.create_all(engine)
-    return engine
+    # todo Not for production: Use for prototyping only.
+    # Delete the database file
+    database_fn.unlink(missing_ok=True)
 
 
 def main():
     """Integration tests and usage examples."""
-    engine = start_engine()
-    add_full_movie(engine, title_year)
-    add_movie_tags(engine, movie_tags)
-    add_full_movie(engine, tagged_movie)
-
-    add_full_movie(engine, star_movie)
-    add_full_movie(engine, star_movie_2)
-    add_full_movie(engine, director_movie)
-    add_full_movie(engine, ego_movie)
-
-    update_movie(engine, old_movie=tagged_movie, update=new_movie)
-
-    print_movies(engine)
-    print_movie_tags(engine)
-    print_people(engine)
+    start_engine()
 
 
 if __name__ == "__main__":
