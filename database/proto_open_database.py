@@ -179,6 +179,23 @@ def select_tag(engine: Engine, match: str) -> set[str]:
 
 def add_full_movie(engine, movie_bag: MovieBag):
     """..."""
+    with Session(engine) as session:
+        result = session.execute(select(schema.Tag))
+        texts = {tag.text for tag in result.scalars().all()}
+    return texts
+
+
+def select_tag(engine: Engine, match: str) -> set[str]:
+    """..."""
+    with Session(engine) as session:
+        stmt = select(schema.Tag).where(schema.Tag.text.like(f"%{match}%"))
+        result = session.execute(stmt)
+        texts = {tag.text for tag in result.scalars().all()}
+    return texts
+
+
+def add_full_movie(engine, movie_bag: MovieBag):
+    """..."""
 
     try:
         with Session(engine) as session, session.begin():
