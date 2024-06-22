@@ -4,7 +4,7 @@ Supports the prototyping of DBv1
 """
 
 #  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/22/24, 6:27 AM by stephen.
+#  Last modified 6/22/24, 8:22 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,6 +24,7 @@ from sqlalchemy import create_engine, select, Engine, union_all, func
 from sqlalchemy.orm import Session
 
 import schema
+from proto_select_examples import select_person_as_director
 from proto_update_database import update_old_database
 from globalconstants import *
 
@@ -99,7 +100,7 @@ def build_engine(database_dir_path: Path) -> Engine:
     # Create engine
     database_fn = database_dir_path / MOVIE_DATABASE_FN
     # Make a new clean empty database for prototyping
-    clean_the_database(database_fn)
+    # clean_the_database(database_fn)
     engine = create_engine(f"sqlite+pysqlite:///{database_fn}", echo=False)
     schema.Base.metadata.create_all(engine)
     return engine
@@ -156,6 +157,23 @@ def add_movie_tags(engine, tags):
     """..."""
     with Session(engine) as session, session.begin():
         session.add_all([schema.Tag(text=tag) for tag in tags])
+
+
+def select_all_tags(engine: Engine) -> set[str]:
+    """..."""
+    with Session(engine) as session:
+        result = session.execute(select(schema.Tag))
+        texts = {tag.text for tag in result.scalars().all()}
+    return texts
+
+
+def select_tag(engine: Engine, match: str) -> set[str]:
+    """..."""
+    with Session(engine) as session:
+        stmt = select(schema.Tag).where(schema.Tag.text.like(f"%{match}%"))
+        result = session.execute(stmt)
+        texts = {tag.text for tag in result.scalars().all()}
+    return texts
 
 
 def add_full_movie(engine, movie_bag: MovieBag):
@@ -331,8 +349,20 @@ def clean_the_database(database_fn: Path):
 
 
 def main():
-    """Integration tests and usage examples."""
-    start_engine()
+    """Integration agts and usage examples."""
+    engine = start_engine()
+    # select_person_as_director(engine)
+    tag_texts = select_all_tags(engine)
+    print()
+    for tag in tag_texts:
+        print(tag)
+    # for text in tag_texts:
+    #     print(text)
+
+    tag_texts = select_tag(engine, "again")
+    print()
+    for text in tag_texts:
+        print(text)
 
 
 if __name__ == "__main__":
