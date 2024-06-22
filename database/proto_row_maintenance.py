@@ -5,7 +5,7 @@ Experiments with the select statement
 """
 
 #  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/17/24, 1:44 PM by stephen.
+#  Last modified 6/22/24, 6:27 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,21 +17,14 @@ Experiments with the select statement
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import json
 import sys
-from pathlib import Path
 
 from sqlalchemy import create_engine, select, Engine, union_all
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 import schema
 from data import *
 from globalconstants import *
-
-DATABASE_DIR = "DB" + schema.SCHEMA_VERSION
-VERSION_FN = "schema_version"
-MOVIE_DATABASE_FN = "movie_database.sqlite"
 
 
 def add_movie_tags(engine, tags):
@@ -145,7 +138,7 @@ def update_movie(engine: Engine, old_movie: MovieBag, update: MovieBag):
 def print_movies(engine):
     """..."""
     print("\nMovies:")
-    with Session(engine) as session, session.begin():
+    with Session(engine) as session:
         result = session.execute(select(schema.Movie))
         for movie in result.scalars():
             print(
@@ -173,7 +166,7 @@ def print_movies(engine):
 def print_movie_tags(engine):
     """..."""
     print("\nMovie Tags:")
-    with Session(engine) as session, session.begin():
+    with Session(engine) as session:
         result = session.execute(select(schema.Tag))
         for tag in result.scalars():
             print(f"{tag=}, {tag.created}, {tag.updated}")
@@ -182,7 +175,7 @@ def print_movie_tags(engine):
 def print_people(engine):
     """..."""
     print("\nPeople:")
-    with Session(engine) as session, session.begin():
+    with Session(engine) as session:
         result = session.execute(select(schema.Person))
         for person in result.scalars():
             print(
@@ -194,64 +187,16 @@ def print_people(engine):
             )
 
 
-def clean_the_database(database_fn: Path):
-    """..."""
-    # todo Not for production: Use for prototyping only.
-    # Delete the database file
-    database_fn.unlink(missing_ok=True)
-
-
 def start_engine() -> Engine:
     """..."""
-    # Create data directory structure if not already present
-    program_path = Path(__file__)
-    movie_data_path = program_path.parents[2] / "Movies Data"
-    # todo in production version: Log missing movie_data_path
-    movie_data_path.mkdir(exist_ok=True)
-    database_dir_path = movie_data_path / DATABASE_DIR
-    # todo in production version: Log missing database_path
-    database_dir_path.mkdir(exist_ok=True)
-
-    # Get or create metadata file
-    # todo in production version:
-    #  Add schema metadata datetime stamps
-    schema_version_fp = movie_data_path / f"{VERSION_FN}.json"
-    try:
-        with open(schema_version_fp) as fp:
-            from_json = json.load(fp)
-    except FileNotFoundError as exc:
-        # todo in production version:  Log missing metafile
-        database_file_version = schema.SCHEMA_VERSION
-
-        data = {
-            VERSION_FN: database_file_version,
-        }
-        with open(schema_version_fp, "w") as fp:
-            json.dump(data, fp)
-    else:
-        database_file_version = from_json[VERSION_FN]
-
-    # Does database need to be updated to new schema version?
-    if schema.SCHEMA_VERSION != database_file_version:
-        # todo in production version:  Log update requirement.
-        # todo in production version:  Request user user permission for update.
-        print("Version mismatch: Database update required.")
-
-    # Create engine
-    database_fn = database_dir_path / MOVIE_DATABASE_FN
-    clean_the_database(database_fn)
-    engine = create_engine(f"sqlite+pysqlite:///{database_fn}", echo=False)
+    engine = create_engine("sqlite+pysqlite:///:memory:", echo=False)
     schema.Base.metadata.create_all(engine)
-
     return engine
 
 
 def main():
     """Integration tests and usage examples."""
-    # todo implement a way of dropping the data from the tables so each run can start with an
-    #  empty database.
     engine = start_engine()
-
     add_full_movie(engine, title_year)
     add_movie_tags(engine, movie_tags)
     add_full_movie(engine, tagged_movie)
