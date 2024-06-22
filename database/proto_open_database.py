@@ -4,7 +4,7 @@ Supports the prototyping of DBv1
 """
 
 #  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/22/24, 6:27 AM by stephen.
+#  Last modified 6/22/24, 11:34 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,9 +21,11 @@ import sys
 from pathlib import Path
 
 from sqlalchemy import create_engine, select, Engine, union_all, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 import schema
+import data as prototype_data
 from proto_update_database import update_old_database
 from globalconstants import *
 
@@ -99,7 +101,7 @@ def build_engine(database_dir_path: Path) -> Engine:
     # Create engine
     database_fn = database_dir_path / MOVIE_DATABASE_FN
     # Make a new clean empty database for prototyping
-    clean_the_database(database_fn)
+    # clean_the_database(database_fn)
     engine = create_engine(f"sqlite+pysqlite:///{database_fn}", echo=False)
     schema.Base.metadata.create_all(engine)
     return engine
@@ -158,52 +160,82 @@ def add_movie_tags(engine, tags):
         session.add_all([schema.Tag(text=tag) for tag in tags])
 
 
+def select_all_tags(engine: Engine) -> set[str]:
+    """..."""
+    with Session(engine) as session:
+        result = session.execute(select(schema.Tag))
+        texts = {tag.text for tag in result.scalars().all()}
+    return texts
+
+
+def select_tag(engine: Engine, match: str) -> set[str]:
+    """..."""
+    with Session(engine) as session:
+        stmt = select(schema.Tag).where(schema.Tag.text.like(f"%{match}%"))
+        result = session.execute(stmt)
+        texts = {tag.text for tag in result.scalars().all()}
+    return texts
+
+
 def add_full_movie(engine, movie_bag: MovieBag):
     """..."""
 
-    with Session(engine) as session, session.begin():
-        movie = schema.Movie(
-            title=movie_bag.get("title"),
-            year=int(movie_bag.get("year")),
-            duration=int(movie_bag.get("duration")),
-            synopsis=movie_bag.get("synopsis"),
-            notes=movie_bag.get("notes"),
-        )
-        # todo Study the distinction between adding a movie to the session and committing it to
-        #  the database, particularly why the movie should be added to the session at this
-        #  point and not at th every end of the context manager.
-        session.add(movie)
+    try:
+        with Session(engine) as session, session.begin():
 
-        # Identify existing people records.
-        all_people_names = (stars_names := movie_bag.get("stars", set())) | (
-            directors_names := movie_bag.get("directors", set())
-        )
-        stmt = select(schema.Person).where(schema.Person.name.in_(all_people_names))
-        result = session.execute(stmt)
-        xtg_people = set(result.scalars().all())
+            movie = schema.Movie(
+                title=movie_bag.get("title"),
+                year=int(movie_bag.get("year")),
+                # duration=int(movie_bag.get("duration")),
+                synopsis=movie_bag.get("synopsis"),
+                notes=movie_bag.get("notes"),
+            )
+            if duration := movie_bag.get("duration"):
+                movie.duration = duration
 
-        # Add new people records
-        new_people_names = all_people_names - {person.name for person in xtg_people}
-        new_people = {
-            schema.Person(name=new_person_name)
-            for new_person_name in new_people_names
-            if new_person_name != ""
-        }
+            # todo Study the distinction between adding a movie to the session
+            #  and committing it to the database, particularly why the movie
+            #  should be added to the session at this point and not at the
+            #  end of the context manager.
+            session.add(movie)
 
-        all_people = xtg_people | new_people
+            # Identify existing people records.
+            all_people_names = (stars_names := movie_bag.get("stars", set())) | (
+                directors_names := movie_bag.get("directors", set())
+            )
+            stmt = select(schema.Person).where(schema.Person.name.in_(all_people_names))
+            with session.no_autoflush:
+                result = session.execute(stmt)
+            xtg_people = set(result.scalars().all())
 
-        # Add directors and stars to movie
-        movie.directors = {
-            person for person in all_people if person.name in directors_names
-        }
-        movie.stars = {person for person in all_people if person.name in stars_names}
+            # Add new people records
+            new_people_names = all_people_names - {person.name for person in xtg_people}
+            new_people = {
+                schema.Person(name=new_person_name)
+                for new_person_name in new_people_names
+                if new_person_name != ""
+            }
 
-        # Add tags to movie.
-        # todo later: Handle invalid tag texts. Here they are silently dropped.
-        if tags := movie_bag.get("movie_tags", set()):
-            stmt = select(schema.Tag).where(schema.Tag.text.in_(tags))
-            result = session.execute(stmt)
-            movie.tags = set(result.scalars().all())
+            all_people = xtg_people | new_people
+
+            # Add directors and stars to movie
+            movie.directors = {
+                person for person in all_people if person.name in directors_names
+            }
+            movie.stars = {
+                person for person in all_people if person.name in stars_names
+            }
+
+            # Add tags to movie.
+            # todo later: Handle invalid tag texts. Here they are silently dropped.
+            if tags := movie_bag.get("movie_tags", set()):
+                stmt = select(schema.Tag).where(schema.Tag.text.in_(tags))
+                result = session.execute(stmt)
+                movie.tags = set(result.scalars().all())
+
+    except IntegrityError:
+        # todo in production code: Log exception
+        raise
 
 
 def update_movie(engine: Engine, old_movie: MovieBag, update: MovieBag):
@@ -271,6 +303,23 @@ def update_movie(engine: Engine, old_movie: MovieBag, update: MovieBag):
                 session.delete(person)
 
 
+def select_all_people(engine: Engine) -> set[str]:
+    """..."""
+    with Session(engine) as session:
+        result = session.execute(select(schema.Person))
+        names = {person.name for person in result.scalars().all()}
+    return names
+
+
+def select_people(engine: Engine, match: str) -> set[str]:
+    """..."""
+    with Session(engine) as session:
+        stmt = select(schema.Person).where(schema.Person.name.like(f"%{match}%"))
+        result = session.execute(stmt)
+        names = {person.name for person in result.scalars().all()}
+    return names
+
+
 def print_movies(engine):
     """..."""
     print("\nMovies:")
@@ -332,7 +381,31 @@ def clean_the_database(database_fn: Path):
 
 def main():
     """Integration tests and usage examples."""
-    start_engine()
+    engine = start_engine()
+
+    # select_person_as_director(engine)
+
+    # tag_texts = select_all_tags(engine)
+    # print()
+    # for tag in tag_texts:
+    #     print(tag)
+    # tag_texts = select_tag(engine, "again")
+    # print()
+    # for text in tag_texts:
+    #     print(text)
+
+    try:
+        add_full_movie(engine, prototype_data.star_movie)
+    except IntegrityError:
+        pass
+    people_names = select_all_people(engine)
+    print()
+    for name in people_names:
+        print(f"{name=}")
+    print()
+    people_names = select_people(engine, match="star")
+    for name in people_names:
+        print(f"{name=}")
 
 
 if __name__ == "__main__":
