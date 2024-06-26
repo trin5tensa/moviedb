@@ -4,7 +4,7 @@ Supports the prototyping of DBv1
 """
 
 #  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/22/24, 11:34 AM by stephen.
+#  Last modified 6/26/24, 8:34 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,12 +20,13 @@ import json
 import sys
 from pathlib import Path
 
-from sqlalchemy import create_engine, select, Engine, union_all, func
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine, select, Engine, func, intersect
+from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy.orm import sessionmaker, Session
 
 import schema
-import data as prototype_data
+from data import tagged_movie, new_movie, movie_tags, star_movie
+from proto_select_examples import select_person_as_director, print_bio
 from proto_update_database import update_old_database
 from globalconstants import *
 
@@ -39,23 +40,23 @@ class DatabaseUpdateCheckZeroError(Exception):
     """A database update cross-check has failed."""
 
 
-def start_engine() -> Engine:
+def start_engine() -> sessionmaker[Session]:
     """..."""
     movie_data_path, database_dir_path = create_database_directories()
     schema_version_fp = movie_data_path / f"{VERSION_FN}.json"
     database_file_version = create_metadata_file(schema_version_fp)
-    engine = build_engine(database_dir_path)
+    sessionmade = build_engine(database_dir_path)
 
     # Does database need to be updated to a schema version?
     if schema.SCHEMA_VERSION != database_file_version:
         update_database(
-            engine,
+            sessionmade,
             database_file_version,
             movie_data_path,
             schema_version_fp,
         )
 
-    return engine
+    return sessionmade
 
 
 def create_database_directories() -> tuple[Path, Path]:
@@ -96,15 +97,18 @@ def create_metadata_file(schema_version_fp: Path) -> str:
     return database_file_version
 
 
-def build_engine(database_dir_path: Path) -> Engine:
+def build_engine(database_dir_path: Path) -> sessionmaker[Session]:
     """..."""
     # Create engine
     database_fn = database_dir_path / MOVIE_DATABASE_FN
     # Make a new clean empty database for prototyping
     # clean_the_database(database_fn)
+    # engine = create_engine(f"sqlite+pysqlite:///{database_fn}", echo=True)
     engine = create_engine(f"sqlite+pysqlite:///{database_fn}", echo=False)
+    # engine = create_engine(f"sqlite+pysqlite:///{database_fn}", echo=True)
+    sessionmade = sessionmaker(engine)
     schema.Base.metadata.create_all(engine)
-    return engine
+    return sessionmade
 
 
 def update_database(
@@ -114,6 +118,7 @@ def update_database(
     schema_version_fp: Path,
 ):
     """..."""
+    # Todo Update for use of sessionmaker and integration test
     # todo in production version:  Log update requirement.
     old_tag_count, old_tags, old_movie_count, old_movies = update_old_database(
         database_file_version, movie_data_path, MOVIE_DATABASE_FN
@@ -154,51 +159,70 @@ def update_database(
         json.dump(from_json, fp)
 
 
-def add_movie_tags(engine, tags):
+def add_movie_tags(sessionmade: sessionmaker[Session], tags: Sequence[str]):
     """..."""
-    with Session(engine) as session, session.begin():
+    with sessionmade() as session, session.begin():
         session.add_all([schema.Tag(text=tag) for tag in tags])
 
 
-def select_all_tags(engine: Engine) -> set[str]:
+def select_all_tags(sessionmade: sessionmaker[Session]) -> set[str]:
     """..."""
-    with Session(engine) as session:
-        result = session.execute(select(schema.Tag))
-        texts = {tag.text for tag in result.scalars().all()}
+    with sessionmade() as session:
+        stmt = select(schema.Tag)
+        texts = {tag.text for tag in (session.scalars(stmt))}
     return texts
 
 
-def select_tag(engine: Engine, match: str) -> set[str]:
+def select_tag(sessionmade: sessionmaker[Session], match: str) -> set[str]:
     """..."""
-    with Session(engine) as session:
+    with sessionmade() as session:
         stmt = select(schema.Tag).where(schema.Tag.text.like(f"%{match}%"))
-        result = session.execute(stmt)
-        texts = {tag.text for tag in result.scalars().all()}
+        texts = {tag.text for tag in (session.scalars(stmt))}
     return texts
 
 
-def add_full_movie(engine, movie_bag: MovieBag):
+def delete_tag(sessionmade: sessionmaker[Session], text: str):
     """..."""
-    with Session(engine) as session:
-        result = session.execute(select(schema.Tag))
-        texts = {tag.text for tag in result.scalars().all()}
-    return texts
+    with sessionmade() as session, session.begin():
+        # noinspection PyTypeChecker
+        stmt = select(schema.Tag).where(schema.Tag.text == text)
+        session.delete(session.scalars(stmt).one())
 
 
-def select_tag(engine: Engine, match: str) -> set[str]:
+def select_movie(sessionmade: sessionmaker[Session], movie_bag: MovieBag) -> MovieBag:
     """..."""
-    with Session(engine) as session:
-        stmt = select(schema.Tag).where(schema.Tag.text.like(f"%{match}%"))
-        result = session.execute(stmt)
-        texts = {tag.text for tag in result.scalars().all()}
-    return texts
+    # print(f"{movie_bag=}")
+    with sessionmade() as session:
+        # noinspection PyTypeChecker
+        title_year_intersect = intersect(
+            select(schema.Movie).where(schema.Movie.title == movie_bag.get("title")),
+            select(schema.Movie).where(schema.Movie.year == int(movie_bag.get("year"))),
+        )
+        stmt = select(schema.Movie).from_statement(title_year_intersect)
+        movie = session.scalars(stmt).one()
+        # print(f"sm {movie=}")
+
+        movie_bag = MovieBag(
+            id=movie.id,
+            title=movie.title,
+            year=MovieInteger(movie.year),
+            notes=movie.notes,
+            synopsis=movie.synopsis,
+            created=movie.created,
+            updated=movie.updated,
+            directors=movie.directors,
+            stars=movie.stars,
+            movie_tags=movie.tags,
+        )
+        if movie.duration:
+            movie_bag["duration"] = MovieInteger(movie.duration)
+        return movie_bag
 
 
-def add_full_movie(engine, movie_bag: MovieBag):
+def add_full_movie(sessionmade: sessionmaker[Session], movie_bag: MovieBag):
     """..."""
-
     try:
-        with Session(engine) as session, session.begin():
+        with sessionmade() as session, session.begin():
 
             movie = schema.Movie(
                 title=movie_bag.get("title"),
@@ -210,10 +234,6 @@ def add_full_movie(engine, movie_bag: MovieBag):
             if duration := movie_bag.get("duration"):
                 movie.duration = duration
 
-            # todo Study the distinction between adding a movie to the session
-            #  and committing it to the database, particularly why the movie
-            #  should be added to the session at this point and not at the
-            #  end of the context manager.
             session.add(movie)
 
             # Identify existing people records.
@@ -255,31 +275,33 @@ def add_full_movie(engine, movie_bag: MovieBag):
         raise
 
 
-def update_movie(engine: Engine, old_movie: MovieBag, update: MovieBag):
+def update_movie(
+    sessionmade: sessionmaker[Session], old_movie: MovieBag, update: MovieBag
+):
     """..."""
-    with Session(engine) as session, session.begin():
+    with sessionmade() as session, session.begin():
         # Find 'old' movie
         # noinspection PyTypeChecker
-        title_year_union = union_all(
+        # session.bind.echo = True
+        title_year_intersect = intersect(
             select(schema.Movie).where(schema.Movie.title == old_movie.get("title")),
             select(schema.Movie).where(schema.Movie.year == int(old_movie.get("year"))),
         )
-        stmt = select(schema.Movie).from_statement(title_year_union)
-        movie = session.scalar(stmt)
+        stmt = select(schema.Movie).from_statement(title_year_intersect)
+        movie = session.scalars(stmt).one()
 
         # Update simple fields (not those with relationships)
         movie.title = update["title"]
         movie.year = int(update["year"])
-        movie.duration = int(update["duration"])
-        movie.synopsis = update["synopsis"]
-        movie.notes = update["notes"]
+        movie.duration = update.get("duration")
+        movie.synopsis = update.get("synopsis")
+        movie.notes = update.get("notes")
 
-        # Tags
-        # todo later: Handle invalid tag texts. Here they are silently dropped.
+        # # Tags
+        # # todo later: Handle invalid tag texts. Here they are silently dropped.
         if movies_tags := update.get("movie_tags"):
             stmt = select(schema.Tag).where(schema.Tag.text.in_(movies_tags))
-            result = session.execute(stmt)
-            movie.tags = set(result.scalars().all())
+            movie.tags = set(session.scalars(stmt).all())
 
         # Identify existing people records.
         all_people_names = (new_stars_names := update.get("stars", set())) | (
@@ -313,34 +335,58 @@ def update_movie(engine: Engine, old_movie: MovieBag, update: MovieBag):
 
         # Remove orphans
         stmt = select(schema.Person).where(schema.Person.name.in_(orphan_names))
-        result = session.execute(stmt)
-        orphans = {person for person in result.scalars()}
-        for person in orphans:
+        for person in {person for person in session.scalars(stmt)}:
+            if not person.star_of_movies and not person.director_of_movies:
+                session.delete(person)
+
+        # session.bind.echo = False
+
+
+def delete_movie(sessionmade: sessionmaker[Session], movie: MovieBag):
+    """..."""
+    with sessionmade() as session, session.begin():
+        # noinspection PyTypeChecker
+        title_year_intersect = intersect(
+            select(schema.Movie).where(schema.Movie.title == movie.get("title")),
+            select(schema.Movie).where(schema.Movie.year == int(movie.get("year"))),
+        )
+        stmt = select(schema.Movie).from_statement(title_year_intersect)
+        movie = session.scalars(stmt).one()
+
+        # Identify potential orphans
+        star_orphan_names = {star.name for star in movie.stars}
+        director_orphan_names = {director.name for director in movie.directors}
+        orphan_names = star_orphan_names | director_orphan_names
+
+        session.delete(movie)
+
+        # Remove orphans
+        stmt = select(schema.Person).where(schema.Person.name.in_(orphan_names))
+        for person in {person for person in session.scalars(stmt)}:
             if not person.star_of_movies and not person.director_of_movies:
                 session.delete(person)
 
 
-def select_all_people(engine: Engine) -> set[str]:
+def select_all_people(sessionmade: sessionmaker[Session]) -> set[str]:
     """..."""
-    with Session(engine) as session:
-        result = session.execute(select(schema.Person))
-        names = {person.name for person in result.scalars().all()}
+    with sessionmade() as session:
+        stmt = select(schema.Person)
+        names = {person.name for person in session.scalars(stmt)}
     return names
 
 
-def select_people(engine: Engine, match: str) -> set[str]:
+def select_people(sessionmade: sessionmaker[Session], match: str) -> set[str]:
     """..."""
-    with Session(engine) as session:
+    with sessionmade() as session:
         stmt = select(schema.Person).where(schema.Person.name.like(f"%{match}%"))
-        result = session.execute(stmt)
-        names = {person.name for person in result.scalars().all()}
+        names = {person.name for person in session.scalars(stmt)}
     return names
 
 
-def print_movies(engine):
+def print_all_movies(sessionmade: sessionmaker[Session]):
     """..."""
-    print("\nMovies:")
-    with Session(engine) as session:
+    print()
+    with sessionmade() as session:
         result = session.execute(select(schema.Movie))
         for movie in result.scalars():
             print(
@@ -365,30 +411,6 @@ def print_movies(engine):
             print()
 
 
-def print_movie_tags(engine):
-    """..."""
-    print("\nMovie Tags:")
-    with Session(engine) as session:
-        result = session.execute(select(schema.Tag))
-        for tag in result.scalars():
-            print(f"{tag=}, {tag.created}, {tag.updated}")
-
-
-def print_people(engine):
-    """..."""
-    print("\nPeople:")
-    with Session(engine) as session:
-        result = session.execute(select(schema.Person))
-        for person in result.scalars():
-            print(
-                f"{person.id}, {person.name}, "
-                # f"{person.star_of_movies}, "
-                # f"{person.director_of_movies}, "
-                # f"{person.created}, {person.updated}"
-                f""
-            )
-
-
 def clean_the_database(database_fn: Path):
     """..."""
     # todo Not for production: Use for prototyping only.
@@ -396,33 +418,110 @@ def clean_the_database(database_fn: Path):
     database_fn.unlink(missing_ok=True)
 
 
-def main():
-    """Integration tests and usage examples."""
-    engine = start_engine()
+def igr_test_tags(session_config: sessionmaker[Session]):
+    """..."""
+    texts = select_all_tags(session_config)
+    for text in texts:
+        print(f"{text=}")
 
-    # select_person_as_director(engine)
+    print()
+    texts = select_tag(session_config, "again")
+    for text in texts:
+        print(f"{text=}")
 
-    # tag_texts = select_all_tags(engine)
-    # print()
-    # for tag in tag_texts:
-    #     print(tag)
-    # tag_texts = select_tag(engine, "again")
-    # print()
-    # for text in tag_texts:
-    #     print(text)
+    print()
+    new_tags = ["new tag 1", "new tag 2", "new tag 3"]
+    add_movie_tags(session_config, new_tags)
+    texts = select_all_tags(session_config)
+    for text in texts:
+        print(f"{text=}")
+
+    print()
+    for new_tag in new_tags:
+        delete_tag(session_config, new_tag)
+    texts = select_all_tags(session_config)
+    for text in texts:
+        print(f"{text=}")
+
+
+def igr_test_people(sessionmade: sessionmaker[Session]):
+    """..."""
+    print()
+    for name in select_all_people(sessionmade):
+        print(name)
+
+    print()
+    for name in select_people(sessionmade, "sidney"):
+        print(name)
+
+
+def igr_test_movies(sessionmade: sessionmaker[Session]):
+    """..."""
+    print("\nSelecting 'Killers of the Flower Moon'")
+    movie = MovieBag(title="Killers of the Flower Moon", year=MovieInteger(2023))
+    print(select_movie(sessionmade, movie))
+
+    print("\nAdding 'Tagged Movie'")
+    try:
+        add_full_movie(sessionmade, tagged_movie)
+    except IntegrityError:
+        print(
+            "Tagged Movie: (sqlite3.IntegrityError) UNIQUE constraint failed: "
+            "movie.title, movie.year"
+        )
+    print(select_movie(sessionmade, tagged_movie))
+
+    print("\nDeleting 'Tagged Movie'")
+    delete_movie(sessionmade, tagged_movie)
 
     try:
-        add_full_movie(engine, prototype_data.star_movie)
-    except IntegrityError:
+        print(select_movie(sessionmade, tagged_movie))
+    except NoResultFound:
+        print(f"{tagged_movie['title']}, {tagged_movie['year']} successfully deleted.")
+
+    print("\nUpdating 'Tagged Movie' with 'Updated Movie'")
+    try:
+        delete_movie(sessionmade, tagged_movie)
+    except NoResultFound:
         pass
-    people_names = select_all_people(engine)
+    try:
+        delete_movie(sessionmade, new_movie)
+    except NoResultFound:
+        pass
+    add_movie_tags(sessionmade, movie_tags)
+
+    add_full_movie(sessionmade, tagged_movie)
+    update_movie(sessionmade, tagged_movie, new_movie)
+    try:
+        print(select_movie(sessionmade, tagged_movie))
+    except NoResultFound:
+        print("Tagged Movie was not found in database and that was expected.")
+    try:
+        print(select_movie(sessionmade, new_movie))
+    except NoResultFound:
+        print("New Movie was not found in database and this was unexpected.")
+
+    for tag in movie_tags:
+        delete_tag(sessionmade, tag)
+
     print()
-    for name in people_names:
-        print(f"{name=}")
-    print()
-    people_names = select_people(engine, match="star")
-    for name in people_names:
-        print(f"{name=}")
+    # delete_movie(sessionmade, tagged_movie)
+    delete_movie(sessionmade, new_movie)
+
+    with sessionmade() as session:
+        stmt = select(schema.Person)
+        for person in [person for person in session.scalars(stmt) if person.id >= 595]:
+            print_bio(sessionmade, person)
+
+
+def main():
+    """Integration tests and usage examples."""
+    sessionmade = start_engine()
+
+    # igr_test_tags(sessionmade)
+    # igr_test_people(sessionmade)
+    igr_test_movies(sessionmade)
+    # select_person_as_director(sessionmade)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ Supports the prototyping of DBv1
 """
 
 #  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/22/24, 6:27 AM by stephen.
+#  Last modified 6/26/24, 8:34 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,11 +16,9 @@ Supports the prototyping of DBv1
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import sys
-from pathlib import Path
 
-from sqlalchemy import create_engine, select, Engine
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.orm import sessionmaker, Session
 
 import schema
 
@@ -29,38 +27,56 @@ VERSION_FN = "schema_version"
 MOVIE_DATABASE_FN = "movie_database.sqlite3"
 
 
-def select_person_as_director(engine, name: str = "Martin Scorsese"):
+def select_person_as_director(
+    sessionmade: sessionmaker[Session],
+    name: str = "Martin " "Scorsese",
+):
     """Print a person and the films they've directed."""
-    with Session(engine) as session:
+    with sessionmade() as session:
+        # noinspection PyTypeChecker
         stmt = select(schema.Person).where(schema.Person.name == name)
-        result = session.execute(stmt)
-        for person in result.scalars().all():
+        for person in session.scalars(stmt):
             print("\n", person.id, person.name, person.director_of_movies)
             print("\tDirected:")
             for movie in person.director_of_movies:
                 print(f"\t{movie}")
 
 
-def start_engine() -> Engine:
-    """..."""
-    program_path = Path(__file__)
-    movie_data_path = program_path.parents[2] / "Movies Data"
-    movie_data_path.mkdir(exist_ok=True)
-    database_dir_path = movie_data_path / DATABASE_DIR
-    database_dir_path.mkdir(exist_ok=True)
-
-    # Create engine
-    database_fn = database_dir_path / MOVIE_DATABASE_FN
-    engine = create_engine(f"sqlite+pysqlite:///{database_fn}", echo=False)
-    schema.Base.metadata.create_all(engine)
-    return engine
-
-
-def main():
-    """Integration tests and usage examples."""
-    engine = start_engine()
-    select_person_as_director(engine)
+def print_bio(
+    sessionmade: sessionmaker[Session],
+    person: schema.Person,
+):
+    """Print a person and the films they've directed."""
+    with sessionmade():
+        print(person)
+        print("\tDirected:")
+        for movie in person.director_of_movies:
+            print(f"\t{movie}")
+        print("\tStarred:")
+        for movie in person.star_of_movies:
+            print(f"\t{movie}")
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+# def start_engine() -> Engine:
+#     """..."""
+#     program_path = Path(__file__)
+#     movie_data_path = program_path.parents[2] / "Movies Data"
+#     movie_data_path.mkdir(exist_ok=True)
+#     database_dir_path = movie_data_path / DATABASE_DIR
+#     database_dir_path.mkdir(exist_ok=True)
+#
+#     # Create engine
+#     database_fn = database_dir_path / MOVIE_DATABASE_FN
+#     engine = create_engine(f"sqlite+pysqlite:///{database_fn}", echo=False)
+#     schema.Base.metadata.create_all(engine)
+#     return engine
+
+
+# def main():
+#     """Integration tests and usage examples."""
+#     engine = start_engine()
+#     select_person_as_director(engine)
+
+
+# if __name__ == "__main__":
+#     sys.exit(main())
