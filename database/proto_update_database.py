@@ -4,7 +4,7 @@ Supports the prototyping of DBv1
 """
 
 #  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/22/24, 6:27 AM by stephen.
+#  Last modified 6/26/24, 2:15 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -63,13 +63,13 @@ def update_database_v0(
         movie_count, new_movies = get_old_movie(
             session, metadata_obj, old_engine, new_tags, movie_tag_links
         )
-
         new_tags = new_tags.values()
 
     # Delete old database file and its directory
     os.remove(old_database_fn)
     os.rmdir(old_database_dir)
 
+    # noinspection PyTypeChecker
     return tag_count, new_tags, movie_count, new_movies
 
 
