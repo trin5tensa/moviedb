@@ -4,7 +4,7 @@ Supports the prototyping of DBv1
 """
 
 #  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/26/24, 8:34 AM by stephen.
+#  Last modified 6/26/24, 2:15 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -27,9 +27,9 @@ VERSION_FN = "schema_version"
 MOVIE_DATABASE_FN = "movie_database.sqlite3"
 
 
-def select_person_as_director(
+def print_person_as_director(
     sessionmade: sessionmaker[Session],
-    name: str = "Martin " "Scorsese",
+    name: str = "Martin Scorsese",
 ):
     """Print a person and the films they've directed."""
     with sessionmade() as session:

@@ -4,7 +4,7 @@ Supports the prototyping of DBv1
 """
 
 #  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/26/24, 8:34 AM by stephen.
+#  Last modified 6/26/24, 2:15 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,13 +20,13 @@ import json
 import sys
 from pathlib import Path
 
-from sqlalchemy import create_engine, select, Engine, func, intersect
+from sqlalchemy import create_engine, select, func, intersect
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm import sessionmaker, Session
 
 import schema
-from data import tagged_movie, new_movie, movie_tags, star_movie
-from proto_select_examples import select_person_as_director, print_bio
+from data import tagged_movie, new_movie, movie_tags
+from proto_select_examples import print_bio
 from proto_update_database import update_old_database
 from globalconstants import *
 
@@ -112,21 +112,20 @@ def build_engine(database_dir_path: Path) -> sessionmaker[Session]:
 
 
 def update_database(
-    engine: Engine,
+    sessionmade: sessionmaker[Session],
     database_file_version: str,
     movie_data_path: Path,
     schema_version_fp: Path,
 ):
     """..."""
-    # Todo Update for use of sessionmaker and integration test
     # todo in production version:  Log update requirement.
     old_tag_count, old_tags, old_movie_count, old_movies = update_old_database(
         database_file_version, movie_data_path, MOVIE_DATABASE_FN
     )
 
     # Add old tags to new tags table.
-    add_movie_tags(engine, old_tags)
-    with Session(engine) as session:
+    add_movie_tags(sessionmade, old_tags)
+    with sessionmade() as session:
         stmt = select(func.count()).select_from(schema.Tag)
         new_tag_count: int = session.execute(stmt).scalar()
     if old_tag_count != new_tag_count:
@@ -139,8 +138,8 @@ def update_database(
 
     # Add old movies to new movies table
     for movie in old_movies:
-        add_full_movie(engine, movie)
-    with Session(engine) as session:
+        add_full_movie(sessionmade, movie)
+    with sessionmade() as session:
         stmt = select(func.count()).select_from(schema.Movie)
         new_movie_count: int = session.execute(stmt).scalar()
     if old_movie_count != new_movie_count:
@@ -189,6 +188,7 @@ def delete_tag(sessionmade: sessionmaker[Session], text: str):
         session.delete(session.scalars(stmt).one())
 
 
+# noinspection DuplicatedCode
 def select_movie(sessionmade: sessionmaker[Session], movie_bag: MovieBag) -> MovieBag:
     """..."""
     # print(f"{movie_bag=}")
