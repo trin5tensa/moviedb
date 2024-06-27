@@ -4,7 +4,7 @@ Supports the prototyping of DBv1
 """
 
 #  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/26/24, 2:15 PM by stephen.
+#  Last modified 6/27/24, 6:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -55,28 +55,3 @@ def print_bio(
         print("\tStarred:")
         for movie in person.star_of_movies:
             print(f"\t{movie}")
-
-
-# def start_engine() -> Engine:
-#     """..."""
-#     program_path = Path(__file__)
-#     movie_data_path = program_path.parents[2] / "Movies Data"
-#     movie_data_path.mkdir(exist_ok=True)
-#     database_dir_path = movie_data_path / DATABASE_DIR
-#     database_dir_path.mkdir(exist_ok=True)
-#
-#     # Create engine
-#     database_fn = database_dir_path / MOVIE_DATABASE_FN
-#     engine = create_engine(f"sqlite+pysqlite:///{database_fn}", echo=False)
-#     schema.Base.metadata.create_all(engine)
-#     return engine
-
-
-# def main():
-#     """Integration tests and usage examples."""
-#     engine = start_engine()
-#     select_person_as_director(engine)
-
-
-# if __name__ == "__main__":
-#     sys.exit(main())

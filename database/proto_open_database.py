@@ -4,7 +4,7 @@ Supports the prototyping of DBv1
 """
 
 #  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/26/24, 2:15 PM by stephen.
+#  Last modified 6/27/24, 6:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -26,7 +26,7 @@ from sqlalchemy.orm import sessionmaker, Session
 
 import schema
 from data import tagged_movie, new_movie, movie_tags
-from proto_select_examples import print_bio
+from proto_select_examples import print_bio, print_person_as_director
 from proto_update_database import update_old_database
 from globalconstants import *
 
@@ -191,7 +191,6 @@ def delete_tag(sessionmade: sessionmaker[Session], text: str):
 # noinspection DuplicatedCode
 def select_movie(sessionmade: sessionmaker[Session], movie_bag: MovieBag) -> MovieBag:
     """..."""
-    # print(f"{movie_bag=}")
     with sessionmade() as session:
         # noinspection PyTypeChecker
         title_year_intersect = intersect(
@@ -200,7 +199,6 @@ def select_movie(sessionmade: sessionmaker[Session], movie_bag: MovieBag) -> Mov
         )
         stmt = select(schema.Movie).from_statement(title_year_intersect)
         movie = session.scalars(stmt).one()
-        # print(f"sm {movie=}")
 
         movie_bag = MovieBag(
             id=movie.id,
@@ -210,13 +208,73 @@ def select_movie(sessionmade: sessionmaker[Session], movie_bag: MovieBag) -> Mov
             synopsis=movie.synopsis,
             created=movie.created,
             updated=movie.updated,
-            directors=movie.directors,
-            stars=movie.stars,
-            movie_tags=movie.tags,
+            directors={director.name for director in movie.directors},
+            stars={star.name for star in movie.stars},
+            movie_tags={tag.text for tag in movie.tags},
         )
         if movie.duration:
             movie_bag["duration"] = MovieInteger(movie.duration)
         return movie_bag
+
+
+# noinspection DuplicatedCode
+def select_matching_movies(
+    sessionmade: sessionmaker[Session], movie_bag: MovieBag
+) -> list[MovieBag]:
+    """..."""
+    with sessionmade() as session:
+        stmt = select(schema.Movie).where(
+            schema.Movie.title.like(f"%{movie_bag['title']}%")
+        )
+        movies = session.scalars(stmt)
+
+        movie_bags = []
+        for movie in movies:
+            movie_bag = MovieBag(
+                id=movie.id,
+                title=movie.title,
+                year=MovieInteger(movie.year),
+                notes=movie.notes,
+                synopsis=movie.synopsis,
+                created=movie.created,
+                updated=movie.updated,
+                directors={director.name for director in movie.directors},
+                stars={star.name for star in movie.stars},
+                movie_tags={tag.text for tag in movie.tags},
+            )
+            if movie.duration:
+                movie_bag["duration"] = MovieInteger(movie.duration)
+            movie_bags.append(movie_bag)
+
+    return movie_bags
+
+
+# noinspection DuplicatedCode
+def select_all_movies(sessionmade: sessionmaker[Session]) -> list[MovieBag]:
+    """..."""
+    with sessionmade() as session:
+        stmt = select(schema.Movie)
+        movies = session.scalars(stmt)
+
+        movie_bags = []
+        for movie in movies:
+            movie_bag = MovieBag(
+                id=movie.id,
+                title=movie.title,
+                year=MovieInteger(movie.year),
+                notes=movie.notes,
+                synopsis=movie.synopsis,
+                created=movie.created,
+                updated=movie.updated,
+                directors={director.name for director in movie.directors},
+                stars={star.name for star in movie.stars},
+                movie_tags={tag.text for tag in movie.tags},
+            )
+            if movie.duration:
+                movie_bag["duration"] = MovieInteger(movie.duration)
+            movie_bags.append(movie_bag)
+
+    return movie_bags
 
 
 def add_full_movie(sessionmade: sessionmaker[Session], movie_bag: MovieBag):
@@ -514,14 +572,36 @@ def igr_test_movies(sessionmade: sessionmaker[Session]):
             print_bio(sessionmade, person)
 
 
+def igr_test_select_movies(sessionmade: sessionmaker[Session]):
+    """..."""
+    print("\nSelect a single movie.")
+    movie_bag = MovieBag(title="Killers of the Flower Moon", year=MovieInteger(2023))
+    movie_bag = select_movie(sessionmade, movie_bag)
+    print(f"{movie_bag=}")
+
+    print("\nSelect movies by matched title substring.")
+    movie_bag = MovieBag(title="sol")
+    movie_bags = select_matching_movies(sessionmade, movie_bag)
+    for movie in movie_bags:
+        print(f"{movie['title']=}, {movie['year']=}")
+
+    print("\nSelect all movies.")
+    movie_bags = select_all_movies(sessionmade)
+    movie_bags.sort(key=lambda m: m["title"].lower())
+    for movie in movie_bags:
+        print(f"{movie['id']}: {movie['title']}, {int(movie['year'])}")
+    print(f"Count of movies found: {len(movie_bags)=}")
+
+
 def main():
     """Integration tests and usage examples."""
     sessionmade = start_engine()
 
     # igr_test_tags(sessionmade)
     # igr_test_people(sessionmade)
-    igr_test_movies(sessionmade)
-    # select_person_as_director(sessionmade)
+    # igr_test_movies(sessionmade)
+    igr_test_select_movies(sessionmade)
+    print_person_as_director(sessionmade)
 
 
 if __name__ == "__main__":
