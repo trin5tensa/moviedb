@@ -3,8 +3,8 @@
 Supports the prototyping of DBv1
 """
 
-#  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/26/24, 2:15 PM by stephen.
+#  Copyright© 2024. Stephen Rigden.
+#  Last modified 7/6/24, 8:45 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -43,6 +43,7 @@ def update_old_database(
                 old_database_fn,
             )
         case _:
+            # todo in production version: Log exception
             msg = f'The old version number of "{version_of_record}" was not recognized'
             raise UnrecognizedOldVersion(msg)
     return tag_count, new_tags, movie_count, new_movies

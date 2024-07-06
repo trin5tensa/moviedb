@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
-#  Copyright ©2024. Stephen Rigden.
-#  Last modified 6/12/24, 6:53 AM by stephen.
+#  Copyright© 2024. Stephen Rigden.
+#  Last modified 7/6/24, 8:45 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -62,6 +62,7 @@ class MovieBag(TypedDict, total=False):
     movie_tags: set[str]
 
     # Database fields
+    # These are for returning data from the database for debugging purposes only.
     id: int
     created: datetime
     updated: datetime

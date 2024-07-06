@@ -1,7 +1,7 @@
 """Prototype"""
 
-#  Copyright (c) 2024. Stephen Rigden.
-#  Last modified 5/29/24, 8:46 AM by stephen.
+#  Copyright© 2024. Stephen Rigden.
+#  Last modified 7/6/24, 8:45 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -40,6 +40,8 @@ class MovieInteger(Set):
         >> mint = MovieInteger('2020-2022, 2021, 2029, 2025-2027')
         >> list(mint)
         [2020, 2021, 2022, 2025, 2026, 2027, 2029]
+        >> 2021 in mint
+        True
 
     Raises:
         >> mint = MovieInteger('abc')
@@ -53,17 +55,20 @@ class MovieInteger(Set):
         >> mint = MovieInteger("2042-wxyz")
         >> int(mint)
         ValueError: invalid literal for int() with base 10: 'wxyz'
+
+    Use case:
+        This simplifies the layout of the GUI, otherwise movie search and movie display movies
+        require separate layouts and support code.
     """
 
     # todo
-    #   Add to program phase documentation
-    #   Create a formal issue
     #   Move into globalconstants.py
     #   Write formal tests
     #   Note: SQLAlchemy v2 replaces the v1 Query object with direct use of a select()
     #       construct notably dropping the deduplication and permitting the direct use of boolean
     #       search strings. See the ORM Querying Guide:
     #       https://docs.sqlalchemy.org/en/20/orm/queryguide/index.html
+
     _value: str | int
     _values: set = field(default_factory=set, init=False)
 
@@ -89,6 +94,9 @@ class MovieInteger(Set):
 
             else:
                 self._values.add(int(element))
+
+    def __str__(self):
+        return str(self._value)
 
     def __len__(self) -> int:
         return len(self._values)
