@@ -1,6 +1,21 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
+#  Last modified 7/9/24, 2:00 PM by stephen.
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+from pytest_check import check
+
+#  Copyright© 2024. Stephen Rigden.
 #  Last modified 7/9/24, 1:13 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,6 +29,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from sqlalchemy import create_engine, Engine
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import sessionmaker, Session, scoped_session
 
 import pytest
@@ -30,7 +46,7 @@ TAG_TEXTS = {
 }
 
 
-def test_select_tag(
+def test__select_tag(
     load_tags: None,
     db_session: Session,
     session_factory: sessionmaker[Session],
@@ -41,7 +57,7 @@ def test_select_tag(
     assert tag.text == SOUGHT_TAG
 
 
-def test_select_all_tags(
+def test__select_all_tags(
     load_tags: None,
     db_session: Session,
     session_factory: sessionmaker[Session],
@@ -51,6 +67,43 @@ def test_select_all_tags(
     texts = {tag.text for tag in tags}
 
     assert texts == TAG_TEXTS
+
+
+def test__add_tags(
+    db_session: Session,
+    session_factory: sessionmaker[Session],
+    session_engine: Engine,
+):
+    test_text = "test add tag"
+    tables._add_tags(db_session, [test_text])
+
+    tag = tables._select_tag(db_session, test_text)
+    assert tag.text == test_text
+
+
+def test__edit_tag(
+    load_tags: None,
+    db_session: Session,
+    session_factory: sessionmaker[Session],
+    session_engine: Engine,
+):
+    test_new_text = "test edited tag"
+    tables._edit_tag(db_session, SOUGHT_TAG, test_new_text)
+
+    tag = tables._select_tag(db_session, test_new_text)
+    assert tag.text == test_new_text
+
+
+def test__delete_tag(
+    load_tags: None,
+    db_session: Session,
+    session_factory: sessionmaker[Session],
+    session_engine: Engine,
+):
+    tables._delete_tag(db_session, SOUGHT_TAG)
+
+    with check.raises(NoResultFound):
+        tables._select_tag(db_session, SOUGHT_TAG)
 
 
 @pytest.fixture(scope="function")
