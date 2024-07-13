@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/11/24, 2:40 PM by stephen.
+#  Last modified 7/13/24, 8:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,6 +14,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from sqlalchemy import select
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session, sessionmaker
 
 from database_src import schema
@@ -30,6 +31,65 @@ def select_all_tags() -> set[str]:
     with session_factory() as session:
         tags = _select_all_tags(session)
     return {tag.text for tag in tags}
+
+
+def add_tag(*, tag_text: str):
+    """Add a tag.
+
+    Args:
+        tag_text:
+
+    Raises:
+        IntegrityError if record already in the database.
+    """
+    with session_factory() as session, session.begin():
+        _add_tag(session, tag_text=tag_text)
+
+
+def add_tags(*, tag_texts: list[str]):
+    """Add a list of tags.
+
+    Args:
+        tag_texts:
+
+    Raises:
+        IntegrityError if any record already in the database.
+    """
+    with session_factory() as session, session.begin():
+        _add_tags(session, tag_texts=tag_texts)
+
+
+def edit_tag(*, old_tag_text: str, new_tag_text: str):
+    """
+
+    Args:
+        old_tag_text:
+        new_tag_text:
+
+    Raises:
+        IntegrityError if the edit duplicates a record already in the database.
+
+    """
+    with session_factory() as session, session.begin():
+        tag = _select_tag(session, match=old_tag_text)
+        _edit_tag(tag=tag, replacement_text=new_tag_text)
+
+
+def delete_tag(*, tag_text: str):
+    """Delete a tag.
+
+    Exception NoResultFound ignored if record is not present.
+
+    Args:
+        tag_text:
+    """
+    with session_factory() as session, session.begin():
+        try:
+            tag = _select_tag(session, match=tag_text)
+        except NoResultFound:
+            pass
+        else:
+            _delete_tag(session, tag=tag)
 
 
 def _select_tag(session: Session, *, match: str) -> schema.Tag:
@@ -55,6 +115,16 @@ def _select_all_tags(session: Session) -> set[schema.Tag]:
     """
     statement = select(schema.Tag)
     return {tag for tag in session.scalars(statement).all()}
+
+
+def _add_tag(session: Session, *, tag_text: str):
+    """Adds new tags from a list of tag texts.
+
+    Args:
+        session:
+        tag_text:
+    """
+    session.add(schema.Tag(text=tag_text))
 
 
 def _add_tags(session: Session, *, tag_texts: list[str]):
