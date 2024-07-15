@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/15/24, 1:29 PM by stephen.
+#  Last modified 7/15/24, 3:13 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,18 +21,39 @@ from sqlalchemy.orm import sessionmaker, Session
 
 from database_src import schema, tables
 
-MATCH = "two"
-PREFIX = "test tag "
-SOUGHT_TAG = PREFIX + MATCH
+TAG_PREFIX = "test tag "
+TAG_MATCH = "two"
+SOUGHT_TAG = TAG_PREFIX + TAG_MATCH
 TAG_TEXTS = {
-    PREFIX + "one",
-    PREFIX + MATCH,
-    PREFIX + "three",
+    TAG_PREFIX + "one",
+    SOUGHT_TAG,
+    TAG_PREFIX + "three",
+}
+PEOPLE_PREFIX = "Test "
+PERSON_MATCH = "B Bullock"
+PERSON_SOUGHT = PEOPLE_PREFIX + PERSON_MATCH
+PEOPLE_NAMES = {
+    PEOPLE_PREFIX + "A Arnold",
+    PERSON_SOUGHT,
+    PEOPLE_PREFIX + "C Candlewick",
 }
 
 
+def test__select_person(load_people, db_session: Session):
+    person = tables._select_person(db_session, match=PERSON_SOUGHT)
+
+    assert person.name == PERSON_SOUGHT
+
+
+def test__match_people(load_people, db_session: Session):
+    people = tables._match_people(db_session, match=PEOPLE_PREFIX)
+
+    names = {person.name for person in people}
+    assert names == PEOPLE_NAMES
+
+
 def test__select_tag(load_tags, db_session: Session):
-    tag = tables._select_tag(db_session, match=MATCH)
+    tag = tables._match_tag(db_session, match=TAG_MATCH)
 
     assert tag.text == SOUGHT_TAG
 
@@ -49,7 +70,7 @@ def test__add_tag(load_tags, db_session: Session):
     tables._add_tag(db_session, tag_text=new_tag)
 
     # 'load_tags' loads three 'test tag […]'s. This is 'test add tag'.
-    tag = tables._select_tag(db_session, match=new_tag[:12])
+    tag = tables._match_tag(db_session, match=new_tag[:12])
     assert tag.text == new_tag
 
 
@@ -58,27 +79,27 @@ def test__add_tags(load_tags, db_session: Session):
     tables._add_tags(db_session, tag_texts=[new_tag])
 
     # 'load_tags' loads three 'test tag […]'s. This is 'test add tag'.
-    tag = tables._select_tag(db_session, match=new_tag[:12])
+    tag = tables._match_tag(db_session, match=new_tag[:12])
     assert tag.text == new_tag
 
 
 def test__edit_tag(load_tags, db_session: Session):
     replacement_text = "test edited tag"
-    tag = tables._select_tag(db_session, match=SOUGHT_TAG)
+    tag = tables._match_tag(db_session, match=SOUGHT_TAG)
 
     tables._edit_tag(tag=tag, replacement_text=replacement_text)
 
-    tag = tables._select_tag(db_session, match=replacement_text)
+    tag = tables._match_tag(db_session, match=replacement_text)
     assert tag.text == replacement_text
 
 
 def test__delete_tag(load_tags, db_session: Session):
-    tag = tables._select_tag(db_session, match=SOUGHT_TAG)
+    tag = tables._match_tag(db_session, match=SOUGHT_TAG)
 
     tables._delete_tag(db_session, tag=tag)
 
     with check.raises(NoResultFound):
-        tables._select_tag(db_session, match=SOUGHT_TAG)
+        tables._match_tag(db_session, match=SOUGHT_TAG)
 
 
 @pytest.fixture(scope="session")
@@ -124,3 +145,13 @@ def load_tags(db_session: Session):
         db_session:
     """
     db_session.add_all([schema.Tag(text=text) for text in TAG_TEXTS])
+
+
+@pytest.fixture(scope="function")
+def load_people(db_session: Session):
+    """Add test people to the database.
+
+    Args:
+        db_session:
+    """
+    db_session.add_all([schema.Person(name=name) for name in PEOPLE_NAMES])

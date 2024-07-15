@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/15/24, 1:29 PM by stephen.
+#  Last modified 7/15/24, 3:13 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,6 +12,8 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+from collections.abc import Sequence
 
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound, IntegrityError
@@ -76,12 +78,18 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
         new_tag_text:
     Raises:
         Exceptions are logged.
+        NoRecordFound if the old_tag_text cannot be found.
         IntegrityError if the edit duplicates a record already in the database.
     """
     try:
         with session_factory() as session, session.begin():
-            tag = _select_tag(session, match=old_tag_text)
-            _edit_tag(tag=tag, replacement_text=new_tag_text)
+            try:
+                tag = _match_tag(session, match=old_tag_text)
+            except NoResultFound as exc:
+                logging.error(exc.args[0])
+                raise
+            else:
+                _edit_tag(tag=tag, replacement_text=new_tag_text)
     except IntegrityError as exc:
         logging.error(exc.args[0])
         raise
@@ -97,14 +105,40 @@ def delete_tag(*, tag_text: str):
     """
     with session_factory() as session, session.begin():
         try:
-            tag = _select_tag(session, match=tag_text)
+            tag = _match_tag(session, match=tag_text)
         except NoResultFound:
             pass
         else:
             _delete_tag(session, tag=tag)
 
 
-def _select_tag(session: Session, *, match: str) -> schema.Tag:
+def _select_person(session: Session, *, match: str) -> schema.Person:
+    """Returns a single person.
+
+    Args:
+        session: The current session.
+        match: Search text
+    Returns:
+        A person.
+    """
+    statement = select(schema.Person).where(schema.Person.name.like(f"%{match}%"))
+    return session.scalars(statement).one()
+
+
+def _match_people(session: Session, *, match: str) -> Sequence[schema.Person]:
+    """Selects a single person.
+
+    Args:
+        session: The current session.
+        match: Search text
+    Returns:
+        A person.
+    """
+    statement = select(schema.Person).where(schema.Person.name.like(f"%{match}%"))
+    return session.scalars(statement).all()
+
+
+def _match_tag(session: Session, *, match: str) -> schema.Tag:
     """Selects a single tag.
 
     Args:
@@ -117,7 +151,7 @@ def _select_tag(session: Session, *, match: str) -> schema.Tag:
     return session.scalars(statement).one()
 
 
-def _select_all_tags(session: Session) -> set[schema.Tag]:
+def _select_all_tags(session: Session) -> Sequence[schema.Tag]:
     """Returns a list of every tag.
 
     Args:
@@ -126,7 +160,7 @@ def _select_all_tags(session: Session) -> set[schema.Tag]:
         A set of tags.
     """
     statement = select(schema.Tag)
-    return {tag for tag in session.scalars(statement).all()}
+    return session.scalars(statement).all()
 
 
 def _add_tag(session: Session, *, tag_text: str):

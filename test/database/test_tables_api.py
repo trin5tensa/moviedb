@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/15/24, 1:29 PM by stephen.
+#  Last modified 7/15/24, 3:13 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,7 +16,6 @@
 import pytest
 from pytest_check import check
 from sqlalchemy import create_engine, Engine
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker, Session
 
 from database_src import schema, tables
@@ -53,7 +52,7 @@ def test_add_duplicate_tag_text_logs_and_raises_exception(load_tags, logged):
 
     with check:
         with pytest.raises(
-            IntegrityError,
+            tables.IntegrityError,
             match="UNIQUE constraint failed: tag.text",
         ):
             tables.add_tag(tag_text=new_tag)
@@ -71,7 +70,7 @@ def test_add_tag_texts(load_tags, logged):
 
     with check:
         with pytest.raises(
-            IntegrityError,
+            tables.IntegrityError,
             match="UNIQUE constraint failed: tag.text",
         ):
             tables.add_tags(tag_texts=[new_tag])
@@ -94,6 +93,20 @@ def test_edit_tag_text(load_tags):
     check.equal(tags_remaining & {new_tag_text}, {new_tag_text})
 
 
+def test_edit_missing_tag_text_logs_and_raises_exception(load_tags, logged):
+    tag_text = "garbage"
+
+    with check:
+        with pytest.raises(tables.NoResultFound):
+            tables.edit_tag(old_tag_text=tag_text, new_tag_text=tag_text)
+
+    check.equal(
+        logged,
+        [(("No row was found when one was required",), {})],
+        msg="NoResultFound was not logged.",
+    )
+
+
 def test_edit_duplicate_tag_text_logs_and_raises_exception(load_tags, logged):
     old_tag_text = SOUGHT_TAG
     # Already present in another Tag object.
@@ -101,7 +114,7 @@ def test_edit_duplicate_tag_text_logs_and_raises_exception(load_tags, logged):
 
     with check:
         with pytest.raises(
-            IntegrityError,
+            tables.IntegrityError,
             match="UNIQUE constraint failed: tag.text",
         ):
             tables.edit_tag(old_tag_text=old_tag_text, new_tag_text=new_tag_text)
