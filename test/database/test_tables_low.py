@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/13/24, 8:53 AM by stephen.
+#  Last modified 7/15/24, 1:29 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -44,18 +44,18 @@ def test__select_all_tags(load_tags, db_session: Session):
     assert texts == TAG_TEXTS
 
 
-def test__add_tags(load_tags, db_session: Session):
+def test__add_tag(load_tags, db_session: Session):
     new_tag = "test add tag garbage garbage"
-    tables._add_tags(db_session, tag_texts=[new_tag])
+    tables._add_tag(db_session, tag_text=new_tag)
 
     # 'load_tags' loads three 'test tag […]'s. This is 'test add tag'.
     tag = tables._select_tag(db_session, match=new_tag[:12])
     assert tag.text == new_tag
 
 
-def test__add_tag(load_tags, db_session: Session):
+def test__add_tags(load_tags, db_session: Session):
     new_tag = "test add tag garbage garbage"
-    tables._add_tag(db_session, tag_text=new_tag)
+    tables._add_tags(db_session, tag_texts=[new_tag])
 
     # 'load_tags' loads three 'test tag […]'s. This is 'test add tag'.
     tag = tables._select_tag(db_session, match=new_tag[:12])

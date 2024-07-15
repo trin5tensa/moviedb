@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/13/24, 8:53 AM by stephen.
+#  Last modified 7/15/24, 1:29 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,10 +14,11 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from sqlalchemy import select
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from database_src import schema
+import logging
 
 session_factory: sessionmaker[Session] | None = None
 
@@ -38,12 +39,16 @@ def add_tag(*, tag_text: str):
 
     Args:
         tag_text:
-
     Raises:
-        IntegrityError if record already in the database.
+        Exceptions are logged.
+        IntegrityError if the record is already in the database.
     """
-    with session_factory() as session, session.begin():
-        _add_tag(session, tag_text=tag_text)
+    try:
+        with session_factory() as session, session.begin():
+            _add_tag(session, tag_text=tag_text)
+    except IntegrityError as exc:
+        logging.error(exc.args[0])
+        raise
 
 
 def add_tags(*, tag_texts: list[str]):
@@ -51,12 +56,16 @@ def add_tags(*, tag_texts: list[str]):
 
     Args:
         tag_texts:
-
     Raises:
-        IntegrityError if any record already in the database.
+        Exceptions are logged.
+        IntegrityError if any record is already in the database.
     """
-    with session_factory() as session, session.begin():
-        _add_tags(session, tag_texts=tag_texts)
+    try:
+        with session_factory() as session, session.begin():
+            _add_tags(session, tag_texts=tag_texts)
+    except IntegrityError as exc:
+        logging.error(exc.args[0])
+        raise
 
 
 def edit_tag(*, old_tag_text: str, new_tag_text: str):
@@ -65,20 +74,23 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
     Args:
         old_tag_text:
         new_tag_text:
-
     Raises:
+        Exceptions are logged.
         IntegrityError if the edit duplicates a record already in the database.
-
     """
-    with session_factory() as session, session.begin():
-        tag = _select_tag(session, match=old_tag_text)
-        _edit_tag(tag=tag, replacement_text=new_tag_text)
+    try:
+        with session_factory() as session, session.begin():
+            tag = _select_tag(session, match=old_tag_text)
+            _edit_tag(tag=tag, replacement_text=new_tag_text)
+    except IntegrityError as exc:
+        logging.error(exc.args[0])
+        raise
 
 
 def delete_tag(*, tag_text: str):
     """Delete a tag.
 
-    Exception NoResultFound ignored if record is not present.
+    The exception NoResultFound is ignored if record is not present.
 
     Args:
         tag_text:
@@ -118,7 +130,7 @@ def _select_all_tags(session: Session) -> set[schema.Tag]:
 
 
 def _add_tag(session: Session, *, tag_text: str):
-    """Adds new tags from a list of tag texts.
+    """Adds new tags from a tag text.
 
     Args:
         session:
