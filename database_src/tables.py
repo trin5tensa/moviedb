@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/15/24, 3:13 PM by stephen.
+#  Last modified 7/16/24, 7:45 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -43,7 +43,7 @@ def add_tag(*, tag_text: str):
         tag_text:
     Raises:
         Exceptions are logged.
-        IntegrityError if the record is already in the database.
+        IntegrityError if the tag text is a duplicate.
     """
     try:
         with session_factory() as session, session.begin():
@@ -60,7 +60,7 @@ def add_tags(*, tag_texts: list[str]):
         tag_texts:
     Raises:
         Exceptions are logged.
-        IntegrityError if any record is already in the database.
+        IntegrityError if any tag text is a duplicate.
     """
     try:
         with session_factory() as session, session.begin():
@@ -78,8 +78,8 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
         new_tag_text:
     Raises:
         Exceptions are logged.
-        NoRecordFound if the old_tag_text cannot be found.
-        IntegrityError if the edit duplicates a record already in the database.
+        NoRecordFound if the old tag text cannot be found.
+        IntegrityError if the new tag text is a duplicate.
     """
     try:
         with session_factory() as session, session.begin():
@@ -136,6 +136,30 @@ def _match_people(session: Session, *, match: str) -> Sequence[schema.Person]:
     """
     statement = select(schema.Person).where(schema.Person.name.like(f"%{match}%"))
     return session.scalars(statement).all()
+
+
+def _add_person(session: Session, *, name: str):
+    """Add a person to the Person table.
+
+    Args:
+        session:
+        name: Name of person.
+    """
+    session.add(schema.Person(name=name))
+
+
+def _delete_person(session: Session, *, person: schema.Person):
+    """Deletes a tag.
+
+    Args:
+        session:
+        person:
+    """
+    session.delete(person)
+
+
+def _delete_orphans(session: Session, candidate_names: Sequence[str]):
+    pass
 
 
 def _match_tag(session: Session, *, match: str) -> schema.Tag:
