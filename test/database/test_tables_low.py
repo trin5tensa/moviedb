@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/15/24, 3:13 PM by stephen.
+#  Last modified 7/16/24, 7:45 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -50,6 +50,31 @@ def test__match_people(load_people, db_session: Session):
 
     names = {person.name for person in people}
     assert names == PEOPLE_NAMES
+
+
+def test__add_person(load_people, db_session: Session):
+    new_person_name = "Test D Dougal"
+    tables._add_person(db_session, name=new_person_name)
+
+    person = tables._select_person(db_session, match=new_person_name)
+    assert person.name == new_person_name
+
+
+def test__delete_person(load_people, db_session: Session):
+    person = tables._select_person(db_session, match=PERSON_MATCH)
+
+    tables._delete_person(db_session, person=person)
+
+    with pytest.raises(NoResultFound):
+        tables._select_person(db_session, match=PERSON_MATCH)
+
+
+@pytest.mark.skip
+def test__delete_orphans(load_people, db_session: Session):
+    # todo Write test
+    #   Setup needs a data structure where some people are attached to a Movie
+    #   so _add_movie must be written first.
+    pass
 
 
 def test__select_tag(load_tags, db_session: Session):
