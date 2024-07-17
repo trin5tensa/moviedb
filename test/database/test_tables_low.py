@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/16/24, 7:45 AM by stephen.
+#  Last modified 7/17/24, 9:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -180,3 +180,54 @@ def load_people(db_session: Session):
         db_session:
     """
     db_session.add_all([schema.Person(name=name) for name in PEOPLE_NAMES])
+
+
+@pytest.fixture(scope="function")
+def load_movies(load_tags, db_session: Session):
+    """Add test movies to the database"""
+    for movie_bag in [MOVIEBAG_1, MOVIEBAG_2, MOVIEBAG_3]:
+        duration = movie_bag.get("duration")
+
+        names = movie_bag.get("directors", set())
+        directors = set()
+        for name in names:
+            person = schema.Person(name=name)
+            db_session.add(person)
+            directors.add(person)
+
+        names = movie_bag.get("stars", set())
+        stars = set()
+        for name in names:
+            person = schema.Person(name=name)
+            db_session.add(person)
+            stars.add(person)
+
+        tag_texts = movie_bag.get("movie_tags", set())
+        stmt = tables.select(schema.Tag).where(schema.Tag.text.in_(tag_texts))
+        tags = set(db_session.scalars(stmt).all())
+
+        movie = schema.Movie(
+            title=movie_bag["title"],
+            year=int(movie_bag["year"]),
+            # todo What does SQL turn 'None' into?  '' or void?
+            duration=int(duration) if duration else None,
+            directors=directors,
+            stars=stars,
+            synopsis=movie_bag.get("synopsis"),
+            notes=movie_bag.get("notes"),
+            tags=tags,
+        )
+        db_session.add(movie)
+        db_session.flush()
+
+        print(f"\n{movie.id=}")
+        print(f"{movie.created=}")
+        print(f"{movie.updated=}")
+        print(f"{movie.title=}")
+        print(f"{movie.year=}")
+        print(f"{movie.duration=}")
+        print(f"{movie.directors=}")
+        print(f"{movie.stars=}")
+        print(f"{movie.synopsis=}")
+        print(f"{movie.notes=}")
+        print(f"{movie.tags=}")
