@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/17/24, 9:41 AM by stephen.
+#  Last modified 7/20/24, 1:31 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -37,6 +37,56 @@ PEOPLE_NAMES = {
     PERSON_SOUGHT,
     PEOPLE_PREFIX + "C Candlewick",
 }
+
+
+def test__match_0_movie(load_movies, db_session: Session):
+    movie_bag = MovieBag()
+
+    movies = tables._match_movies(db_session, match=movie_bag)
+
+    assert not movies
+
+
+def test__match_1_movie(load_movies, db_session: Session):
+    movie_bag = MovieBag(
+        title="Movie",
+        year=MovieInteger("4240-4250"),
+    )
+    movie_bag_notes = {
+        movie_bag["notes"] for movie_bag in [MOVIEBAG_1, MOVIEBAG_3, MOVIEBAG_4]
+    }
+
+    movies = tables._match_movies(db_session, match=movie_bag)
+
+    assert {movie.notes for movie in movies} == movie_bag_notes
+
+
+def test__match_2_movie(load_movies, db_session: Session):
+    movie_bag = MovieBag(
+        id=2,
+        notes="bag_2",
+        title="transformer",
+        year=MovieInteger("4240-4250"),
+        duration=MovieInteger("120-150"),
+        synopsis="syn",
+        stars={STARS.pop()[-4:]},  # e.g. "lred" of "Edgar Ethelred"
+        directors={DIRECTORS.pop()[5:10]},  # e.g. "d Dir" of "Donald Director"
+        movie_tags=TAG_TEXTS,  # Three texts exercise loop in test
+    )
+    movies = tables._match_movies(db_session, match=movie_bag)
+
+    assert {movie.notes for movie in movies} == {MOVIEBAG_2["notes"]}
+
+
+def test__select_all_movies(load_movies, db_session: Session):
+    movies = tables._select_all_movies(db_session)
+
+    movie_bag_all_notes = {
+        movie_bag["notes"]
+        for movie_bag in [MOVIEBAG_1, MOVIEBAG_2, MOVIEBAG_3, MOVIEBAG_4]
+    }
+    movie_all_notes = {movie.notes for movie in movies}
+    assert movie_all_notes == movie_bag_all_notes
 
 
 def test__select_person(load_people, db_session: Session):
@@ -136,7 +186,7 @@ def session_engine():
     engine.dispose()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def session_factory(session_engine: Engine) -> sessionmaker[Session]:
     """Returns a session factory.
 
@@ -185,7 +235,7 @@ def load_people(db_session: Session):
 @pytest.fixture(scope="function")
 def load_movies(load_tags, db_session: Session):
     """Add test movies to the database"""
-    for movie_bag in [MOVIEBAG_1, MOVIEBAG_2, MOVIEBAG_3]:
+    for movie_bag in [MOVIEBAG_1, MOVIEBAG_2, MOVIEBAG_3, MOVIEBAG_4]:
         duration = movie_bag.get("duration")
 
         names = movie_bag.get("directors", set())
@@ -220,14 +270,19 @@ def load_movies(load_tags, db_session: Session):
         db_session.add(movie)
         db_session.flush()
 
-        print(f"\n{movie.id=}")
-        print(f"{movie.created=}")
-        print(f"{movie.updated=}")
-        print(f"{movie.title=}")
-        print(f"{movie.year=}")
-        print(f"{movie.duration=}")
-        print(f"{movie.directors=}")
-        print(f"{movie.stars=}")
-        print(f"{movie.synopsis=}")
-        print(f"{movie.notes=}")
-        print(f"{movie.tags=}")
+        # print_movie(movie)
+
+
+# noinspection PyMissingOrEmptyDocstring
+def print_movie(movie):
+    print(f"\n{movie.id=}")
+    print(f"{movie.created=}")
+    print(f"{movie.updated=}")
+    print(f"{movie.title=}")
+    print(f"{movie.year=}")
+    print(f"{movie.duration=}")
+    print(f"{movie.directors=}")
+    print(f"{movie.stars=}")
+    print(f"{movie.synopsis=}")
+    print(f"{movie.notes=}")
+    print(f"{movie.tags=}")
