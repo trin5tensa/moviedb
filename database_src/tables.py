@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/23/24, 3:51 AM by stephen.
+#  Last modified 7/23/24, 4:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -210,14 +210,8 @@ def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | N
                     )
 
     if statements:
-        # DayBreak
-        #   1 Read manual on intersect
-        #           Common Table Expression
-        #   2 SO/SQLALcforum
-        #       Why does intersect(*statements) only return ids
-        statement = intersect(*statements)
-        ids = session.scalars(statement).all()
-        statement = select(schema.Movie).where(schema.Movie.id.in_(ids))
+        intersection = intersect(*statements)
+        statement = select(schema.Movie).from_statement(intersection)
         matches = session.scalars(statement).all()
         return set(matches)
 
