@@ -10,6 +10,7 @@
       <w>editmoviegui</w>
       <w>edittaggui</w>
       <w>enterable</w>
+      <w>fullworthy</w>
       <w>globalconstants</w>
       <w>guimessgebox</w>
       <w>guiwidgets</w>
@@ -17,6 +18,7 @@
       <w>kwargus</w>
       <w>maxs</w>
       <w>mins</w>
+      <w>moviebag</w>
       <w>moviedb</w>
       <w>moviedb's</w>
       <w>muybridge</w>
