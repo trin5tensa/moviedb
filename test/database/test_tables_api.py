@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/15/24, 3:13 PM by stephen.
+#  Last modified 7/23/24, 3:51 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,10 +15,11 @@
 
 import pytest
 from pytest_check import check
+
 from sqlalchemy import create_engine, Engine
-from sqlalchemy.orm import sessionmaker, Session
 
 from database_src import schema, tables
+from database_src.tables import sessionmaker, Session
 
 MATCH = "two"
 THIRD = "three"

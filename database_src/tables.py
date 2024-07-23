@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/16/24, 7:45 AM by stephen.
+#  Last modified 7/23/24, 3:51 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,13 +14,14 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from collections.abc import Sequence
+import logging
 
-from sqlalchemy import select
+from sqlalchemy import select, intersect
 from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from database_src import schema
-import logging
+from globalconstants import *
 
 session_factory: sessionmaker[Session] | None = None
 
@@ -110,6 +111,151 @@ def delete_tag(*, tag_text: str):
             pass
         else:
             _delete_tag(session, tag=tag)
+
+
+def _select_movie(session: Session, *, title: str, year: int) -> schema.Movie:
+    """Selects a single movie.
+
+    Args:
+        session:
+        title:
+        year:
+
+    Returns:
+        A movie.
+    """
+    statement = (
+        select(schema.Movie)
+        .where(schema.Movie.title == title)
+        .where(schema.Movie.year == year)
+    )
+    return session.scalars(statement).one()
+
+
+def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | None:
+    """Selects matching movies.
+
+    Args:
+        session:
+        match: A MovieBag object containing any items to be used as search criteria.
+
+    Returns:
+        Matching movies.
+        Returns None if match argument is an empty dict.
+    """
+    statements = []
+    for column, criteria in match.items():
+        match column:
+            case "id":
+                statements.append(
+                    select(schema.Movie.id).where(schema.Movie.id == criteria)
+                )
+            case "notes":
+                statements.append(
+                    select(schema.Movie.id).where(
+                        schema.Movie.notes.like(f"%{criteria}%")
+                    )
+                )
+            case "title":
+                statements.append(
+                    select(schema.Movie.id).where(
+                        schema.Movie.title.like(f"%{criteria}%")
+                    )
+                )
+            case "year":
+                statements.append(
+                    select(schema.Movie.id).where(schema.Movie.year.in_(list(criteria)))
+                )
+            case "duration":
+                statements.append(
+                    select(schema.Movie.id).where(
+                        schema.Movie.duration.in_(list(criteria))
+                    )
+                )
+            case "synopsis":
+                statements.append(
+                    select(schema.Movie.id).where(
+                        schema.Movie.synopsis.like(f"%{criteria}%")
+                    )
+                )
+            case "stars":
+                for star in criteria:
+                    statements.append(
+                        (
+                            select(schema.Movie.id)
+                            .select_from(schema.Movie)
+                            .join(schema.Movie.stars)
+                            .where(schema.Person.name.like(f"%{star}%"))
+                        )
+                    )
+            case "directors":
+                for director in criteria:
+                    statements.append(
+                        (
+                            select(schema.Movie.id)
+                            .select_from(schema.Movie)
+                            .join(schema.Movie.directors)
+                            .where(schema.Person.name.like(f"%{director}%"))
+                        )
+                    )
+            case "movie_tags":
+                for movie_tag in criteria:
+                    statements.append(
+                        (
+                            select(schema.Movie.id)
+                            .select_from(schema.Movie)
+                            .join(schema.Movie.tags)
+                            .where(schema.Tag.text.like(f"%{movie_tag}%"))
+                        )
+                    )
+
+    if statements:
+        # DayBreak
+        #   1 Read manual on intersect
+        #           Common Table Expression
+        #   2 SO/SQLALcforum
+        #       Why does intersect(*statements) only return ids
+        statement = intersect(*statements)
+        ids = session.scalars(statement).all()
+        statement = select(schema.Movie).where(schema.Movie.id.in_(ids))
+        matches = session.scalars(statement).all()
+        return set(matches)
+
+
+def _select_all_movies(session: Session) -> Sequence[schema.Movie]:
+    """Selects all movies.
+
+    Args:
+        session:
+
+    Returns:
+        All movies.
+    """
+    statement = select(schema.Movie)
+    return session.scalars(statement).all()
+
+
+def _translate_to_moviebag(session: Session, movie: schema.Movie) -> MovieBag:
+    # Todo: Suspended until #391 and #392 have been completed.
+    # Ensures that id and datestamps are populated.
+    session.add(movie)
+    session.flush()
+
+    movie_bag = MovieBag(
+        title=movie.title,
+        year=MovieInteger(movie.year),
+        duration=MovieInteger(movie.duration),
+        directors={person.name for person in movie.directors},
+        stars={person.name for person in movie.stars},
+        synopsis=movie.synopsis,
+        notes=movie.notes,
+        movie_tags={tag.text for tag in movie.tags},
+        id=movie.id,
+        created=movie.created,
+        updated=movie.updated,
+    )
+
+    return movie_bag
 
 
 def _select_person(session: Session, *, match: str) -> schema.Person:

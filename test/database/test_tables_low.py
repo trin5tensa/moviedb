@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/16/24, 7:45 AM by stephen.
+#  Last modified 7/23/24, 3:51 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,10 +16,14 @@
 import pytest
 from pytest_check import check
 from sqlalchemy import create_engine, Engine
-from sqlalchemy.exc import NoResultFound
-from sqlalchemy.orm import sessionmaker, Session
 
 from database_src import schema, tables
+from database_src.tables import (
+    sessionmaker,
+    Session,
+    NoResultFound,
+)
+from globalconstants import *
 
 TAG_PREFIX = "test tag "
 TAG_MATCH = "two"
@@ -37,6 +41,68 @@ PEOPLE_NAMES = {
     PERSON_SOUGHT,
     PEOPLE_PREFIX + "C Candlewick",
 }
+DIRECTORS = {"Donald Director"}
+STARS = {"Edgar Ethelred", "Fanny Fullworthy"}
+MOVIEBAG_1 = MovieBag(
+    title="First Movie",
+    year=MovieInteger("4241"),
+    notes="I am MOVIEBAG_1",
+)
+MOVIEBAG_2 = MovieBag(
+    title="Transformer",
+    year=MovieInteger("4242"),
+    duration=MovieInteger(142),
+    directors=DIRECTORS,
+    stars=STARS,
+    synopsis="Synopsis for test",
+    notes="I am MOVIEBAG_2",
+    movie_tags=TAG_TEXTS,
+)
+MOVIEBAG_3 = MovieBag(
+    title="Third Movie",
+    duration=MovieInteger(242),
+    notes="I am MOVIEBAG_3",
+    year=MovieInteger("4243"),
+)
+MOVIEBAG_4 = MovieBag(
+    title="Fourth Movie",
+    notes="I am MOVIEBAG_4",
+    year=MovieInteger("4244"),
+)
+
+
+@pytest.mark.skip("Suspended until #391 and #392 have been completed.")
+def test__translate_to_moviebag(load_tags, db_session: Session):
+    mb = MOVIEBAG_2
+    # todo Call mb.get(<key>) not mb[<'key'>]
+    movie = schema.Movie(
+        title=mb["title"],
+        year=int(mb["year"]),
+        duration=int(mb["duration"]),
+        directors={schema.Person(name=name) for name in mb["directors"]},
+        stars={schema.Person(name=name) for name in mb["stars"]},
+        synopsis=mb["synopsis"],
+        notes=mb["notes"],
+        # todo: Can't do this - These already entered names have unique constraint
+        tags={schema.Tag(text=text) for text in mb["movie_tags"]},
+    )
+    # todo Add the movie to get the id and datestamps
+
+    movie_bag = tables._translate_to_moviebag(db_session, movie=movie)
+
+    assert movie_bag == MOVIEBAG_2
+    # todo Test id and datestamps
+    assert False
+
+
+# def test__select_movie(load_movies, db_session: Session):
+#     title = MOVIEBAG_2["title"]
+#     year = int(MOVIEBAG_2["year"])
+#
+#     movie = tables._select_movie(db_session, title=title, year=year)
+#
+#     check.equal(movie.title, title)
+#     check.equal(movie.year, year)
 
 
 def test__select_person(load_people, db_session: Session):
@@ -69,7 +135,7 @@ def test__delete_person(load_people, db_session: Session):
         tables._select_person(db_session, match=PERSON_MATCH)
 
 
-@pytest.mark.skip
+@pytest.mark.skip("Suspended until #391 and #392 have been completed.")
 def test__delete_orphans(load_people, db_session: Session):
     # todo Write test
     #   Setup needs a data structure where some people are attached to a Movie
