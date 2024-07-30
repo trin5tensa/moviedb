@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/30/24, 7:29 AM by stephen.
+#  Last modified 7/30/24, 8:34 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -108,6 +108,13 @@ def test__delete_movie(load_movies, db_session):
 
 
 def test__edit_movie(load_movies, db_session):
+    """Test that:
+
+    1) The key fields of title and year can be changed without deleting the old movie and
+    adding the new movie. (It's a *low* level function.)
+    2) Fields not in the data bag are left unchanged and so have to be marked
+    as 'pragma nocover' in the function under test.
+    """
     # noinspection PyTypeChecker
     statement = (
         tables.select(schema.Movie)
@@ -117,9 +124,12 @@ def test__edit_movie(load_movies, db_session):
     movie = db_session.scalars(statement).one()
     new_title = "Son of Transformers"
     new_year = MovieInteger(4244)
-    new_fields = MovieBag(title=new_title, year=new_year)
+    new_fields = MovieBag(
+        title=new_title,
+        year=new_year,
+    )
 
-    tables._edit_movie(db_session, old_movie=movie, edit_fields=new_fields)
+    tables._edit_movie(movie=movie, edit_fields=new_fields)
 
     # noinspection PyTypeChecker
     statement = (

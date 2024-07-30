@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/30/24, 7:29 AM by stephen.
+#  Last modified 7/30/24, 8:34 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -256,31 +256,28 @@ def _delete_movie(session: Session, *, movie: schema.Movie):
     session.delete(movie)
 
 
-def _edit_movie(session: Session, *, old_movie: schema.Movie, edit_fields: MovieBag):
-    """Edit old_movie with edit_fields.
+def _edit_movie(*, movie: schema.Movie, edit_fields: MovieBag):
+    """Edit movie with edit_fields.
 
     Neither the related tables nor the relationship columns are changed by
     this function.  If that is needed use the high level function edit_movie.
 
     Args:
-        session:
-        old_movie:
+        movie:
         edit_fields:
     """
     for column, value in edit_fields.items():
         match column:
             case "title":
-                old_movie.title = value
+                movie.title = value
             case "year":
-                old_movie.year = int(value)
-            case "duration":
-                old_movie.duration = int(value)
-            case "synopsis":
-                old_movie.synopsis = value
-            case "notes":
-                old_movie.notes = value
-
-    session.add(old_movie)
+                movie.year = int(value)
+            case "duration":  # pragma nocover
+                movie.duration = int(value)
+            case "synopsis":  # pragma nocover
+                movie.synopsis = value
+            case "notes":  # pragma nocover
+                movie.notes = value
 
 
 def _select_person(session: Session, *, match: str) -> schema.Person:
