@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/16/24, 7:45 AM by stephen.
+#  Last modified 7/30/24, 8:34 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,10 +16,14 @@
 import pytest
 from pytest_check import check
 from sqlalchemy import create_engine, Engine
-from sqlalchemy.exc import NoResultFound
-from sqlalchemy.orm import sessionmaker, Session
 
 from database_src import schema, tables
+from database_src.tables import (
+    sessionmaker,
+    Session,
+    NoResultFound,
+)
+from globalconstants import *
 
 TAG_PREFIX = "test tag "
 TAG_MATCH = "two"
@@ -37,6 +41,166 @@ PEOPLE_NAMES = {
     PERSON_SOUGHT,
     PEOPLE_PREFIX + "C Candlewick",
 }
+DIRECTORS = {"Donald Director"}
+STARS = {"Edgar Ethelred", "Fanny Fullworthy"}
+MOVIEBAG_1 = MovieBag(
+    title="First Movie",
+    year=MovieInteger("4241"),
+    notes="I am MOVIEBAG_1",
+)
+MOVIEBAG_2 = MovieBag(
+    title="Transformer",
+    year=MovieInteger("4242"),
+    duration=MovieInteger(142),
+    directors=DIRECTORS,
+    stars=STARS,
+    synopsis="Synopsis for test",
+    notes="I am MOVIEBAG_2",
+    movie_tags=TAG_TEXTS,
+)
+MOVIEBAG_3 = MovieBag(
+    title="Third Movie",
+    year=MovieInteger("4243"),
+    duration=MovieInteger(242),
+    notes="I am MOVIEBAG_3",
+)
+MOVIEBAG_4 = MovieBag(
+    title="Fourth Movie",
+    year=MovieInteger("4244"),
+    notes="I am MOVIEBAG_4",
+    stars=STARS,
+)
+
+
+class IllegalBranching(Exception):
+    """Raised when the program takes a branch which ought to have been
+    logically impossible."""
+
+
+def test__add_movie(db_session):
+    tables._add_movie(db_session, movie_bag=MOVIEBAG_2)
+
+    # noinspection PyTypeChecker
+    statement = (
+        tables.select(schema.Movie)
+        .where(schema.Movie.title == MOVIEBAG_2["title"])
+        .where(schema.Movie.year == int(MOVIEBAG_2["year"]))
+    )
+    movie = db_session.scalars(statement).one()
+    check.equal(movie.duration, int(MOVIEBAG_2["duration"]))
+    check.equal(movie.synopsis, MOVIEBAG_2["synopsis"])
+    check.equal(movie.notes, MOVIEBAG_2["notes"])
+
+
+def test__delete_movie(load_movies, db_session):
+    # noinspection PyTypeChecker
+    statement = (
+        tables.select(schema.Movie)
+        .where(schema.Movie.title == MOVIEBAG_2["title"])
+        .where(schema.Movie.year == int(MOVIEBAG_2["year"]))
+    )
+    movie = db_session.scalars(statement).one()
+
+    tables._delete_movie(db_session, movie=movie)
+
+    with pytest.raises(NoResultFound):
+        db_session.scalars(statement).one()
+
+
+def test__edit_movie(load_movies, db_session):
+    """Test that:
+
+    1) The key fields of title and year can be changed without deleting the old movie and
+    adding the new movie. (It's a *low* level function.)
+    2) Fields not in the data bag are left unchanged and so have to be marked
+    as 'pragma nocover' in the function under test.
+    """
+    # noinspection PyTypeChecker
+    statement = (
+        tables.select(schema.Movie)
+        .where(schema.Movie.title == MOVIEBAG_2["title"])
+        .where(schema.Movie.year == int(MOVIEBAG_2["year"]))
+    )
+    movie = db_session.scalars(statement).one()
+    new_title = "Son of Transformers"
+    new_year = MovieInteger(4244)
+    new_fields = MovieBag(
+        title=new_title,
+        year=new_year,
+    )
+
+    tables._edit_movie(movie=movie, edit_fields=new_fields)
+
+    # noinspection PyTypeChecker
+    statement = (
+        tables.select(schema.Movie)
+        .where(schema.Movie.title == new_title)
+        .where(schema.Movie.year == 4244)
+    )
+    movie = db_session.scalars(statement).one()
+    check.equal(movie.duration, int(MOVIEBAG_2["duration"]))
+    check.equal(movie.synopsis, MOVIEBAG_2["synopsis"])
+    check.equal(movie.notes, MOVIEBAG_2["notes"])
+
+
+def test__select_movie(load_movies, db_session: Session):
+    title = MOVIEBAG_2["title"]
+    year = int(MOVIEBAG_2["year"])
+
+    movie = tables._select_movie(db_session, title=title, year=year)
+
+    check.equal(movie.title, title)
+    check.equal(movie.year, year)
+
+
+def test__match_0_movie(load_movies, db_session: Session):
+    movie_bag = MovieBag()
+
+    movies = tables._match_movies(db_session, match=movie_bag)
+
+    assert not movies
+
+
+def test__match_1_movie(load_movies, db_session: Session):
+    movie_bag = MovieBag(
+        title="Movie",
+        year=MovieInteger("4240-4250"),
+    )
+    movie_bag_notes = {
+        movie_bag["notes"] for movie_bag in [MOVIEBAG_1, MOVIEBAG_3, MOVIEBAG_4]
+    }
+
+    movies = tables._match_movies(db_session, match=movie_bag)
+
+    assert {movie.notes for movie in movies} == movie_bag_notes
+
+
+def test__match_2_movie(load_movies, db_session: Session):
+    movie_bag = MovieBag(
+        id=2,
+        notes="bag_2",
+        title="transformer",
+        year=MovieInteger("4240-4250"),
+        duration=MovieInteger("120-150"),
+        synopsis="syn",
+        stars={list(STARS)[0][:4]},  # e.g. "lred" of "Edgar Ethelred"
+        directors={list(DIRECTORS)[0][5:10]},  # e.g. "d Dir" of "Donald Director"
+        movie_tags=TAG_TEXTS,  # Three texts exercise loop in test
+    )
+    movies = tables._match_movies(db_session, match=movie_bag)
+
+    assert {movie.notes for movie in movies} == {MOVIEBAG_2["notes"]}
+
+
+def test__select_all_movies(load_movies, db_session: Session):
+    movies = tables._select_all_movies(db_session)
+
+    movie_bag_all_notes = {
+        movie_bag["notes"]
+        for movie_bag in [MOVIEBAG_1, MOVIEBAG_2, MOVIEBAG_3, MOVIEBAG_4]
+    }
+    movie_all_notes = {movie.notes for movie in movies}
+    assert movie_all_notes == movie_bag_all_notes
 
 
 def test__select_person(load_people, db_session: Session):
@@ -69,12 +233,26 @@ def test__delete_person(load_people, db_session: Session):
         tables._select_person(db_session, match=PERSON_MATCH)
 
 
-@pytest.mark.skip
-def test__delete_orphans(load_people, db_session: Session):
-    # todo Write test
-    #   Setup needs a data structure where some people are attached to a Movie
-    #   so _add_movie must be written first.
-    pass
+def test__delete_orphans(load_movies, session_engine, db_session: Session):
+    orphan = schema.Person(name="Nigel Nobody")
+    db_session.add(orphan)
+
+    statement = tables.select(schema.Person)
+    all_people = db_session.scalars(statement).all()
+
+    orphans = set()
+    non_orphans = set()
+    for person in all_people:
+        if len(person.star_of_movies) + len(person.director_of_movies) == 0:
+            orphans.add(person)
+        else:
+            non_orphans.add(person)
+
+    tables._delete_orphans(db_session, candidates=orphans | non_orphans)
+
+    statement = tables.select(schema.Person)
+    all_people = db_session.scalars(statement).all()
+    assert set(all_people) == non_orphans
 
 
 def test__select_tag(load_tags, db_session: Session):
@@ -136,7 +314,7 @@ def session_engine():
     engine.dispose()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def session_factory(session_engine: Engine) -> sessionmaker[Session]:
     """Returns a session factory.
 
@@ -180,3 +358,72 @@ def load_people(db_session: Session):
         db_session:
     """
     db_session.add_all([schema.Person(name=name) for name in PEOPLE_NAMES])
+
+
+@pytest.fixture(scope="function")
+def load_movies(load_tags, db_session: Session):
+    """Add test movies to the database"""
+    for movie_bag in [MOVIEBAG_1, MOVIEBAG_2, MOVIEBAG_3, MOVIEBAG_4]:
+        duration = movie_bag.get("duration")
+
+        names = movie_bag.get("directors", set())
+        directors = set()
+        for director in names:
+            # noinspection PyTypeChecker
+            statement = tables.select(schema.Person).where(
+                schema.Person.name == director
+            )
+            try:
+                person = db_session.scalars(statement).one()
+            except NoResultFound:
+                person = schema.Person(name=director)
+                db_session.add(person)
+            directors.add(person)
+
+        names = movie_bag.get("stars", set())
+        stars = set()
+        for star in names:
+            # noinspection PyTypeChecker
+            statement = tables.select(schema.Person).where(schema.Person.name == star)
+            try:
+                person = db_session.scalars(statement).one()
+            except NoResultFound:
+                person = schema.Person(name=star)
+                db_session.add(person)
+            stars.add(person)
+
+        tag_texts = movie_bag.get("movie_tags", set())
+        statement = tables.select(schema.Tag).where(schema.Tag.text.in_(tag_texts))
+        tags = set(db_session.scalars(statement).all())
+
+        movie = schema.Movie(
+            title=movie_bag["title"],
+            year=int(movie_bag["year"]),
+            # todo What does SQL turn 'None' into?  '' or void?
+            duration=int(duration) if duration else None,
+            directors=directors,
+            stars=stars,
+            synopsis=movie_bag.get("synopsis"),
+            notes=movie_bag.get("notes"),
+            tags=tags,
+        )
+        db_session.add(movie)
+        db_session.flush()
+
+        # print_movie(movie)
+
+
+# noinspection PyMissingOrEmptyDocstring
+def print_movie(movie):
+    # todo: Remove as not for production.
+    print(f"\n{movie.id=}")
+    print(f"{movie.created=}")
+    print(f"{movie.updated=}")
+    print(f"{movie.title=}")
+    print(f"{movie.year=}")
+    print(f"{movie.duration=}")
+    print(f"{movie.directors=}")
+    print(f"{movie.stars=}")
+    print(f"{movie.synopsis=}")
+    print(f"{movie.notes=}")
+    print(f"{movie.tags=}")

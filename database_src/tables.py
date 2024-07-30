@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/16/24, 7:45 AM by stephen.
+#  Last modified 7/30/24, 8:34 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,14 +13,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from collections.abc import Sequence
+import logging
 
-from sqlalchemy import select
+from sqlalchemy import select, intersect
 from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from database_src import schema
-import logging
+from globalconstants import *
 
 session_factory: sessionmaker[Session] | None = None
 
@@ -42,7 +42,6 @@ def add_tag(*, tag_text: str):
     Args:
         tag_text:
     Raises:
-        Exceptions are logged.
         IntegrityError if the tag text is a duplicate.
     """
     try:
@@ -59,7 +58,6 @@ def add_tags(*, tag_texts: list[str]):
     Args:
         tag_texts:
     Raises:
-        Exceptions are logged.
         IntegrityError if any tag text is a duplicate.
     """
     try:
@@ -77,7 +75,6 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
         old_tag_text:
         new_tag_text:
     Raises:
-        Exceptions are logged.
         NoRecordFound if the old tag text cannot be found.
         IntegrityError if the new tag text is a duplicate.
     """
@@ -98,7 +95,7 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
 def delete_tag(*, tag_text: str):
     """Delete a tag.
 
-    The exception NoResultFound is ignored if record is not present.
+    The exception NoResultFound is ignored if the record is not present.
 
     Args:
         tag_text:
@@ -110,6 +107,177 @@ def delete_tag(*, tag_text: str):
             pass
         else:
             _delete_tag(session, tag=tag)
+
+
+def _select_movie(session: Session, *, title: str, year: int) -> schema.Movie:
+    """Selects a single movie.
+
+    Args:
+        session:
+        title:
+        year:
+
+    Returns:
+        A movie.
+    """
+    # noinspection PyTypeChecker
+    statement = (
+        select(schema.Movie)
+        .where(schema.Movie.title == title)
+        .where(schema.Movie.year == year)
+    )
+    return session.scalars(statement).one()
+
+
+def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | None:
+    """Selects matching movies.
+
+    Args:
+        session:
+        match: A MovieBag object containing any items to be used as search criteria.
+
+    Returns:
+        Matching movies.
+        Returns None if match argument is an empty dict.
+    """
+    statements = []
+    for column, criteria in match.items():
+        match column:
+            case "id":
+                # noinspection PyTypeChecker
+                statements.append(
+                    select(schema.Movie).where(schema.Movie.id == criteria)
+                )
+            case "notes":
+                statements.append(
+                    select(schema.Movie).where(schema.Movie.notes.like(f"%{criteria}%"))
+                )
+            case "title":
+                statements.append(
+                    select(schema.Movie).where(schema.Movie.title.like(f"%{criteria}%"))
+                )
+            case "year":
+                statements.append(
+                    select(schema.Movie).where(schema.Movie.year.in_(list(criteria)))
+                )
+            case "duration":
+                statements.append(
+                    select(schema.Movie).where(
+                        schema.Movie.duration.in_(list(criteria))
+                    )
+                )
+            case "synopsis":
+                statements.append(
+                    select(schema.Movie).where(
+                        schema.Movie.synopsis.like(f"%{criteria}%")
+                    )
+                )
+            case "stars":
+                for star in criteria:
+                    statements.append(
+                        (
+                            select(schema.Movie)
+                            .select_from(schema.Movie)
+                            .join(schema.Movie.stars)
+                            .where(schema.Person.name.like(f"%{star}%"))
+                        )
+                    )
+            case "directors":
+                for director in criteria:
+                    statements.append(
+                        (
+                            select(schema.Movie)
+                            .select_from(schema.Movie)
+                            .join(schema.Movie.directors)
+                            .where(schema.Person.name.like(f"%{director}%"))
+                        )
+                    )
+            case "movie_tags":
+                for movie_tag in criteria:
+                    statements.append(
+                        (
+                            select(schema.Movie)
+                            .select_from(schema.Movie)
+                            .join(schema.Movie.tags)
+                            .where(schema.Tag.text.like(f"%{movie_tag}%"))
+                        )
+                    )
+
+    if statements:
+        intersection = intersect(*statements)
+        statement = select(schema.Movie).from_statement(intersection)
+        matches = session.scalars(statement).all()
+        return set(matches)
+
+
+def _select_all_movies(session: Session) -> Sequence[schema.Movie]:
+    """Selects all movies.
+
+    Args:
+        session:
+
+    Returns:
+        All movies.
+    """
+    statement = select(schema.Movie)
+    return session.scalars(statement).all()
+
+
+def _add_movie(session: Session, *, movie_bag: MovieBag):
+    """Add a new movie to the Movie table.
+
+    Neither the related tables nor the relationship columns are changed by
+    this function. If that is needed use the high level function add_movie.
+
+    Args:
+        session:
+        movie_bag:
+    """
+    movie = schema.Movie(
+        title=movie_bag["title"],
+        year=int(movie_bag["year"]),
+        duration=int(movie_bag["duration"]),
+        synopsis=movie_bag["synopsis"],
+        notes=movie_bag["notes"],
+    )
+    session.add(movie)
+
+
+def _delete_movie(session: Session, *, movie: schema.Movie):
+    """Delete a movie from the Movie table.
+
+    Related records which have a relationship with the movie will have the relationship
+    deleted. The related record will be otherwise unaffected.
+
+    Args:
+        session:
+        movie:
+    """
+    session.delete(movie)
+
+
+def _edit_movie(*, movie: schema.Movie, edit_fields: MovieBag):
+    """Edit movie with edit_fields.
+
+    Neither the related tables nor the relationship columns are changed by
+    this function.  If that is needed use the high level function edit_movie.
+
+    Args:
+        movie:
+        edit_fields:
+    """
+    for column, value in edit_fields.items():
+        match column:
+            case "title":
+                movie.title = value
+            case "year":
+                movie.year = int(value)
+            case "duration":  # pragma nocover
+                movie.duration = int(value)
+            case "synopsis":  # pragma nocover
+                movie.synopsis = value
+            case "notes":  # pragma nocover
+                movie.notes = value
 
 
 def _select_person(session: Session, *, match: str) -> schema.Person:
@@ -126,13 +294,13 @@ def _select_person(session: Session, *, match: str) -> schema.Person:
 
 
 def _match_people(session: Session, *, match: str) -> Sequence[schema.Person]:
-    """Selects a single person.
+    """Selects a people with a name that contains the match substring.
 
     Args:
         session: The current session.
-        match: Search text
+        match: Name substring
     Returns:
-        A person.
+        None or more people.
     """
     statement = select(schema.Person).where(schema.Person.name.like(f"%{match}%"))
     return session.scalars(statement).all()
@@ -158,8 +326,13 @@ def _delete_person(session: Session, *, person: schema.Person):
     session.delete(person)
 
 
-def _delete_orphans(session: Session, candidate_names: Sequence[str]):
-    pass
+def _delete_orphans(session: Session, candidates: set[schema.Person]):
+    for person in candidates:
+        if person.star_of_movies != set():
+            continue
+        if person.director_of_movies != set():
+            continue
+        session.delete(person)
 
 
 def _match_tag(session: Session, *, match: str) -> schema.Tag:
