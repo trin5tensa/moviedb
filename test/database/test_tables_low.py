@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/30/24, 8:34 AM by stephen.
+#  Last modified 8/3/24, 6:09 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -41,8 +41,8 @@ PEOPLE_NAMES = {
     PERSON_SOUGHT,
     PEOPLE_PREFIX + "C Candlewick",
 }
-DIRECTORS = {"Donald Director"}
-STARS = {"Edgar Ethelred", "Fanny Fullworthy"}
+TEST_DIRECTORS = {"Donald Director"}
+TEST_STARS = {"Edgar Ethelred", "Fanny Fullworthy"}
 MOVIEBAG_1 = MovieBag(
     title="First Movie",
     year=MovieInteger("4241"),
@@ -52,8 +52,8 @@ MOVIEBAG_2 = MovieBag(
     title="Transformer",
     year=MovieInteger("4242"),
     duration=MovieInteger(142),
-    directors=DIRECTORS,
-    stars=STARS,
+    directors=TEST_DIRECTORS,
+    stars=TEST_STARS,
     synopsis="Synopsis for test",
     notes="I am MOVIEBAG_2",
     movie_tags=TAG_TEXTS,
@@ -68,13 +68,15 @@ MOVIEBAG_4 = MovieBag(
     title="Fourth Movie",
     year=MovieInteger("4244"),
     notes="I am MOVIEBAG_4",
-    stars=STARS,
+    stars=TEST_STARS,
 )
 
 
 class IllegalBranching(Exception):
     """Raised when the program takes a branch which ought to have been
     logically impossible."""
+
+    # todo delete this unused class
 
 
 def test__add_movie(db_session):
@@ -183,8 +185,8 @@ def test__match_2_movie(load_movies, db_session: Session):
         year=MovieInteger("4240-4250"),
         duration=MovieInteger("120-150"),
         synopsis="syn",
-        stars={list(STARS)[0][:4]},  # e.g. "lred" of "Edgar Ethelred"
-        directors={list(DIRECTORS)[0][5:10]},  # e.g. "d Dir" of "Donald Director"
+        stars={list(TEST_STARS)[0][:4]},  # e.g. "lred" of "Edgar Ethelred"
+        directors={list(TEST_DIRECTORS)[0][5:10]},  # e.g. "d Dir" of "Donald Director"
         movie_tags=TAG_TEXTS,  # Three texts exercise loop in test
     )
     movies = tables._match_movies(db_session, match=movie_bag)
@@ -408,22 +410,3 @@ def load_movies(load_tags, db_session: Session):
             tags=tags,
         )
         db_session.add(movie)
-        db_session.flush()
-
-        # print_movie(movie)
-
-
-# noinspection PyMissingOrEmptyDocstring
-def print_movie(movie):
-    # todo: Remove as not for production.
-    print(f"\n{movie.id=}")
-    print(f"{movie.created=}")
-    print(f"{movie.updated=}")
-    print(f"{movie.title=}")
-    print(f"{movie.year=}")
-    print(f"{movie.duration=}")
-    print(f"{movie.directors=}")
-    print(f"{movie.stars=}")
-    print(f"{movie.synopsis=}")
-    print(f"{movie.notes=}")
-    print(f"{movie.tags=}")

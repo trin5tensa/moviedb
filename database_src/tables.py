@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/30/24, 8:34 AM by stephen.
+#  Last modified 8/3/24, 6:09 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,12 +25,76 @@ from globalconstants import *
 session_factory: sessionmaker[Session] | None = None
 
 
-def select_all_tags() -> set[str]:
-    """Returns a list of all tags.
+def select_movie(*, movie_bag: MovieBag) -> MovieBag:
+    """Selects and returns a single movie.
+
+    Args:
+        A movie_bag containing the title and year of the movie.
 
     Returns:
-        A list of all tags.
+        A movie
     """
+    with session_factory() as session:
+        movie = _select_movie(
+            session, title=movie_bag["title"], year=int(movie_bag["year"])
+        )
+        return _convert_to_movie_bag(movie)
+
+
+def select_all_movies() -> list[MovieBag]:
+    """Selects and returns all movies."""
+    with session_factory() as session:
+        movies = _select_all_movies(session)
+        movie_bags = [_convert_to_movie_bag(movie) for movie in movies]
+    return movie_bags
+
+
+def match_movies(match: MovieBag) -> list[MovieBag]:
+    """Selects and returns matching movies.
+
+    Match patterns are specified in a MovieBag object which can contain none, any,
+    or all the fields of a MovieBag object. Each supplied field will be used to
+    select compliant records.This function will return the intersection of the
+    movie records selected by each field's match criteria. The internal
+    database fields of 'id'. 'created', and 'updated' are ignored.
+
+    Args:
+        match:
+
+        Match patterns are specified in a MovieBag object which can contain none,
+        any, or all the following fields:
+            title. Substring match
+            year. Contains match
+            duration. Contains match
+            directors. Substring set match
+            stars. Substring set match
+            synopsis. Substring match
+            notes. Substring match
+            movie_tags. Substring set match
+
+        Exact match. 4 will match movie.id = 4
+        Substring match. The substring 'kwai' will match 'Bridge on the River Kwai'.
+        Substring set match. Each item in the set will be matched as a substring
+            match (defined above). The movie will only be selected if every item in
+            the set matches.
+            For a movie with stars {"Edgar Ethelred", "Fanny Fullworthy"}:
+                {'ethel'} will match
+                {'ethel', 'worth'} will match
+                {'ethel', 'bogart'} will not match.
+        Contains match. A movie.year of `1955 in MovieInteger('1950-1960')` is a match.
+        Ignored. Will not be used for search.
+
+    Returns:
+        The intersection of the records selected by each field's search criteria.
+    """
+    with session_factory() as session:
+        movies = _match_movies(session, match=match)
+        movie_bags = [_convert_to_movie_bag(movie) for movie in movies]
+    return movie_bags
+
+
+def select_all_tags() -> set[str]:
+    """Returns a list of all tag texts."""
     with session_factory() as session:
         tags = _select_all_tags(session)
     return {tag.text for tag in tags}
@@ -52,7 +116,7 @@ def add_tag(*, tag_text: str):
         raise
 
 
-def add_tags(*, tag_texts: list[str]):
+def add_tags(*, tag_texts: set[str]):
     """Add a list of tags.
 
     Args:
@@ -109,8 +173,41 @@ def delete_tag(*, tag_text: str):
             _delete_tag(session, tag=tag)
 
 
+def _convert_to_movie_bag(movie: schema.Movie) -> MovieBag:
+    """Converts a Movie object into a movie_bag.
+
+    Args:
+        movie:
+
+    Returns:
+        A movie bag.
+    """
+    movie_bag = MovieBag(
+        id=movie.id,
+        created=movie.created,
+        updated=movie.updated,
+        title=movie.title,
+        year=MovieInteger(movie.year),
+    )
+
+    if movie.notes:
+        movie_bag["notes"] = movie.notes
+    if movie.duration:
+        movie_bag["duration"] = MovieInteger(movie.duration)
+    if movie.synopsis:
+        movie_bag["synopsis"] = movie.synopsis
+    if movie.stars:
+        movie_bag["stars"] = {person.name for person in movie.stars}
+    if movie.directors:
+        movie_bag["directors"] = {person.name for person in movie.directors}
+    if movie.tags:
+        movie_bag["movie_tags"] = {tag.text for tag in movie.tags}
+
+    return movie_bag
+
+
 def _select_movie(session: Session, *, title: str, year: int) -> schema.Movie:
-    """Selects a single movie.
+    """Selects and returns a single movie.
 
     Args:
         session:
@@ -143,11 +240,6 @@ def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | N
     statements = []
     for column, criteria in match.items():
         match column:
-            case "id":
-                # noinspection PyTypeChecker
-                statements.append(
-                    select(schema.Movie).where(schema.Movie.id == criteria)
-                )
             case "notes":
                 statements.append(
                     select(schema.Movie).where(schema.Movie.notes.like(f"%{criteria}%"))
@@ -210,7 +302,7 @@ def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | N
         return set(matches)
 
 
-def _select_all_movies(session: Session) -> Sequence[schema.Movie]:
+def _select_all_movies(session: Session) -> set[schema.Movie]:
     """Selects all movies.
 
     Args:
@@ -220,7 +312,7 @@ def _select_all_movies(session: Session) -> Sequence[schema.Movie]:
         All movies.
     """
     statement = select(schema.Movie)
-    return session.scalars(statement).all()
+    return set(session.scalars(statement).all())
 
 
 def _add_movie(session: Session, *, movie_bag: MovieBag):
@@ -293,7 +385,7 @@ def _select_person(session: Session, *, match: str) -> schema.Person:
     return session.scalars(statement).one()
 
 
-def _match_people(session: Session, *, match: str) -> Sequence[schema.Person]:
+def _match_people(session: Session, *, match: str) -> set[schema.Person]:
     """Selects a people with a name that contains the match substring.
 
     Args:
@@ -303,7 +395,7 @@ def _match_people(session: Session, *, match: str) -> Sequence[schema.Person]:
         None or more people.
     """
     statement = select(schema.Person).where(schema.Person.name.like(f"%{match}%"))
-    return session.scalars(statement).all()
+    return set(session.scalars(statement).all())
 
 
 def _add_person(session: Session, *, name: str):
@@ -348,7 +440,7 @@ def _match_tag(session: Session, *, match: str) -> schema.Tag:
     return session.scalars(statement).one()
 
 
-def _select_all_tags(session: Session) -> Sequence[schema.Tag]:
+def _select_all_tags(session: Session) -> set[schema.Tag]:
     """Returns a list of every tag.
 
     Args:
@@ -357,7 +449,7 @@ def _select_all_tags(session: Session) -> Sequence[schema.Tag]:
         A set of tags.
     """
     statement = select(schema.Tag)
-    return session.scalars(statement).all()
+    return set(session.scalars(statement).all())
 
 
 def _add_tag(session: Session, *, tag_text: str):
@@ -370,7 +462,7 @@ def _add_tag(session: Session, *, tag_text: str):
     session.add(schema.Tag(text=tag_text))
 
 
-def _add_tags(session: Session, *, tag_texts: list[str]):
+def _add_tags(session: Session, *, tag_texts: set[str]):
     """Adds new tags from a list of tag texts.
 
     Args:

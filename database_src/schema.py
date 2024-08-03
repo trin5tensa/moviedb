@@ -1,7 +1,7 @@
 """Schema v1"""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/9/24, 1:13 PM by stephen.
+#  Last modified 8/3/24, 6:09 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -83,7 +83,7 @@ class Movie(Base):
         secondary=movie_tag_table, back_populates="movies"
     )
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma nocover
         return (
             f"{self.__class__.__qualname__}("
             f"id={self.id!r}, "
@@ -112,7 +112,7 @@ class Person(Base):
         secondary=movie_star_table, back_populates="stars"
     )
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma nocover
         return f"{self.__class__.__qualname__}(id={self.id!r}, name={self.name!r})"
 
 
@@ -130,5 +130,5 @@ class Tag(Base):
         secondary=movie_tag_table, back_populates="tags"
     )
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma nocover
         return f"{self.__class__.__qualname__}(id={self.id!r}, text={self.text!r})"
