@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/30/24, 7:29 AM by stephen.
+#  Last modified 8/3/24, 6:09 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -141,16 +141,7 @@ class MovieInteger(set):
     def __len__(self) -> int:
         return len(self._values)
 
-    # todo
-    #  Add a __next__ method
-    #  See https://docs.python.org/3/library/stdtypes.html#iterator-types
-
     def __iter__(self) -> Iterator:
-        # todo
-        #  Rewrite to
-        #   1) Avoid expanding ranges in __post_init__
-        #   2) Allow for
-        #  See https://docs.python.org/3/library/stdtypes.html#iterator-types
         return iter(self._values)
 
     def __contains__(self, item: int) -> bool:
