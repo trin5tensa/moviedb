@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/3/24, 6:09 AM by stephen.
+#  Last modified 8/7/24, 7:05 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -55,7 +55,7 @@ def match_movies(match: MovieBag) -> list[MovieBag]:
     Match patterns are specified in a MovieBag object which can contain none, any,
     or all the fields of a MovieBag object. Each supplied field will be used to
     select compliant records.This function will return the intersection of the
-    movie records selected by each field's match criteria. The internal
+    movie records selected by each field's name criteria. The internal
     database fields of 'id'. 'created', and 'updated' are ignored.
 
     Args:
@@ -63,25 +63,25 @@ def match_movies(match: MovieBag) -> list[MovieBag]:
 
         Match patterns are specified in a MovieBag object which can contain none,
         any, or all the following fields:
-            title. Substring match
-            year. Contains match
-            duration. Contains match
-            directors. Substring set match
-            stars. Substring set match
-            synopsis. Substring match
-            notes. Substring match
-            movie_tags. Substring set match
+            title. Substring name
+            year. Contains name
+            duration. Contains name
+            directors. Substring set name
+            stars. Substring set name
+            synopsis. Substring name
+            notes. Substring name
+            movie_tags. Substring set name
 
-        Exact match. 4 will match movie.id = 4
-        Substring match. The substring 'kwai' will match 'Bridge on the River Kwai'.
-        Substring set match. Each item in the set will be matched as a substring
+        Exact name. 4 will name `movie.id` = 4
+        Substring name. The substring 'kwai' will name 'Bridge on the River Kwai'.
+        Substring set name. Each item in the set will be matched as a substring
             match (defined above). The movie will only be selected if every item in
             the set matches.
             For a movie with stars {"Edgar Ethelred", "Fanny Fullworthy"}:
-                {'ethel'} will match
-                {'ethel', 'worth'} will match
-                {'ethel', 'bogart'} will not match.
-        Contains match. A movie.year of `1955 in MovieInteger('1950-1960')` is a match.
+                {'ethel'} will name
+                {'ethel', 'worth'} will name
+                {'ethel', 'bogart'} will not name.
+        Contains name. A movie.year of `1955 in MovieInteger('1950-1960')` is a name.
         Ignored. Will not be used for search.
 
     Returns:
@@ -235,7 +235,7 @@ def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | N
 
     Returns:
         Matching movies.
-        Returns None if match argument is an empty dict.
+        Returns None if name argument is an empty dict.
     """
     statements = []
     for column, criteria in match.items():
@@ -315,7 +315,7 @@ def _select_all_movies(session: Session) -> set[schema.Movie]:
     return set(session.scalars(statement).all())
 
 
-def _add_movie(session: Session, *, movie_bag: MovieBag):
+def _add_movie(session: Session, *, movie_bag: MovieBag) -> schema.Movie:
     """Add a new movie to the Movie table.
 
     Neither the related tables nor the relationship columns are changed by
@@ -333,6 +333,7 @@ def _add_movie(session: Session, *, movie_bag: MovieBag):
         notes=movie_bag["notes"],
     )
     session.add(movie)
+    return movie
 
 
 def _delete_movie(session: Session, *, movie: schema.Movie):
@@ -372,21 +373,22 @@ def _edit_movie(*, movie: schema.Movie, edit_fields: MovieBag):
                 movie.notes = value
 
 
-def _select_person(session: Session, *, match: str) -> schema.Person:
+def _select_person(session: Session, *, name: str) -> schema.Person:
     """Returns a single person.
 
     Args:
         session: The current session.
-        match: Search text
+        name: Name of person
     Returns:
-        A person.
+        A person object
     """
-    statement = select(schema.Person).where(schema.Person.name.like(f"%{match}%"))
+    # noinspection PyTypeChecker
+    statement = select(schema.Person).where(schema.Person.name == name)
     return session.scalars(statement).one()
 
 
 def _match_people(session: Session, *, match: str) -> set[schema.Person]:
-    """Selects a people with a name that contains the match substring.
+    """Selects people with names that contains the name substring.
 
     Args:
         session: The current session.
@@ -473,7 +475,7 @@ def _add_tags(session: Session, *, tag_texts: set[str]):
 
 
 def _edit_tag(*, tag: schema.Tag, replacement_text: str):
-    """
+    """Edits a tag.
 
     Args:
         tag:

@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/3/24, 6:09 AM by stephen.
+#  Last modified 8/7/24, 7:05 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -117,6 +117,58 @@ def test_match_movies(test_database):
             movie["stars"],
             msg="'Fanny Fullworthy' is missing from the found movie.",
         )
+
+
+def test_add_movie(test_database):
+    # todo movie
+    #   Use _add_movie and alter it to return the new Movie object
+    # todo tags
+    #   Use _match_tag to get Tag objects raising tables.TagNotFound exception if any not
+    #   found. (new function)
+    #   Add tags to Movie.tags
+    # todo people
+    #   Get People records creating new if not found
+    #   Add stars to Movie.stars
+    #   Add directors to Movie.directors
+
+    # Arrange
+    # Act
+    # Assert
+    # Cleanup
+    pass
+
+
+def test_edit_movie(test_database):
+    # todo movie
+    #   Use _edit_movie
+    # todo tags
+    #   Use _match_tag to get Tag objects raising tables.TagNotFound exception if any not
+    #   found. (new function)
+    #   Add new tags to Movie.tags and delete links to old tags.
+    # todo people
+    #   Add Movie.stars and Movie.directors to set of orphan candidates
+    #   Get people records for new stars and directors creating new if not found.
+    #   Replace Movie.stars with new
+    #   Replace Movie.directors with new
+    #   Call _delete_orphans
+
+    # Arrange
+    # Act
+    # Assert
+    # Cleanup
+    pass
+
+
+def test_delete_movie(test_database):
+    # todo
+    #  Call _delete_orphans for Movie.stars and Movie.directors
+    #  Use _delete_movie which automatically updates all links
+
+    # Arrange
+    # Act
+    # Assert
+    # Cleanup
+    pass
 
 
 def test_select_all_tags(test_database):

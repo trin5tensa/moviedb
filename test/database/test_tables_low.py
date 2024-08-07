@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/3/24, 6:09 AM by stephen.
+#  Last modified 8/7/24, 7:05 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -72,23 +72,9 @@ MOVIEBAG_4 = MovieBag(
 )
 
 
-class IllegalBranching(Exception):
-    """Raised when the program takes a branch which ought to have been
-    logically impossible."""
-
-    # todo delete this unused class
-
-
 def test__add_movie(db_session):
-    tables._add_movie(db_session, movie_bag=MOVIEBAG_2)
+    movie = tables._add_movie(db_session, movie_bag=MOVIEBAG_2)
 
-    # noinspection PyTypeChecker
-    statement = (
-        tables.select(schema.Movie)
-        .where(schema.Movie.title == MOVIEBAG_2["title"])
-        .where(schema.Movie.year == int(MOVIEBAG_2["year"]))
-    )
-    movie = db_session.scalars(statement).one()
     check.equal(movie.duration, int(MOVIEBAG_2["duration"]))
     check.equal(movie.synopsis, MOVIEBAG_2["synopsis"])
     check.equal(movie.notes, MOVIEBAG_2["notes"])
@@ -206,7 +192,7 @@ def test__select_all_movies(load_movies, db_session: Session):
 
 
 def test__select_person(load_people, db_session: Session):
-    person = tables._select_person(db_session, match=PERSON_SOUGHT)
+    person = tables._select_person(db_session, name=PERSON_SOUGHT)
 
     assert person.name == PERSON_SOUGHT
 
@@ -222,17 +208,17 @@ def test__add_person(load_people, db_session: Session):
     new_person_name = "Test D Dougal"
     tables._add_person(db_session, name=new_person_name)
 
-    person = tables._select_person(db_session, match=new_person_name)
+    person = tables._select_person(db_session, name=new_person_name)
     assert person.name == new_person_name
 
 
 def test__delete_person(load_people, db_session: Session):
-    person = tables._select_person(db_session, match=PERSON_MATCH)
+    person = tables._select_person(db_session, name=PERSON_SOUGHT)
 
     tables._delete_person(db_session, person=person)
 
     with pytest.raises(NoResultFound):
-        tables._select_person(db_session, match=PERSON_MATCH)
+        tables._select_person(db_session, name=PERSON_SOUGHT)
 
 
 def test__delete_orphans(load_movies, session_engine, db_session: Session):
