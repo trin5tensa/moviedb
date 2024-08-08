@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/7/24, 7:05 AM by stephen.
+#  Last modified 8/8/24, 9:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -244,7 +244,7 @@ def test__delete_orphans(load_movies, session_engine, db_session: Session):
 
 
 def test__select_tag(load_tags, db_session: Session):
-    tag = tables._match_tag(db_session, match=TAG_MATCH)
+    tag = tables._select_tag(db_session, match=TAG_MATCH)
 
     assert tag.text == SOUGHT_TAG
 
@@ -261,7 +261,7 @@ def test__add_tag(load_tags, db_session: Session):
     tables._add_tag(db_session, tag_text=new_tag)
 
     # 'load_tags' loads three 'test tag […]'s. This is 'test add tag'.
-    tag = tables._match_tag(db_session, match=new_tag[:12])
+    tag = tables._select_tag(db_session, text=new_tag)
     assert tag.text == new_tag
 
 
@@ -270,27 +270,32 @@ def test__add_tags(load_tags, db_session: Session):
     tables._add_tags(db_session, tag_texts=[new_tag])
 
     # 'load_tags' loads three 'test tag […]'s. This is 'test add tag'.
-    tag = tables._match_tag(db_session, match=new_tag[:12])
+    tag = tables._select_tag(db_session, text=new_tag)
     assert tag.text == new_tag
 
 
 def test__edit_tag(load_tags, db_session: Session):
     replacement_text = "test edited tag"
-    tag = tables._match_tag(db_session, match=SOUGHT_TAG)
+    tag = tables._select_tag(db_session, text=SOUGHT_TAG)
 
     tables._edit_tag(tag=tag, replacement_text=replacement_text)
 
-    tag = tables._match_tag(db_session, match=replacement_text)
+    tag = tables._select_tag(db_session, text=replacement_text)
     assert tag.text == replacement_text
 
 
 def test__delete_tag(load_tags, db_session: Session):
-    tag = tables._match_tag(db_session, match=SOUGHT_TAG)
+    tag = tables._select_tag(db_session, text=SOUGHT_TAG)
 
     tables._delete_tag(db_session, tag=tag)
 
     with check.raises(NoResultFound):
-        tables._match_tag(db_session, match=SOUGHT_TAG)
+        tables._select_tag(db_session, text=SOUGHT_TAG)
+
+
+def test__select_tag(load_tags, db_session: Session):
+    tag = tables._select_tag(db_session, text=SOUGHT_TAG)
+    assert tag.text == SOUGHT_TAG
 
 
 @pytest.fixture(scope="session")

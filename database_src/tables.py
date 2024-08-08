@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/7/24, 7:05 AM by stephen.
+#  Last modified 8/8/24, 9:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,6 +23,33 @@ from database_src import schema
 from globalconstants import *
 
 session_factory: sessionmaker[Session] | None = None
+
+
+def add_movie(*, movie_bag: MovieBag):
+    """
+
+    Args:
+        movie_bag:
+
+    Raises:
+        IntegrityError if title and year duplicate an existing movie.
+    """
+    # todo movie
+    #   Use _add_movie
+    #   Log and reraise IntegrityError for key mismatch.
+    #   Log and reraise ConstraintFailure for year outside valid range.
+
+    # todo tags
+    #   Use _match_tag to get Tag objects
+    #   Log and reraise sqlalchemy.exc.NoResultFound
+    #   Add tags to Movie.tags
+
+    # todo people
+    #   Try _select_person to get Person objects
+    #   If any not found create a new Person object
+    #   Add stars to Movie.stars
+    #   Add directors to Movie.directors
+    pass
 
 
 def select_movie(*, movie_bag: MovieBag) -> MovieBag:
@@ -106,7 +133,7 @@ def add_tag(*, tag_text: str):
     Args:
         tag_text:
     Raises:
-        IntegrityError if the tag text is a duplicate.
+        IntegrityError if the tag match is a duplicate.
     """
     try:
         with session_factory() as session, session.begin():
@@ -122,7 +149,7 @@ def add_tags(*, tag_texts: set[str]):
     Args:
         tag_texts:
     Raises:
-        IntegrityError if any tag text is a duplicate.
+        IntegrityError if any tag match is a duplicate.
     """
     try:
         with session_factory() as session, session.begin():
@@ -139,13 +166,13 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
         old_tag_text:
         new_tag_text:
     Raises:
-        NoRecordFound if the old tag text cannot be found.
-        IntegrityError if the new tag text is a duplicate.
+        NoRecordFound if the old tag match cannot be found.
+        IntegrityError if the new tag match is a duplicate.
     """
     try:
         with session_factory() as session, session.begin():
             try:
-                tag = _match_tag(session, match=old_tag_text)
+                tag = _select_tag(session, text=old_tag_text)
             except NoResultFound as exc:
                 logging.error(exc.args[0])
                 raise
@@ -166,7 +193,7 @@ def delete_tag(*, tag_text: str):
     """
     with session_factory() as session, session.begin():
         try:
-            tag = _match_tag(session, match=tag_text)
+            tag = _select_tag(session, text=tag_text)
         except NoResultFound:
             pass
         else:
@@ -429,16 +456,17 @@ def _delete_orphans(session: Session, candidates: set[schema.Person]):
         session.delete(person)
 
 
-def _match_tag(session: Session, *, match: str) -> schema.Tag:
+def _select_tag(session: Session, *, text: str) -> schema.Tag:
     """Selects a single tag.
 
     Args:
         session: The current session.
-        match: Search text
+        text: Search match
     Returns:
         A tag.
     """
-    statement = select(schema.Tag).where(schema.Tag.text.like(f"%{match}%"))
+    statement = select(schema.Tag).where(schema.Tag.text == text)
+    # statement = select(schema.Tag).where(schema.Tag.text.like(f"%{text}%"))
     return session.scalars(statement).one()
 
 
@@ -455,7 +483,7 @@ def _select_all_tags(session: Session) -> set[schema.Tag]:
 
 
 def _add_tag(session: Session, *, tag_text: str):
-    """Adds new tags from a tag text.
+    """Adds new tags from a tag match.
 
     Args:
         session:

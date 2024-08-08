@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/7/24, 7:05 AM by stephen.
+#  Last modified 8/8/24, 9:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -120,21 +120,48 @@ def test_match_movies(test_database):
 
 
 def test_add_movie(test_database):
-    # todo movie
-    #   Use _add_movie and alter it to return the new Movie object
-    # todo tags
-    #   Use _match_tag to get Tag objects raising tables.TagNotFound exception if any not
-    #   found. (new function)
-    #   Add tags to Movie.tags
-    # todo people
-    #   Get People records creating new if not found
-    #   Add stars to Movie.stars
-    #   Add directors to Movie.directors
-
     # Arrange
+    extra_star = "Gerald Golightly"
+    extra_director = "Howard Hologram"
+    movie_bag = MovieBag(
+        title="Test Add Movie",
+        year=MovieInteger(5042),
+        duration=MovieInteger(159),
+        synopsis="Test synopsis",
+        notes="Test notes",
+        movie_tags=TAG_TEXTS,
+        directors=TEST_DIRECTORS | {extra_director},
+        stars=TEST_STARS | {extra_star},
+    )
+    print()
+    print("test_database tags: ", tables.select_all_tags())
+    print(movie_bag)
+
     # Act
+    # Call movie = add_movie(movie_bag=movie_bag)
     # Assert
+    # todo (movie) Check eight non-relationship fields
+    # todo (tags) Check tags field matches tables._select_all_tags
+    # todo (people) Check extra star and director added to person table
+    # todo (people) Check Movie.stars matches TEST_STARS and extra_star
+    # todo (people) Check Movie.directors matches TEST_STARS and extra_director
+
     # Cleanup
+    assert False
+
+
+def test_add_movie_with_integrity_error(test_database):
+    # Log and reraise IntegrityError for key mismatch.
+    pass
+
+
+def test_add_movie_with_constraint_failure_error(test_database):
+    # Log and reraise ConstraintFailure for year outside valid range.
+    pass
+
+
+def test_add_movie_with_invalid_tag(test_database):
+    #   Log and reraise sqlalchemy.exc.NoResultFound
     pass
 
 
