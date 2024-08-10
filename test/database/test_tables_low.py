@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/8/24, 9:17 AM by stephen.
+#  Last modified 8/10/24, 12:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -73,8 +73,15 @@ MOVIEBAG_4 = MovieBag(
 
 
 def test__add_movie(db_session):
-    movie = tables._add_movie(db_session, movie_bag=MOVIEBAG_2)
+    movie = tables._add_movie(movie_bag=MOVIEBAG_2)
+    db_session.add(movie)
+    db_session.flush()
 
+    check.is_instance(movie.id, int)
+    check.is_instance(movie.created, schema.datetime)
+    check.is_instance(movie.updated, schema.datetime)
+    check.equal(movie.title, MOVIEBAG_2["title"])
+    check.equal(movie.year, int(MOVIEBAG_2["year"]))
     check.equal(movie.duration, int(MOVIEBAG_2["duration"]))
     check.equal(movie.synopsis, MOVIEBAG_2["synopsis"])
     check.equal(movie.notes, MOVIEBAG_2["notes"])
@@ -126,6 +133,7 @@ def test__edit_movie(load_movies, db_session):
         .where(schema.Movie.year == 4244)
     )
     movie = db_session.scalars(statement).one()
+
     check.equal(movie.duration, int(MOVIEBAG_2["duration"]))
     check.equal(movie.synopsis, MOVIEBAG_2["synopsis"])
     check.equal(movie.notes, MOVIEBAG_2["notes"])
@@ -195,6 +203,12 @@ def test__select_person(load_people, db_session: Session):
     person = tables._select_person(db_session, name=PERSON_SOUGHT)
 
     assert person.name == PERSON_SOUGHT
+
+
+def test__select_people(load_people, db_session: Session):
+    people = tables._select_people(db_session, names=PEOPLE_NAMES)
+
+    assert {person.name for person in people} == PEOPLE_NAMES
 
 
 def test__match_people(load_people, db_session: Session):

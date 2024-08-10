@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/8/24, 9:17 AM by stephen.
+#  Last modified 8/10/24, 12:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,6 +20,7 @@ from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from database_src import schema
+from database_src.schema import Person
 from globalconstants import *
 
 session_factory: sessionmaker[Session] | None = None
@@ -31,25 +32,34 @@ def add_movie(*, movie_bag: MovieBag):
     Args:
         movie_bag:
 
-    Raises:
+    Logs and reraises:
         IntegrityError if title and year duplicate an existing movie.
+        ConstraintFailure for year outside valid range.
+        NoResultFound for tag not in database.
     """
-    # todo movie
-    #   Use _add_movie
-    #   Log and reraise IntegrityError for key mismatch.
-    #   Log and reraise ConstraintFailure for year outside valid range.
+    # DayBreak tests for exceptions
+    #   Add module exceptions and exception handlers
 
-    # todo tags
-    #   Use _match_tag to get Tag objects
-    #   Log and reraise sqlalchemy.exc.NoResultFound
-    #   Add tags to Movie.tags
+    with session_factory() as session:
+        # Movie
+        # todo
+        #   Log and reraise IntegrityError for duplicated key.
+        #   Log and reraise ConstraintFailure for year outside valid range.
+        movie = _add_movie(movie_bag=movie_bag)
 
-    # todo people
-    #   Try _select_person to get Person objects
-    #   If any not found create a new Person object
-    #   Add stars to Movie.stars
-    #   Add directors to Movie.directors
-    pass
+        # Tags
+        # todo
+        #   Log and reraise sqlalchemy.exc.NoResultFound
+        movie.tags = {
+            _select_tag(session, text=tag_text) for tag_text in movie_bag["movie_tags"]
+        }
+
+        # People
+        movie.directors = _getadd_people(session, names=movie_bag["directors"])
+        movie.stars = _getadd_people(session, names=movie_bag["stars"])
+
+        session.add(movie)
+        session.commit()
 
 
 def select_movie(*, movie_bag: MovieBag) -> MovieBag:
@@ -250,7 +260,9 @@ def _select_movie(session: Session, *, title: str, year: int) -> schema.Movie:
         .where(schema.Movie.title == title)
         .where(schema.Movie.year == year)
     )
-    return session.scalars(statement).one()
+    movie = session.scalars(statement).one()
+    # print(f"_select_movie: {movie=}")
+    return movie
 
 
 def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | None:
@@ -342,14 +354,13 @@ def _select_all_movies(session: Session) -> set[schema.Movie]:
     return set(session.scalars(statement).all())
 
 
-def _add_movie(session: Session, *, movie_bag: MovieBag) -> schema.Movie:
+def _add_movie(*, movie_bag: MovieBag) -> schema.Movie:
     """Add a new movie to the Movie table.
 
     Neither the related tables nor the relationship columns are changed by
     this function. If that is needed use the high level function add_movie.
 
     Args:
-        session:
         movie_bag:
     """
     movie = schema.Movie(
@@ -359,7 +370,6 @@ def _add_movie(session: Session, *, movie_bag: MovieBag) -> schema.Movie:
         synopsis=movie_bag["synopsis"],
         notes=movie_bag["notes"],
     )
-    session.add(movie)
     return movie
 
 
@@ -414,6 +424,19 @@ def _select_person(session: Session, *, name: str) -> schema.Person:
     return session.scalars(statement).one()
 
 
+def _select_people(session: Session, *, names: set[str]) -> Sequence[Person]:
+    """Returns a sequence of people.
+
+    Args:
+        session: The current session.
+        names: Names of people.
+    Returns:
+        A sequence of people.
+    """
+    statement = select(schema.Person).where(schema.Person.name.in_(list(names)))
+    return session.scalars(statement).all()
+
+
 def _match_people(session: Session, *, match: str) -> set[schema.Person]:
     """Selects people with names that contains the name substring.
 
@@ -427,14 +450,39 @@ def _match_people(session: Session, *, match: str) -> set[schema.Person]:
     return set(session.scalars(statement).all())
 
 
-def _add_person(session: Session, *, name: str):
+def _add_person(session: Session, *, name: str) -> schema.Person:
     """Add a person to the Person table.
 
     Args:
         session:
         name: Name of person.
+
+    Returns:
+        Person
     """
-    session.add(schema.Person(name=name))
+    person = schema.Person(name=name)
+    session.add(person)
+    return person
+
+
+def _getadd_people(session: Session, *, names: set[str]) -> set[schema.Person]:
+    """Get and add people.
+
+    Args:
+        session:
+        names:
+
+    Returns:
+        A set of Persons
+    """
+    people = set()
+    for name in names:
+        try:
+            person = _select_person(session, name=name)
+        except NoResultFound:
+            person = _add_person(session, name=name)
+        people.add(person)
+    return people
 
 
 def _delete_person(session: Session, *, person: schema.Person):
@@ -465,8 +513,8 @@ def _select_tag(session: Session, *, text: str) -> schema.Tag:
     Returns:
         A tag.
     """
+    # noinspection PyTypeChecker
     statement = select(schema.Tag).where(schema.Tag.text == text)
-    # statement = select(schema.Tag).where(schema.Tag.text.like(f"%{text}%"))
     return session.scalars(statement).one()
 
 

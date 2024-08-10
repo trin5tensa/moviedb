@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/8/24, 9:17 AM by stephen.
+#  Last modified 8/10/24, 12:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -133,21 +133,40 @@ def test_add_movie(test_database):
         directors=TEST_DIRECTORS | {extra_director},
         stars=TEST_STARS | {extra_star},
     )
-    print()
-    print("test_database tags: ", tables.select_all_tags())
-    print(movie_bag)
 
     # Act
-    # Call movie = add_movie(movie_bag=movie_bag)
-    # Assert
-    # todo (movie) Check eight non-relationship fields
-    # todo (tags) Check tags field matches tables._select_all_tags
-    # todo (people) Check extra star and director added to person table
-    # todo (people) Check Movie.stars matches TEST_STARS and extra_star
-    # todo (people) Check Movie.directors matches TEST_STARS and extra_director
+    tables.add_movie(movie_bag=movie_bag)
 
-    # Cleanup
-    assert False
+    # Assert
+    with tables.session_factory() as session:
+        movie = tables._select_movie(
+            session,
+            title=movie_bag["title"],
+            year=int(movie_bag["year"]),
+        )
+
+        # Check eight non-relationship fields
+        check.is_instance(movie.id, int)
+        check.is_instance(movie.created, schema.datetime)
+        check.is_instance(movie.updated, schema.datetime)
+        check.equal(movie.title, movie_bag["title"])
+        check.equal(movie.year, int(movie_bag["year"]))
+        check.equal(movie.duration, int(movie_bag["duration"]))
+        check.equal(movie.synopsis, movie_bag["synopsis"])
+        check.equal(movie.notes, movie_bag["notes"])
+
+        # Check relationship fields
+        check.equal({tag.text for tag in movie.tags}, movie_bag["movie_tags"])
+        check.equal({person.name for person in movie.directors}, movie_bag["directors"])
+        check.equal({person.name for person in movie.stars}, movie_bag["stars"])
+
+        # Check new people added to people table
+        people = tables._select_people(session, names={extra_star, extra_director})
+        check.equal(
+            len(people),
+            2,
+            msg=f"Expected two names in person table: {extra_star}, {extra_director}",
+        )
 
 
 def test_add_movie_with_integrity_error(test_database):
