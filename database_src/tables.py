@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/10/24, 12:41 PM by stephen.
+#  Last modified 8/13/24, 9:59 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,6 +23,9 @@ from database_src import schema
 from database_src.schema import Person
 from globalconstants import *
 
+# todo Clean up
+#   Where 'movie_bag' is a parameter specify the required and optional contents.
+
 session_factory: sessionmaker[Session] | None = None
 
 
@@ -33,33 +36,41 @@ def add_movie(*, movie_bag: MovieBag):
         movie_bag:
 
     Logs and reraises:
-        IntegrityError if title and year duplicate an existing movie.
-        ConstraintFailure for year outside valid range.
-        NoResultFound for tag not in database.
+        MovieExists if title and year duplicate an existing movie.
+        InvalidReleaseYear for year outside valid range.
+        TagNotFound for tag not in database.
     """
-    # DayBreak tests for exceptions
-    #   Add module exceptions and exception handlers
+    try:
+        with session_factory() as session:
+            movie = _add_movie(movie_bag=movie_bag)
+            if movie_tags := movie_bag.get("movie_tags"):
+                movie.tags = {
+                    _select_tag(session, text=tag_text) for tag_text in movie_tags
+                }
+            if directors := movie_bag.get("directors"):
+                movie.directors = _getadd_people(session, names=directors)
+            if stars := movie_bag.get("stars"):
+                movie.stars = _getadd_people(session, names=stars)
 
-    with session_factory() as session:
-        # Movie
-        # todo
-        #   Log and reraise IntegrityError for duplicated key.
-        #   Log and reraise ConstraintFailure for year outside valid range.
-        movie = _add_movie(movie_bag=movie_bag)
+            session.add(movie)
+            session.commit()
 
-        # Tags
-        # todo
-        #   Log and reraise sqlalchemy.exc.NoResultFound
-        movie.tags = {
-            _select_tag(session, text=tag_text) for tag_text in movie_bag["movie_tags"]
-        }
+    except IntegrityError as exc:
+        if "UNIQUE constraint failed: movie.title, movie.year" in exc.args[0]:
+            msg = f"Duplicate title and year: {movie.title=}, {movie.year=}."
+            logging.error(str(exc.orig), msg)
+            raise MovieExists(exc.statement, exc.params, exc.orig) from exc
+        elif "CHECK constraint failed: year" in exc.args[0]:
+            logging.error(str(exc.orig), exc.args)
+            raise InvalidReleaseYear(exc.statement, exc.params, exc.orig) from exc
+        else:  # pragma nocover
+            logging.error(exc.orig)
+            raise
 
-        # People
-        movie.directors = _getadd_people(session, names=movie_bag["directors"])
-        movie.stars = _getadd_people(session, names=movie_bag["stars"])
-
-        session.add(movie)
-        session.commit()
+    except NoResultFound as exc:
+        msg = movie_bag["movie_tags"]
+        logging.error(exc.args[0], f"Bad tag: {msg}")
+        raise TagNotFound(msg) from exc
 
 
 def select_movie(*, movie_bag: MovieBag) -> MovieBag:
@@ -150,7 +161,7 @@ def add_tag(*, tag_text: str):
             _add_tag(session, tag_text=tag_text)
     except IntegrityError as exc:
         logging.error(exc.args[0])
-        raise
+        raise TagExists(exc.statement, exc.params, exc.orig) from exc
 
 
 def add_tags(*, tag_texts: set[str]):
@@ -166,7 +177,7 @@ def add_tags(*, tag_texts: set[str]):
             _add_tags(session, tag_texts=tag_texts)
     except IntegrityError as exc:
         logging.error(exc.args[0])
-        raise
+        raise TagExists(exc.statement, exc.params, exc.orig) from exc
 
 
 def edit_tag(*, old_tag_text: str, new_tag_text: str):
@@ -185,12 +196,12 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
                 tag = _select_tag(session, text=old_tag_text)
             except NoResultFound as exc:
                 logging.error(exc.args[0])
-                raise
+                raise TagNotFound from exc
             else:
                 _edit_tag(tag=tag, replacement_text=new_tag_text)
     except IntegrityError as exc:
         logging.error(exc.args[0])
-        raise
+        raise TagExists(exc.statement, exc.params, exc.orig) from exc
 
 
 def delete_tag(*, tag_text: str):
@@ -208,6 +219,22 @@ def delete_tag(*, tag_text: str):
             pass
         else:
             _delete_tag(session, tag=tag)
+
+
+class MovieExists(IntegrityError):
+    pass
+
+
+class InvalidReleaseYear(IntegrityError):
+    pass
+
+
+class TagNotFound(NoResultFound):
+    pass
+
+
+class TagExists(IntegrityError):
+    pass
 
 
 def _convert_to_movie_bag(movie: schema.Movie) -> MovieBag:
@@ -366,10 +393,13 @@ def _add_movie(*, movie_bag: MovieBag) -> schema.Movie:
     movie = schema.Movie(
         title=movie_bag["title"],
         year=int(movie_bag["year"]),
-        duration=int(movie_bag["duration"]),
-        synopsis=movie_bag["synopsis"],
-        notes=movie_bag["notes"],
     )
+    if duration := movie_bag.get("duration"):
+        movie.duration = int(duration)
+    if synopsis := movie_bag.get("synopsis"):
+        movie.synopsis = synopsis
+    if notes := movie_bag.get("notes"):
+        movie.notes = notes
     return movie
 
 

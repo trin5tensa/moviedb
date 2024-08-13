@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/10/24, 12:41 PM by stephen.
+#  Last modified 8/13/24, 9:59 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -258,8 +258,7 @@ def test__delete_orphans(load_movies, session_engine, db_session: Session):
 
 
 def test__select_tag(load_tags, db_session: Session):
-    tag = tables._select_tag(db_session, match=TAG_MATCH)
-
+    tag = tables._select_tag(db_session, text=SOUGHT_TAG)
     assert tag.text == SOUGHT_TAG
 
 
@@ -281,7 +280,7 @@ def test__add_tag(load_tags, db_session: Session):
 
 def test__add_tags(load_tags, db_session: Session):
     new_tag = "test add tag garbage garbage"
-    tables._add_tags(db_session, tag_texts=[new_tag])
+    tables._add_tags(db_session, tag_texts={new_tag})
 
     # 'load_tags' loads three 'test tag […]'s. This is 'test add tag'.
     tag = tables._select_tag(db_session, text=new_tag)
@@ -305,11 +304,6 @@ def test__delete_tag(load_tags, db_session: Session):
 
     with check.raises(NoResultFound):
         tables._select_tag(db_session, text=SOUGHT_TAG)
-
-
-def test__select_tag(load_tags, db_session: Session):
-    tag = tables._select_tag(db_session, text=SOUGHT_TAG)
-    assert tag.text == SOUGHT_TAG
 
 
 @pytest.fixture(scope="session")
@@ -406,7 +400,6 @@ def load_movies(load_tags, db_session: Session):
         movie = schema.Movie(
             title=movie_bag["title"],
             year=int(movie_bag["year"]),
-            # todo What does SQL turn 'None' into?  '' or void?
             duration=int(duration) if duration else None,
             directors=directors,
             stars=stars,

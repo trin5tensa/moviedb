@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/10/24, 12:41 PM by stephen.
+#  Last modified 8/13/24, 9:59 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -169,19 +169,98 @@ def test_add_movie(test_database):
         )
 
 
-def test_add_movie_with_integrity_error(test_database):
-    # Log and reraise IntegrityError for key mismatch.
-    pass
+def test_add_movie_with_invalid_tag(test_database, logged):
+    movie_bag = MovieBag(
+        title="Test Add Movie",
+        year=MovieInteger(5042),
+        movie_tags={"garbage"},
+    )
+
+    with check:
+        with pytest.raises(
+            tables.TagNotFound,
+            match="garbage",
+        ):
+            tables.add_movie(movie_bag=movie_bag)
+    check.equal(
+        logged,
+        [(("No row was found when one was required", "Bad tag: {'garbage'}"), {})],
+        msg="TagNotFound was not logged.",
+    )
 
 
-def test_add_movie_with_constraint_failure_error(test_database):
-    # Log and reraise ConstraintFailure for year outside valid range.
-    pass
+def test_add_movie_with_title_year_duplication_error(test_database, logged):
+    with check:
+        with pytest.raises(
+            tables.MovieExists,
+            match="UNIQUE constraint failed: movie.title, movie.year",
+        ):
+            tables.add_movie(movie_bag=MOVIEBAG_1)
+    check.equal(
+        logged,
+        [
+            (
+                (
+                    "UNIQUE constraint failed: movie.title, movie.year",
+                    "Duplicate title and year: movie.title='First Movie', "
+                    "movie.year=4241.",
+                ),
+                {},
+            )
+        ],
+    )
 
 
-def test_add_movie_with_invalid_tag(test_database):
-    #   Log and reraise sqlalchemy.exc.NoResultFound
-    pass
+def test_add_movie_with_too_early_year(test_database, logged):
+    movie_bag = MovieBag(
+        title="Test Add Movie",
+        year=MovieInteger(0),
+    )
+
+    with check:
+        with pytest.raises(
+            tables.InvalidReleaseYear,
+            match="CHECK constraint failed: year>1878",
+        ):
+            tables.add_movie(movie_bag=movie_bag)
+    check.equal(
+        logged,
+        [
+            (
+                (
+                    "CHECK constraint failed: year>1878",
+                    ("(sqlite3.IntegrityError) CHECK constraint failed: year>1878",),
+                ),
+                {},
+            )
+        ],
+    )
+
+
+def test_add_movie_with_too_late_year(test_database, logged):
+    movie_bag = MovieBag(
+        title="Test Add Movie",
+        year=MovieInteger(424242),
+    )
+
+    with check:
+        with pytest.raises(
+            tables.InvalidReleaseYear,
+            match="CHECK constraint failed: year<=10000",
+        ):
+            tables.add_movie(movie_bag=movie_bag)
+    check.equal(
+        logged,
+        [
+            (
+                (
+                    "CHECK constraint failed: year<=10000",
+                    ("(sqlite3.IntegrityError) CHECK constraint failed: year<=10000",),
+                ),
+                {},
+            )
+        ],
+    )
 
 
 def test_edit_movie(test_database):
@@ -231,13 +310,13 @@ def test_add_tag_text(test_database):
     assert tags & {new_tag} == {new_tag}
 
 
-def test_add_duplicate_tag_text_logs_and_raises_exception(test_database, logged):
+def test_add_duplicate_tag_logs_and_raises_exception(test_database, logged):
     new_tag = "test new tag"
     tables.add_tag(tag_text=new_tag)
 
     with check:
         with pytest.raises(
-            tables.IntegrityError,
+            tables.TagExists,
             match="UNIQUE constraint failed: tag.text",
         ):
             tables.add_tag(tag_text=new_tag)
@@ -249,17 +328,16 @@ def test_add_duplicate_tag_text_logs_and_raises_exception(test_database, logged)
     )
 
 
-def test_add_tag_texts(test_database, logged):
+def test_add_tags(test_database, logged):
     new_tag = "test new tag"
     tables.add_tags(tag_texts={new_tag})
 
     with check:
         with pytest.raises(
-            tables.IntegrityError,
+            tables.TagExists,
             match="UNIQUE constraint failed: tag.text",
         ):
             tables.add_tags(tag_texts={new_tag})
-
     check.equal(
         logged,
         [(("(sqlite3.IntegrityError) UNIQUE constraint failed: tag.text",), {})],
@@ -267,7 +345,7 @@ def test_add_tag_texts(test_database, logged):
     )
 
 
-def test_edit_tag_text(test_database):
+def test_edit_tag(test_database):
     old_tag_text = SOUGHT_TAG
     new_tag_text = "test new tag"
 
@@ -278,13 +356,12 @@ def test_edit_tag_text(test_database):
     check.equal(tags_remaining & {new_tag_text}, {new_tag_text})
 
 
-def test_edit_missing_tag_text_logs_and_raises_exception(test_database, logged):
+def test_edit_missing_tag_logs_and_raises_exception(test_database, logged):
     tag_text = "garbage"
 
     with check:
-        with pytest.raises(tables.NoResultFound):
+        with pytest.raises(tables.TagNotFound):
             tables.edit_tag(old_tag_text=tag_text, new_tag_text=tag_text)
-
     check.equal(
         logged,
         [(("No row was found when one was required",), {})],
@@ -299,12 +376,11 @@ def test_edit_duplicate_tag_text_logs_and_raises_exception(test_database, logged
 
     with check:
         with pytest.raises(
-            tables.IntegrityError,
+            tables.TagExists,
             match="UNIQUE constraint failed: tag.text",
         ):
             tables.edit_tag(old_tag_text=old_tag_text, new_tag_text=new_tag_text)
             pass
-
     check.equal(
         logged,
         [(("(sqlite3.IntegrityError) UNIQUE constraint failed: tag.text",), {})],

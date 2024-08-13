@@ -1,7 +1,7 @@
 """Schema v1"""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/10/24, 12:41 PM by stephen.
+#  Last modified 8/13/24, 9:59 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -59,8 +59,8 @@ class Movie(Base):
     __tablename__ = "movie"
     __table_args__ = (
         UniqueConstraint("title", "year"),
-        CheckConstraint(f"year>={MUYBRIDGE}"),
-        CheckConstraint(f"year<{MAX_YEAR}"),
+        CheckConstraint(f"year>{MUYBRIDGE}"),
+        CheckConstraint(f"year<={MAX_YEAR}"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
