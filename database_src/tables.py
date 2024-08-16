@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/13/24, 9:59 AM by stephen.
+#  Last modified 8/16/24, 8:03 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,12 +30,15 @@ session_factory: sessionmaker[Session] | None = None
 
 
 def add_movie(*, movie_bag: MovieBag):
-    """
+    """Adds a movie.
+
+    Adds a movie, links it to tag table, links stars and directors to people
+    table, and adds new people to person table.
 
     Args:
         movie_bag:
 
-    Logs and reraises:
+    Logs and raises:
         MovieExists if title and year duplicate an existing movie.
         InvalidReleaseYear for year outside valid range.
         TagNotFound for tag not in database.
@@ -71,6 +74,66 @@ def add_movie(*, movie_bag: MovieBag):
         msg = movie_bag["movie_tags"]
         logging.error(exc.args[0], f"Bad tag: {msg}")
         raise TagNotFound(msg) from exc
+
+
+def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
+    """Edits a movie.
+
+    Edits an existing movie, updates links to tag table, updates person table
+    links for stars and directors, adds new people to person table, and deletes
+    orphans from person table.
+
+    Args:
+        old_movie_bag:
+        new_movie_bag:
+
+    Logs and raises:
+        MovieExists if new title and year duplicate an existing movie.
+        InvalidReleaseYear for new year outside valid range.
+        TagNotFound for new tag not in database.
+    """
+    try:
+        with session_factory() as session:
+            movie = _select_movie(
+                session, title=old_movie_bag["title"], year=int(old_movie_bag["year"])
+            )
+            _edit_movie(movie=movie, edit_fields=new_movie_bag)
+            if movie_tags := new_movie_bag.get("movie_tags"):
+                movie.tags = {
+                    _select_tag(session, text=tag_text) for tag_text in movie_tags
+                }
+            if directors := new_movie_bag.get("directors"):
+                movie.directors = _getadd_people(session, names=directors)
+            if stars := new_movie_bag.get("stars"):
+                movie.stars = _getadd_people(session, names=stars)
+
+            # Orphan removal
+            old_directors = old_movie_bag.get("directors", set())
+            old_stars = old_movie_bag.get("stars", set())
+            candidates = _select_people(
+                session,
+                names=(old_directors | old_stars),
+            )
+            _delete_orphans(session, candidates=set(candidates))
+
+            session.commit()
+
+    except NoResultFound as exc:
+        msg = new_movie_bag["movie_tags"]
+        logging.error(exc.args[0], f"Bad tag: {msg}")
+        raise TagNotFound(msg) from exc
+
+    except IntegrityError as exc:
+        if "UNIQUE constraint failed: movie.title, movie.year" in exc.args[0]:
+            msg = f"Duplicate title and year."
+            logging.error(str(exc.orig), msg)
+            raise MovieExists(exc.statement, exc.params, exc.orig) from exc
+        elif "CHECK constraint failed: year" in exc.args[0]:
+            logging.error(str(exc.orig), exc.args)
+            raise InvalidReleaseYear(exc.statement, exc.params, exc.orig) from exc
+        else:  # pragma nocover
+            logging.error(exc.orig)
+            raise
 
 
 def select_movie(*, movie_bag: MovieBag) -> MovieBag:
@@ -281,6 +344,7 @@ def _select_movie(session: Session, *, title: str, year: int) -> schema.Movie:
     Returns:
         A movie.
     """
+    # todo Change signature to use incoming movie bag.
     # noinspection PyTypeChecker
     statement = (
         select(schema.Movie)
@@ -463,6 +527,7 @@ def _select_people(session: Session, *, names: set[str]) -> Sequence[Person]:
     Returns:
         A sequence of people.
     """
+    # todo Consider converting return value to a set
     statement = select(schema.Person).where(schema.Person.name.in_(list(names)))
     return session.scalars(statement).all()
 

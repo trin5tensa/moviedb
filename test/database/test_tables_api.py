@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/13/24, 9:59 AM by stephen.
+#  Last modified 8/16/24, 8:03 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -264,24 +264,180 @@ def test_add_movie_with_too_late_year(test_database, logged):
 
 
 def test_edit_movie(test_database):
-    # todo movie
-    #   Use _edit_movie
-    # todo tags
-    #   Use _match_tag to get Tag objects raising tables.TagNotFound exception if any not
-    #   found. (new function)
-    #   Add new tags to Movie.tags and delete links to old tags.
-    # todo people
-    #   Add Movie.stars and Movie.directors to set of orphan candidates
-    #   Get people records for new stars and directors creating new if not found.
-    #   Replace Movie.stars with new
-    #   Replace Movie.directors with new
-    #   Call _delete_orphans
+    old_movie_bag = MovieBag(
+        title="Test Edit Movie",
+        year=MovieInteger(5042),
+        duration=MovieInteger(159),
+        synopsis="Test synopsis",
+        notes="Test notes",
+        movie_tags=TAG_TEXTS,
+        directors={"Yolanda Ypsilanti"},
+        stars={"O Star 10", "O Star 11"},
+    )
+    tables.add_movie(movie_bag=old_movie_bag)
+    new_movie_bag = MovieBag(
+        title="Son of Test Edit Movie",
+        year=MovieInteger(6042),
+        duration=MovieInteger(242),
+        synopsis="Test synopsis sequel",
+        notes="Test notes sequel",
+        movie_tags={SOUGHT_TAG},
+        directors={"Zach Zimmermann"},
+        stars={"O Star 10", "N Star 20"},
+    )
 
-    # Arrange
-    # Act
-    # Assert
-    # Cleanup
-    pass
+    tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag)
+
+    with tables.session_factory() as session:
+        movie = tables._select_movie(
+            session,
+            title=new_movie_bag["title"],
+            year=int(new_movie_bag["year"]),
+        )
+
+        # Check eight non-relationship fields
+        check.is_instance(movie.id, int)
+        check.is_instance(movie.created, schema.datetime)
+        check.is_instance(movie.updated, schema.datetime)
+        check.equal(movie.title, new_movie_bag["title"])
+        check.equal(movie.year, int(new_movie_bag["year"]))
+        check.equal(movie.duration, int(new_movie_bag["duration"]))
+        check.equal(movie.synopsis, new_movie_bag["synopsis"])
+        check.equal(movie.notes, new_movie_bag["notes"])
+
+        # Check relationship fields
+        check.equal({tag.text for tag in movie.tags}, new_movie_bag["movie_tags"])
+        check.equal(
+            {person.name for person in movie.directors}, new_movie_bag["directors"]
+        )
+        check.equal({person.name for person in movie.stars}, new_movie_bag["stars"])
+
+        # Check new people added to people table
+        people = tables._select_people(
+            session,
+            names=old_movie_bag["directors"]
+            | old_movie_bag["stars"]
+            | new_movie_bag["directors"]
+            | new_movie_bag["stars"],
+        )
+        check.equal(
+            {person.name for person in people},
+            new_movie_bag["directors"] | new_movie_bag["stars"],
+            msg=f"Either new people not added to person table or orphans not removed.",
+        )
+
+
+def test_edit_movie_with_invalid_tag(test_database, logged):
+    old_movie_bag = MovieBag(
+        title="Test Edit Movie",
+        year=MovieInteger(5042),
+    )
+    tables.add_movie(movie_bag=old_movie_bag)
+    new_movie_bag = MovieBag(
+        movie_tags={"garbage"},
+    )
+
+    with check:
+        with pytest.raises(
+            tables.TagNotFound,
+            match="garbage",
+        ):
+            tables.edit_movie(
+                old_movie_bag=old_movie_bag,
+                new_movie_bag=new_movie_bag,
+            )
+    check.equal(
+        logged,
+        [(("No row was found when one was required", "Bad tag: {'garbage'}"), {})],
+        msg="TagNotFound was not logged.",
+    )
+
+
+def test_edit_movie_with_title_year_duplication_error(test_database, logged):
+    old_movie_bag = MovieBag(
+        title="Test Edit Movie",
+        year=MovieInteger(5042),
+    )
+    tables.add_movie(movie_bag=old_movie_bag)
+
+    with check:
+        with pytest.raises(
+            tables.MovieExists,
+            match="UNIQUE constraint failed: movie.title, movie.year",
+        ):
+            tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=MOVIEBAG_1)
+    check.equal(
+        logged,
+        [
+            (
+                (
+                    "UNIQUE constraint failed: movie.title, movie.year",
+                    "Duplicate title and year.",
+                ),
+                {},
+            )
+        ],
+    )
+
+
+def test_edit_movie_with_too_early_year(test_database, logged):
+    old_movie_bag = MovieBag(
+        title="Test Edit Movie",
+        year=MovieInteger(5042),
+    )
+    tables.add_movie(movie_bag=old_movie_bag)
+    new_movie_bag = MovieBag(
+        year=MovieInteger(0),
+    )
+
+    with check:
+        with pytest.raises(
+            tables.InvalidReleaseYear,
+            match="CHECK constraint failed: year>1878",
+        ):
+            tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag)
+    check.equal(
+        logged,
+        [
+            (
+                (
+                    "CHECK constraint failed: year>1878",
+                    ("(sqlite3.IntegrityError) CHECK constraint failed: year>1878",),
+                ),
+                {},
+            )
+        ],
+    )
+
+
+def test_edit_movie_with_too_late_year(test_database, logged):
+    old_movie_bag = MovieBag(
+        title="Test Edit Movie",
+        year=MovieInteger(5042),
+    )
+    tables.add_movie(movie_bag=old_movie_bag)
+    new_movie_bag = MovieBag(
+        year=MovieInteger(14242),
+    )
+
+    with check:
+        with pytest.raises(
+            tables.InvalidReleaseYear,
+            match="CHECK constraint failed: year<=10000",
+        ):
+            tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag)
+    check.equal(
+        logged,
+        [
+            (
+                (
+                    "CHECK constraint failed: year<=10000",
+                    ("(sqlite3.IntegrityError) CHECK constraint failed: year<=10000",),
+                ),
+                {},
+            )
+        ],
+    )
 
 
 def test_delete_movie(test_database):
