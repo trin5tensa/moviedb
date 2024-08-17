@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/16/24, 8:03 AM by stephen.
+#  Last modified 8/17/24, 8:39 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -441,15 +441,50 @@ def test_edit_movie_with_too_late_year(test_database, logged):
 
 
 def test_delete_movie(test_database):
-    # todo
-    #  Call _delete_orphans for Movie.stars and Movie.directors
-    #  Use _delete_movie which automatically updates all links
+    movie_bag = MovieBag(
+        title="Test Delete Movie",
+        year=MovieInteger(5042),
+        stars={"Sylvia Star", "Sidney Star"},
+    )
+    tables.add_movie(movie_bag=movie_bag)
 
-    # Arrange
-    # Act
-    # Assert
-    # Cleanup
-    pass
+    tables.delete_movie(movie_bag=movie_bag)
+
+    with tables.session_factory() as session:
+        movies = tables._match_movies(
+            session,
+            match=movie_bag,
+        )
+        check.equal(len(movies), 0, "The movie was not deleted.")
+
+        people = tables._select_people(session, names=movie_bag["stars"])
+        check.equal(len(people), 0, msg=f"People not removed from people table.")
+
+
+def test_previously_deleted_movie(test_database):
+    """This tests the scenario where the movie has been deleted by another
+    process.Orphan deletion must still be executed."""
+    movie_bag = MovieBag(
+        title="Test Delete Movie",
+        year=MovieInteger(5042),
+        stars={"Sylvia Star", "Sidney Star"},
+    )
+    with tables.session_factory() as session:
+        for person_name in movie_bag["stars"]:
+            tables._add_person(session, name=person_name)
+        session.commit()
+
+    tables.delete_movie(movie_bag=movie_bag)
+
+    with tables.session_factory() as session:
+        movies = tables._match_movies(
+            session,
+            match=movie_bag,
+        )
+        check.equal(len(movies), 0, "The movie was not deleted.")
+
+        people = tables._select_people(session, names=movie_bag["stars"])
+        check.equal(len(people), 0, msg=f"People not removed from people table.")
 
 
 def test_select_all_tags(test_database):

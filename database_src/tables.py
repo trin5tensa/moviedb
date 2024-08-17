@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/16/24, 8:03 AM by stephen.
+#  Last modified 8/17/24, 8:39 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,6 +25,16 @@ from globalconstants import *
 
 # todo Clean up
 #   Where 'movie_bag' is a parameter specify the required and optional contents.
+#   Signature 'rules'
+#       API In - MovieBag
+#       API Out - Optional MovieBag
+#       Internal state change in - ORM object (previously selected in a different low level)
+#       Internal state change out - Optional ORM object
+#       Internal select in - Movie Bag
+#       Internal select out - ORM object
+#       naming: *select* one , *select* all, or *match* an unknown number of objects.
+#       return *sets* not *sequences*
+
 
 session_factory: sessionmaker[Session] | None = None
 
@@ -134,6 +144,34 @@ def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
         else:  # pragma nocover
             logging.error(exc.orig)
             raise
+
+
+def delete_movie(*, movie_bag: MovieBag):
+    """Deletes a movie.
+
+    The movie may have been deleted by another process. This function's failure to
+    find the movie would be expected. Orphan deletion will still be executed.
+
+    Args:
+        movie_bag:
+    """
+
+    try:
+        with session_factory() as session:
+            movie = _select_movie(
+                session, title=movie_bag["title"], year=int(movie_bag["year"])
+            )
+            candidate_orphans = movie.directors | movie.stars
+            _delete_movie(session, movie=movie)
+            _delete_orphans(session, candidates=candidate_orphans)
+            session.commit()
+    except NoResultFound:
+        with session_factory() as session:
+            directors = movie_bag.get("directors", set())
+            stars = movie_bag.get("stars", set())
+            candidate_orphans = set(_select_people(session, names=stars | directors))
+            _delete_orphans(session, candidates=candidate_orphans)
+            session.commit()
 
 
 def select_movie(*, movie_bag: MovieBag) -> MovieBag:
@@ -352,7 +390,6 @@ def _select_movie(session: Session, *, title: str, year: int) -> schema.Movie:
         .where(schema.Movie.year == year)
     )
     movie = session.scalars(statement).one()
-    # print(f"_select_movie: {movie=}")
     return movie
 
 
