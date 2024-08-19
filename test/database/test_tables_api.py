@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/17/24, 8:39 AM by stephen.
+#  Last modified 8/19/24, 1:21 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -139,11 +139,7 @@ def test_add_movie(test_database):
 
     # Assert
     with tables.session_factory() as session:
-        movie = tables._select_movie(
-            session,
-            title=movie_bag["title"],
-            year=int(movie_bag["year"]),
-        )
+        movie = tables._select_movie(session, movie_bag=movie_bag)
 
         # Check eight non-relationship fields
         check.is_instance(movie.id, int)
@@ -289,11 +285,7 @@ def test_edit_movie(test_database):
     tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag)
 
     with tables.session_factory() as session:
-        movie = tables._select_movie(
-            session,
-            title=new_movie_bag["title"],
-            year=int(new_movie_bag["year"]),
-        )
+        movie = tables._select_movie(session, movie_bag=new_movie_bag)
 
         # Check eight non-relationship fields
         check.is_instance(movie.id, int)
@@ -465,7 +457,7 @@ def test_previously_deleted_movie(test_database):
     """This tests the scenario where the movie has been deleted by another
     process.Orphan deletion must still be executed."""
     movie_bag = MovieBag(
-        title="Test Delete Movie",
+        title="Test Previously Deleted Movie",
         year=MovieInteger(5042),
         stars={"Sylvia Star", "Sidney Star"},
     )

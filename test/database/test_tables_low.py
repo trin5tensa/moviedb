@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/13/24, 9:59 AM by stephen.
+#  Last modified 8/19/24, 1:21 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -140,13 +140,10 @@ def test__edit_movie(load_movies, db_session):
 
 
 def test__select_movie(load_movies, db_session: Session):
-    title = MOVIEBAG_2["title"]
-    year = int(MOVIEBAG_2["year"])
+    movie = tables._select_movie(db_session, movie_bag=MOVIEBAG_2)
 
-    movie = tables._select_movie(db_session, title=title, year=year)
-
-    check.equal(movie.title, title)
-    check.equal(movie.year, year)
+    check.equal(movie.title, MOVIEBAG_2["title"])
+    check.equal(movie.year, int(MOVIEBAG_2["year"]))
 
 
 def test__match_0_movie(load_movies, db_session: Session):
@@ -271,7 +268,7 @@ def test__select_all_tags(load_tags, db_session: Session):
 
 def test__add_tag(load_tags, db_session: Session):
     new_tag = "test add tag garbage garbage"
-    tables._add_tag(db_session, tag_text=new_tag)
+    tables._add_tag(db_session, text=new_tag)
 
     # 'load_tags' loads three 'test tag […]'s. This is 'test add tag'.
     tag = tables._select_tag(db_session, text=new_tag)
@@ -280,7 +277,7 @@ def test__add_tag(load_tags, db_session: Session):
 
 def test__add_tags(load_tags, db_session: Session):
     new_tag = "test add tag garbage garbage"
-    tables._add_tags(db_session, tag_texts={new_tag})
+    tables._add_tags(db_session, texts={new_tag})
 
     # 'load_tags' loads three 'test tag […]'s. This is 'test add tag'.
     tag = tables._select_tag(db_session, text=new_tag)
