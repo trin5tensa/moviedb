@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/3/24, 6:09 AM by stephen.
+#  Last modified 8/19/24, 2:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,8 +19,11 @@ from sqlalchemy import select, intersect
 from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
+from database import all_tags
 from database_src import schema
+from database_src.schema import Person
 from globalconstants import *
+
 
 session_factory: sessionmaker[Session] | None = None
 
@@ -29,16 +32,26 @@ def select_movie(*, movie_bag: MovieBag) -> MovieBag:
     """Selects and returns a single movie.
 
     Args:
-        A movie_bag containing the title and year of the movie.
+        movie_bag:
+            id: ignored
+            created: ignored
+            updated: ignored
+            title: required
+            year: required
+            duration: ignored
+            directors: ignored
+            stars: ignored
+            synopsis: ignored
+            notes: ignored
+            movie_tags: ignored
 
     Returns:
         A movie
     """
     with session_factory() as session:
-        movie = _select_movie(
-            session, title=movie_bag["title"], year=int(movie_bag["year"])
-        )
-        return _convert_to_movie_bag(movie)
+        movie = _select_movie(session, movie_bag=movie_bag)
+        movie_bag = _convert_to_movie_bag(movie)
+    return movie_bag
 
 
 def select_all_movies() -> list[MovieBag]:
@@ -50,39 +63,40 @@ def select_all_movies() -> list[MovieBag]:
 
 
 def match_movies(match: MovieBag) -> list[MovieBag]:
-    """Selects and returns matching movies.
+    """Selects and returns the intersection of matching movies.
 
     Match patterns are specified in a MovieBag object which can contain none, any,
     or all the fields of a MovieBag object. Each supplied field will be used to
     select compliant records.This function will return the intersection of the
-    movie records selected by each field's match criteria. The internal
+    movie records selected by each field's name criteria. The internal
     database fields of 'id'. 'created', and 'updated' are ignored.
 
     Args:
         match:
+            A movie bag object with the match fields specified below. The id, created,
+            and updated fields are ignored.
 
-        Match patterns are specified in a MovieBag object which can contain none,
-        any, or all the following fields:
-            title. Substring match
-            year. Contains match
-            duration. Contains match
-            directors. Substring set match
-            stars. Substring set match
-            synopsis. Substring match
-            notes. Substring match
-            movie_tags. Substring set match
+            Match patterns are specified in a MovieBag object which can contain none,
+            any, or all the following fields:
+                title. Substring match.
+                year. Contains match.
+                duration. Contains match.
+                directors. Substring set match.
+                stars. Substring set match.
+                synopsis. Substring match.
+                notes. Substring match.
+                movie_tags. Substring set match.
 
-        Exact match. 4 will match movie.id = 4
-        Substring match. The substring 'kwai' will match 'Bridge on the River Kwai'.
-        Substring set match. Each item in the set will be matched as a substring
-            match (defined above). The movie will only be selected if every item in
-            the set matches.
-            For a movie with stars {"Edgar Ethelred", "Fanny Fullworthy"}:
-                {'ethel'} will match
-                {'ethel', 'worth'} will match
-                {'ethel', 'bogart'} will not match.
-        Contains match. A movie.year of `1955 in MovieInteger('1950-1960')` is a match.
-        Ignored. Will not be used for search.
+            Exact match. 4 will match `movie.id` = 4
+            Substring match. The substring 'kwai' will match 'Bridge on the River Kwai'.
+            Substring set match. Each item in the set will be matched as a substring
+                match (defined above). The movie will only be selected if every item in
+                the set matches.
+                For a movie with stars {"Edgar Ethelred", "Fanny Fullworthy"}:
+                    {'ethel'} will match
+                    {'ethel', 'worth'} will match
+                    {'ethel', 'bogart'} will not match.
+            Contains match. A movie.year of `1955 in MovieInteger('1950-1960')` is a match.
 
     Returns:
         The intersection of the records selected by each field's search criteria.
@@ -93,6 +107,198 @@ def match_movies(match: MovieBag) -> list[MovieBag]:
     return movie_bags
 
 
+def add_movie(*, movie_bag: MovieBag):
+    """Adds a movie.
+
+    Adds a movie, links it to tag table, links stars and directors to people
+    table, and adds new people to person table.
+
+    Args:
+        movie_bag:
+            id: ignored
+            created: ignored
+            updated: ignored
+            title: required
+            year: required
+            duration: optional
+            directors: optional
+            stars: optional
+            synopsis: optional
+            notes: optional
+            movie_tags: optional
+
+    Logs and raises:
+        MovieExists if title and year duplicate an existing movie.
+        InvalidReleaseYear for year outside valid range.
+        TagNotFound for tag not in database.
+    """
+    try:
+        with session_factory() as session:
+            movie = _add_movie(movie_bag=movie_bag)
+            if movie_tags := movie_bag.get("movie_tags"):
+                movie.tags = {
+                    _select_tag(session, text=tag_text) for tag_text in movie_tags
+                }
+            if directors := movie_bag.get("directors"):
+                movie.directors = _getadd_people(session, names=directors)
+            if stars := movie_bag.get("stars"):
+                movie.stars = _getadd_people(session, names=stars)
+
+            session.add(movie)
+            session.commit()
+
+    except IntegrityError as exc:
+        if "UNIQUE constraint failed: movie.title, movie.year" in exc.args[0]:
+            msg = f"Duplicate title and year: {movie.title=}, {movie.year=}."
+            logging.error(str(exc.orig), msg)
+            raise MovieExists(exc.statement, exc.params, exc.orig) from exc
+        elif "CHECK constraint failed: year" in exc.args[0]:
+            logging.error(str(exc.orig), exc.args)
+            raise InvalidReleaseYear(exc.statement, exc.params, exc.orig) from exc
+        else:  # pragma nocover
+            logging.error(exc.orig)
+            raise
+
+    except NoResultFound as exc:
+        msg = movie_bag["movie_tags"]
+        logging.error(exc.args[0], f"Bad tag: {msg}")
+        raise TagNotFound(msg) from exc
+
+
+def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
+    """Edits a movie.
+
+    Edits an existing movie, updates links to tag table, updates person table
+    links for stars and directors, adds new people to person table, and deletes
+    orphans from person table.
+
+    Args:
+        old_movie_bag:
+            id: ignored
+            created: ignored
+            updated: ignored
+            title: required
+            year: required
+            duration: ignored
+            directors: ignored
+            stars: ignored
+            synopsis: ignored
+            notes: ignored
+            movie_tags: ignored
+        new_movie_bag:
+            id: ignored
+            created: ignored
+            updated: ignored
+            title: required
+            year: required
+            duration: optional
+            directors: optional
+            stars: optional
+            synopsis: optional
+            notes: optional
+            movie_tags: optional
+
+    Logs and raises:
+        MovieExists if new title and year duplicate an existing movie.
+        InvalidReleaseYear for new year outside valid range.
+        TagNotFound for new tag not in database.
+    """
+    try:
+        with session_factory() as session:
+            movie = _select_movie(session, movie_bag=old_movie_bag)
+            candidate_orphans = movie.directors | movie.stars
+            _edit_movie(movie=movie, edit_fields=new_movie_bag)
+
+            if movie_tags := new_movie_bag.get("movie_tags"):
+                movie.tags = {
+                    _select_tag(session, text=tag_text) for tag_text in movie_tags
+                }
+            if new_director_names := new_movie_bag.get("directors"):
+                movie.directors = _getadd_people(session, names=new_director_names)
+            if new_star_names := new_movie_bag.get("stars"):
+                movie.stars = _getadd_people(session, names=new_star_names)
+
+            _delete_orphans(session, candidates=candidate_orphans)
+
+            session.commit()
+
+    except NoResultFound as exc:
+        msg = new_movie_bag["movie_tags"]
+        logging.error(exc.args[0], f"Bad tag: {msg}")
+        raise TagNotFound(msg) from exc
+
+    except IntegrityError as exc:
+        if "UNIQUE constraint failed: movie.title, movie.year" in exc.args[0]:
+            msg = f"Duplicate title and year."
+            logging.error(str(exc.orig), msg)
+            raise MovieExists(exc.statement, exc.params, exc.orig) from exc
+        elif "CHECK constraint failed: year" in exc.args[0]:
+            logging.error(str(exc.orig), exc.args)
+            raise InvalidReleaseYear(exc.statement, exc.params, exc.orig) from exc
+        else:  # pragma nocover
+            logging.error(exc.orig)
+            raise
+
+
+def delete_movie(*, movie_bag: MovieBag):
+    """Deletes a movie.
+
+    Deletes an existing movie, deletes links to tag table, deletes person
+    table links for stars and directors, and deletes orphans from person
+    table.
+
+    No exception will be raised if the movie has already been deleted.
+
+        Args:
+            movie_bag:
+                id: ignored
+                created: ignored
+                updated: ignored
+                title: required
+                year: required
+                duration: ignored
+                directors: ignored
+                stars: ignored
+                synopsis: ignored
+                notes: ignored
+                movie_tags: ignored
+    """
+    try:
+        with session_factory() as session:
+            movie = _select_movie(session, movie_bag=movie_bag)
+            candidate_orphans = movie.directors | movie.stars
+            _delete_movie(session, movie=movie)
+            _delete_orphans(session, candidates=candidate_orphans)
+            session.commit()
+
+    except NoResultFound:
+        with session_factory() as session:
+            directors = movie_bag.get("directors", set())
+            stars = movie_bag.get("stars", set())
+            candidate_orphans = set(_select_people(session, names=stars | directors))
+            _delete_orphans(session, candidates=candidate_orphans)
+            session.commit()
+
+
+def delete_all_orphans():
+    """Deletes all orphans.
+
+    Use Case:
+        It is possible for a movie to be deleted by another process without handling orphan
+        people. THis function should be runat program termination to delete any orphans
+        created in ths manner.
+    """
+    with session_factory() as session:
+        all_people = _select_all_people(session)
+        count = _delete_orphans(session, candidates=all_people)
+        if count:
+            logging.info(
+                f"{count} Orphan(s) were removed. "
+                f"They should have been removed before now."
+            )
+        session.commit()
+
+
 def select_all_tags() -> set[str]:
     """Returns a list of all tag texts."""
     with session_factory() as session:
@@ -101,59 +307,59 @@ def select_all_tags() -> set[str]:
 
 
 def add_tag(*, tag_text: str):
-    """Add a tag.
+    """Adds a tag.
 
     Args:
         tag_text:
     Raises:
-        IntegrityError if the tag text is a duplicate.
+        Logs and raises a TagExists exception.
     """
     try:
         with session_factory() as session, session.begin():
-            _add_tag(session, tag_text=tag_text)
+            _add_tag(session, text=tag_text)
     except IntegrityError as exc:
         logging.error(exc.args[0])
-        raise
+        raise TagExists(exc.statement, exc.params, exc.orig) from exc
 
 
 def add_tags(*, tag_texts: set[str]):
-    """Add a list of tags.
+    """Adds a list of tags.
 
     Args:
         tag_texts:
     Raises:
-        IntegrityError if any tag text is a duplicate.
+        Logs and raises a TagExists exception.
     """
     try:
         with session_factory() as session, session.begin():
-            _add_tags(session, tag_texts=tag_texts)
+            _add_tags(session, texts=tag_texts)
     except IntegrityError as exc:
         logging.error(exc.args[0])
-        raise
+        raise TagExists(exc.statement, exc.params, exc.orig) from exc
 
 
 def edit_tag(*, old_tag_text: str, new_tag_text: str):
-    """
+    """Edits the text of an existing tag.
 
     Args:
         old_tag_text:
         new_tag_text:
     Raises:
-        NoRecordFound if the old tag text cannot be found.
-        IntegrityError if the new tag text is a duplicate.
+        Logs and raises a TagNotFound exception.
+        Logs and raises a TagExists exception.
     """
     try:
         with session_factory() as session, session.begin():
             try:
-                tag = _match_tag(session, match=old_tag_text)
+                tag = _select_tag(session, text=old_tag_text)
             except NoResultFound as exc:
                 logging.error(exc.args[0])
-                raise
+                raise TagNotFound from exc
             else:
                 _edit_tag(tag=tag, replacement_text=new_tag_text)
     except IntegrityError as exc:
         logging.error(exc.args[0])
-        raise
+        raise TagExists(exc.statement, exc.params, exc.orig) from exc
 
 
 def delete_tag(*, tag_text: str):
@@ -166,76 +372,100 @@ def delete_tag(*, tag_text: str):
     """
     with session_factory() as session, session.begin():
         try:
-            tag = _match_tag(session, match=tag_text)
+            tag = _select_tag(session, text=tag_text)
         except NoResultFound:
             pass
         else:
             _delete_tag(session, tag=tag)
 
 
-def _convert_to_movie_bag(movie: schema.Movie) -> MovieBag:
-    """Converts a Movie object into a movie_bag.
-
-    Args:
-        movie:
-
-    Returns:
-        A movie bag.
-    """
-    movie_bag = MovieBag(
-        id=movie.id,
-        created=movie.created,
-        updated=movie.updated,
-        title=movie.title,
-        year=MovieInteger(movie.year),
-    )
-
-    if movie.notes:
-        movie_bag["notes"] = movie.notes
-    if movie.duration:
-        movie_bag["duration"] = MovieInteger(movie.duration)
-    if movie.synopsis:
-        movie_bag["synopsis"] = movie.synopsis
-    if movie.stars:
-        movie_bag["stars"] = {person.name for person in movie.stars}
-    if movie.directors:
-        movie_bag["directors"] = {person.name for person in movie.directors}
-    if movie.tags:
-        movie_bag["movie_tags"] = {tag.text for tag in movie.tags}
-
-    return movie_bag
+class MovieExists(IntegrityError):
+    pass
 
 
-def _select_movie(session: Session, *, title: str, year: int) -> schema.Movie:
-    """Selects and returns a single movie.
+class InvalidReleaseYear(IntegrityError):
+    pass
+
+
+class TagNotFound(NoResultFound):
+    pass
+
+
+class TagExists(IntegrityError):
+    pass
+
+
+def _select_movie(session: Session, *, movie_bag: MovieBag) -> schema.Movie:
+    """Selects and returns a single ORM movie.
 
     Args:
         session:
-        title:
-        year:
-
-    Returns:
-        A movie.
+        movie_bag:
+            id: ignored
+            created: ignored
+            updated: ignored
+            title: required
+            year: required
+            duration: ignored
+            directors: ignored
+            stars: ignored
+            synopsis: ignored
+            notes: ignored
+            movie_tags: ignored
     """
     # noinspection PyTypeChecker
     statement = (
         select(schema.Movie)
-        .where(schema.Movie.title == title)
-        .where(schema.Movie.year == year)
+        .where(schema.Movie.title == movie_bag["title"])
+        .where(schema.Movie.year == int(movie_bag["year"]))
     )
-    return session.scalars(statement).one()
+    movie = session.scalars(statement).one()
+    return movie
 
 
-def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | None:
-    """Selects matching movies.
+def _select_all_movies(session: Session) -> set[schema.Movie]:
+    """Selects and returns all ORM movies.
 
     Args:
         session:
-        match: A MovieBag object containing any items to be used as search criteria.
+    """
+    statement = select(schema.Movie)
+    return set(session.scalars(statement).all())
+
+
+def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | None:
+    """Selects and returns matching ORM movies.
+
+    Args:
+        session:
+        match:
+            A movie bag object with the match fields specified below. The id, created,
+            and updated fields are ignored.
+
+            Match patterns are specified in a MovieBag object which can contain none,
+            any, or all the following fields:
+                title. Substring match.
+                year. Contains match.
+                duration. Contains match.
+                directors. Substring set match.
+                stars. Substring set match.
+                synopsis. Substring match.
+                notes. Substring match.
+                movie_tags. Substring set match.
+
+            Exact match. 4 will match `movie.id` = 4
+            Substring match. The substring 'kwai' will match 'Bridge on the River Kwai'.
+            Substring set match. Each item in the set will be matched as a substring
+                match (defined above). The movie will only be selected if every item in
+                the set matches.
+                For a movie with stars {"Edgar Ethelred", "Fanny Fullworthy"}:
+                    {'ethel'} will match
+                    {'ethel', 'worth'} will match
+                    {'ethel', 'bogart'} will not match.
+            Contains match. A movie.year of `1955 in MovieInteger('1950-1960')` is a match.
 
     Returns:
-        Matching movies.
-        Returns None if match argument is an empty dict.
+        The intersection of the ORM movies selected by each field's search criteria.
     """
     statements = []
     for column, criteria in match.items():
@@ -302,61 +532,62 @@ def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | N
         return set(matches)
 
 
-def _select_all_movies(session: Session) -> set[schema.Movie]:
-    """Selects all movies.
-
-    Args:
-        session:
-
-    Returns:
-        All movies.
-    """
-    statement = select(schema.Movie)
-    return set(session.scalars(statement).all())
-
-
-def _add_movie(session: Session, *, movie_bag: MovieBag):
+def _add_movie(*, movie_bag: MovieBag) -> schema.Movie:
     """Add a new movie to the Movie table.
 
     Neither the related tables nor the relationship columns are changed by
     this function. If that is needed use the high level function add_movie.
 
     Args:
-        session:
         movie_bag:
+            id: ignored
+            created: ignored
+            updated: ignored
+            title: required
+            year: required
+            duration: optional
+            directors: ignored
+            stars: ignored
+            synopsis: optional
+            notes: optional
+            movie_tags: ignored
+
+    Returns:
+        The new ORM movie.
     """
     movie = schema.Movie(
         title=movie_bag["title"],
         year=int(movie_bag["year"]),
-        duration=int(movie_bag["duration"]),
-        synopsis=movie_bag["synopsis"],
-        notes=movie_bag["notes"],
     )
-    session.add(movie)
-
-
-def _delete_movie(session: Session, *, movie: schema.Movie):
-    """Delete a movie from the Movie table.
-
-    Related records which have a relationship with the movie will have the relationship
-    deleted. The related record will be otherwise unaffected.
-
-    Args:
-        session:
-        movie:
-    """
-    session.delete(movie)
+    if duration := movie_bag.get("duration"):
+        movie.duration = int(duration)
+    if synopsis := movie_bag.get("synopsis"):
+        movie.synopsis = synopsis
+    if notes := movie_bag.get("notes"):
+        movie.notes = notes
+    return movie
 
 
 def _edit_movie(*, movie: schema.Movie, edit_fields: MovieBag):
-    """Edit movie with edit_fields.
+    """Edits a movie.
 
     Neither the related tables nor the relationship columns are changed by
     this function.  If that is needed use the high level function edit_movie.
 
     Args:
-        movie:
-        edit_fields:
+        movie: ORM Movie.
+        edit_fields: movie bag
+            id: ignored
+            created: ignored
+            updated: ignored
+            title: optional
+            year: optional
+            duration: optional
+            directors: ignored
+            stars: ignored
+            synopsis: optional
+            notes: optional
+            movie_tags: ignored
     """
     for column, value in edit_fields.items():
         match column:
@@ -372,44 +603,138 @@ def _edit_movie(*, movie: schema.Movie, edit_fields: MovieBag):
                 movie.notes = value
 
 
-def _select_person(session: Session, *, match: str) -> schema.Person:
-    """Returns a single person.
+def _delete_movie(session: Session, *, movie: schema.Movie):
+    """Delete a movie from the Movie table.
+
+    Related records which have a relationship with the movie will have the relationship
+    deleted. The related record will be otherwise unaffected.
+
+    Args:
+        session:
+        movie: ORM movie.
+    """
+    session.delete(movie)
+
+
+def _convert_to_movie_bag(movie: schema.Movie) -> MovieBag:
+    """Converts a Movie object into a movie_bag.
+
+    Args:
+        movie:
+
+    Returns:
+        A movie bag.
+    """
+    movie_bag = MovieBag(
+        id=movie.id,
+        created=movie.created,
+        updated=movie.updated,
+        title=movie.title,
+        year=MovieInteger(movie.year),
+    )
+
+    if movie.notes:
+        movie_bag["notes"] = movie.notes
+    if movie.duration:
+        movie_bag["duration"] = MovieInteger(movie.duration)
+    if movie.synopsis:
+        movie_bag["synopsis"] = movie.synopsis
+    if movie.stars:
+        movie_bag["stars"] = {person.name for person in movie.stars}
+    if movie.directors:
+        movie_bag["directors"] = {person.name for person in movie.directors}
+    if movie.tags:
+        movie_bag["movie_tags"] = {tag.text for tag in movie.tags}
+
+    return movie_bag
+
+
+def _select_person(session: Session, *, name: str) -> schema.Person:
+    """Returns an ORM person.
 
     Args:
         session: The current session.
-        match: Search text
-    Returns:
-        A person.
+        name: Name of person
     """
-    statement = select(schema.Person).where(schema.Person.name.like(f"%{match}%"))
+    # noinspection PyTypeChecker
+    statement = select(schema.Person).where(schema.Person.name == name)
     return session.scalars(statement).one()
 
 
-def _match_people(session: Session, *, match: str) -> set[schema.Person]:
-    """Selects a people with a name that contains the match substring.
+def _select_people(session: Session, *, names: set[str]) -> set[Person]:
+    """Returns a set of ORM persons matching the names.
+
+    The names argument must contain full names and not substrings. See the
+    _match_people function for substring matching.
 
     Args:
         session: The current session.
-        match: Name substring
+        names: Names of people.
+    """
+    statement = select(schema.Person).where(schema.Person.name.in_(list(names)))
+    return set(session.scalars(statement).all())
+
+
+def _select_all_people(session: Session) -> set[Person]:
+    """Returns a set of all ORM persons.
+
+    Args:
+        session: The current session.
+    """
+    statement = select(schema.Person)
+    return set(session.scalars(statement).all())
+
+
+def _match_people(session: Session, *, match: str) -> set[schema.Person]:
+    """Selects people with names that contain the substring.
+
+    Args:
+        session: The current session.
+        match: Substring
     Returns:
-        None or more people.
+        A set of ORM persons which may be empty.
     """
     statement = select(schema.Person).where(schema.Person.name.like(f"%{match}%"))
     return set(session.scalars(statement).all())
 
 
-def _add_person(session: Session, *, name: str):
-    """Add a person to the Person table.
+def _add_person(session: Session, *, name: str) -> schema.Person:
+    """Adds a person to the ORM Person table..
 
     Args:
         session:
         name: Name of person.
+
+    Returns:
+        An ORM Person.
     """
-    session.add(schema.Person(name=name))
+    person = schema.Person(name=name)
+    session.add(person)
+    return person
+
+
+def _getadd_people(session: Session, *, names: set[str]) -> set[schema.Person]:
+    """Returns ORM Persons adding them to the table if they are not already present.
+
+    Args:
+        session:
+        names:
+
+    Returns:
+        A set of ORM Persons
+    """
+    people = set()
+    for name in names:
+        try:
+            person = _select_person(session, name=name)
+        except NoResultFound:
+            person = _add_person(session, name=name)
+        people.add(person)
+    return people
 
 
 def _delete_person(session: Session, *, person: schema.Person):
-    """Deletes a tag.
+    """Deletes an ORM Person.
 
     Args:
         session:
@@ -418,62 +743,71 @@ def _delete_person(session: Session, *, person: schema.Person):
     session.delete(person)
 
 
-def _delete_orphans(session: Session, candidates: set[schema.Person]):
+def _delete_orphans(session: Session, candidates: set[schema.Person]) -> int:
+    """Deletes ORM Persons with no relationship to any ORM Movie.
+
+    Args:
+        session:
+        candidates:
+
+    Returns:
+        A count of orphans deleted.
+    """
+    count = 0
     for person in candidates:
         if person.star_of_movies != set():
             continue
         if person.director_of_movies != set():
             continue
+        count = +1
         session.delete(person)
+    return count
 
 
-def _match_tag(session: Session, *, match: str) -> schema.Tag:
-    """Selects a single tag.
+def _select_tag(session: Session, *, text: str) -> schema.Tag:
+    """Selects and returns a single ORM Tag.
 
     Args:
         session: The current session.
-        match: Search text
-    Returns:
-        A tag.
+        text:
     """
-    statement = select(schema.Tag).where(schema.Tag.text.like(f"%{match}%"))
+    # noinspection PyTypeChecker
+    statement = select(schema.Tag).where(schema.Tag.text == text)
     return session.scalars(statement).one()
 
 
 def _select_all_tags(session: Session) -> set[schema.Tag]:
-    """Returns a list of every tag.
+    """Returns a set of all ORM Tags.
 
     Args:
         session:
-    Returns:
-        A set of tags.
     """
     statement = select(schema.Tag)
     return set(session.scalars(statement).all())
 
 
-def _add_tag(session: Session, *, tag_text: str):
-    """Adds new tags from a tag text.
+def _add_tag(session: Session, *, text: str):
+    """Adds a new ORM Tag.
 
     Args:
         session:
-        tag_text:
+        text:
     """
-    session.add(schema.Tag(text=tag_text))
+    session.add(schema.Tag(text=text))
 
 
-def _add_tags(session: Session, *, tag_texts: set[str]):
-    """Adds new tags from a list of tag texts.
+def _add_tags(session: Session, *, texts: set[str]):
+    """Adds new ORM Tags.
 
     Args:
         session:
-        tag_texts:
+        texts:
     """
-    session.add_all([schema.Tag(text=tag) for tag in tag_texts])
+    session.add_all([schema.Tag(text=tag) for tag in texts])
 
 
 def _edit_tag(*, tag: schema.Tag, replacement_text: str):
-    """
+    """Edits an ORM Tag.
 
     Args:
         tag:
@@ -483,7 +817,7 @@ def _edit_tag(*, tag: schema.Tag, replacement_text: str):
 
 
 def _delete_tag(session: Session, *, tag: schema.Tag):
-    """Deletes a tag.
+    """Deletes an ORM Tag.
 
     Args:
         session:

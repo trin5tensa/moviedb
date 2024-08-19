@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/3/24, 6:09 AM by stephen.
+#  Last modified 8/19/24, 2:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -72,23 +72,16 @@ MOVIEBAG_4 = MovieBag(
 )
 
 
-class IllegalBranching(Exception):
-    """Raised when the program takes a branch which ought to have been
-    logically impossible."""
-
-    # todo delete this unused class
-
-
 def test__add_movie(db_session):
-    tables._add_movie(db_session, movie_bag=MOVIEBAG_2)
+    movie = tables._add_movie(movie_bag=MOVIEBAG_2)
+    db_session.add(movie)
+    db_session.flush()
 
-    # noinspection PyTypeChecker
-    statement = (
-        tables.select(schema.Movie)
-        .where(schema.Movie.title == MOVIEBAG_2["title"])
-        .where(schema.Movie.year == int(MOVIEBAG_2["year"]))
-    )
-    movie = db_session.scalars(statement).one()
+    check.is_instance(movie.id, int)
+    check.is_instance(movie.created, schema.datetime)
+    check.is_instance(movie.updated, schema.datetime)
+    check.equal(movie.title, MOVIEBAG_2["title"])
+    check.equal(movie.year, int(MOVIEBAG_2["year"]))
     check.equal(movie.duration, int(MOVIEBAG_2["duration"]))
     check.equal(movie.synopsis, MOVIEBAG_2["synopsis"])
     check.equal(movie.notes, MOVIEBAG_2["notes"])
@@ -140,19 +133,17 @@ def test__edit_movie(load_movies, db_session):
         .where(schema.Movie.year == 4244)
     )
     movie = db_session.scalars(statement).one()
+
     check.equal(movie.duration, int(MOVIEBAG_2["duration"]))
     check.equal(movie.synopsis, MOVIEBAG_2["synopsis"])
     check.equal(movie.notes, MOVIEBAG_2["notes"])
 
 
 def test__select_movie(load_movies, db_session: Session):
-    title = MOVIEBAG_2["title"]
-    year = int(MOVIEBAG_2["year"])
+    movie = tables._select_movie(db_session, movie_bag=MOVIEBAG_2)
 
-    movie = tables._select_movie(db_session, title=title, year=year)
-
-    check.equal(movie.title, title)
-    check.equal(movie.year, year)
+    check.equal(movie.title, MOVIEBAG_2["title"])
+    check.equal(movie.year, int(MOVIEBAG_2["year"]))
 
 
 def test__match_0_movie(load_movies, db_session: Session):
@@ -206,9 +197,21 @@ def test__select_all_movies(load_movies, db_session: Session):
 
 
 def test__select_person(load_people, db_session: Session):
-    person = tables._select_person(db_session, match=PERSON_SOUGHT)
+    person = tables._select_person(db_session, name=PERSON_SOUGHT)
 
     assert person.name == PERSON_SOUGHT
+
+
+def test__select_people(load_people, db_session: Session):
+    people = tables._select_people(db_session, names=PEOPLE_NAMES)
+
+    assert {person.name for person in people} == PEOPLE_NAMES
+
+
+def test__select_all_people(load_people, db_session: Session):
+    people = tables._select_all_people(db_session)
+
+    assert {person.name for person in people} == PEOPLE_NAMES
 
 
 def test__match_people(load_people, db_session: Session):
@@ -222,25 +225,23 @@ def test__add_person(load_people, db_session: Session):
     new_person_name = "Test D Dougal"
     tables._add_person(db_session, name=new_person_name)
 
-    person = tables._select_person(db_session, match=new_person_name)
+    person = tables._select_person(db_session, name=new_person_name)
     assert person.name == new_person_name
 
 
 def test__delete_person(load_people, db_session: Session):
-    person = tables._select_person(db_session, match=PERSON_MATCH)
+    person = tables._select_person(db_session, name=PERSON_SOUGHT)
 
     tables._delete_person(db_session, person=person)
 
     with pytest.raises(NoResultFound):
-        tables._select_person(db_session, match=PERSON_MATCH)
+        tables._select_person(db_session, name=PERSON_SOUGHT)
 
 
 def test__delete_orphans(load_movies, session_engine, db_session: Session):
     orphan = schema.Person(name="Nigel Nobody")
     db_session.add(orphan)
-
-    statement = tables.select(schema.Person)
-    all_people = db_session.scalars(statement).all()
+    all_people = tables._select_all_people(db_session)
 
     orphans = set()
     non_orphans = set()
@@ -250,16 +251,16 @@ def test__delete_orphans(load_movies, session_engine, db_session: Session):
         else:
             non_orphans.add(person)
 
-    tables._delete_orphans(db_session, candidates=orphans | non_orphans)
+    count = tables._delete_orphans(db_session, candidates=orphans | non_orphans)
 
     statement = tables.select(schema.Person)
     all_people = db_session.scalars(statement).all()
-    assert set(all_people) == non_orphans
+    check.equal(set(all_people), non_orphans)
+    check.equal(count, 1)
 
 
 def test__select_tag(load_tags, db_session: Session):
-    tag = tables._match_tag(db_session, match=TAG_MATCH)
-
+    tag = tables._select_tag(db_session, text=SOUGHT_TAG)
     assert tag.text == SOUGHT_TAG
 
 
@@ -272,39 +273,39 @@ def test__select_all_tags(load_tags, db_session: Session):
 
 def test__add_tag(load_tags, db_session: Session):
     new_tag = "test add tag garbage garbage"
-    tables._add_tag(db_session, tag_text=new_tag)
+    tables._add_tag(db_session, text=new_tag)
 
     # 'load_tags' loads three 'test tag […]'s. This is 'test add tag'.
-    tag = tables._match_tag(db_session, match=new_tag[:12])
+    tag = tables._select_tag(db_session, text=new_tag)
     assert tag.text == new_tag
 
 
 def test__add_tags(load_tags, db_session: Session):
     new_tag = "test add tag garbage garbage"
-    tables._add_tags(db_session, tag_texts=[new_tag])
+    tables._add_tags(db_session, texts={new_tag})
 
     # 'load_tags' loads three 'test tag […]'s. This is 'test add tag'.
-    tag = tables._match_tag(db_session, match=new_tag[:12])
+    tag = tables._select_tag(db_session, text=new_tag)
     assert tag.text == new_tag
 
 
 def test__edit_tag(load_tags, db_session: Session):
     replacement_text = "test edited tag"
-    tag = tables._match_tag(db_session, match=SOUGHT_TAG)
+    tag = tables._select_tag(db_session, text=SOUGHT_TAG)
 
     tables._edit_tag(tag=tag, replacement_text=replacement_text)
 
-    tag = tables._match_tag(db_session, match=replacement_text)
+    tag = tables._select_tag(db_session, text=replacement_text)
     assert tag.text == replacement_text
 
 
 def test__delete_tag(load_tags, db_session: Session):
-    tag = tables._match_tag(db_session, match=SOUGHT_TAG)
+    tag = tables._select_tag(db_session, text=SOUGHT_TAG)
 
     tables._delete_tag(db_session, tag=tag)
 
     with check.raises(NoResultFound):
-        tables._match_tag(db_session, match=SOUGHT_TAG)
+        tables._select_tag(db_session, text=SOUGHT_TAG)
 
 
 @pytest.fixture(scope="session")
@@ -401,7 +402,6 @@ def load_movies(load_tags, db_session: Session):
         movie = schema.Movie(
             title=movie_bag["title"],
             year=int(movie_bag["year"]),
-            # todo What does SQL turn 'None' into?  '' or void?
             duration=int(duration) if duration else None,
             directors=directors,
             stars=stars,

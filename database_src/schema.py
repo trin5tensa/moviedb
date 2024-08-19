@@ -1,7 +1,7 @@
 """Schema v1"""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/3/24, 6:09 AM by stephen.
+#  Last modified 8/13/24, 9:59 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -59,8 +59,8 @@ class Movie(Base):
     __tablename__ = "movie"
     __table_args__ = (
         UniqueConstraint("title", "year"),
-        CheckConstraint(f"year>={MUYBRIDGE}"),
-        CheckConstraint(f"year<{MAX_YEAR}"),
+        CheckConstraint(f"year>{MUYBRIDGE}"),
+        CheckConstraint(f"year<={MAX_YEAR}"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -87,10 +87,16 @@ class Movie(Base):
         return (
             f"{self.__class__.__qualname__}("
             f"id={self.id!r}, "
+            f"created={self.created!r}, "
+            f"created={self.created!r}, "
+            f"updated={self.updated!r}, "
             f"title={self.title!r}, "
-            f"year={self.year!r}), "
-            f"stars={self.stars!r}), "
-            f"directors={self.directors!r}), "
+            f"year={self.year!r}, "
+            f"duration={self.duration!r}, "
+            f"synopsis={self.synopsis!r}, "
+            f"notes={self.notes!r}, "
+            f"stars={self.stars!r}, "
+            f"directors={self.directors!r}, "
             f"tags={self.tags!r}), "
         )
 
