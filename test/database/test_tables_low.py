@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/19/24, 1:21 PM by stephen.
+#  Last modified 8/19/24, 2:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -208,6 +208,12 @@ def test__select_people(load_people, db_session: Session):
     assert {person.name for person in people} == PEOPLE_NAMES
 
 
+def test__select_all_people(load_people, db_session: Session):
+    people = tables._select_all_people(db_session)
+
+    assert {person.name for person in people} == PEOPLE_NAMES
+
+
 def test__match_people(load_people, db_session: Session):
     people = tables._match_people(db_session, match=PEOPLE_PREFIX)
 
@@ -235,9 +241,7 @@ def test__delete_person(load_people, db_session: Session):
 def test__delete_orphans(load_movies, session_engine, db_session: Session):
     orphan = schema.Person(name="Nigel Nobody")
     db_session.add(orphan)
-
-    statement = tables.select(schema.Person)
-    all_people = db_session.scalars(statement).all()
+    all_people = tables._select_all_people(db_session)
 
     orphans = set()
     non_orphans = set()
@@ -247,11 +251,12 @@ def test__delete_orphans(load_movies, session_engine, db_session: Session):
         else:
             non_orphans.add(person)
 
-    tables._delete_orphans(db_session, candidates=orphans | non_orphans)
+    count = tables._delete_orphans(db_session, candidates=orphans | non_orphans)
 
     statement = tables.select(schema.Person)
     all_people = db_session.scalars(statement).all()
-    assert set(all_people) == non_orphans
+    check.equal(set(all_people), non_orphans)
+    check.equal(count, 1)
 
 
 def test__select_tag(load_tags, db_session: Session):

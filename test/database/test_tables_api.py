@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/19/24, 1:21 PM by stephen.
+#  Last modified 8/19/24, 2:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -165,7 +165,7 @@ def test_add_movie(test_database):
         )
 
 
-def test_add_movie_with_invalid_tag(test_database, logged):
+def test_add_movie_with_invalid_tag(test_database, log_error):
     movie_bag = MovieBag(
         title="Test Add Movie",
         year=MovieInteger(5042),
@@ -179,13 +179,13 @@ def test_add_movie_with_invalid_tag(test_database, logged):
         ):
             tables.add_movie(movie_bag=movie_bag)
     check.equal(
-        logged,
+        log_error,
         [(("No row was found when one was required", "Bad tag: {'garbage'}"), {})],
         msg="TagNotFound was not logged.",
     )
 
 
-def test_add_movie_with_title_year_duplication_error(test_database, logged):
+def test_add_movie_with_title_year_duplication_error(test_database, log_error):
     with check:
         with pytest.raises(
             tables.MovieExists,
@@ -193,7 +193,7 @@ def test_add_movie_with_title_year_duplication_error(test_database, logged):
         ):
             tables.add_movie(movie_bag=MOVIEBAG_1)
     check.equal(
-        logged,
+        log_error,
         [
             (
                 (
@@ -207,7 +207,7 @@ def test_add_movie_with_title_year_duplication_error(test_database, logged):
     )
 
 
-def test_add_movie_with_too_early_year(test_database, logged):
+def test_add_movie_with_too_early_year(test_database, log_error):
     movie_bag = MovieBag(
         title="Test Add Movie",
         year=MovieInteger(0),
@@ -220,7 +220,7 @@ def test_add_movie_with_too_early_year(test_database, logged):
         ):
             tables.add_movie(movie_bag=movie_bag)
     check.equal(
-        logged,
+        log_error,
         [
             (
                 (
@@ -233,7 +233,7 @@ def test_add_movie_with_too_early_year(test_database, logged):
     )
 
 
-def test_add_movie_with_too_late_year(test_database, logged):
+def test_add_movie_with_too_late_year(test_database, log_error):
     movie_bag = MovieBag(
         title="Test Add Movie",
         year=MovieInteger(424242),
@@ -246,7 +246,7 @@ def test_add_movie_with_too_late_year(test_database, logged):
         ):
             tables.add_movie(movie_bag=movie_bag)
     check.equal(
-        logged,
+        log_error,
         [
             (
                 (
@@ -319,7 +319,7 @@ def test_edit_movie(test_database):
         )
 
 
-def test_edit_movie_with_invalid_tag(test_database, logged):
+def test_edit_movie_with_invalid_tag(test_database, log_error):
     old_movie_bag = MovieBag(
         title="Test Edit Movie",
         year=MovieInteger(5042),
@@ -339,13 +339,13 @@ def test_edit_movie_with_invalid_tag(test_database, logged):
                 new_movie_bag=new_movie_bag,
             )
     check.equal(
-        logged,
+        log_error,
         [(("No row was found when one was required", "Bad tag: {'garbage'}"), {})],
         msg="TagNotFound was not logged.",
     )
 
 
-def test_edit_movie_with_title_year_duplication_error(test_database, logged):
+def test_edit_movie_with_title_year_duplication_error(test_database, log_error):
     old_movie_bag = MovieBag(
         title="Test Edit Movie",
         year=MovieInteger(5042),
@@ -359,7 +359,7 @@ def test_edit_movie_with_title_year_duplication_error(test_database, logged):
         ):
             tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=MOVIEBAG_1)
     check.equal(
-        logged,
+        log_error,
         [
             (
                 (
@@ -372,7 +372,7 @@ def test_edit_movie_with_title_year_duplication_error(test_database, logged):
     )
 
 
-def test_edit_movie_with_too_early_year(test_database, logged):
+def test_edit_movie_with_too_early_year(test_database, log_error):
     old_movie_bag = MovieBag(
         title="Test Edit Movie",
         year=MovieInteger(5042),
@@ -389,7 +389,7 @@ def test_edit_movie_with_too_early_year(test_database, logged):
         ):
             tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag)
     check.equal(
-        logged,
+        log_error,
         [
             (
                 (
@@ -402,7 +402,7 @@ def test_edit_movie_with_too_early_year(test_database, logged):
     )
 
 
-def test_edit_movie_with_too_late_year(test_database, logged):
+def test_edit_movie_with_too_late_year(test_database, log_error):
     old_movie_bag = MovieBag(
         title="Test Edit Movie",
         year=MovieInteger(5042),
@@ -419,7 +419,7 @@ def test_edit_movie_with_too_late_year(test_database, logged):
         ):
             tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag)
     check.equal(
-        logged,
+        log_error,
         [
             (
                 (
@@ -493,7 +493,7 @@ def test_add_tag_text(test_database):
     assert tags & {new_tag} == {new_tag}
 
 
-def test_add_duplicate_tag_logs_and_raises_exception(test_database, logged):
+def test_add_duplicate_tag_logs_and_raises_exception(test_database, log_error):
     new_tag = "test new tag"
     tables.add_tag(tag_text=new_tag)
 
@@ -505,13 +505,13 @@ def test_add_duplicate_tag_logs_and_raises_exception(test_database, logged):
             tables.add_tag(tag_text=new_tag)
 
     check.equal(
-        logged,
+        log_error,
         [(("(sqlite3.IntegrityError) UNIQUE constraint failed: tag.text",), {})],
         msg="IntegrityError was not logged.",
     )
 
 
-def test_add_tags(test_database, logged):
+def test_add_tags(test_database, log_error):
     new_tag = "test new tag"
     tables.add_tags(tag_texts={new_tag})
 
@@ -522,7 +522,7 @@ def test_add_tags(test_database, logged):
         ):
             tables.add_tags(tag_texts={new_tag})
     check.equal(
-        logged,
+        log_error,
         [(("(sqlite3.IntegrityError) UNIQUE constraint failed: tag.text",), {})],
         msg="IntegrityError was not logged.",
     )
@@ -539,20 +539,20 @@ def test_edit_tag(test_database):
     check.equal(tags_remaining & {new_tag_text}, {new_tag_text})
 
 
-def test_edit_missing_tag_logs_and_raises_exception(test_database, logged):
+def test_edit_missing_tag_logs_and_raises_exception(test_database, log_error):
     tag_text = "garbage"
 
     with check:
         with pytest.raises(tables.TagNotFound):
             tables.edit_tag(old_tag_text=tag_text, new_tag_text=tag_text)
     check.equal(
-        logged,
+        log_error,
         [(("No row was found when one was required",), {})],
         msg="NoResultFound was not logged.",
     )
 
 
-def test_edit_duplicate_tag_text_logs_and_raises_exception(test_database, logged):
+def test_edit_duplicate_tag_text_logs_and_raises_exception(test_database, log_error):
     old_tag_text = SOUGHT_TAG
     # Already present in another Tag object.
     new_tag_text = THIRD_TAG
@@ -565,7 +565,7 @@ def test_edit_duplicate_tag_text_logs_and_raises_exception(test_database, logged
             tables.edit_tag(old_tag_text=old_tag_text, new_tag_text=new_tag_text)
             pass
     check.equal(
-        logged,
+        log_error,
         [(("(sqlite3.IntegrityError) UNIQUE constraint failed: tag.text",), {})],
         msg="IntegrityError was not logged.",
     )
@@ -578,9 +578,34 @@ def test_delete_tag(test_database):
     assert tags_remaining & set(SOUGHT_TAG) == set()
 
 
-def test_delete_missing_tag_suppresses_exception(test_database):
+def test_delete_missing_tag_suppresses_exception(test_database, log_error):
     tables.delete_tag(tag_text=SOUGHT_TAG)
     tables.delete_tag(tag_text=SOUGHT_TAG)
+
+
+def test_delete_all_orphans(test_database, log_info):
+    names = {"Mona Marimba", "Nigel Nicholby"}
+    with tables.session_factory() as session:
+        for name in names:
+            tables._add_person(session, name=name)
+        session.commit()
+
+    tables.delete_all_orphans()
+
+    with tables.session_factory() as session:
+        people = tables._select_people(session, names=names)
+        check.equal(people, set())
+        check.equal(
+            log_info,
+            [
+                (
+                    (
+                        "1 Orphan(s) were removed. They should have been removed before now.",
+                    ),
+                    {},
+                )
+            ],
+        )
 
 
 @pytest.fixture(scope="function")
@@ -649,12 +674,24 @@ def test_database(session_engine):
 
 
 @pytest.fixture(scope="function")
-def logged(monkeypatch):
+def log_error(monkeypatch):
     """Logs arguments of calls to logging.error."""
     calls = []
     monkeypatch.setattr(
         tables.logging,
         "error",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+    return calls
+
+
+@pytest.fixture(scope="function")
+def log_info(monkeypatch):
+    """Logs arguments of calls to logging.info."""
+    calls = []
+    monkeypatch.setattr(
+        tables.logging,
+        "info",
         lambda *args, **kwargs: calls.append((args, kwargs)),
     )
     return calls

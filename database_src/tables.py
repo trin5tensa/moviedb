@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/19/24, 1:21 PM by stephen.
+#  Last modified 8/19/24, 2:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,6 +19,7 @@ from sqlalchemy import select, intersect
 from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
+from database import all_tags
 from database_src import schema
 from database_src.schema import Person
 from globalconstants import *
@@ -277,6 +278,25 @@ def delete_movie(*, movie_bag: MovieBag):
             candidate_orphans = set(_select_people(session, names=stars | directors))
             _delete_orphans(session, candidates=candidate_orphans)
             session.commit()
+
+
+def delete_all_orphans():
+    """Deletes all orphans.
+
+    Use Case:
+        It is possible for a movie to be deleted by another process without handling orphan
+        people. THis function should be runat program termination to delete any orphans
+        created in ths manner.
+    """
+    with session_factory() as session:
+        all_people = _select_all_people(session)
+        count = _delete_orphans(session, candidates=all_people)
+        if count:
+            logging.info(
+                f"{count} Orphan(s) were removed. "
+                f"They should have been removed before now."
+            )
+        session.commit()
 
 
 def select_all_tags() -> set[str]:
@@ -650,10 +670,18 @@ def _select_people(session: Session, *, names: set[str]) -> set[Person]:
     Args:
         session: The current session.
         names: Names of people.
-    Returns:
-        A set of ORM Persons.
     """
     statement = select(schema.Person).where(schema.Person.name.in_(list(names)))
+    return set(session.scalars(statement).all())
+
+
+def _select_all_people(session: Session) -> set[Person]:
+    """Returns a set of all ORM persons.
+
+    Args:
+        session: The current session.
+    """
+    statement = select(schema.Person)
     return set(session.scalars(statement).all())
 
 
@@ -715,19 +743,25 @@ def _delete_person(session: Session, *, person: schema.Person):
     session.delete(person)
 
 
-def _delete_orphans(session: Session, candidates: set[schema.Person]):
+def _delete_orphans(session: Session, candidates: set[schema.Person]) -> int:
     """Deletes ORM Persons with no relationship to any ORM Movie.
 
     Args:
         session:
         candidates:
+
+    Returns:
+        A count of orphans deleted.
     """
+    count = 0
     for person in candidates:
         if person.star_of_movies != set():
             continue
         if person.director_of_movies != set():
             continue
+        count = +1
         session.delete(person)
+    return count
 
 
 def _select_tag(session: Session, *, text: str) -> schema.Tag:
