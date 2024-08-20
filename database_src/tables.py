@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/19/24, 2:44 PM by stephen.
+#  Last modified 8/20/24, 8:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,7 +19,6 @@ from sqlalchemy import select, intersect
 from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
-from database import all_tags
 from database_src import schema
 from database_src.schema import Person
 from globalconstants import *
@@ -699,7 +698,7 @@ def _match_people(session: Session, *, match: str) -> set[schema.Person]:
 
 
 def _add_person(session: Session, *, name: str) -> schema.Person:
-    """Adds a person to the ORM Person table..
+    """Adds a person to the ORM Person table.
 
     Args:
         session:
