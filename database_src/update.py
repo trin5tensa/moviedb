@@ -1,7 +1,7 @@
 """Database update functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/29/24, 8:27 AM by stephen.
+#  Last modified 9/3/24, 11:51 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,10 +15,10 @@
 
 from pathlib import Path
 
-from sqlalchemy import MetaData, Engine, create_engine
+from sqlalchemy import MetaData, Engine, create_engine, Table, select
 from sqlalchemy.orm import Session
 
-from globalconstants import MovieBag
+from globalconstants import *
 
 engine: Engine | None = None
 
@@ -130,14 +130,14 @@ def _reflect_data() -> tuple[list[MovieBag], set[str]]:
 
 
 def _reflect_old_tags(session: Session) -> tuple[dict[int, str], int]:
-    """Returns Tag tag indexed by Tag id.
+    """Returns tag texts indexed by tag object id.
 
     Args:
         session:
 
     Returns
-        Dict k: tag id  v: tag.tag
-        Count of tags
+        Tag texts indexed by tag object id.
+        A check count of tag objects.
 
     Pseudocode:
         Reflect old tags table.
@@ -145,38 +145,53 @@ def _reflect_old_tags(session: Session) -> tuple[dict[int, str], int]:
         Get length of result.all().
         Return dict and original tag count.
     """
-    pass
+    metadata_obj = MetaData()
+    old_tags_table = Table("tags", metadata_obj, autoload_with=engine)
+    old_tags = session.execute(select(old_tags_table)).all()
+    new_tags = {tag_id: tag_tag for tag_id, tag_tag in old_tags}
+    return new_tags, len(old_tags)
 
 
 def _reflect_old_movie_tag_links(
     tags: dict[int, str], session: Session
-) -> dict[int, str]:
-    """Returns Tag tag indexed by Movie id.
+) -> tuple[dict[int, set[str]], int]:
+    """Returns lists of tag texts indexed by Movie object id.
 
     Args:
         tags:
         session:
 
+    Returns:
+        Lists of tag texts indexed by Movie object id.
+        A check count of movie tag objects.
+
     Pseudocode:
         Reflect old movie_tag table.
         Select all movie_tag records.
-        Return a dict of movie.id: tag.tag.
+        Return a dict of movie.id: tag.tag list.
     """
-    pass
+    metadata_obj = MetaData()
+    old_movie_tags = Table("movie_tag", metadata_obj, autoload_with=engine)
+    links = session.execute(select(old_movie_tags)).all()
+    movie_id_keys = {movie_tag[0] for movie_tag in links}
+    movie_tag_links = {movie_id: set() for movie_id in movie_id_keys}
+    for movie_id, tag_id in links:
+        movie_tag_links[movie_id].add(tags[tag_id])
+    return movie_tag_links, len(links)
 
 
 def _reflect_old_movie(
-    movie_tags: dict[int, str], session: Session
+    movie_tags: dict[int, set[str]], session: Session
 ) -> tuple[list[MovieBag], int]:
-    """Returns a list of movie_bags with movie_tags item.
+    """Returns a list of movie_bags.
 
     Args:
-        movie_tags:
+        movie_tags: Lists of tag texts indexed by Movie object id.
         session:
 
     Returns:
         A list of movie bags.
-        A count of movie records.
+        A check count of movie records.
 
     Pseudocode:
         Reflect movies table.
@@ -184,8 +199,29 @@ def _reflect_old_movie(
         Get length of result.all().
         Loop though movies:
             Create a dictionary of movie bags keyed on movies.id.
-        Loop through movie_tags:.
+            Add DB0 notes to both notes and synopsis fields
+        Loop through movie_tags:
             Add tag text to movie bag.
-        Return a list of movie_bags.values() and the count of movie records.
+        Return a list of movie_bags.values() and a check count of movie records.
     """
-    pass
+    metadata_obj = MetaData()
+    old_movies_table = Table("movies", metadata_obj, autoload_with=engine)
+    old_movies = session.execute(select(old_movies_table)).all()
+
+    movie_bags = []
+    for movie in old_movies:
+        m_id, m_title, m_year, m_directors, m_notes = movie
+        movie_bag = MovieBag(
+            title=m_title,
+            year=MovieInteger(m_year),
+        )
+        if m_directors:
+            movie_bag["directors"] = m_directors
+        if m_notes:
+            movie_bag["notes"] = m_notes
+            movie_bag["synopsis"] = m_notes
+        if tags := movie_tags.get(m_id):
+            movie_bag["movie_tags"] = tags
+        movie_bags.append(movie_bag)
+
+    return movie_bags, len(old_movies)
