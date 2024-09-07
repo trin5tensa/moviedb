@@ -1,7 +1,7 @@
 """Database update functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/3/24, 11:51 AM by stephen.
+#  Last modified 9/7/24, 7:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,12 +13,17 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import logging
 from pathlib import Path
 
 from sqlalchemy import MetaData, Engine, create_engine, Table, select
 from sqlalchemy.orm import Session
 
 from globalconstants import *
+
+CHECK_ZERO_TAGS = "Record count mismatch on tags table."
+CHECK_ZERO_MOVIE_TAG_LINKS = "Record count mismatch on movie tag links table."
+CHECK_ZERO_MOVIES = "Record count mismatch on movie table."
 
 engine: Engine | None = None
 
@@ -110,23 +115,44 @@ def _reflect_data() -> tuple[list[MovieBag], set[str]]:
     """
     Collect data from the old database and return a list of movie bags.
 
-    A list of tag texts is returned. The same texts are included in the movie bags. This
-    duplication is intended to enable the use of existing update functions.
+    A list of tag texts is returned. The same texts are included in the movie
+    bags. Both are in the format expected by the functions of the
+    database.tables module.
 
-    Pseudocode:
-        DO NOT delete v0 data. (Will happen when DBv1 is updated to new schema).
-        With Session(old_engine) as session:
-            Call _reflect_old_tags(session) ->
-                dict of tags (tag key), count.
-            Call _reflect_movie_tag_links(dict of tags (tag key), session) ->
-                dict of tags (movie key).
-            Call _reflect_movies(dict of tags (movie key), session) ->
-                list of movie bags, count.
-        Check lists match record counts and
-            log and raise DatabaseUpdateCheckZeroError.
-        Return movies and tags.
+    Raises:
+        DatabaseUpdateCheckZeroError if any of the following checks fail:
+            Tag list length not equal to the number of old tag records.
+            Movie tag links not equal to number of old movie_tag records.
+            Movie bag list length not equal to number of old movie records.
+
+    Returns:
+        A list of movie bags.
+        A set of tag texts.
     """
-    pass
+    with Session(engine) as session:
+        old_tags, old_tags_check_count = _reflect_old_tags(session)
+        old_movie_tag_links, old_movie_tag_links_count = _reflect_old_movie_tag_links(
+            old_tags, session
+        )
+        movie_bags, movie_bags_count = _reflect_old_movie(old_movie_tag_links, session)
+
+        if old_tags_check_count != len(old_tags):
+            logging.error(DatabaseUpdateCheckZeroError, CHECK_ZERO_TAGS)
+            raise DatabaseUpdateCheckZeroError(CHECK_ZERO_TAGS)
+
+        links_count = 0
+        for movie_bag in movie_bags:
+            movie_tag_count = len(movie_bag.get("movie_tags", set()))
+            links_count += movie_tag_count
+        if old_movie_tag_links_count != links_count:
+            logging.error(DatabaseUpdateCheckZeroError, CHECK_ZERO_MOVIE_TAG_LINKS)
+            raise DatabaseUpdateCheckZeroError(CHECK_ZERO_MOVIE_TAG_LINKS)
+
+        if movie_bags_count != len(movie_bags):
+            logging.error(DatabaseUpdateCheckZeroError, CHECK_ZERO_MOVIES)
+            raise DatabaseUpdateCheckZeroError(CHECK_ZERO_MOVIES)
+
+    return movie_bags, set(old_tags.values())
 
 
 def _reflect_old_tags(session: Session) -> tuple[dict[int, str], int]:
@@ -138,12 +164,6 @@ def _reflect_old_tags(session: Session) -> tuple[dict[int, str], int]:
     Returns
         Tag texts indexed by tag object id.
         A check count of tag objects.
-
-    Pseudocode:
-        Reflect old tags table.
-        Select all tag records.
-        Get length of result.all().
-        Return dict and original tag count.
     """
     metadata_obj = MetaData()
     old_tags_table = Table("tags", metadata_obj, autoload_with=engine)
@@ -164,11 +184,6 @@ def _reflect_old_movie_tag_links(
     Returns:
         Lists of tag texts indexed by Movie object id.
         A check count of movie tag objects.
-
-    Pseudocode:
-        Reflect old movie_tag table.
-        Select all movie_tag records.
-        Return a dict of movie.id: tag.tag list.
     """
     metadata_obj = MetaData()
     old_movie_tags = Table("movie_tag", metadata_obj, autoload_with=engine)
@@ -192,17 +207,6 @@ def _reflect_old_movie(
     Returns:
         A list of movie bags.
         A check count of movie records.
-
-    Pseudocode:
-        Reflect movies table.
-        Select all movie records.
-        Get length of result.all().
-        Loop though movies:
-            Create a dictionary of movie bags keyed on movies.id.
-            Add DB0 notes to both notes and synopsis fields
-        Loop through movie_tags:
-            Add tag text to movie bag.
-        Return a list of movie_bags.values() and a check count of movie records.
     """
     metadata_obj = MetaData()
     old_movies_table = Table("movies", metadata_obj, autoload_with=engine)

@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/3/24, 11:51 AM by stephen.
+#  Last modified 9/7/24, 7:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,6 +12,24 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import math
+
+#  Copyright© 2024. Stephen Rigden.
+#  Last modified 9/7/24, 7:33 AM by stephen.
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+from functools import partial
+from typing import Tuple, Any
 
 import pytest
 from pytest_check import check
@@ -30,6 +48,112 @@ from sqlalchemy.orm import Session
 
 from database_src import update
 from globalconstants import MovieInteger, MovieBag
+
+
+def test__reflect_data(create_test_database, db_session):
+    tag_table, movie_tag_table, movies_table = create_test_database
+    old_tags = _get_old_tags(tag_table, db_session)
+    tag_links, _ = _get_old_movie_tag_links(old_tags, movie_tag_table, db_session)
+    expected_bags, _ = _get_old_movies(movies_table, tag_links, db_session)
+    expected_tags = set(old_tags.values())
+
+    movie_bags, tags = update._reflect_data()
+
+    check.equal(movie_bags, expected_bags)
+    check.equal(tags, expected_tags)
+
+
+def test__reflect_data_with_bad_tag_count(
+    create_test_database, db_session, monkeypatch, log_error
+):
+    tag_table, movie_tag_table, movies_table = create_test_database
+    old_tags = _get_old_tags(tag_table, db_session)
+    monkeypatch.setattr(
+        update, "_reflect_old_tags", partial(_reflect_old_tags_badly, old_tags)
+    )
+
+    with check:
+        with pytest.raises(
+            update.DatabaseUpdateCheckZeroError, match=update.CHECK_ZERO_TAGS
+        ):
+            update._reflect_data()
+
+    check.equal(
+        log_error,
+        [
+            (
+                (update.DatabaseUpdateCheckZeroError, update.CHECK_ZERO_TAGS),
+                {},
+            )
+        ],
+    )
+
+
+def test__reflect_data_with_bad_movie_tag_link_count(
+    create_test_database, db_session, monkeypatch, log_error
+):
+    tag_table, movie_tag_table, movies_table = create_test_database
+    old_tags = _get_old_tags(tag_table, db_session)
+    tag_links, _ = _get_old_movie_tag_links(old_tags, movie_tag_table, db_session)
+
+    monkeypatch.setattr(
+        update,
+        "_reflect_old_movie_tag_links",
+        partial(_reflect_old_movie_tag_links_badly, tag_links),
+    )
+
+    with check:
+        with pytest.raises(
+            update.DatabaseUpdateCheckZeroError, match=update.CHECK_ZERO_MOVIE_TAG_LINKS
+        ):
+            update._reflect_data()
+
+    check.equal(
+        log_error,
+        [
+            (
+                (
+                    update.DatabaseUpdateCheckZeroError,
+                    update.CHECK_ZERO_MOVIE_TAG_LINKS,
+                ),
+                {},
+            )
+        ],
+    )
+
+
+def test__reflect_data_with_bad_movie_count(
+    create_test_database, db_session, monkeypatch, log_error
+):
+    tag_table, movie_tag_table, movies_table = create_test_database
+    old_tags = _get_old_tags(tag_table, db_session)
+    tag_links, _ = _get_old_movie_tag_links(old_tags, movie_tag_table, db_session)
+    expected_bags, _ = _get_old_movies(movies_table, tag_links, db_session)
+
+    monkeypatch.setattr(
+        update,
+        "_reflect_old_movie",
+        partial(_reflect_old_movie_badly, expected_bags),
+    )
+
+    with check:
+        with pytest.raises(
+            update.DatabaseUpdateCheckZeroError, match=update.CHECK_ZERO_MOVIES
+        ):
+            update._reflect_data()
+
+    check.equal(
+        log_error,
+        [
+            (
+                (
+                    update.DatabaseUpdateCheckZeroError,
+                    update.CHECK_ZERO_MOVIES,
+                ),
+                {},
+            )
+        ],
+    )
 
 
 def test__reflect_old_tags(create_test_database, db_session):
@@ -90,6 +214,25 @@ def _get_old_movie_tag_links(
         expected_links[movie_id].add(old_tags[tag_id])
 
     return expected_links, old_movie_links
+
+
+# noinspection PyUnusedLocal
+def _reflect_old_tags_badly(old_tags, session) -> tuple[Any, float]:
+    return old_tags, math.nan
+
+
+# noinspection PyUnusedLocal
+def _reflect_old_movie_tag_links_badly(
+    tag_links, old_tags, session
+) -> tuple[dict[int, str], float]:
+    return tag_links, math.nan
+
+
+# noinspection PyUnusedLocal
+def _reflect_old_movie_badly(
+    expected_bags, movie_tags, session
+) -> tuple[dict[int, str], float]:
+    return expected_bags, math.nan
 
 
 def _get_old_movies(
@@ -203,14 +346,26 @@ def create_test_database(session_engine: Engine):
         # todo delete the following print suite
         statement = select(tag_table)
         result = session.execute(statement).all()
-        print(f"f {result=}")
+        print(f"fix {result=}")
         statement = select(movies_table)
         result = session.execute(statement).all()
-        print(f"f {result=}")
+        print(f"fix {result=}")
         statement = select(movie_tag_table)
         result = session.execute(statement).all()
-        print(f"f {result=}")
+        print(f"fix {result=}")
 
         session.commit()
 
     return tag_table, movie_tag_table, movies_table
+
+
+@pytest.fixture(scope="function")
+def log_error(monkeypatch):
+    """Logs arguments of calls to logging.error."""
+    calls = []
+    monkeypatch.setattr(
+        update.logging,
+        "error",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+    return calls
