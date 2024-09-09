@@ -1,7 +1,7 @@
 """Database update functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/7/24, 7:37 AM by stephen.
+#  Last modified 9/9/24, 2:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,11 +16,13 @@
 import logging
 from pathlib import Path
 
-from sqlalchemy import MetaData, Engine, create_engine, Table, select
+from sqlalchemy import MetaData, Engine, Table, select, create_engine
 from sqlalchemy.orm import Session
 
 from globalconstants import *
 
+DIALECT = "sqlite+pysqlite:///"
+INFO_UPDATE_V0_STARTING = "The update from the v0 database is starting."
 CHECK_ZERO_TAGS = "Record count mismatch on tags table."
 CHECK_ZERO_MOVIE_TAG_LINKS = "Record count mismatch on movie tag links table."
 CHECK_ZERO_MOVIES = "Record count mismatch on movie table."
@@ -45,14 +47,13 @@ def update_old_database(
         A tuple of:
             A list of MovieBags
             A set of tag texts.
-
-    Pseudocode:
-        match case old_version == DBv0:
-            Call _reflect_database_v0(old_database_fn)
-            Return movies, tags
-        match case _: Log and raise UnrecognizedOldVersion
     """
-    pass
+    match old_version:
+        case "DBv0":
+            return _reflect_database_v0(old_version_fn)
+        case _:
+            logging.error(UnrecognizedOldVersion)
+            raise UnrecognizedOldVersion
 
 
 class UnrecognizedOldVersion(Exception):
@@ -60,7 +61,8 @@ class UnrecognizedOldVersion(Exception):
 
 
 class DatabaseUpdateCheckZeroError(Exception):
-    """Old and new record counts are unequal."""
+    """Record counts in the old database are compared with the counts after
+    processing."""
 
 
 def _reflect_database_v0(
@@ -80,24 +82,16 @@ def _reflect_database_v0(
     The v0 database and its enclosing folder are required to be in the following locations:
         1) The database directory 'DBv0' located within the 'Movies Data' directory.
         (../Movies Data/DBv0)
-        2) The database named 'movie_database.sqlite3' located within the 'DBv0' directory. (
-        ../Movies
-        Data/DBv0/movie_database.sqlite3)
+        2) The database named 'movie_database.sqlite3' located within the 'DBv0' directory.
+        ( ../Movies Data/DBv0/movie_database.sqlite3)
 
     Returns:
         A list of movie bags
         A list of tag texts.
-
-    Raises:
-        MissingDatabaseDirectory
-        MissingDatabase
-
-    Pseudocode:
-        Log the update from v0 is starting
-        Call _register_engine(old_database_fn: Path)
-        Call _reflect_data() -> movies, tags.
     """
-    pass
+    logging.info(INFO_UPDATE_V0_STARTING)
+    _register_engine(old_database_fn)
+    return _reflect_data()
 
 
 def _register_engine(old_database_fn: Path):
@@ -106,9 +100,8 @@ def _register_engine(old_database_fn: Path):
     Args:
         old_database_fn:
     """
-    # global engine
-    # engine = create_engine(f"sqlite+pysqlite:///{old_database_fn}", echo=False)
-    pass
+    global engine
+    engine = create_engine(f"{DIALECT}{old_database_fn}", echo=False)
 
 
 def _reflect_data() -> tuple[list[MovieBag], set[str]]:
@@ -136,10 +129,12 @@ def _reflect_data() -> tuple[list[MovieBag], set[str]]:
         )
         movie_bags, movie_bags_count = _reflect_old_movie(old_movie_tag_links, session)
 
+        # Check zero for tags
         if old_tags_check_count != len(old_tags):
             logging.error(DatabaseUpdateCheckZeroError, CHECK_ZERO_TAGS)
             raise DatabaseUpdateCheckZeroError(CHECK_ZERO_TAGS)
 
+        # Check zero for movie tag links
         links_count = 0
         for movie_bag in movie_bags:
             movie_tag_count = len(movie_bag.get("movie_tags", set()))
@@ -148,6 +143,7 @@ def _reflect_data() -> tuple[list[MovieBag], set[str]]:
             logging.error(DatabaseUpdateCheckZeroError, CHECK_ZERO_MOVIE_TAG_LINKS)
             raise DatabaseUpdateCheckZeroError(CHECK_ZERO_MOVIE_TAG_LINKS)
 
+        # Check zero for movies
         if movie_bags_count != len(movie_bags):
             logging.error(DatabaseUpdateCheckZeroError, CHECK_ZERO_MOVIES)
             raise DatabaseUpdateCheckZeroError(CHECK_ZERO_MOVIES)

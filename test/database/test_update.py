@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/7/24, 7:37 AM by stephen.
+#  Last modified 9/9/24, 2:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -29,7 +29,7 @@ import math
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from functools import partial
-from typing import Tuple, Any
+from typing import Any
 
 import pytest
 from pytest_check import check
@@ -48,6 +48,80 @@ from sqlalchemy.orm import Session
 
 from database_src import update
 from globalconstants import MovieInteger, MovieBag
+
+
+def test_update_old_database_matching_v0(monkeypatch):
+    old_version = "DBv0"
+    old_version_fn = update.Path()
+
+    expected_calls = []
+    expected_movie_bags = [update.MovieBag(), update.MovieBag()]
+    expected_tag_texts = ["tag text 1", "tag text 2"]
+    monkeypatch.setattr(
+        update,
+        "_reflect_database_v0",
+        reflect_database_v0(expected_calls, expected_movie_bags, expected_tag_texts),
+    )
+
+    movie_bags, tag_texts = update.update_old_database(old_version, old_version_fn)
+
+    check.equal(old_version_fn, expected_calls[0])
+    check.equal(movie_bags, expected_movie_bags)
+    check.equal(tag_texts, expected_tag_texts)
+
+
+def test_update_old_database_with_match_fail(log_error):
+    old_version = "garbage"
+    old_version_fn = update.Path()
+
+    with check:
+        with pytest.raises(update.UnrecognizedOldVersion):
+            update.update_old_database(old_version, old_version_fn)
+
+    check.equal(
+        log_error,
+        [
+            (
+                (update.UnrecognizedOldVersion,),
+                {},
+            )
+        ],
+    )
+
+
+def test__reflect_database_v0(
+    create_test_database, db_session, monkeypatch, tmp_path, log_info
+):
+    tag_table, movie_tag_table, movies_table = create_test_database
+    old_tags = _get_old_tags(tag_table, db_session)
+    tag_links, _ = _get_old_movie_tag_links(old_tags, movie_tag_table, db_session)
+    expected_bags, _ = _get_old_movies(movies_table, tag_links, db_session)
+    monkeypatch.setattr(
+        update,
+        "_reflect_data",
+        _get_data(expected_bags, old_tags),
+    )
+
+    movie_bags, tag_texts = update._reflect_database_v0(tmp_path)
+
+    check.equal(f"{update.engine.url}", f"{update.DIALECT}{tmp_path}")
+    check.equal(movie_bags, expected_bags)
+    check.equal(tag_texts, old_tags)
+    check.equal(
+        log_info,
+        [
+            (
+                (update.INFO_UPDATE_V0_STARTING,),
+                {},
+            )
+        ],
+    )
+
+
+def test__register_engine(tmp_path):
+    update._register_engine(tmp_path)
+
+    assert f"{update.engine.url}" == f"{update.DIALECT}{tmp_path}"
 
 
 def test__reflect_data(create_test_database, db_session):
@@ -195,6 +269,45 @@ def test__reflect_old_movie(create_test_database, db_session):
     check.equal(check_count, expected_count)
 
 
+def reflect_database_v0(
+    expected_calls: list, movie_bags: list[MovieBag], tag_texts: list[str]
+):
+    # noinspection GrazieInspection
+    """Wraps a mock of update._reflect_database_v0.
+
+    Args:
+        expected_calls: A mutable list which can store positional arguments to func.
+        movie_bags: Mock movie_bags.
+        tag_texts: Mock tag_texts.
+
+    Returns:
+        Mock of update._reflect_database_v0.
+    """
+
+    def func(old_version_fn):
+        """Mocks update._reflect_database_v0.
+
+        Args:
+            old_version_fn
+
+        Returns:
+            Mock movie_bags
+            Mock tag_texts
+        """
+        expected_calls.append(old_version_fn)
+        return movie_bags, tag_texts
+
+    return func
+
+
+def _get_data(expected_bags, old_tags):
+    def func():
+        """..."""
+        return expected_bags, old_tags
+
+    return func
+
+
 def _get_old_tags(tag_table: Table, db_session) -> dict[int, str]:
     statement = select(tag_table)
     result = db_session.execute(statement).all()
@@ -214,25 +327,6 @@ def _get_old_movie_tag_links(
         expected_links[movie_id].add(old_tags[tag_id])
 
     return expected_links, old_movie_links
-
-
-# noinspection PyUnusedLocal
-def _reflect_old_tags_badly(old_tags, session) -> tuple[Any, float]:
-    return old_tags, math.nan
-
-
-# noinspection PyUnusedLocal
-def _reflect_old_movie_tag_links_badly(
-    tag_links, old_tags, session
-) -> tuple[dict[int, str], float]:
-    return tag_links, math.nan
-
-
-# noinspection PyUnusedLocal
-def _reflect_old_movie_badly(
-    expected_bags, movie_tags, session
-) -> tuple[dict[int, str], float]:
-    return expected_bags, math.nan
 
 
 def _get_old_movies(
@@ -261,14 +355,33 @@ def _get_old_movies(
     return expected_bags, len(old_movies)
 
 
-@pytest.fixture(scope="module")
+# noinspection PyUnusedLocal
+def _reflect_old_tags_badly(old_tags, session) -> tuple[Any, float]:
+    return old_tags, math.nan
+
+
+# noinspection PyUnusedLocal
+def _reflect_old_movie_tag_links_badly(
+    tag_links, old_tags, session
+) -> tuple[dict[int, str], float]:
+    return tag_links, math.nan
+
+
+# noinspection PyUnusedLocal
+def _reflect_old_movie_badly(
+    expected_bags, movie_tags, session
+) -> tuple[dict[int, str], float]:
+    return expected_bags, math.nan
+
+
+@pytest.fixture(scope="function")
 def session_engine():
     """Yields an engine."""
     update.engine = create_engine("sqlite+pysqlite:///:memory:")
     yield update.engine
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def db_session(session_engine: Engine):
     """Yields a database connection.
 
@@ -282,7 +395,7 @@ def db_session(session_engine: Engine):
         session.close()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def create_test_database(session_engine: Engine):
     """Creates a test database."""
     metadata_obj = MetaData()
@@ -343,17 +456,6 @@ def create_test_database(session_engine: Engine):
         statement = insert(movie_tag_table).values(movies_id=2, tag_id=3)
         session.execute(statement)
 
-        # todo delete the following print suite
-        statement = select(tag_table)
-        result = session.execute(statement).all()
-        print(f"fix {result=}")
-        statement = select(movies_table)
-        result = session.execute(statement).all()
-        print(f"fix {result=}")
-        statement = select(movie_tag_table)
-        result = session.execute(statement).all()
-        print(f"fix {result=}")
-
         session.commit()
 
     return tag_table, movie_tag_table, movies_table
@@ -364,8 +466,16 @@ def log_error(monkeypatch):
     """Logs arguments of calls to logging.error."""
     calls = []
     monkeypatch.setattr(
-        update.logging,
-        "error",
-        lambda *args, **kwargs: calls.append((args, kwargs)),
+        update.logging, "error", lambda *args, **kwargs: calls.append((args, kwargs))
+    )
+    return calls
+
+
+@pytest.fixture(scope="function")
+def log_info(monkeypatch):
+    """Logs arguments of calls to logging.error."""
+    calls = []
+    monkeypatch.setattr(
+        update.logging, "info", lambda *args, **kwargs: calls.append((args, kwargs))
     )
     return calls
