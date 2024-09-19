@@ -1,7 +1,7 @@
 """Database environment functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/29/24, 8:27 AM by stephen.
+#  Last modified 9/19/24, 12:26 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,13 +13,22 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import json
+import logging
 from pathlib import Path
 
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-from database_src import schema
+from database_src import schema, tables, update
 
-session_factory: sessionmaker[Session] | None = None
+DATA_DIR_NAME = "Movie Data"
+SAVED_VERSION = "saved_version"
+DATABASE_STEM = "movie_database_"
+NO_MOVIE_DATA_DIRECTORY_MSG = "Missing movie data directory."
+NO_DATABASE_DIRECTORY_MSG = "Missing database directory."
+UPDATE_SUCCESSFUL_MSG = "The database was successfully updated to "
+DATABASE_REOPENED_MSG = "The database has been opened for use: Version "
 
 
 def start_engine():
@@ -28,49 +37,75 @@ def start_engine():
     This will:
         Prepare a database for first use,
         or prepare an existing database for use,
-        and update an older version.
+        or update an older version ready for use.
 
-    Pseudocode:
-        Call _getcreate_directories
-        Call _getcreate_metadata
-        Call _register_session_factory
-        Save the session factory to tables.session_factory
-        If current version is different to saved version
-            call _update_database(old_version: str, old_version_fn: Path)
-            which will update the database with data from the previous version.
-        Log successful start of database
+    If the data directory 'Movie Data' does not exist in the expected location a new database
+    will be created and readied for first use.
+
+    If the data directory 'Movie Data' exists then the version number of the saved database
+    will be retrieved from 'saved_version.json'. If it is the current version the SQL database
+    will be started ready for use.
+
+    Otherwise, a new current version database will be created. Data from the old database will
+    be copied and transformed before loading into the new database.
+
+    Naming conventions:
+        data_dir_name = "Movie Data"
+        database_dir_name = schema.VERSION (The current version from the schema module.)
+        metadata_name = "saved_version"
+        movie_database_name = "movie_database"
+
+    Directory and file structure:
+        Movie Data
+        Movie Data / schema.VERSION
+        Movie Data / schema.VERSION / movie_database_DBv1.sqlite3
+        Movie Data / saved_version.json
+            1 dict entry → {SAVED_VERSION: schema.VERSION}
     """
-    data_directory = "Movie Data"
-    version_text = "version"
-    database_dir_prefix = "DB"
-    # todo NB: Version number format is "DBv0" or "DBv1"
-    current_version = database_dir_prefix + schema.VERSION
-    metadata_fn = "schema_version.json"
-    movie_database_fn = "movie_database.sqlite3"
+    data_dir_path, database_dir_path = _getcreate_directories(
+        DATA_DIR_NAME, DATABASE_STEM + schema.VERSION
+    )
+    saved_version = _getcreate_metadata(data_dir_path)
+    _register_session_factory(database_dir_path)
+
+    if saved_version != schema.VERSION:
+        _update_database(saved_version, data_dir_path)
+    else:
+        logging.info(DATABASE_REOPENED_MSG + schema.VERSION)
 
 
 def _getcreate_directories(
-    data_directory: str, current_version: str
+    data_dir_name: str, database_dir_name: str
 ) -> tuple[Path, Path]:
     """Gets the data directory and database directory paths.
 
-    If either directory is not present it will be created.
+    It will log and create missing directories.
 
     Args:
-        data_directory: This is located in the parent directory of the source
-            data files directory.
-        current_version: This directory contains the SQL database.
+        data_dir_name: This is located in the parent directory at the same
+        level as the source files.
+        database_dir_name: This directory contains the SQL database.
 
     Returns:
         A Path to the data directory.
         A Path to the database directory.
     """
-    pass
+    program_path = Path(__file__)
+
+    movie_data_path = program_path.parents[2] / data_dir_name
+    if not movie_data_path.is_dir():
+        logging.info(NO_MOVIE_DATA_DIRECTORY_MSG)
+    movie_data_path.mkdir(exist_ok=True)
+
+    database_dir_path = movie_data_path / database_dir_name
+    if not database_dir_path.is_dir():
+        logging.info(NO_DATABASE_DIRECTORY_MSG)
+    database_dir_path.mkdir(exist_ok=True)
+
+    return movie_data_path, database_dir_path
 
 
-def _getcreate_metadata(
-    data_directory: Path, metadata_fn: str, current_version: dict
-) -> str:
+def _getcreate_metadata(data_dir: Path) -> str:
     """Returns the version of the saved SQL database.
 
     This gets the database version from the metadata file. If it is not
@@ -78,46 +113,65 @@ def _getcreate_metadata(
     current version.
 
     Args:
-        data_directory: The directory containing the database data files.
-        metadata_fn: The name of the metadata file.
-        current_version: A dict with the single entry of
-            <version text>: <saved version>
+        data_dir: The directory containing the database data files.
 
     Returns:
         The version of the saved database.
     """
-    pass
+    saved_version_fn = data_dir / (SAVED_VERSION + ".json")
+    try:
+        with open(saved_version_fn) as fp:
+            from_json = json.load(fp)
+    except FileNotFoundError:
+        data = {SAVED_VERSION: schema.VERSION}
+        with open(saved_version_fn, "w") as fp:
+            json.dump(data, fp)
+        with open(saved_version_fn) as fp:
+            from_json = json.load(fp)
+    return from_json[SAVED_VERSION]
 
 
-def _register_session_factory(database_directory: Path):
+def _register_session_factory(database_dir: Path):
     """Registers a session factory for the database.
 
     This creates the SQL engine, creates all the tables from the schema, and
     registers a session factory.
 
     Args:
-        database_directory:
+        database_dir:
     """
-    pass
+    database_name = DATABASE_STEM + schema.VERSION + ".sqlite3"
+    database_fn = database_dir / database_name
+    engine = create_engine(f"sqlite+pysqlite:///{database_fn}", echo=False)
+    tables.session_factory = sessionmaker(engine)
+    schema.Base.metadata.create_all(engine)
 
 
-def _update_database(old_version: str, old_version_fn: Path):
+def _update_database(old_version: str, data_dir_path: Path):
     """Update the database with data from a previous version.
 
     This will call code which will extract data from the old version by
-    schema reflection. Movie data is returned in movie bag format allowing
-    use of standard table module functions for updating.
+    schema reflection. The database is updated with data converted from old
+    formats.
 
-    Raises:
-        UnrecognizedOldVersion if the old version number is not recognized.
-        DatabaseUpdateCheckZeroError if old and new record counts don't match.
-
-    Pseudocode:
-        Call update.update_old_database(old_version: str, old_version_fn: Path)
-            returning tags: set[str], movies: list[MovieBag]
-        Call tables.add_tags
-        Call tables.add_movie for each movie in list.
-        Update metafile with new version number
-        Log the update as being successfully completed
+    Args:
+        old_version: example 'DBv42'
+        data_dir_path: example 'Movie Data'
     """
-    pass
+    old_database_name = DATABASE_STEM + old_version + ".sqlite3"
+    old_database_fn = data_dir_path / old_version / old_database_name
+    movies, tags = update.update_old_database(old_version, old_database_fn)
+    for movie in movies:
+        tables.add_movie(movie_bag=movie)
+    tables.add_tags(tag_texts=tags)
+
+    # Update saved version file with new version number.
+    saved_version_fn = data_dir_path / (SAVED_VERSION + ".json")
+    with open(saved_version_fn) as fp:
+        data = json.load(fp)
+    data[SAVED_VERSION] = schema.VERSION
+    with open(saved_version_fn, "w") as fp:
+        json.dump(data, fp)
+
+    # Log the update as being successfully completed.
+    logging.info(UPDATE_SUCCESSFUL_MSG + schema.VERSION)

@@ -1,7 +1,7 @@
 """Schema v1"""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/29/24, 8:27 AM by stephen.
+#  Last modified 9/19/24, 12:26 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-VERSION = "v1"
+VERSION = "DBv1"
 MUYBRIDGE = 1878
 MAX_YEAR = 10000
 
