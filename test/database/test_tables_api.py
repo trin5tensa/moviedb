@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/20/24, 8:53 AM by stephen.
+#  Last modified 8/29/24, 8:27 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -624,12 +624,10 @@ def test_invalid_movie_regression(test_database):
 
 @pytest.fixture(scope="function")
 def session_engine():
-    """Yields an engine."""
+    """Creates an engine."""
     engine: Engine = create_engine("sqlite+pysqlite:///:memory:")
     schema.Base.metadata.create_all(engine)
     tables.session_factory = sessionmaker(engine)
-    yield
-    engine.dispose()
 
 
 @pytest.fixture(scope="function")

@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/19/24, 2:44 PM by stephen.
+#  Last modified 9/3/24, 11:51 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -308,39 +308,25 @@ def test__delete_tag(load_tags, db_session: Session):
         tables._select_tag(db_session, text=SOUGHT_TAG)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def session_engine():
     """Yields an engine."""
     engine: Engine = create_engine("sqlite+pysqlite:///:memory:")
     schema.Base.metadata.create_all(engine)
     yield engine
-    engine.dispose()
-
-
-@pytest.fixture(scope="session")
-def session_factory(session_engine: Engine) -> sessionmaker[Session]:
-    """Returns a session factory.
-
-    Args:
-        session_engine:
-
-    Returns:
-        A session factory
-    """
-    return sessionmaker(session_engine)
 
 
 @pytest.fixture(scope="function")
-def db_session(session_factory: sessionmaker[Session]):
+def db_session(session_engine: Engine):
     """Yields a database connection.
 
     Args:
-        session_factory:
+        session_engine:
     """
-    session: Session = session_factory()
-    yield session
-    session.rollback()
-    session.close()
+    with Session(session_engine) as session:
+        yield session
+        session.rollback()
+        session.close()
 
 
 @pytest.fixture(scope="function")
