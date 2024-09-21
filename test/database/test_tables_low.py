@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/3/24, 11:51 AM by stephen.
+#  Last modified 9/21/24, 12:22 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -262,6 +262,12 @@ def test__delete_orphans(load_movies, session_engine, db_session: Session):
 def test__select_tag(load_tags, db_session: Session):
     tag = tables._select_tag(db_session, text=SOUGHT_TAG)
     assert tag.text == SOUGHT_TAG
+
+
+def test__match_tags(load_tags, db_session: Session):
+    tags = tables._match_tags(db_session, match=SOUGHT_TAG)
+
+    assert {tag.text for tag in tags} == {SOUGHT_TAG}
 
 
 def test__select_all_tags(load_tags, db_session: Session):

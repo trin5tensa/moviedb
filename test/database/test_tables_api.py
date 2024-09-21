@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/29/24, 8:27 AM by stephen.
+#  Last modified 9/21/24, 12:22 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -482,6 +482,12 @@ def test_previously_deleted_movie(test_database):
 def test_select_all_tags(test_database):
     tag_texts = tables.select_all_tags()
     assert tag_texts == TAG_TEXTS
+
+
+def test_match_tags(test_database):
+    tags = tables.match_tags(match=SOUGHT_TAG)
+
+    assert tags == {SOUGHT_TAG}
 
 
 def test_add_tag_text(test_database):

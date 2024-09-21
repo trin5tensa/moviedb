@@ -305,6 +305,20 @@ def select_all_tags() -> set[str]:
     return {tag.text for tag in tags}
 
 
+def match_tags(*, match: str) -> set[str]:
+    """Returns tag texts which contain a substring.
+
+    Args:
+        match:
+
+    Returns:
+        A set of complaint tag texts.
+    """
+    with session_factory() as session:
+        tags = _match_tags(session, match=match)
+    return {tag.text for tag in tags}
+
+
 def add_tag(*, tag_text: str):
     """Adds a tag.
 
@@ -773,6 +787,17 @@ def _select_tag(session: Session, *, text: str) -> schema.Tag:
     # noinspection PyTypeChecker
     statement = select(schema.Tag).where(schema.Tag.text == text)
     return session.scalars(statement).one()
+
+
+def _match_tags(session: Session, *, match: str) -> set[schema.Tag]:
+    """Selects and returns a set of ORM Tags.
+
+    Args:
+        session: The current session.
+        match: A substring of sought tag.texts
+    """
+    statement = select(schema.Tag).where(schema.Tag.text.like(f"%{match}%"))
+    return set(session.scalars(statement).all())
 
 
 def _select_all_tags(session: Session) -> set[schema.Tag]:
