@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/3/24, 6:09 AM by stephen.
+#  Last modified 9/24/24, 10:19 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -33,15 +33,22 @@ YEAR = "year"
 class MovieTD(TypedDict):
     """Type definition for movie.
 
-    Deprecated. Use MovieBag.
+    Deprecated. Use Movie Bag.
     """
 
-    TITLE: str
-    YEAR: str
-    DIRECTOR: NotRequired[str]
-    DURATION: NotRequired[str]
-    NOTES: NotRequired[str]
-    MOVIE_TAGS: NotRequired[Sequence[str]]
+    title: str
+    year: str
+    director: NotRequired[str]
+    duration: NotRequired[str]
+    notes: NotRequired[str]
+    movie_tags: NotRequired[Sequence[str]]
+
+    # TITLE: str
+    # YEAR: str
+    # DIRECTOR: NotRequired[str]
+    # DURATION: NotRequired[str]
+    # NOTES: NotRequired[str]
+    # MOVIE_TAGS: NotRequired[Sequence[str]]
 
 
 class MovieBag(TypedDict, total=False):
