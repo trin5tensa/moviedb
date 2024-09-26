@@ -4,7 +4,7 @@ This module contains new tests written after Brian Okken's course and book on py
 """
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/26/24, 6:30 AM by stephen.
+#  Last modified 9/26/24, 2:52 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,6 +19,7 @@ This module contains new tests written after Brian Okken's course and book on py
 import config
 from contextlib import contextmanager
 from gui_handlers import handlers
+
 from unittest.mock import MagicMock
 
 import pytest
