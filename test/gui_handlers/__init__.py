@@ -1,7 +1,7 @@
 """__init__.py"""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/25/24, 8:35 AM by stephen.
+#  Last modified 9/26/24, 6:30 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or

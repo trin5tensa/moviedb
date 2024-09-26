@@ -1,7 +1,7 @@
 """MovieBag Facade."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/24/24, 10:19 AM by stephen.
+#  Last modified 9/26/24, 6:30 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -71,8 +71,9 @@ class MovieBagFacade(MovieBag):
         Returns:
             A movie bag object.
         """
-        year_range = f"{movie['year'][0]}-{movie['year'][1]}"
-        movie["year"] = MovieInteger(year_range)
+        if movie["year"]:
+            year_range = f"{movie['year'][0]}-{movie['year'][1]}"
+            movie["year"] = MovieInteger(year_range)
         if movie["director"]:
             movie["directors"] = {movie["director"]}
             del movie["director"]
