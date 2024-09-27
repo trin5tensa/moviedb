@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/26/24, 2:52 PM by stephen.
+#  Last modified 9/27/24, 7:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -267,6 +267,7 @@ class TestDeleteMovie:
         assert calls == [(movie,)]
 
 
+@pytest.mark.skip
 class TestEditMovie:
     TAGS = ["Movie night candidate"]
 

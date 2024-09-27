@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/26/24, 2:52 PM by stephen.
+#  Last modified 9/27/24, 7:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -34,4 +34,22 @@ def test_add_movie(monkeypatch):
         guidatabase._tmdb_io_handler,
         list(test_tags),
         add_movie_callback=guidatabase.add_movie_callback,
+    )
+
+
+def test_edit_movie(monkeypatch):
+    mock_name = test_add_movie.__name__
+    monkeypatch.setattr(guidatabase.config, "current", MagicMock(name=mock_name))
+    test_tags = {"tag 1", "tag 2", "tag 3"}
+    mock_select_tags = MagicMock(name=mock_name, return_value=test_tags)
+    monkeypatch.setattr(guidatabase.tables, "select_all_tags", mock_select_tags)
+    mock_search_movie_gui = MagicMock(name=mock_name)
+    monkeypatch.setattr(guidatabase.guiwidgets, "SearchMovieGUI", mock_search_movie_gui)
+
+    guidatabase.edit_movie()
+
+    mock_search_movie_gui.assert_called_once_with(
+        guidatabase.config.current.tk_root,
+        guidatabase._search_movie_callback,
+        list(test_tags),
     )
