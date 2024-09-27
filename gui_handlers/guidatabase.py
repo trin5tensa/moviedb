@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/26/24, 2:52 PM by stephen.
+#  Last modified 9/27/24, 7:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,9 +19,14 @@ This module is the glue between the user's selection of a menu item and the gui.
 import config
 
 
+import guiwidgets
 import guiwidgets_2
 from database_src import tables
-from gui_handlers.handlers import _tmdb_io_handler, add_movie_callback
+from gui_handlers.handlers import (
+    _tmdb_io_handler,
+    add_movie_callback,
+    _search_movie_callback,
+)
 
 
 def add_movie():
@@ -32,4 +37,12 @@ def add_movie():
         _tmdb_io_handler,
         list(all_tags),
         add_movie_callback=add_movie_callback,
+    )
+
+
+def edit_movie():
+    """Get search movie data from the user and search for compliant records"""
+    all_tags = tables.select_all_tags()
+    guiwidgets.SearchMovieGUI(
+        config.current.tk_root, _search_movie_callback, list(all_tags)
     )

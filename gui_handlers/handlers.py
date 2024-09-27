@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/26/24, 2:52 PM by stephen.
+#  Last modified 9/27/24, 7:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -191,24 +191,6 @@ def _get_tmdb_api_key() -> Optional[str]:
         settings_dialog()
     else:
         return tmdb_api_key
-
-
-# def add_movie():
-#     """Get new movie data from the user and add it to the database."""
-#     all_tags = database.all_tags()
-#     guiwidgets_2.AddMovieGUI(
-#         config.current.tk_root,
-#         _tmdb_io_handler,
-#         all_tags,
-#         add_movie_callback=add_movie_callback,
-#     )
-
-
-# todo Rewrite for database API change.
-def edit_movie():
-    """Get search movie data from the user and search for compliant records"""
-    all_tags = database.all_tags()
-    guiwidgets.SearchMovieGUI(config.current.tk_root, _search_movie_callback, all_tags)
 
 
 def add_tag():
