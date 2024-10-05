@@ -5,3 +5,4 @@ SQLAlchemy
 requests
 tmdbsimple
 coverage
+black

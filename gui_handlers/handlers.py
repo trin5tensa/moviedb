@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/5/24, 10:04 AM by stephen.
+#  Last modified 10/5/24, 4:20 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -218,28 +218,6 @@ def _settings_callback(tmdb_api_key: str, use_tmdb: bool):
     """
     config.persistent.tmdb_api_key = tmdb_api_key
     config.persistent.use_tmdb = use_tmdb
-
-
-# todo Rewrite for database API change.
-# noinspection PyTypedDict
-def add_movie_callback(gui_movie: MovieTD):
-    """Add user supplied data to the database.
-
-    Args:
-        gui_movie:
-    """
-
-    selected_tags = gui_movie[MOVIE_TAGS]
-    del gui_movie[MOVIE_TAGS]
-
-    database.add_movie(gui_movie)
-    # noinspection PyTypeChecker
-    db_movie = config.MovieKeyTypedDict(
-        title=gui_movie["title"], year=gui_movie["year"]
-    )
-    for tag in selected_tags:
-        # noinspection PyTypeChecker
-        database.add_movie_tag_link(tag, db_movie)
 
 
 # todo Rewrite for database API change.
