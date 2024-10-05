@@ -1,7 +1,7 @@
 """MovieBag Facade."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/26/24, 6:30 AM by stephen.
+#  Last modified 10/5/24, 4:20 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,6 +12,8 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import copy
 
 from config import MovieKeyTypedDict, FindMovieTypedDict
 from globalconstants import *
@@ -49,13 +51,17 @@ class MovieBagFacade(MovieBag):
         Returns:
             A movie bag object.
         """
+        movie = copy.deepcopy(movie)  # Testing support (before and after)
+        # noinspection PyTypeChecker
         movie["year"] = MovieInteger(movie["year"])
-        if movie["director"]:
+        if movie.get("director"):
+            # noinspection PyTypeChecker
             movie["directors"] = {movie["director"]}
             del movie["director"]
-        if movie["duration"]:
+        if movie.get("duration"):
+            # noinspection PyTypeChecker
             movie["duration"] = MovieInteger(movie["duration"])
-        if movie["movie_tags"]:
+        if movie.get("movie_tags"):
             # noinspection PyTypeChecker
             movie["movie_tags"] = {movie for movie in movie["movie_tags"]}
         return cls(movie)
@@ -71,17 +77,21 @@ class MovieBagFacade(MovieBag):
         Returns:
             A movie bag object.
         """
-        if movie["year"]:
+        movie = copy.deepcopy(movie)  # Testing support (before and after)
+        if movie.get("year"):
             year_range = f"{movie['year'][0]}-{movie['year'][1]}"
+            # noinspection PyTypeChecker
             movie["year"] = MovieInteger(year_range)
-        if movie["director"]:
+        if movie.get("director"):
+            # noinspection PyTypeChecker
             movie["directors"] = {movie["director"]}
             del movie["director"]
-        if movie["minutes"]:
+        if movie.get("minutes"):
             duration_range = f"{movie['minutes'][0]}-{movie['minutes'][1]}"
+            # noinspection PyTypeChecker
             movie["duration"] = MovieInteger(duration_range)
             del movie["minutes"]
-        if movie["tags"]:
+        if movie.get("tags"):
             # noinspection PyTypeChecker
             movie["movie_tags"] = {movie for movie in movie["tags"]}
             del movie["tags"]

@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/27/24, 7:20 AM by stephen.
+#  Last modified 10/5/24, 4:20 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -44,21 +44,23 @@ class EscapeKeyDict(UserDict):
         Apple GUI docs state the <Escape> and <Command-.> accelerator keys should end the current
          activity.
 
-    Application of the Apple requirements to moviedb is accomplished by calling the destroy
-    method of the moviedb object. The precise nature of what happens when a specific destroy
-    method is called can vary so this approach can accommodate any tkinter widget which is
-    managed by a moviedb class. This excludes 'convenience' windows such as messageboxes.
+    Application of the Apple requirements to moviedb is accomplished by calling
+    the destroy method of the moviedb object. The precise nature of what
+    happens when a specific destroy method is called can vary so this
+    approach can accommodate any tkinter widget managed by a moviedb class.
+    This excludes 'convenience' windows such as messageboxes.
 
-    The two escape accelerators have been attached to Tk/Tcl's root with the bind_all function.
-    When either accelerator is pressed the closure within the escape method will be called.
+    The two escape accelerators have been attached to Tk/Tcl's root with the
+    bind_all function. When either accelerator is pressed the closure within
+    the escape method will be called.
 
     The complicated design of this class has been dictated by the inadequacy of information
     provided by the keypress event callback from tkinter. A moviedb object will be destroyed
     by the closure and this object is identified by naming the outer frame widget. This outer
     frame name can be extracted from the keypress event supplied by tkinter. This is used to
     match an entry in the 'data' attribute of this class. This entry should be registered when
-    the moviedb object is initialized. Extensive validation is necessary to ensure that all of
-    these elements are in place.
+    the moviedb object is initialized. Extensive validation is necessary to ensure that
+    each element is in place.
 
     The matching is accomplished by:
     1) Uniquely naming the outer frame widget with the name of the moviedb class.
@@ -181,7 +183,7 @@ def _get_tmdb_api_key() -> Optional[str]:
             A call to the preferences dialog is scheduled and None is returned.
 
     Returns:
-        The TMDB API key or None if handled exceptions were encountered.
+        The TMDB API key if it has been set and the user has not switched off TMDB.
     """
     try:
         tmdb_api_key = config.persistent.tmdb_api_key
@@ -216,27 +218,6 @@ def _settings_callback(tmdb_api_key: str, use_tmdb: bool):
     """
     config.persistent.tmdb_api_key = tmdb_api_key
     config.persistent.use_tmdb = use_tmdb
-
-
-# todo Rewrite for database API change.
-# noinspection PyTypedDict
-def add_movie_callback(gui_movie: MovieTD):
-    """Add user supplied data to the database.
-
-    Args:
-        gui_movie:
-    """
-
-    selected_tags = gui_movie[MOVIE_TAGS]
-    del gui_movie[MOVIE_TAGS]
-
-    database.add_movie(gui_movie)
-    db_movie = config.MovieKeyTypedDict(
-        title=gui_movie["title"], year=gui_movie["year"]
-    )
-    for tag in selected_tags:
-        # noinspection PyTypeChecker
-        database.add_movie_tag_link(tag, db_movie)
 
 
 # todo Rewrite for database API change.

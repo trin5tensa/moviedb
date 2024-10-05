@@ -3,8 +3,8 @@
 This module includes windows for presenting data and returning entered data to its callers.
 """
 
-#  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/21/24, 8:24 AM by stephen.
+#  Copyright© 2024. Stephen Rigden.
+#  Last modified 10/5/24, 10:04 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,14 +21,14 @@ import queue
 # This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
-
 from tkinter import filedialog, messagebox
+
+# noinspection PyUnresolvedReferences
 from dataclasses import dataclass, field
 from typing import (
     Callable,
     Dict,
     Iterable,
-    Iterator,
     Tuple,
     Literal,
     Optional,
@@ -154,7 +154,7 @@ class MovieGUI:
 
     def user_input_frame(self, body_frame: tk.Frame):
         """
-        This creates the widgets which will be used to enter data an display data
+        This creates the widgets which will be used to enter data and display data
         retrieved from the user's database.
 
         Args:
@@ -296,7 +296,11 @@ class MovieGUI:
 
         finally:
             # Have tkinter call this function again after the poll interval.
-            self.recall_id = self.parent.after(self.work_queue_poll, self.tmdb_consumer)
+            # noinspection PyTypeChecker
+            self.recall_id = self.parent.after(
+                self.work_queue_poll,
+                self.tmdb_consumer,
+            )
 
     # noinspection PyUnusedLocal
     def tmdb_treeview_callback(self, *args, **kwargs):
@@ -331,7 +335,30 @@ class MovieGUI:
 class AddMovieGUI(MovieGUI):
     """Create and manage a GUI form for entering a new movie."""
 
+    movie_bag: MovieBag | None = field(default=None, kw_only=True)
     add_movie_callback: Callable[[MovieTD], None] = field(default=None, kw_only=True)
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.movie_bag:
+            if self.movie_bag.get("title"):
+                self.entry_fields["title"].original_value = self.movie_bag["title"]
+            if self.movie_bag.get("year"):
+                self.entry_fields["year"].original_value = int(self.movie_bag["year"])
+            if self.movie_bag.get("directors"):
+                self.entry_fields["director"].original_value = ", ".join(
+                    director for director in self.movie_bag["directors"]
+                )
+            if self.movie_bag.get("duration"):
+                self.entry_fields["minutes"].original_value = int(
+                    self.movie_bag["duration"]
+                )
+            if self.movie_bag.get("notes"):
+                self.entry_fields["notes"].original_value = self.movie_bag[
+                    "notes"
+                ]  # pragma nocover
+            if self.movie_bag.get("movie_tags"):
+                self.entry_fields["tags"].original_value = self.movie_bag["movie_tags"]
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         commit_button = create_button(
@@ -558,7 +585,7 @@ class TagGUI:
 
     def user_input_frame(self, body_frame: tk.Frame):
         """
-        This creates the widgets which will be used to enter data an display data
+        This creates the widgets which will be used to enter data and display data
         retrieved from the user's database.
 
         Args:
@@ -649,8 +676,8 @@ class AddTagGUI(TagGUI):
         return func
 
     def commit(self):
-        """The user has clicked the 'Commit' button. The tag is returned to the caller and the
-        window is deleted."""
+        """The user has clicked the 'Commit' button. The tag is returned to
+        the caller. The window is deleted."""
         tag = self.entry_fields[MOVIE_TAG].current_value
         self.add_tag_callback(tag)
         self.destroy()

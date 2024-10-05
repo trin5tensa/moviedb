@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/27/24, 7:20 AM by stephen.
+#  Last modified 10/5/24, 4:20 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,22 +22,43 @@ import config
 import guiwidgets
 import guiwidgets_2
 from database_src import tables
+from globalconstants import MovieTD, MovieBag
+from gui_handlers import moviebagfacade
 from gui_handlers.handlers import (
     _tmdb_io_handler,
-    add_movie_callback,
     _search_movie_callback,
 )
 
 
-def add_movie():
+def add_movie(movie_bag: MovieBag = None):
     """Get new movie data from the user and add it to the database."""
     all_tags = tables.select_all_tags()
     guiwidgets_2.AddMovieGUI(
         config.current.tk_root,
         _tmdb_io_handler,
         list(all_tags),
+        movie_bag=movie_bag,
         add_movie_callback=add_movie_callback,
     )
+
+
+def add_movie_callback(gui_movie: MovieTD):
+    """Add user supplied data to the database.
+
+    Args:
+        gui_movie:
+
+    Logs and raises:
+        MovieExists if title and year duplicate an existing movie.
+        InvalidReleaseYear for year outside valid range.
+        TagNotFound for tag not in database.
+    """
+    # noinspection PyUnresolvedReferences
+    movie_bag = moviebagfacade.MovieBagFacade.from_movie_td(gui_movie)
+    try:
+        tables.add_movie(movie_bag=movie_bag)
+    except (tables.MovieExists, tables.InvalidReleaseYear, tables.TagNotFound):
+        add_movie(movie_bag)
 
 
 def edit_movie():

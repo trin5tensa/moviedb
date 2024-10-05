@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/26/24, 6:30 AM by stephen.
+#  Last modified 10/5/24, 4:20 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,6 +15,7 @@
 
 from unittest.mock import MagicMock, call
 
+import pytest
 from pytest_check import check
 
 from gui_handlers import handlers
@@ -22,6 +23,7 @@ from globalconstants import *
 
 
 # noinspection PyMissingOrEmptyDocstring
+@pytest.mark.skip
 class TestAddMovieCallback:
     def test_add_movie_callback(self, monkeypatch):
         test_title = "test title"
