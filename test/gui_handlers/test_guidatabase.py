@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/5/24, 4:20 PM by stephen.
+#  Last modified 10/7/24, 2:13 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,6 +15,7 @@
 
 from unittest.mock import MagicMock
 
+from pytest_check import check
 
 from globalconstants import MovieTD
 from gui_handlers import (
@@ -67,12 +68,21 @@ def test_add_movie_callback_with_MovieExists_exception(monkeypatch):
     guid_add_movie = MagicMock(name="guid_add_movie")
     monkeypatch.setattr(guidatabase, "add_movie", guid_add_movie)
     gui_movie = MovieTD(title="Add movie test", year="4242")
+    messagebox = MagicMock(name="messagebox")
+    monkeypatch.setattr(guidatabase.guiwidgets_2, "gui_messagebox", messagebox)
+    monkeypatch.setattr(guidatabase, "config", MagicMock(name="config"))
     # noinspection PyUnresolvedReferences
     movie_bag = moviebagfacade.MovieBagFacade.from_movie_td(gui_movie)
 
     guidatabase.add_movie_callback(gui_movie)
 
-    guid_add_movie.assert_called_once_with(movie_bag)
+    with check:
+        messagebox.assert_called_once_with(
+            guidatabase.config.current.tk_root,
+            message=guidatabase.TITLE_AND_YEAR_EXISTS_MSG,
+        )
+    with check:
+        guid_add_movie.assert_called_once_with(movie_bag)
 
 
 # noinspection PyPep8Naming
@@ -85,13 +95,22 @@ def test_add_movie_callback_with_InvalidReleaseYear_exception(monkeypatch):
     monkeypatch.setattr(guidatabase.tables, "add_movie", table_add_movie)
     guid_add_movie = MagicMock(name="guid_add_movie")
     monkeypatch.setattr(guidatabase, "add_movie", guid_add_movie)
+    messagebox = MagicMock(name="messagebox")
+    monkeypatch.setattr(guidatabase.guiwidgets_2, "gui_messagebox", messagebox)
+    monkeypatch.setattr(guidatabase, "config", MagicMock(name="config"))
     gui_movie = MovieTD(title="Add movie test", year="4242")
     # noinspection PyUnresolvedReferences
     movie_bag = moviebagfacade.MovieBagFacade.from_movie_td(gui_movie)
 
     guidatabase.add_movie_callback(gui_movie)
 
-    guid_add_movie.assert_called_once_with(movie_bag)
+    with check:
+        messagebox.assert_called_once_with(
+            guidatabase.config.current.tk_root,
+            message=guidatabase.IMPOSSIBLE_RELEASE_YEAR_MSG,
+        )
+    with check:
+        guid_add_movie.assert_called_once_with(movie_bag)
 
 
 # noinspection PyPep8Naming
@@ -103,13 +122,21 @@ def test_add_movie_callback_with_TagNotFound_exception(monkeypatch):
     monkeypatch.setattr(guidatabase.tables, "add_movie", table_add_movie)
     guid_add_movie = MagicMock(name="guid_add_movie")
     monkeypatch.setattr(guidatabase, "add_movie", guid_add_movie)
+    messagebox = MagicMock(name="messagebox")
+    monkeypatch.setattr(guidatabase.guiwidgets_2, "gui_messagebox", messagebox)
+    monkeypatch.setattr(guidatabase, "config", MagicMock(name="config"))
     gui_movie = MovieTD(title="Add movie test", year="4242")
     # noinspection PyUnresolvedReferences
     movie_bag = moviebagfacade.MovieBagFacade.from_movie_td(gui_movie)
 
     guidatabase.add_movie_callback(gui_movie)
 
-    guid_add_movie.assert_called_once_with(movie_bag)
+    with check:
+        messagebox.assert_called_once_with(
+            guidatabase.config.current.tk_root, message=guidatabase.TAG_NOT_FOUND_MSG
+        )
+    with check:
+        guid_add_movie.assert_called_once_with(movie_bag)
 
 
 def test_edit_movie(monkeypatch):
