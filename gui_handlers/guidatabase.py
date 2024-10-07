@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/5/24, 4:20 PM by stephen.
+#  Last modified 10/7/24, 2:13 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,6 @@ This module is the glue between the user's selection of a menu item and the gui.
 
 import config
 
-
 import guiwidgets
 import guiwidgets_2
 from database_src import tables
@@ -28,6 +27,12 @@ from gui_handlers.handlers import (
     _tmdb_io_handler,
     _search_movie_callback,
 )
+
+TITLE_AND_YEAR_EXISTS_MSG = (
+    "The title and release date clash with a movie already in the database"
+)
+IMPOSSIBLE_RELEASE_YEAR_MSG = "The release year is too early or too late."
+TAG_NOT_FOUND_MSG = "One or more tags were not found in the database."
 
 
 def add_movie(movie_bag: MovieBag = None):
@@ -57,7 +62,18 @@ def add_movie_callback(gui_movie: MovieTD):
     movie_bag = moviebagfacade.MovieBagFacade.from_movie_td(gui_movie)
     try:
         tables.add_movie(movie_bag=movie_bag)
-    except (tables.MovieExists, tables.InvalidReleaseYear, tables.TagNotFound):
+    except tables.MovieExists:
+        guiwidgets_2.gui_messagebox(
+            config.current.tk_root, message=TITLE_AND_YEAR_EXISTS_MSG
+        )
+        add_movie(movie_bag)
+    except tables.InvalidReleaseYear:
+        guiwidgets_2.gui_messagebox(
+            config.current.tk_root, message=IMPOSSIBLE_RELEASE_YEAR_MSG
+        )
+        add_movie(movie_bag)
+    except tables.TagNotFound:
+        guiwidgets_2.gui_messagebox(config.current.tk_root, message=TAG_NOT_FOUND_MSG)
         add_movie(movie_bag)
 
 
