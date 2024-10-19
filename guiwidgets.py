@@ -4,8 +4,8 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 
-#  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/21/24, 8:24 AM by stephen.
+#  Copyright© 2024. Stephen Rigden.
+#  Last modified 10/19/24, 10:33 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -396,7 +396,7 @@ class SelectMovieGUI(MovieGUIBase):
     # Movie records retrieved from the database.
     movies: List[config.MovieUpdateDef]
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[str, int], None]
+    callback: Callable
     # Attributes for managing the treeview
     treeview: ttk.Treeview = field(default=None, init=False, repr=False)
     treeview_items: dict[str : config.MovieKeyTypedDict] = field(

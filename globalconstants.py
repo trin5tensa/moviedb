@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/24/24, 10:19 AM by stephen.
+#  Last modified 10/18/24, 2:25 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -29,6 +29,8 @@ SYNOPSIS = "synopsis"
 TITLE = "title"
 YEAR = "year"
 
+NO_INTEGER_VALUE = "This object cannot provide an integer value"
+
 
 class MovieTD(TypedDict):
     """Type definition for movie.
@@ -42,13 +44,6 @@ class MovieTD(TypedDict):
     duration: NotRequired[str]
     notes: NotRequired[str]
     movie_tags: NotRequired[Sequence[str]]
-
-    # TITLE: str
-    # YEAR: str
-    # DIRECTOR: NotRequired[str]
-    # DURATION: NotRequired[str]
-    # NOTES: NotRequired[str]
-    # MOVIE_TAGS: NotRequired[Sequence[str]]
 
 
 class MovieBag(TypedDict, total=False):
@@ -158,4 +153,4 @@ class MovieInteger(set):
         if len(self._values) == 1:
             return list(self._values)[0]
         else:
-            raise TypeError(f"Not a single integer value: {self._values}")
+            raise TypeError(f"{NO_INTEGER_VALUE}: {self._values}")

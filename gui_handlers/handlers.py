@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/5/24, 4:20 PM by stephen.
+#  Last modified 10/19/24, 10:33 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -234,49 +234,6 @@ def delete_movie_callback(movie: config.FindMovieTypedDict):
         # This can happen if the movie was deleted by another process between the user retrieving
         # a record for deletion and the call to actually delete it.
         pass
-
-
-# todo Rewrite for database API change.
-def _search_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
-    """Finds movies in the database which match the user entered criteria.
-    Continue to the next appropriate stage of processing depending on whether no movies, one
-    movie, or more than one movie is found.
-
-    Args:
-        criteria:
-        tags:
-    """
-
-    # Find compliant movies.
-    criteria["tags"] = tags
-    # Remove empty items because SQL treats them as meaningful.
-    criteria = {
-        k: v
-        for k, v in criteria.items()
-        if v != "" and v != [] and v != () and v != ["", ""]
-    }
-    movies = database.find_movies(criteria)
-
-    if (movies_found := len(movies)) <= 0:
-        raise exception.DatabaseSearchFoundNothing
-    elif movies_found == 1:
-        movie = movies[0]
-        movie_key = config.MovieKeyTypedDict(title=movie["title"], year=movie["year"])
-
-        guiwidgets_2.EditMovieGUI(
-            config.current.tk_root,
-            _tmdb_io_handler,
-            database.all_tags(),
-            old_movie=movie,
-            edit_movie_callback=edit_movie_callback(movie_key),
-            delete_movie_callback=delete_movie_callback,
-        )
-
-    else:
-        # noinspection PyTypeChecker
-        guiwidgets.SelectMovieGUI(
-            config.current.tk_root, movies, _select_movie_callback
-        )
 
 
 # todo Rewrite for database API change.

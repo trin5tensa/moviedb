@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 8/20/24, 8:53 AM by stephen.
+#  Last modified 10/19/24, 10:33 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -134,15 +134,7 @@ def add_movie(*, movie_bag: MovieBag):
     try:
         with session_factory() as session:
             movie = _add_movie(movie_bag=movie_bag)
-            if movie_tags := movie_bag.get("movie_tags"):
-                movie.tags = {
-                    _select_tag(session, text=tag_text) for tag_text in movie_tags
-                }
-            if directors := movie_bag.get("directors"):
-                movie.directors = _getadd_people(session, names=directors)
-            if stars := movie_bag.get("stars"):
-                movie.stars = _getadd_people(session, names=stars)
-
+            update_movie_relationships(movie, movie_bag, session)
             session.add(movie)
             session.commit()
 
@@ -207,18 +199,8 @@ def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
             movie = _select_movie(session, movie_bag=old_movie_bag)
             candidate_orphans = movie.directors | movie.stars
             _edit_movie(movie=movie, edit_fields=new_movie_bag)
-
-            if movie_tags := new_movie_bag.get("movie_tags"):
-                movie.tags = {
-                    _select_tag(session, text=tag_text) for tag_text in movie_tags
-                }
-            if new_director_names := new_movie_bag.get("directors"):
-                movie.directors = _getadd_people(session, names=new_director_names)
-            if new_star_names := new_movie_bag.get("stars"):
-                movie.stars = _getadd_people(session, names=new_star_names)
-
+            update_movie_relationships(movie, new_movie_bag, session)
             _delete_orphans(session, candidates=candidate_orphans)
-
             session.commit()
 
     except NoResultFound as exc:
@@ -237,6 +219,22 @@ def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
         else:  # pragma nocover
             logging.error(exc.orig)
             raise
+
+
+def update_movie_relationships(movie, movie_bag, session):
+    """Updates the directors, stars, and tags relationships of the movie.
+
+    Args:
+        movie:
+        movie_bag:
+        session:
+    """
+    if movie_tags := movie_bag.get("movie_tags"):
+        movie.tags = {_select_tag(session, text=tag_text) for tag_text in movie_tags}
+    if directors := movie_bag.get("directors"):
+        movie.directors = _getadd_people(session, names=directors)
+    if stars := movie_bag.get("stars"):
+        movie.stars = _getadd_people(session, names=stars)
 
 
 def delete_movie(*, movie_bag: MovieBag):
@@ -539,6 +537,8 @@ def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | N
                     )
 
     if statements:
+        # https://docs.sqlalchemy.org/en/20/orm/queryguide
+        # /select.html#selecting-entities-from-subqueries
         intersection = intersect(*statements)
         statement = select(schema.Movie).from_statement(intersection)
         matches = session.scalars(statement).all()
