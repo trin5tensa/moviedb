@@ -1,7 +1,7 @@
 """MovieBag Facade."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/18/24, 2:25 PM by stephen.
+#  Last modified 10/19/24, 10:33 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -49,11 +49,12 @@ def convert_to_movie_key_typed_dict(movie_bag: MovieBag) -> MovieKeyTypedDict:
     return movie_key
 
 
+# noinspection DuplicatedCode
 def convert_from_movie_td(movie: MovieTD) -> MovieBag:
     """Converts a MovieTD into a MovieBag object.
 
     Args:
-        movie:
+        movie: A MovieTD()
 
     Returns:
         A movie bag object.
@@ -65,24 +66,25 @@ def convert_from_movie_td(movie: MovieTD) -> MovieBag:
     movie_bag = MovieBag()
     if movie.get("title"):
         movie_bag["title"] = movie["title"]
-    if movie.get("year"):
-        movie_bag["year"] = MovieInteger(movie["year"])
     if movie.get("director"):
         movie_bag["directors"] = set(movie["director"].split(", "))
-    if movie.get("duration"):
-        movie_bag["duration"] = MovieInteger(movie["duration"])
     if movie.get("notes"):
         movie_bag["notes"] = movie["notes"]
+    if movie.get("year"):
+        movie_bag["year"] = MovieInteger(movie["year"])
+    if movie.get("duration"):
+        movie_bag["duration"] = MovieInteger(movie["duration"])
     if movie.get("movie_tags"):
         movie_bag["movie_tags"] = {movie for movie in movie["movie_tags"]}
     return movie_bag
 
 
+# noinspection DuplicatedCode
 def convert_from_find_movie_typed_dict(movie: FindMovieTypedDict) -> MovieBag:
     """Converts a FindMovieTypedDict into a MovieBag object.
 
     Args:
-        movie:
+        movie: FindMovieTypedDict()
 
     Returns:
         A movie bag object.
@@ -94,14 +96,14 @@ def convert_from_find_movie_typed_dict(movie: FindMovieTypedDict) -> MovieBag:
     movie_bag = MovieBag()
     if movie.get("title"):
         movie_bag["title"] = movie["title"]
-    if movie.get("year"):
-        movie_bag["year"] = _range_converter(movie["year"])
     if movie.get("director"):
         movie_bag["directors"] = set(movie["director"].split(", "))
-    if movie.get("minutes"):
-        movie_bag["duration"] = _range_converter(movie["minutes"])
     if movie.get("notes"):
         movie_bag["notes"] = movie["notes"]
+    if movie.get("year"):
+        movie_bag["year"] = _range_converter(movie["year"])
+    if movie.get("minutes"):
+        movie_bag["duration"] = _range_converter(movie["minutes"])
     if movie.get("tags"):
         movie_bag["movie_tags"] = {movie for movie in movie["tags"]}
     return movie_bag
