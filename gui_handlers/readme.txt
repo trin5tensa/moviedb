@@ -5,13 +5,13 @@ The original module which will be retained until DB1 is fully implemented and op
 
 M2-Movies-2024/gui_handlers/handlers.py
 This started life as a simple copy of M2-Movies-2024/handlers.py.
-Code will be deleted from here as its functionality is migrated to guidatabase.py
+Functions will be removed after refactoring into guidatabase.py
 
 M2-Movies-2024/gui_handlers/guidatabase.py
-This is the new primary handler for managing GUI and database interactions.
+This will be the new handler for GUI and database interactions.
 
 M2-Movies-2024/gui_handlers/moviebagfacade.py
-This is subclass of moviebag with constructor methods which create a MovieBag()
-using the obsolescent typed dicts from the config module.
+This will have functions which can convert between the new style MovieBag objects and the variety
+of old style TypedDict objects.
 It will become obsolete itself as soon as the GUI modules are upgraded to use
 movie bags.

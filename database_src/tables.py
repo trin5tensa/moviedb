@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/19/24, 10:33 AM by stephen.
+#  Last modified 10/28/24, 4:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,6 +30,9 @@ session_factory: sessionmaker[Session] | None = None
 def select_movie(*, movie_bag: MovieBag) -> MovieBag:
     """Selects and returns a single movie.
 
+    This is not an identity function. See the detailed description of arguments and return
+    value for a fuller explanation.
+
     Args:
         movie_bag:
             id: ignored
@@ -45,9 +48,10 @@ def select_movie(*, movie_bag: MovieBag) -> MovieBag:
             movie_tags: ignored
 
     Returns:
-        A movie
+        A movie bag populated with every field that is present in the database.
     """
     with session_factory() as session:
+        # todo Surround _select_movie with try…except same as in edit_tag function
         movie = _select_movie(session, movie_bag=movie_bag)
         movie_bag = _convert_to_movie_bag(movie)
     return movie_bag
@@ -129,7 +133,7 @@ def add_movie(*, movie_bag: MovieBag):
     Logs and raises:
         MovieExists if title and year duplicate an existing movie.
         InvalidReleaseYear for year outside valid range.
-        TagNotFound for tag not in database.
+        TagNotFound_OLD for tag not in database.
     """
     try:
         with session_factory() as session:
@@ -151,9 +155,10 @@ def add_movie(*, movie_bag: MovieBag):
             raise
 
     except NoResultFound as exc:
+        # todo Is this in the right place? Bad tags will be raised in 'update_movie_relationships'
         msg = movie_bag["movie_tags"]
         logging.error(exc.args[0], f"Bad tag: {msg}")
-        raise TagNotFound(msg) from exc
+        raise TagNotFound_OLD(msg) from exc
 
 
 def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
@@ -192,10 +197,11 @@ def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
     Logs and raises:
         MovieExists if new title and year duplicate an existing movie.
         InvalidReleaseYear for new year outside valid range.
-        TagNotFound for new tag not in database.
+        TagNotFound_OLD for new tag not in database.
     """
     try:
         with session_factory() as session:
+            # todo Surround _select_movie with try…except same as in edit_tag function
             movie = _select_movie(session, movie_bag=old_movie_bag)
             candidate_orphans = movie.directors | movie.stars
             _edit_movie(movie=movie, edit_fields=new_movie_bag)
@@ -204,9 +210,10 @@ def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
             session.commit()
 
     except NoResultFound as exc:
+        # todo Move mutatis mutandum -twice- to main suite for movie and for tag
         msg = new_movie_bag["movie_tags"]
         logging.error(exc.args[0], f"Bad tag: {msg}")
-        raise TagNotFound(msg) from exc
+        raise TagNotFound_OLD(msg) from exc
 
     except IntegrityError as exc:
         if "UNIQUE constraint failed: movie.title, movie.year" in exc.args[0]:
@@ -229,6 +236,7 @@ def update_movie_relationships(movie, movie_bag, session):
         movie_bag:
         session:
     """
+    # todo Surround _select_tag with try…except same as in edit_tag function
     if movie_tags := movie_bag.get("movie_tags"):
         movie.tags = {_select_tag(session, text=tag_text) for tag_text in movie_tags}
     if directors := movie_bag.get("directors"):
@@ -262,6 +270,7 @@ def delete_movie(*, movie_bag: MovieBag):
     """
     try:
         with session_factory() as session:
+            # todo Surround _select_movie with try…except same as in edit_tag function
             movie = _select_movie(session, movie_bag=movie_bag)
             candidate_orphans = movie.directors | movie.stars
             _delete_movie(session, movie=movie)
@@ -282,7 +291,7 @@ def delete_all_orphans():
 
     Use Case:
         It is possible for a movie to be deleted by another process without handling orphan
-        people. THis function should be runat program termination to delete any orphans
+        people. THis function should be run at program termination to delete any orphans
         created in ths manner.
     """
     with session_factory() as session:
@@ -356,7 +365,7 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
         old_tag_text:
         new_tag_text:
     Raises:
-        Logs and raises a TagNotFound exception.
+        Logs and raises a TagNotFound_OLD exception.
         Logs and raises a TagExists exception.
     """
     try:
@@ -365,9 +374,10 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
                 tag = _select_tag(session, text=old_tag_text)
             except NoResultFound as exc:
                 logging.error(exc.args[0])
-                raise TagNotFound from exc
+                raise TagNotFound_OLD from exc
             else:
                 _edit_tag(tag=tag, replacement_text=new_tag_text)
+
     except IntegrityError as exc:
         logging.error(exc.args[0])
         raise TagExists(exc.statement, exc.params, exc.orig) from exc
@@ -398,7 +408,15 @@ class InvalidReleaseYear(IntegrityError):
     pass
 
 
+class MovieNotFound(NoResultFound):
+    pass
+
+
 class TagNotFound(NoResultFound):
+    pass
+
+
+class TagNotFound_OLD(NoResultFound):
     pass
 
 
@@ -430,6 +448,7 @@ def _select_movie(session: Session, *, movie_bag: MovieBag) -> schema.Movie:
         .where(schema.Movie.title == movie_bag["title"])
         .where(schema.Movie.year == int(movie_bag["year"]))
     )
+    # todo Raise new  'MovieNotFound' exception. Log it here too.
     movie = session.scalars(statement).one()
     return movie
 
@@ -786,6 +805,7 @@ def _select_tag(session: Session, *, text: str) -> schema.Tag:
     """
     # noinspection PyTypeChecker
     statement = select(schema.Tag).where(schema.Tag.text == text)
+    # todo Raise 'TagNotFound' exception. Log it here too.
     return session.scalars(statement).one()
 
 

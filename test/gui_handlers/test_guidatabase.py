@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/19/24, 10:33 AM by stephen.
+#  Last modified 10/28/24, 4:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,6 +15,7 @@
 
 from unittest.mock import MagicMock
 
+import pytest
 from pytest_check import check
 
 import config
@@ -88,6 +89,7 @@ def test_add_movie_callback_with_MovieExists_exception(monkeypatch):
 
 # noinspection DuplicatedCode, PyPep8Naming
 def test_add_movie_callback_with_InvalidReleaseYear_exception(monkeypatch):
+    # todo Fix duplicated code maybe?
     # noinspection PyTypeChecker
     table_add_movie = MagicMock(
         name="table_add_movie",
@@ -116,9 +118,10 @@ def test_add_movie_callback_with_InvalidReleaseYear_exception(monkeypatch):
 
 # noinspection DuplicatedCode, PyPep8Naming
 def test_add_movie_callback_with_TagNotFound_exception(monkeypatch):
+    # todo Fix duplicated code maybe?
     table_add_movie = MagicMock(
         name="table_add_movie",
-        side_effect=guidatabase.tables.TagNotFound,
+        side_effect=guidatabase.tables.TagNotFound_OLD,
     )
     monkeypatch.setattr(guidatabase.tables, "add_movie", table_add_movie)
     guid_add_movie = MagicMock(name="guid_add_movie")
@@ -142,6 +145,7 @@ def test_add_movie_callback_with_TagNotFound_exception(monkeypatch):
 
 # noinspection DuplicatedCode
 def test_search_for_movie(monkeypatch):
+    # todo Fix duplicated code maybe?
     monkeypatch.setattr(guidatabase.config, "current", MagicMock(name="current"))
     test_tags = {"tag 1", "tag 2", "tag 3"}
     mock_select_tags = MagicMock(name="mock_select_tags", return_value=test_tags)
@@ -160,6 +164,7 @@ def test_search_for_movie(monkeypatch):
 
 # noinspection DuplicatedCode
 def test_search_for_movie_callback(monkeypatch):
+    # todo Fix duplicated code maybe?
     # Arrange
     match_movies = MagicMock(name="match_movies", return_value=[])
     monkeypatch.setattr(guidatabase.tables, "match_movies", match_movies)
@@ -202,6 +207,7 @@ def test_search_for_movie_callback(monkeypatch):
 
 # noinspection DuplicatedCode
 def test_search_for_movie_callback_with_year_range(monkeypatch):
+    # todo Fix duplicated code maybe?
     # Arrange
     match_movies = MagicMock(name="match_movies", return_value=[])
     monkeypatch.setattr(guidatabase.tables, "match_movies", match_movies)
@@ -255,6 +261,7 @@ def test_search_for_movie_callback_returning_0_movies(monkeypatch):
         search_for_movie.assert_called_once_with()
 
 
+# noinspection DuplicatedCode
 def test_search_for_movie_callback_returning_1_movie(monkeypatch):
     year = "4242"
     movie_1 = guidatabase.MovieBag(title="Old Movie", year=MovieInteger(year))
@@ -264,6 +271,7 @@ def test_search_for_movie_callback_returning_1_movie(monkeypatch):
     title = "title search"
     criteria = config.FindMovieTypedDict(title=title, year=[year])
 
+    # todo Fix duplicated code maybe?
     edit_movie_gui = MagicMock(name="edit_movie_gui")
     monkeypatch.setattr(guidatabase.guiwidgets_2, "EditMovieGUI", edit_movie_gui)
     edit_movie_callback = MagicMock(name="edit_movie_callback")
@@ -318,3 +326,177 @@ def test_search_for_movie_callback_returning_2_movies(monkeypatch):
         movies_found,
         guidatabase._select_movie_callback,
     )
+
+
+# noinspection DuplicatedCode
+def test_func_of_edit_movie_callback(monkeypatch):
+    # todo Fix duplicated code maybe?
+    # Arrange
+    old_title = "Old Title"
+    old_year = 4242
+    old_movie = config.MovieKeyTypedDict(title=old_title, year=old_year)
+    old_movie_bag = moviebagfacade.convert_from_movie_key_typed_dict(old_movie)
+
+    new_title = "New Title"
+    new_year = "4343"
+    new_director = "Janis Jackson, Keith Kryzlowski"
+    new_duration = "142"
+    new_notes = "New Notes"
+    new_movie_tags = ["new", "movie", "tags"]
+    new_movie = guidatabase.MovieTD(
+        title=new_title,
+        year=new_year,
+        director=new_director,
+        duration=new_duration,
+        notes=new_notes,
+        movie_tags=new_movie_tags,
+    )
+    new_movie_bag = moviebagfacade.convert_from_movie_td(new_movie)
+
+    edit_movie = MagicMock(name="edit_movie")
+    monkeypatch.setattr(guidatabase.tables, "edit_movie", edit_movie)
+
+    # Act
+    guidatabase.edit_movie_callback(old_movie)(new_movie)
+
+    # Assert
+    edit_movie.assert_called_once_with(
+        old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag
+    )
+
+
+# noinspection DuplicatedCode,PyPep8Naming
+def test_func_of_edit_movie_callback_with_TagNotFoundOLD_exception(monkeypatch):
+    # todo Fix duplicated code maybe?
+    # Arrange
+    old_title = "Old Title"
+    old_year = 4242
+    old_movie = config.MovieKeyTypedDict(title=old_title, year=old_year)
+
+    new_title = "New Title"
+    new_year = "4343"
+    new_director = "Janis Jackson, Keith Kryzlowski"
+    new_duration = "142"
+    new_notes = "New Notes"
+    new_movie_tags = ["new", "movie", "tags"]
+    new_movie = guidatabase.MovieTD(
+        title=new_title,
+        year=new_year,
+        director=new_director,
+        duration=new_duration,
+        notes=new_notes,
+        movie_tags=new_movie_tags,
+    )
+
+    edit_movie = MagicMock(
+        name="edit_movie", side_effect=guidatabase.tables.TagNotFound_OLD
+    )
+    monkeypatch.setattr(guidatabase.tables, "edit_movie", edit_movie)
+
+    messagebox = MagicMock(name="messagebox")
+    monkeypatch.setattr(guidatabase.guiwidgets_2, "gui_messagebox", messagebox)
+    monkeypatch.setattr(guidatabase, "config", MagicMock(name="config"))
+
+    # Act
+    guidatabase.edit_movie_callback(old_movie)(new_movie)
+
+    # Assert
+    messagebox.assert_called_once_with(
+        guidatabase.config.current.tk_root, message=guidatabase.TAG_NOT_FOUND_MSG
+    )
+
+
+# noinspection PyPep8Naming,DuplicatedCode
+def test_func_of_edit_movie_callback_with_MovieExists_exception(monkeypatch):
+    # Arrange old movie and edited movie.
+    # todo Fix duplicated code maybe?
+    old_title = "Old Title"
+    old_year = 4242
+    old_movie = config.MovieKeyTypedDict(title=old_title, year=old_year)
+
+    edited_title = "New Title"
+    edited_year = "4343"
+    edited_director = "Janis Jackson, Keith Kryzlowski"
+    edited_duration = "142"
+    edited_notes = "New Notes"
+    edited_movie_tags = ["edited", "movie", "tags"]
+    edited_movie = guidatabase.MovieTD(
+        title=edited_title,
+        year=edited_year,
+        director=edited_director,
+        duration=edited_duration,
+        notes=edited_notes,
+        movie_tags=edited_movie_tags,
+    )
+    edited_movie_bag = moviebagfacade.convert_from_movie_td(edited_movie)
+
+    # Monkeypatch database calls
+    edit_movie = MagicMock(
+        name="edit_movie",
+        side_effect=guidatabase.tables.MovieExists(
+            "statement", "params", BaseException()
+        ),
+    )
+    monkeypatch.setattr(guidatabase.tables, "edit_movie", edit_movie)
+    select_movie = MagicMock(name="select_movie", return_value=edited_movie_bag)
+    monkeypatch.setattr(guidatabase.tables, "select_movie", select_movie)
+
+    # Monkeypatch GUI calls
+    messagebox = MagicMock(name="messagebox")
+    monkeypatch.setattr(guidatabase.guiwidgets_2, "gui_messagebox", messagebox)
+    monkeypatch.setattr(guidatabase.config, "current", MagicMock(name="current"))
+    edit_movie_gui_call = []
+    monkeypatch.setattr(
+        guidatabase.guiwidgets_2,
+        "EditMovieGUI",
+        lambda *args, **kwargs: edit_movie_gui_call.append((args, kwargs)),
+    )
+    test_tags = ["tag 1", "tag 2", "tag 3"]
+    select_all_tags = MagicMock(name="select_all_tags", return_value=test_tags)
+    monkeypatch.setattr(guidatabase.tables, "select_all_tags", select_all_tags)
+
+    # Act
+    guidatabase.edit_movie_callback(old_movie)(edited_movie)
+
+    # Assert
+    with check:
+        messagebox.assert_called_once_with(
+            guidatabase.config.current.tk_root,
+            message=guidatabase.TITLE_AND_YEAR_EXISTS_MSG,
+        )
+    with check:
+        select_movie.assert_called_once_with(movie_bag=edited_movie_bag)
+
+    # The call to EditMovieGUI recurses into the function under test so the parameters to the
+    # call have to be individually tested.
+    check.equal(
+        edit_movie_gui_call[0][0],
+        (
+            guidatabase.config.current.tk_root,
+            guidatabase._tmdb_io_handler,
+            test_tags,
+        ),
+    )
+    check.equal(edit_movie_gui_call[0][1]["old_movie"], old_movie)
+    check.equal(edit_movie_gui_call[0][1]["edited_movie_bag"], edited_movie_bag)
+    check.equal(
+        edit_movie_gui_call[0][1]["edit_movie_callback"].__qualname__[:19],
+        "edit_movie_callback",
+    )
+    check.equal(
+        edit_movie_gui_call[0][1]["delete_movie_callback"],
+        guidatabase.delete_movie_callback,
+    )
+
+
+@pytest.mark.skip
+def test_func_of_edit_movie_callback_with_InvalidReleaseYear_exception():
+    # Arranges
+
+    # Acts
+
+    # Asserts
+    # assert tables.edit_movie raises InvalidReleaseYear
+
+    # Cleans up
+    assert False

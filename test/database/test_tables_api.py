@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/21/24, 12:22 PM by stephen.
+#  Last modified 10/28/24, 4:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -35,6 +35,7 @@ TAG_TEXTS = {
     SOUGHT_TAG,
     THIRD_TAG,
 }
+# noinspection DuplicatedCode
 MOVIEBAG_1 = MovieBag(
     title="First Movie",
     year=MovieInteger("4241"),
@@ -139,24 +140,7 @@ def test_add_movie(test_database):
 
     # Assert
     with tables.session_factory() as session:
-        movie = tables._select_movie(session, movie_bag=movie_bag)
-
-        # Check eight non-relationship fields
-        check.is_instance(movie.id, int)
-        check.is_instance(movie.created, schema.datetime)
-        check.is_instance(movie.updated, schema.datetime)
-        check.equal(movie.title, movie_bag["title"])
-        check.equal(movie.year, int(movie_bag["year"]))
-        check.equal(movie.duration, int(movie_bag["duration"]))
-        check.equal(movie.synopsis, movie_bag["synopsis"])
-        check.equal(movie.notes, movie_bag["notes"])
-
-        # Check relationship fields
-        check.equal({tag.text for tag in movie.tags}, movie_bag["movie_tags"])
-        check.equal({person.name for person in movie.directors}, movie_bag["directors"])
-        check.equal({person.name for person in movie.stars}, movie_bag["stars"])
-
-        # Check new people added to people table
+        check_movie_assignments(session, movie_bag)
         people = tables._select_people(session, names={extra_star, extra_director})
         check.equal(
             len(people),
@@ -174,14 +158,14 @@ def test_add_movie_with_invalid_tag(test_database, log_error):
 
     with check:
         with pytest.raises(
-            tables.TagNotFound,
+            tables.TagNotFound_OLD,
             match="garbage",
         ):
             tables.add_movie(movie_bag=movie_bag)
     check.equal(
         log_error,
         [(("No row was found when one was required", "Bad tag: {'garbage'}"), {})],
-        msg="TagNotFound was not logged.",
+        msg="TagNotFound_OLD was not logged.",
     )
 
 
@@ -207,6 +191,7 @@ def test_add_movie_with_title_year_duplication_error(test_database, log_error):
     )
 
 
+# noinspection DuplicatedCode
 def test_add_movie_with_too_early_year(test_database, log_error):
     movie_bag = MovieBag(
         title="Test Add Movie",
@@ -233,6 +218,7 @@ def test_add_movie_with_too_early_year(test_database, log_error):
     )
 
 
+# noinspection DuplicatedCode
 def test_add_movie_with_too_late_year(test_database, log_error):
     movie_bag = MovieBag(
         title="Test Add Movie",
@@ -285,26 +271,7 @@ def test_edit_movie(test_database):
     tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag)
 
     with tables.session_factory() as session:
-        movie = tables._select_movie(session, movie_bag=new_movie_bag)
-
-        # Check eight non-relationship fields
-        check.is_instance(movie.id, int)
-        check.is_instance(movie.created, schema.datetime)
-        check.is_instance(movie.updated, schema.datetime)
-        check.equal(movie.title, new_movie_bag["title"])
-        check.equal(movie.year, int(new_movie_bag["year"]))
-        check.equal(movie.duration, int(new_movie_bag["duration"]))
-        check.equal(movie.synopsis, new_movie_bag["synopsis"])
-        check.equal(movie.notes, new_movie_bag["notes"])
-
-        # Check relationship fields
-        check.equal({tag.text for tag in movie.tags}, new_movie_bag["movie_tags"])
-        check.equal(
-            {person.name for person in movie.directors}, new_movie_bag["directors"]
-        )
-        check.equal({person.name for person in movie.stars}, new_movie_bag["stars"])
-
-        # Check new people added to people table
+        check_movie_assignments(session, new_movie_bag)
         people = tables._select_people(
             session,
             names=old_movie_bag["directors"]
@@ -331,7 +298,7 @@ def test_edit_movie_with_invalid_tag(test_database, log_error):
 
     with check:
         with pytest.raises(
-            tables.TagNotFound,
+            tables.TagNotFound_OLD,
             match="garbage",
         ):
             tables.edit_movie(
@@ -341,7 +308,7 @@ def test_edit_movie_with_invalid_tag(test_database, log_error):
     check.equal(
         log_error,
         [(("No row was found when one was required", "Bad tag: {'garbage'}"), {})],
-        msg="TagNotFound was not logged.",
+        msg="TagNotFound_OLD was not logged.",
     )
 
 
@@ -372,6 +339,7 @@ def test_edit_movie_with_title_year_duplication_error(test_database, log_error):
     )
 
 
+# noinspection DuplicatedCode
 def test_edit_movie_with_too_early_year(test_database, log_error):
     old_movie_bag = MovieBag(
         title="Test Edit Movie",
@@ -402,6 +370,7 @@ def test_edit_movie_with_too_early_year(test_database, log_error):
     )
 
 
+# noinspection DuplicatedCode
 def test_edit_movie_with_too_late_year(test_database, log_error):
     old_movie_bag = MovieBag(
         title="Test Edit Movie",
@@ -432,6 +401,7 @@ def test_edit_movie_with_too_late_year(test_database, log_error):
     )
 
 
+# noinspection DuplicatedCode
 def test_delete_movie(test_database):
     movie_bag = MovieBag(
         title="Test Delete Movie",
@@ -453,6 +423,7 @@ def test_delete_movie(test_database):
         check.equal(len(people), 0, msg=f"People not removed from people table.")
 
 
+# noinspection DuplicatedCode
 def test_previously_deleted_movie(test_database):
     """This tests the scenario where the movie has been deleted by another
     process.Orphan deletion must still be executed."""
@@ -549,7 +520,7 @@ def test_edit_missing_tag_logs_and_raises_exception(test_database, log_error):
     tag_text = "garbage"
 
     with check:
-        with pytest.raises(tables.TagNotFound):
+        with pytest.raises(tables.TagNotFound_OLD):
             tables.edit_tag(old_tag_text=tag_text, new_tag_text=tag_text)
     check.equal(
         log_error,
@@ -628,6 +599,32 @@ def test_invalid_movie_regression(test_database):
     tables.select_movie(movie_bag=select_bag)
 
 
+# noinspection DuplicatedCode
+def check_movie_assignments(session: tables.Session, movie_bag: tables.MovieBag):
+    """This function runs common code for the add_movie and edit movie tests.
+
+    It is temporary code and will be replaced when the code in the subclasses
+    under test is consolidated into their superclass.
+    """
+    # noinspection PyProtectedMember
+    movie = tables._select_movie(session, movie_bag=movie_bag)
+
+    # Check eight non-relationship fields
+    check.is_instance(movie.id, int)
+    check.is_instance(movie.created, schema.datetime)
+    check.is_instance(movie.updated, schema.datetime)
+    check.equal(movie.title, movie_bag["title"])
+    check.equal(movie.year, int(movie_bag["year"]))
+    check.equal(movie.duration, int(movie_bag["duration"]))
+    check.equal(movie.synopsis, movie_bag["synopsis"])
+    check.equal(movie.notes, movie_bag["notes"])
+
+    # Check relationship fields
+    check.equal({tag.text for tag in movie.tags}, movie_bag["movie_tags"])
+    check.equal({person.name for person in movie.directors}, movie_bag["directors"])
+    check.equal({person.name for person in movie.stars}, movie_bag["stars"])
+
+
 @pytest.fixture(scope="function")
 def session_engine():
     """Creates an engine."""
@@ -641,6 +638,7 @@ def test_database(session_engine):
     with tables.session_factory() as session:
         session.add_all([schema.Tag(text=text) for text in TAG_TEXTS])
 
+        # noinspection DuplicatedCode
         for movie_bag in [MOVIEBAG_1, MOVIEBAG_2, MOVIEBAG_3, MOVIEBAG_4]:
             duration = movie_bag.get("duration")
 

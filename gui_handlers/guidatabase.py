@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/19/24, 10:33 AM by stephen.
+#  Last modified 10/28/24, 4:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,7 @@ This module is the glue between the user's selection of a menu item and the gui.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from collections.abc import Sequence
+from collections.abc import Sequence, Callable
 import config
 
 import guiwidgets
@@ -25,7 +25,6 @@ from globalconstants import MovieTD, MovieBag
 from gui_handlers import moviebagfacade
 from gui_handlers.handlers import (
     _tmdb_io_handler,
-    edit_movie_callback,
     delete_movie_callback,
     _select_movie_callback,
 )
@@ -57,6 +56,14 @@ def add_movie(movie_bag: MovieBag = None):
     )
 
 
+def search_for_movie():
+    """Get search movie data from the user and search for compliant records"""
+    all_tags = tables.select_all_tags()
+    guiwidgets.SearchMovieGUI(
+        config.current.tk_root, search_for_movie_callback, list(all_tags)
+    )
+
+
 def add_movie_callback(gui_movie: MovieTD):
     """Add user supplied data to the database.
 
@@ -66,7 +73,7 @@ def add_movie_callback(gui_movie: MovieTD):
     Logs and raises:
         MovieExists if title and year duplicate an existing movie.
         InvalidReleaseYear for year outside valid range.
-        TagNotFound for tag not in database.
+        TagNotFound_OLD for tag not in database.
     """
     # noinspection PyUnresolvedReferences
     movie_bag = moviebagfacade.convert_from_movie_td(gui_movie)
@@ -82,17 +89,9 @@ def add_movie_callback(gui_movie: MovieTD):
             config.current.tk_root, message=IMPOSSIBLE_RELEASE_YEAR_MSG
         )
         add_movie(movie_bag)
-    except tables.TagNotFound:
+    except tables.TagNotFound_OLD:
         guiwidgets_2.gui_messagebox(config.current.tk_root, message=TAG_NOT_FOUND_MSG)
         add_movie(movie_bag)
-
-
-def search_for_movie():
-    """Get search movie data from the user and search for compliant records"""
-    all_tags = tables.select_all_tags()
-    guiwidgets.SearchMovieGUI(
-        config.current.tk_root, search_for_movie_callback, list(all_tags)
-    )
 
 
 def search_for_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
@@ -146,3 +145,67 @@ def search_for_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequenc
             guiwidgets.SelectMovieGUI(
                 config.current.tk_root, movies, _select_movie_callback
             )
+
+
+def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
+    """Create the edit movie callback
+
+
+    Args:
+        old_movie: The movie that is to be edited.
+            The record's key values may be altered by the user. This function will delete the old
+            record and add a new record.
+
+    Returns:
+        A callback function which GUI edit can call with edits entered by the user.
+    """
+
+    def func(new_movie: MovieTD):
+        """Change movie and links in database with new user supplied data,
+
+        NoResultFound
+        MovieExists
+        InvalidReleaseYear
+
+        Args:
+            new_movie: Fields with either original values or values modified by the user.
+
+
+
+        Raises exception.DatabaseSearchFoundNothing
+        """
+        old_movie_bag = moviebagfacade.convert_from_movie_key_typed_dict(old_movie)
+        new_movie_bag = moviebagfacade.convert_from_movie_td(new_movie)
+        try:
+            tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag)
+
+        except tables.TagNotFound_OLD:
+            # todo Remove this message when the tables.py design problem is fixed.
+            #   Due to an as yet unexplored design problem* in tables.py we got here because
+            #   either an expected movie record or an expected tag record was not found.
+            #   For the time being, the user will be notified and the process will end.
+            #   *
+            #   When a tuple is not found by a select statement it seems likely that the
+            #   exception is not raised immediately but when the session is committed. If an
+            #   exception can be raised by more than one operation within a a session then it
+            #   becomes difficult to determine which statement is at fault.
+            guiwidgets_2.gui_messagebox(
+                config.current.tk_root, message=TAG_NOT_FOUND_MSG
+            )
+
+        except tables.MovieExists:
+            guiwidgets_2.gui_messagebox(
+                config.current.tk_root, message=TITLE_AND_YEAR_EXISTS_MSG
+            )
+            full_movie_bag = tables.select_movie(movie_bag=new_movie_bag)
+            guiwidgets_2.EditMovieGUI(
+                config.current.tk_root,
+                _tmdb_io_handler,
+                list(tables.select_all_tags()),
+                old_movie=config.MovieUpdateDef(**old_movie),
+                edited_movie_bag=full_movie_bag,
+                edit_movie_callback=edit_movie_callback(old_movie),
+                delete_movie_callback=delete_movie_callback,
+            )
+
+    return func
