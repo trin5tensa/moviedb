@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/28/24, 4:01 PM by stephen.
+#  Last modified 11/5/24, 10:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -86,6 +86,31 @@ def test_select_movie(test_database):
     check.equal(movie["movie_tags"], MOVIEBAG_2["movie_tags"])
 
 
+# noinspection PyPep8Naming
+def test_select_movie_raises_MovieNotFound(test_database, log_error):
+    movie_bag = MovieBag(
+        title="Test Select Movie Not Found",
+        year=MOVIEBAG_2["year"],
+    )
+
+    with check:
+        with pytest.raises(tables.MovieNotFound):
+            tables.select_movie(movie_bag=movie_bag)
+    check.equal(
+        log_error,
+        [
+            (
+                (
+                    tables.MovieNotFound.__qualname__,
+                    tables.MovieNotFound.__doc__,
+                    movie_bag,
+                ),
+                {},
+            )
+        ],
+    )
+
+
 def test_select_all_movies(test_database):
     movie_bags = tables.select_all_movies()
 
@@ -158,14 +183,21 @@ def test_add_movie_with_invalid_tag(test_database, log_error):
 
     with check:
         with pytest.raises(
-            tables.TagNotFound_OLD,
-            match="garbage",
+            tables.TagNotFound,
         ):
             tables.add_movie(movie_bag=movie_bag)
     check.equal(
         log_error,
-        [(("No row was found when one was required", "Bad tag: {'garbage'}"), {})],
-        msg="TagNotFound_OLD was not logged.",
+        [
+            (
+                (
+                    tables.TagNotFound.__qualname__,
+                    tables.TagNotFound.__doc__,
+                    movie_bag["movie_tags"],
+                ),
+                {},
+            )
+        ],
     )
 
 
@@ -286,6 +318,48 @@ def test_edit_movie(test_database):
         )
 
 
+# noinspection PyPep8Naming
+def test_edit_movie_raises_MovieNotFound(test_database, log_error):
+    old_movie_bag = MovieBag(
+        title="Test Edit Movie Not Found",
+        year=MovieInteger(5042),
+        # duration=MovieInteger(159),
+        # synopsis="Test synopsis",
+        # notes="Test notes",
+        # movie_tags=TAG_TEXTS,
+        # directors={"Yolanda Ypsilanti"},
+        # stars={"O Star 10", "O Star 11"},
+    )
+    # tables.add_movie(movie_bag=old_movie_bag)
+    # new_movie_bag = MovieBag(
+    #     title="Son of Test Edit Movie",
+    #     year=MovieInteger(6042),
+    #     duration=MovieInteger(242),
+    #     synopsis="Test synopsis sequel",
+    #     notes="Test notes sequel",
+    #     movie_tags={SOUGHT_TAG},
+    #     directors={"Zach Zimmermann"},
+    #     stars={"O Star 10", "N Star 20"},
+    # )
+
+    with check:
+        with pytest.raises(tables.MovieNotFound):
+            tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=old_movie_bag)
+    check.equal(
+        log_error,
+        [
+            (
+                (
+                    tables.MovieNotFound.__qualname__,
+                    tables.MovieNotFound.__doc__,
+                    old_movie_bag,
+                ),
+                {},
+            )
+        ],
+    )
+
+
 def test_edit_movie_with_invalid_tag(test_database, log_error):
     old_movie_bag = MovieBag(
         title="Test Edit Movie",
@@ -298,8 +372,7 @@ def test_edit_movie_with_invalid_tag(test_database, log_error):
 
     with check:
         with pytest.raises(
-            tables.TagNotFound_OLD,
-            match="garbage",
+            tables.TagNotFound,
         ):
             tables.edit_movie(
                 old_movie_bag=old_movie_bag,
@@ -307,8 +380,16 @@ def test_edit_movie_with_invalid_tag(test_database, log_error):
             )
     check.equal(
         log_error,
-        [(("No row was found when one was required", "Bad tag: {'garbage'}"), {})],
-        msg="TagNotFound_OLD was not logged.",
+        [
+            (
+                (
+                    tables.TagNotFound.__qualname__,
+                    tables.TagNotFound.__doc__,
+                    new_movie_bag["movie_tags"],
+                ),
+                {},
+            )
+        ],
     )
 
 
@@ -461,48 +542,25 @@ def test_match_tags(test_database):
     assert tags == {SOUGHT_TAG}
 
 
-def test_add_tag_text(test_database):
+def test_add_tag(test_database):
     new_tag = "test new tag"
 
+    # Addition of identical tag should be silently suppressed
+    tables.add_tag(tag_text=new_tag)
     tables.add_tag(tag_text=new_tag)
 
     tags = tables.select_all_tags()
     assert tags & {new_tag} == {new_tag}
 
 
-def test_add_duplicate_tag_logs_and_raises_exception(test_database, log_error):
-    new_tag = "test new tag"
-    tables.add_tag(tag_text=new_tag)
-
-    with check:
-        with pytest.raises(
-            tables.TagExists,
-            match="UNIQUE constraint failed: tag.text",
-        ):
-            tables.add_tag(tag_text=new_tag)
-
-    check.equal(
-        log_error,
-        [(("(sqlite3.IntegrityError) UNIQUE constraint failed: tag.text",), {})],
-        msg="IntegrityError was not logged.",
-    )
-
-
 def test_add_tags(test_database, log_error):
     new_tag = "test new tag"
+
+    tables.add_tags(tag_texts={new_tag})
     tables.add_tags(tag_texts={new_tag})
 
-    with check:
-        with pytest.raises(
-            tables.TagExists,
-            match="UNIQUE constraint failed: tag.text",
-        ):
-            tables.add_tags(tag_texts={new_tag})
-    check.equal(
-        log_error,
-        [(("(sqlite3.IntegrityError) UNIQUE constraint failed: tag.text",), {})],
-        msg="IntegrityError was not logged.",
-    )
+    tags = tables.select_all_tags()
+    assert tags & {new_tag} == {new_tag}
 
 
 def test_edit_tag(test_database):
@@ -520,7 +578,7 @@ def test_edit_missing_tag_logs_and_raises_exception(test_database, log_error):
     tag_text = "garbage"
 
     with check:
-        with pytest.raises(tables.TagNotFound_OLD):
+        with pytest.raises(tables.TagNotFound):
             tables.edit_tag(old_tag_text=tag_text, new_tag_text=tag_text)
     check.equal(
         log_error,
@@ -540,7 +598,6 @@ def test_edit_duplicate_tag_text_logs_and_raises_exception(test_database, log_er
             match="UNIQUE constraint failed: tag.text",
         ):
             tables.edit_tag(old_tag_text=old_tag_text, new_tag_text=new_tag_text)
-            pass
     check.equal(
         log_error,
         [(("(sqlite3.IntegrityError) UNIQUE constraint failed: tag.text",), {})],
