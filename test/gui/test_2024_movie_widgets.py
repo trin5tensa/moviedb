@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/5/24, 10:04 AM by stephen.
+#  Last modified 10/28/24, 4:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -710,6 +710,74 @@ class TestAddMovieGUI:
                     call(parent=cut.parent, message=dummy_msg),
                 ]
             )
+
+
+def test_edit_movie_init_with_movie_bag(monkeypatch):
+    # Arrange
+    monkeypatch.setattr(guiwidgets_2.ttk, "Entry", MagicMock(name="Entry"))
+    monkeypatch.setattr(guiwidgets_2.tk, "StringVar", MagicMock(name="StringVar"))
+    monkeypatch.setattr(
+        guiwidgets_2.MovieGUI,
+        "framing",
+        MagicMock(
+            name="framing",
+            return_value=(
+                MagicMock(name="outer_frame"),
+                MagicMock(name="body_frame"),
+                MagicMock(name="buttonbox"),
+                MagicMock(name="tmdb_frame"),
+            ),
+        ),
+    )
+    monkeypatch.setattr(guiwidgets_2, "InputZone", MagicMock(name="InputZone"))
+    monkeypatch.setattr(
+        guiwidgets_2.MovieGUI, "fill_buttonbox", MagicMock(name="fill_buttonbox")
+    )
+    monkeypatch.setattr(
+        guiwidgets_2.MovieGUI,
+        "tmdb_results_frame",
+        MagicMock(name="tmdb_results_frame"),
+    )
+    monkeypatch.setattr(
+        guiwidgets_2,
+        "init_button_enablements",
+        MagicMock(name="init_button_enablements"),
+    )
+
+    movie_bag = MovieBag(
+        title="test title",
+        year=MovieInteger(4242),
+        directors={"Donald Director", "Delphine Directrice"},
+        duration=MovieInteger("42"),
+        # Notes intentionally omitted
+        synopsis="Boy meets girl.",
+        movie_tags={"tag 1", "tag 2"},
+    )
+
+    # Act
+    cut = guiwidgets_2.EditMovieGUI(
+        MagicMock(name="tk/tcl parent"),
+        tmdb_search_callback=MagicMock(),
+        all_tags=[],
+        edited_movie_bag=movie_bag,
+    )
+
+    # Assert
+    check.equal(cut.entry_fields["title"].original_value, movie_bag["title"])
+    check.equal(cut.entry_fields["year"].original_value, str(int(movie_bag["year"])))
+    check.equal(
+        cut.entry_fields["director"].original_value,
+        ", ".join(director for director in movie_bag["directors"]),
+    )
+    check.equal(
+        cut.entry_fields["minutes"].original_value, str(int(movie_bag["duration"]))
+    )
+    # check.equal(cut.entry_fields["notes"].original_value, movie_bag["notes"])
+    # synopsis is not used in GUI2 but is expected for GUI3.
+    # This test will fail when GUI3 is implemented.
+    check.equal(cut.entry_fields.get("synopsis"), None)
+
+    check.equal(cut.entry_fields["tags"].original_value, movie_bag["movie_tags"])
 
 
 # noinspection PyMissingOrEmptyDocstring

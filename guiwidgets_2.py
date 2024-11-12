@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/5/24, 10:04 AM by stephen.
+#  Last modified 10/28/24, 4:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -338,6 +338,7 @@ class AddMovieGUI(MovieGUI):
     movie_bag: MovieBag | None = field(default=None, kw_only=True)
     add_movie_callback: Callable[[MovieTD], None] = field(default=None, kw_only=True)
 
+    # noinspection DuplicatedCode
     def __post_init__(self):
         super().__post_init__()
         if self.movie_bag:
@@ -446,7 +447,8 @@ class AddMovieGUI(MovieGUI):
 class EditMovieGUI(MovieGUI):
     """Create and manage a GUI form for editing an existing movie."""
 
-    old_movie: config.MovieUpdateDef = field(default=None, kw_only=True)
+    old_movie: config.MovieUpdateDef | None = field(default=None, kw_only=True)
+    edited_movie_bag: MovieBag | None = field(default=None, kw_only=True)
     edit_movie_callback: Callable[[config.FindMovieTypedDict], None] = field(
         default=None, kw_only=True
     )
@@ -454,11 +456,40 @@ class EditMovieGUI(MovieGUI):
         default=None, kw_only=True
     )
 
+    # noinspection DuplicatedCode
     def __post_init__(self):
         super().__post_init__()
-        for k in self.entry_fields.keys():
-            # noinspection PyTypedDict
-            self.entry_fields[k].original_value = self.old_movie[k]
+        if self.old_movie:
+            for k in self.entry_fields.keys():
+                # noinspection PyTypedDict
+                self.entry_fields[k].original_value = self.old_movie[k]
+        elif self.edited_movie_bag:
+            if self.edited_movie_bag.get("title"):
+                self.entry_fields["title"].original_value = self.edited_movie_bag[
+                    "title"
+                ]
+            if self.edited_movie_bag.get("year"):
+                self.entry_fields["year"].original_value = int(
+                    self.edited_movie_bag["year"]
+                )
+            if self.edited_movie_bag.get("directors"):
+                self.entry_fields["director"].original_value = ", ".join(
+                    director for director in self.edited_movie_bag["directors"]
+                )
+            if self.edited_movie_bag.get("duration"):
+                self.entry_fields["minutes"].original_value = int(
+                    self.edited_movie_bag["duration"]
+                )
+            if self.edited_movie_bag.get("notes"):
+                self.entry_fields["notes"].original_value = self.edited_movie_bag[
+                    "notes"
+                ]  # pragma nocover
+            if self.edited_movie_bag.get("movie_tags"):
+                self.entry_fields["tags"].original_value = self.edited_movie_bag[
+                    "movie_tags"
+                ]
+        else:
+            raise ValueError(f"")
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         commit_button = create_button(
@@ -1134,6 +1165,7 @@ class InputZone:
         entry_field.widget.configure(width=self.col_1_width)
         entry_field.widget.grid(column=1, row=row_ix)
 
+    # noinspection DuplicatedCode
     def add_text_row(self, entry_field: tk_facade.Text):
         """
         Add label and text widgets as the bottom row.
@@ -1181,6 +1213,7 @@ class InputZone:
         )
         entry_field.widget.grid(column=1, row=row_ix)
 
+    # noinspection DuplicatedCode
     def add_treeview_row(
         self, entry_field: tk_facade.Treeview, all_tags: Sequence[str]
     ):

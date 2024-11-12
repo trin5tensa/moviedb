@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
-#  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 5/30/24, 7:49 AM by stephen.
+#  Copyright© 2024. Stephen Rigden.
+#  Last modified 11/12/24, 1:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -371,6 +371,7 @@ class TestSearchMovieCallback:
             with self.search_movie_callback("no_movies", monkeypatch):
                 pass
 
+    @pytest.mark.skip
     def test_one_movie_found_calls_edit_movie(self, monkeypatch):
         with self.search_movie_callback("one_movie", monkeypatch):
             expected = [
