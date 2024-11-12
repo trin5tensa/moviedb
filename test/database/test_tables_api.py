@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/5/24, 10:41 AM by stephen.
+#  Last modified 11/12/24, 1:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -323,24 +323,7 @@ def test_edit_movie_raises_MovieNotFound(test_database, log_error):
     old_movie_bag = MovieBag(
         title="Test Edit Movie Not Found",
         year=MovieInteger(5042),
-        # duration=MovieInteger(159),
-        # synopsis="Test synopsis",
-        # notes="Test notes",
-        # movie_tags=TAG_TEXTS,
-        # directors={"Yolanda Ypsilanti"},
-        # stars={"O Star 10", "O Star 11"},
     )
-    # tables.add_movie(movie_bag=old_movie_bag)
-    # new_movie_bag = MovieBag(
-    #     title="Son of Test Edit Movie",
-    #     year=MovieInteger(6042),
-    #     duration=MovieInteger(242),
-    #     synopsis="Test synopsis sequel",
-    #     notes="Test notes sequel",
-    #     movie_tags={SOUGHT_TAG},
-    #     directors={"Zach Zimmermann"},
-    #     stars={"O Star 10", "N Star 20"},
-    # )
 
     with check:
         with pytest.raises(tables.MovieNotFound):

@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/28/24, 4:01 PM by stephen.
+#  Last modified 11/12/24, 1:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -33,9 +33,10 @@ from gui_handlers.moviebagfacade import convert_to_movie_update_def
 TITLE_AND_YEAR_EXISTS_MSG = (
     "The title and release date clash with a movie already in the database"
 )
-IMPOSSIBLE_RELEASE_YEAR_MSG = "The release year is too early or too late."
+INVALID_RELEASE_YEAR_MSG = "The release year is too early or too late."
 TAG_NOT_FOUND_MSG = "One or more tags were not found in the database."
 NO_COMPLIANT_MOVIES_FOUND_MSG = "No compliant movies were found"
+MOVIE_NO_LONGER_PRESENT = "The original movie is no longer present in the database."
 
 
 def add_movie(movie_bag: MovieBag = None):
@@ -86,10 +87,10 @@ def add_movie_callback(gui_movie: MovieTD):
         add_movie(movie_bag)
     except tables.InvalidReleaseYear:
         guiwidgets_2.gui_messagebox(
-            config.current.tk_root, message=IMPOSSIBLE_RELEASE_YEAR_MSG
+            config.current.tk_root, message=INVALID_RELEASE_YEAR_MSG
         )
         add_movie(movie_bag)
-    except tables.TagNotFound_OLD:
+    except tables.TagNotFound:
         guiwidgets_2.gui_messagebox(config.current.tk_root, message=TAG_NOT_FOUND_MSG)
         add_movie(movie_bag)
 
@@ -176,36 +177,69 @@ def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
         """
         old_movie_bag = moviebagfacade.convert_from_movie_key_typed_dict(old_movie)
         new_movie_bag = moviebagfacade.convert_from_movie_td(new_movie)
+
         try:
             tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag)
 
-        except tables.TagNotFound_OLD:
-            # todo Remove this message when the tables.py design problem is fixed.
-            #   Due to an as yet unexplored design problem* in tables.py we got here because
-            #   either an expected movie record or an expected tag record was not found.
-            #   For the time being, the user will be notified and the process will end.
-            #   *
-            #   When a tuple is not found by a select statement it seems likely that the
-            #   exception is not raised immediately but when the session is committed. If an
-            #   exception can be raised by more than one operation within a a session then it
-            #   becomes difficult to determine which statement is at fault.
+        except tables.MovieNotFound:
+            # The old movie has been deleted by another process. The edit was rolled back.
+            # Since the movie selected by the user for editing is no linger available no
+            # further help can be provided beyond informing the user.
             guiwidgets_2.gui_messagebox(
-                config.current.tk_root, message=TAG_NOT_FOUND_MSG
+                config.current.tk_root,
+                message=f"{MOVIE_NO_LONGER_PRESENT} {old_movie_bag['title']}, "
+                f"{old_movie_bag['year']}",
             )
+
+        except tables.TagNotFound:
+            # A tag was deleted by another process. The edit was rolled back. Represent the
+            # edit screen with the values which were entered by the user.
+            guiwidgets_2.gui_messagebox(
+                config.current.tk_root,
+                message=f"{TAG_NOT_FOUND_MSG}. {new_movie['movie_tags']}",
+            )
+            _edit_movie(old_movie, new_movie_bag)
 
         except tables.MovieExists:
+            # An attempt to change the key was rejected as the new key was not unique.
+            # The edit was rolled back.
             guiwidgets_2.gui_messagebox(
-                config.current.tk_root, message=TITLE_AND_YEAR_EXISTS_MSG
-            )
-            full_movie_bag = tables.select_movie(movie_bag=new_movie_bag)
-            guiwidgets_2.EditMovieGUI(
                 config.current.tk_root,
-                _tmdb_io_handler,
-                list(tables.select_all_tags()),
-                old_movie=config.MovieUpdateDef(**old_movie),
-                edited_movie_bag=full_movie_bag,
-                edit_movie_callback=edit_movie_callback(old_movie),
-                delete_movie_callback=delete_movie_callback,
+                message=f"{TITLE_AND_YEAR_EXISTS_MSG}. {new_movie_bag['title']}, "
+                f"{new_movie_bag['year']}",
             )
+            _edit_movie(old_movie, new_movie_bag)
+
+        except tables.InvalidReleaseYear:
+            # An attempt to change the year was rejected as impossibly early
+            # or late. The edit was rolled back.
+            guiwidgets_2.gui_messagebox(
+                config.current.tk_root,
+                message=f"{INVALID_RELEASE_YEAR_MSG}. {new_movie_bag['title']}, "
+                f"{new_movie_bag['year']}",
+            )
+            _edit_movie(old_movie, new_movie_bag)
 
     return func
+
+
+def _edit_movie(old_movie: config.MovieKeyTypedDict, new_movie_bag: MovieBag):
+    """A helper function which calls edit movie GUI.
+
+    Args:
+        old_movie:
+        new_movie_bag:
+
+    Use Case:
+        This supports exception cases handled by the edit_movie_callback.
+        They need to redisplay the user edit which caused the exceptions.
+    """
+    guiwidgets_2.EditMovieGUI(
+        config.current.tk_root,
+        _tmdb_io_handler,
+        list(tables.select_all_tags()),
+        old_movie=config.MovieUpdateDef(**old_movie),
+        edited_movie_bag=new_movie_bag,
+        edit_movie_callback=edit_movie_callback(old_movie),
+        delete_movie_callback=delete_movie_callback,
+    )
