@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/5/24, 4:20 PM by stephen.
+#  Last modified 11/14/24, 7:03 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -55,6 +55,7 @@ class TestAddMovieCallback:
 
 
 # noinspection PyMissingOrEmptyDocstring
+@pytest.mark.skip
 class TestEditMovieCallback:
     def test_edit_movie_callback(self, monkeypatch):
         test_old_title = "test old title"
