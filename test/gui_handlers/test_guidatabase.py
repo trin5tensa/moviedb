@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/12/24, 1:00 PM by stephen.
+#  Last modified 11/20/24, 1:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -435,6 +435,18 @@ def test_edit_movie_callback_with_InvalidReleaseYear_exception(
             f"{new_movie_bag['year']}",
         )
     common_edit_movie_gui_test(edit_movie_gui_call, test_tags, old_movie, new_movie_bag)
+
+
+def test_delete_movie_callback():
+    # Arrange
+
+    # Act
+    pass
+
+    # Assert
+
+    # Cleanup
+    # assert False
 
 
 def common_edit_movie_gui_test(

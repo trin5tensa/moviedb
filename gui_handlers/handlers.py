@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/14/24, 7:04 AM by stephen.
+#  Last modified 11/20/24, 1:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -28,7 +28,6 @@ import exception
 import guiwidgets
 import guiwidgets_2
 import tmdb
-from globalconstants import *
 
 MISSING_MOVIE = "Missing movie"
 THE_MOVIE = "The movie"
@@ -238,9 +237,6 @@ def delete_movie_callback(movie: config.FindMovieTypedDict):
         pass
 
 
-
-
-
 # todo Rewrite for database API change.
 def _select_movie_callback(movie_id: config.MovieKeyTypedDict):
     """Edit a movie selected by the user from a list of movies.
@@ -261,7 +257,7 @@ def _select_movie_callback(movie_id: config.MovieKeyTypedDict):
         _tmdb_io_handler,
         database.all_tags(),
         old_movie=movie,
-        edit_movie_callback=edit_movie_callback(movie_key),
+        # edit_movie_callback=edit_movie_callback(movie_key),
         delete_movie_callback=delete_movie_callback,
     )
 

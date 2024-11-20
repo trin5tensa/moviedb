@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/12/24, 1:00 PM by stephen.
+#  Last modified 11/20/24, 1:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -87,24 +87,20 @@ def test_select_movie(test_database):
 
 
 # noinspection PyPep8Naming
-def test_select_movie_raises_MovieNotFound(test_database, log_error):
+def test_select_movie_raises_NoResultFound(test_database, log_error):
     movie_bag = MovieBag(
-        title="Test Select Movie Not Found",
+        title="garbage",
         year=MOVIEBAG_2["year"],
     )
 
-    with check:
-        with pytest.raises(tables.MovieNotFound):
-            tables.select_movie(movie_bag=movie_bag)
+    with pytest.raises(tables.NoResultFound, match=tables.MOVIE_NOT_FOUND):
+        tables.select_movie(movie_bag=movie_bag)
+
     check.equal(
         log_error,
         [
             (
-                (
-                    tables.MovieNotFound.__qualname__,
-                    tables.MovieNotFound.__doc__,
-                    movie_bag,
-                ),
+                (tables.MOVIE_NOT_FOUND, movie_bag),
                 {},
             )
         ],
@@ -175,26 +171,22 @@ def test_add_movie(test_database):
 
 
 def test_add_movie_with_invalid_tag(test_database, log_error):
+    tag_text = "garbage"
     movie_bag = MovieBag(
         title="Test Add Movie",
         year=MovieInteger(5042),
-        movie_tags={"garbage"},
+        movie_tags={tag_text},
     )
 
     with check:
-        with pytest.raises(
-            tables.TagNotFound,
-        ):
+        with pytest.raises(tables.NoResultFound, match=tables.TAG_NOT_FOUND):
             tables.add_movie(movie_bag=movie_bag)
+
     check.equal(
         log_error,
         [
             (
-                (
-                    tables.TagNotFound.__qualname__,
-                    tables.TagNotFound.__doc__,
-                    movie_bag["movie_tags"],
-                ),
+                (tables.TAG_NOT_FOUND, tag_text),
                 {},
             )
         ],
@@ -204,8 +196,8 @@ def test_add_movie_with_invalid_tag(test_database, log_error):
 def test_add_movie_with_title_year_duplication_error(test_database, log_error):
     with check:
         with pytest.raises(
-            tables.MovieExists,
-            match="UNIQUE constraint failed: movie.title, movie.year",
+            tables.IntegrityError,
+            match=tables.MOVIE_KEY_CONSTRAINT_FAILURE,
         ):
             tables.add_movie(movie_bag=MOVIEBAG_1)
     check.equal(
@@ -213,9 +205,8 @@ def test_add_movie_with_title_year_duplication_error(test_database, log_error):
         [
             (
                 (
-                    "UNIQUE constraint failed: movie.title, movie.year",
-                    "Duplicate title and year: movie.title='First Movie', "
-                    "movie.year=4241.",
+                    f"{tables.MOVIE_KEY_CONSTRAINT_FAILURE}"
+                    f" {MOVIEBAG_1['title']}, {MOVIEBAG_1['year']}.",
                 ),
                 {},
             )
@@ -227,23 +218,21 @@ def test_add_movie_with_title_year_duplication_error(test_database, log_error):
 def test_add_movie_with_too_early_year(test_database, log_error):
     movie_bag = MovieBag(
         title="Test Add Movie",
-        year=MovieInteger(0),
+        year=MovieInteger(42),
     )
 
     with check:
         with pytest.raises(
-            tables.InvalidReleaseYear,
-            match="CHECK constraint failed: year>1878",
+            tables.IntegrityError,
+            match=tables.INVALID_YEAR,
         ):
             tables.add_movie(movie_bag=movie_bag)
+
     check.equal(
         log_error,
         [
             (
-                (
-                    "CHECK constraint failed: year>1878",
-                    ("(sqlite3.IntegrityError) CHECK constraint failed: year>1878",),
-                ),
+                (f"{tables.INVALID_YEAR}. {movie_bag['year']}.",),
                 {},
             )
         ],
@@ -259,18 +248,16 @@ def test_add_movie_with_too_late_year(test_database, log_error):
 
     with check:
         with pytest.raises(
-            tables.InvalidReleaseYear,
-            match="CHECK constraint failed: year<=10000",
+            tables.IntegrityError,
+            match=tables.INVALID_YEAR,
         ):
             tables.add_movie(movie_bag=movie_bag)
+
     check.equal(
         log_error,
         [
             (
-                (
-                    "CHECK constraint failed: year<=10000",
-                    ("(sqlite3.IntegrityError) CHECK constraint failed: year<=10000",),
-                ),
+                (f"{tables.INVALID_YEAR}. {movie_bag['year']}.",),
                 {},
             )
         ],
@@ -319,24 +306,21 @@ def test_edit_movie(test_database):
 
 
 # noinspection PyPep8Naming
-def test_edit_movie_raises_MovieNotFound(test_database, log_error):
+def test_edit_movie_raises_NoResultFound(test_database, log_error):
     old_movie_bag = MovieBag(
         title="Test Edit Movie Not Found",
         year=MovieInteger(5042),
     )
 
     with check:
-        with pytest.raises(tables.MovieNotFound):
+        with pytest.raises(tables.NoResultFound, match=tables.MOVIE_NOT_FOUND):
             tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=old_movie_bag)
+
     check.equal(
         log_error,
         [
             (
-                (
-                    tables.MovieNotFound.__qualname__,
-                    tables.MovieNotFound.__doc__,
-                    old_movie_bag,
-                ),
+                (tables.MOVIE_NOT_FOUND, old_movie_bag),
                 {},
             )
         ],
@@ -349,27 +333,23 @@ def test_edit_movie_with_invalid_tag(test_database, log_error):
         year=MovieInteger(5042),
     )
     tables.add_movie(movie_bag=old_movie_bag)
+    tag_text = "garbage"
     new_movie_bag = MovieBag(
-        movie_tags={"garbage"},
+        movie_tags={tag_text},
     )
 
     with check:
-        with pytest.raises(
-            tables.TagNotFound,
-        ):
+        with pytest.raises(tables.NoResultFound, match=tables.TAG_NOT_FOUND):
             tables.edit_movie(
                 old_movie_bag=old_movie_bag,
                 new_movie_bag=new_movie_bag,
             )
+
     check.equal(
         log_error,
         [
             (
-                (
-                    tables.TagNotFound.__qualname__,
-                    tables.TagNotFound.__doc__,
-                    new_movie_bag["movie_tags"],
-                ),
+                (tables.TAG_NOT_FOUND, tag_text),
                 {},
             )
         ],
@@ -385,8 +365,8 @@ def test_edit_movie_with_title_year_duplication_error(test_database, log_error):
 
     with check:
         with pytest.raises(
-            tables.MovieExists,
-            match="UNIQUE constraint failed: movie.title, movie.year",
+            tables.IntegrityError,
+            match=tables.MOVIE_KEY_CONSTRAINT_FAILURE,
         ):
             tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=MOVIEBAG_1)
     check.equal(
@@ -394,8 +374,8 @@ def test_edit_movie_with_title_year_duplication_error(test_database, log_error):
         [
             (
                 (
-                    "UNIQUE constraint failed: movie.title, movie.year",
-                    "Duplicate title and year.",
+                    f"{tables.MOVIE_KEY_CONSTRAINT_FAILURE}"
+                    f" {MOVIEBAG_1['title']}, {MOVIEBAG_1['year']}.",
                 ),
                 {},
             )
@@ -416,18 +396,16 @@ def test_edit_movie_with_too_early_year(test_database, log_error):
 
     with check:
         with pytest.raises(
-            tables.InvalidReleaseYear,
-            match="CHECK constraint failed: year>1878",
+            tables.IntegrityError,
+            match=tables.INVALID_YEAR,
         ):
             tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag)
+
     check.equal(
         log_error,
         [
             (
-                (
-                    "CHECK constraint failed: year>1878",
-                    ("(sqlite3.IntegrityError) CHECK constraint failed: year>1878",),
-                ),
+                (f"{tables.INVALID_YEAR}. {new_movie_bag['year']}.",),
                 {},
             )
         ],
@@ -447,18 +425,16 @@ def test_edit_movie_with_too_late_year(test_database, log_error):
 
     with check:
         with pytest.raises(
-            tables.InvalidReleaseYear,
-            match="CHECK constraint failed: year<=10000",
+            tables.IntegrityError,
+            match=tables.INVALID_YEAR,
         ):
             tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag)
+
     check.equal(
         log_error,
         [
             (
-                (
-                    "CHECK constraint failed: year<=10000",
-                    ("(sqlite3.IntegrityError) CHECK constraint failed: year<=10000",),
-                ),
+                (f"{tables.INVALID_YEAR}. {new_movie_bag['year']}.",),
                 {},
             )
         ],
@@ -561,12 +537,12 @@ def test_edit_missing_tag_logs_and_raises_exception(test_database, log_error):
     tag_text = "garbage"
 
     with check:
-        with pytest.raises(tables.TagNotFound):
+        with pytest.raises(tables.NoResultFound, match=tables.TAG_NOT_FOUND):
             tables.edit_tag(old_tag_text=tag_text, new_tag_text=tag_text)
+
     check.equal(
         log_error,
-        [(("No row was found when one was required",), {})],
-        msg="NoResultFound was not logged.",
+        [((tables.TAG_NOT_FOUND, tag_text), {})],
     )
 
 
@@ -577,14 +553,14 @@ def test_edit_duplicate_tag_text_logs_and_raises_exception(test_database, log_er
 
     with check:
         with pytest.raises(
-            tables.TagExists,
-            match="UNIQUE constraint failed: tag.text",
+            tables.IntegrityError,
+            match=tables.TAG_EXISTS,
         ):
             tables.edit_tag(old_tag_text=old_tag_text, new_tag_text=new_tag_text)
+
     check.equal(
         log_error,
-        [(("(sqlite3.IntegrityError) UNIQUE constraint failed: tag.text",), {})],
-        msg="IntegrityError was not logged.",
+        [((tables.TAG_EXISTS, new_tag_text), {})],
     )
 
 
@@ -626,17 +602,19 @@ def test_delete_all_orphans(test_database, log_info):
 
 
 def test_invalid_movie_regression(test_database):
-    """This is a regression test for #261 Invalid movie returned from search selection."""
+    """This is a regression test for moviedb-#261 Invalid movie returned from search selection."""
     movie_one = MovieBag(title="Spit it Out", year=MovieInteger(2000))
     tables.add_movie(movie_bag=movie_one)
     movie_two = MovieBag(title="t", year=MovieInteger(2000))
     tables.add_movie(movie_bag=movie_two)
     movie_three = MovieBag(title="Tea for three", year=MovieInteger(2000))
     tables.add_movie(movie_bag=movie_three)
+    select_bag = MovieBag(title="t", year=MovieInteger(2000))
 
     # Only the correct movie is selected otherwise an exception would be generated.
-    select_bag = MovieBag(title="t", year=MovieInteger(2000))
-    tables.select_movie(movie_bag=select_bag)
+    found = tables.select_movie(movie_bag=select_bag)
+
+    assert found["title"] == movie_two["title"]
 
 
 # noinspection DuplicatedCode
