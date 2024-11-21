@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/20/24, 1:59 PM by stephen.
+#  Last modified 11/21/24, 7:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -56,8 +56,7 @@ def select_movie(*, movie_bag: MovieBag) -> MovieBag:
         A movie bag populated with every field that is present in the database.
 
     Raises:
-        A NoResultFound exception will be raised if the movie has been deleted
-        by another process.
+        A NoResultFound exception will be raised if the movie was not found
 
     Use Case.
         For a movie specified by its key of title and year this will
@@ -179,11 +178,11 @@ def add_movie(*, movie_bag: MovieBag):
 
 
 def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
-    """Edits a movie.
+    """Edits a movie. Most often.
 
-    Edits an existing movie, updates links to tag table, updates person table
-    links for stars and directors, adds new people to person table, and deletes
-    orphans from person table.
+    This function edits an existing movie and updates links to the tag table.
+    It adds new people to the person table and removes orphans. It links the
+    people table to stars and directors.
 
     Args:
         old_movie_bag:
@@ -212,10 +211,12 @@ def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
             movie_tags: optional
 
     Logs and reraises:
-        NoResultFound if a new movie tag is not already in the database
+        NoResultFound
+            If the movie was not found or if a new movie tag is not
+            already in the database.
         IntegrityError
-          if title and year duplicate an existing movie.
-          or if year outside valid range.
+          If the title and year duplicate an existing movie or if the year
+          is outside the valid range.
     """
     try:
         with session_factory() as session:
@@ -262,7 +263,7 @@ def update_movie_relationships(
         session:
 
     Raises:
-        NoResultFound
+        NoResultFound if any tag cannot be found.
     """
     if movie_tags := movie_bag.get("movie_tags"):
         movie.tags = set()
@@ -271,7 +272,6 @@ def update_movie_relationships(
                 movie.tags.add(_select_tag(session, text=tag_text))
             except NoResultFound as exc:
                 logging.error(TAG_NOT_FOUND, tag_text)
-                # todo Display user info pop up.
                 exc.add_note(TAG_NOT_FOUND)
                 raise
 
@@ -395,14 +395,16 @@ def add_tags(*, tag_texts: set[str]):
 
 
 def edit_tag(*, old_tag_text: str, new_tag_text: str):
-    """Edits the text of an existing tag.
+    """This function edits the text of an existing tag.
 
     Args:
         old_tag_text:
         new_tag_text:
+
     Raises:
-        Logs and raises a TagNotFound exception.
-        Logs and raises a TagExists exception.
+        NoResultFound if a Tag with old_tag_text cannot be found.
+        IntegrityError if a Tag with the new_tag_text is already present
+            in the database.
     """
     try:
         with session_factory() as session, session.begin():
