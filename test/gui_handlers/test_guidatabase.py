@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/20/24, 1:59 PM by stephen.
+#  Last modified 11/26/24, 12:15 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -59,14 +59,17 @@ def test_add_movie_callback(monkeypatch):
 def test_add_movie_callback_with_MovieExists_exception(
     monkeypatch, config_current, messagebox
 ):
-    # noinspection PyTypeChecker
     table_add_movie = MagicMock(
         name="table_add_movie",
-        side_effect=guidatabase.tables.MovieExists(
-            "", "", guidatabase.tables.IntegrityError
-        ),
     )
+    message = guidatabase.tables.MOVIE_EXISTS
+    title_note = "title note"
+    year_note = "year note"
+    # noinspection PyTypeChecker
+    table_add_movie.side_effect = guidatabase.tables.IntegrityError("", "", "")
+    table_add_movie.side_effect.__notes__ = [message, title_note, year_note]
     monkeypatch.setattr(guidatabase.tables, "add_movie", table_add_movie)
+
     guid_add_movie = MagicMock(name="guid_add_movie")
     monkeypatch.setattr(guidatabase, "add_movie", guid_add_movie)
     gui_movie = MovieTD(title="Add movie test", year="4242")
@@ -78,23 +81,28 @@ def test_add_movie_callback_with_MovieExists_exception(
     with check:
         messagebox.assert_called_once_with(
             guidatabase.config.current.tk_root,
-            message=guidatabase.TITLE_AND_YEAR_EXISTS_MSG,
+            message=message,
+            detail=f"{title_note}, {year_note}.",
         )
     with check:
         guid_add_movie.assert_called_once_with(movie_bag)
 
 
-# noinspection PyPep8Naming
+# noinspection PyPep8Naming,DuplicatedCode
 def test_add_movie_callback_with_InvalidReleaseYear_exception(
-    monkeypatch, config_current, add_movie_setup
+    monkeypatch,
+    config_current,
+    add_movie_setup,
 ):
-    # noinspection PyTypeChecker
     table_add_movie = MagicMock(
         name="table_add_movie",
-        side_effect=guidatabase.tables.InvalidReleaseYear(
-            "", "", guidatabase.tables.IntegrityError
-        ),
     )
+    message = guidatabase.tables.INVALID_YEAR
+    detail = "year note"
+    # noinspection PyTypeChecker
+    table_add_movie.side_effect = guidatabase.tables.InvalidReleaseYear("", "", "")
+    table_add_movie.side_effect.__notes__ = [message, detail]
+
     monkeypatch.setattr(guidatabase.tables, "add_movie", table_add_movie)
     gui_movie, guid_add_movie, movie_bag, messagebox = add_movie_setup
 
@@ -102,21 +110,24 @@ def test_add_movie_callback_with_InvalidReleaseYear_exception(
 
     with check:
         messagebox.assert_called_once_with(
-            guidatabase.config.current.tk_root,
-            message=guidatabase.INVALID_RELEASE_YEAR_MSG,
+            guidatabase.config.current.tk_root, message=message, detail=detail
         )
     with check:
         guid_add_movie.assert_called_once_with(movie_bag)
 
 
 # noinspection PyPep8Naming
-def test_add_movie_callback_with_TagNotFound_exception(
+def test_add_movie_callback_with_NoResultFound_exception(
     monkeypatch, config_current, add_movie_setup
 ):
     table_add_movie = MagicMock(
         name="table_add_movie",
-        side_effect=guidatabase.tables.TagNotFound,
     )
+    table_add_movie.side_effect = guidatabase.tables.NoResultFound()
+    message = "Oopsie add movie"
+    detail = "42"
+    table_add_movie.side_effect.__notes__ = [message, detail]
+
     # noinspection DuplicatedCode
     monkeypatch.setattr(guidatabase.tables, "add_movie", table_add_movie)
     gui_movie, guid_add_movie, movie_bag, messagebox = add_movie_setup
@@ -125,8 +136,7 @@ def test_add_movie_callback_with_TagNotFound_exception(
 
     with check:
         messagebox.assert_called_once_with(
-            guidatabase.config.current.tk_root,
-            message=guidatabase.TAG_NOT_FOUND_MSG,
+            guidatabase.config.current.tk_root, message=message, detail=detail
         )
     with check:
         guid_add_movie.assert_called_once_with(movie_bag)
@@ -231,7 +241,7 @@ def test_search_for_movie_callback_returning_0_movies(
     with check:
         messagebox.assert_called_once_with(
             guidatabase.config.current.tk_root,
-            message=guidatabase.NO_COMPLIANT_MOVIES_FOUND_MSG,
+            message=guidatabase.MOVIE_NOT_FOUND,
         )
     with check:
         search_for_movie.assert_called_once_with()
@@ -313,7 +323,7 @@ def test_edit_movie_callback(monkeypatch, old_movie, new_movie):
 
     # Assert
     edit_movie.assert_called_once_with(
-        old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag
+        old_movie_bag=old_movie_bag, replacement_fields=new_movie_bag
     )
 
 
@@ -354,7 +364,7 @@ def test_edit_movie_callback_with_MovieNotFound_exception(
 
 
 # noinspection PyPep8Naming
-def test_edit_movie_callback_with_TagNotFound_exception(
+def test_edit_movie_callback_with_NoResultFound_exception(
     monkeypatch,
     config_current,
     old_movie,
@@ -364,9 +374,11 @@ def test_edit_movie_callback_with_TagNotFound_exception(
     edit_movie_gui_call,
 ):
     new_movie_bag = moviebagfacade.convert_from_movie_td(new_movie)
-    edit_movie = MagicMock(
-        name="edit_movie", side_effect=guidatabase.tables.TagNotFound
-    )
+    edit_movie = MagicMock(name="edit_movie")
+    edit_movie.side_effect = guidatabase.tables.NoResultFound
+    message = "Oopsie edit movie"
+    detail = "42"
+    edit_movie.side_effect.__notes__ = [message, detail]
     monkeypatch.setattr(guidatabase.tables, "edit_movie", edit_movie)
 
     guidatabase.edit_movie_callback(old_movie)(new_movie)
@@ -374,7 +386,8 @@ def test_edit_movie_callback_with_TagNotFound_exception(
     with check:
         messagebox.assert_called_once_with(
             guidatabase.config.current.tk_root,
-            message=f"{guidatabase.TAG_NOT_FOUND_MSG}. {new_movie["movie_tags"]}",
+            message=message,
+            detail=detail,
         )
     common_edit_movie_gui_test(edit_movie_gui_call, test_tags, old_movie, new_movie_bag)
 

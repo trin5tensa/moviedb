@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/20/24, 1:59 PM by stephen.
+#  Last modified 11/26/24, 12:15 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -171,15 +171,16 @@ def test_add_movie(test_database):
 
 
 def test_add_movie_with_invalid_tag(test_database, log_error):
-    tag_text = "garbage"
+    tag_text = "add_movie_with_invalid_tag"
     movie_bag = MovieBag(
         title="Test Add Movie",
         year=MovieInteger(5042),
         movie_tags={tag_text},
     )
+    exc_notes = f"{tables.TAG_NOT_FOUND}\n{tag_text}"
 
     with check:
-        with pytest.raises(tables.NoResultFound, match=tables.TAG_NOT_FOUND):
+        with pytest.raises(tables.NoResultFound, match=exc_notes):
             tables.add_movie(movie_bag=movie_bag)
 
     check.equal(
@@ -194,18 +195,18 @@ def test_add_movie_with_invalid_tag(test_database, log_error):
 
 
 def test_add_movie_with_title_year_duplication_error(test_database, log_error):
+    exc_notes = f"{tables.MOVIE_EXISTS}\n{MOVIEBAG_1['title']}\n{MOVIEBAG_1['year']}"
+
     with check:
-        with pytest.raises(
-            tables.IntegrityError,
-            match=tables.MOVIE_KEY_CONSTRAINT_FAILURE,
-        ):
+        with pytest.raises(tables.IntegrityError, match=exc_notes):
             tables.add_movie(movie_bag=MOVIEBAG_1)
+
     check.equal(
         log_error,
         [
             (
                 (
-                    f"{tables.MOVIE_KEY_CONSTRAINT_FAILURE}"
+                    f"{tables.MOVIE_EXISTS}"
                     f" {MOVIEBAG_1['title']}, {MOVIEBAG_1['year']}.",
                 ),
                 {},
@@ -220,11 +221,12 @@ def test_add_movie_with_too_early_year(test_database, log_error):
         title="Test Add Movie",
         year=MovieInteger(42),
     )
+    exc_notes = f"{tables.INVALID_YEAR}\n{str(int(movie_bag['year']))}"
 
     with check:
         with pytest.raises(
             tables.IntegrityError,
-            match=tables.INVALID_YEAR,
+            match=exc_notes,
         ):
             tables.add_movie(movie_bag=movie_bag)
 
@@ -241,6 +243,7 @@ def test_add_movie_with_too_early_year(test_database, log_error):
 
 # noinspection DuplicatedCode
 def test_add_movie_with_too_late_year(test_database, log_error):
+    exc_notes = "This year is likely incorrect.\n42"
     movie_bag = MovieBag(
         title="Test Add Movie",
         year=MovieInteger(424242),
@@ -249,7 +252,7 @@ def test_add_movie_with_too_late_year(test_database, log_error):
     with check:
         with pytest.raises(
             tables.IntegrityError,
-            match=tables.INVALID_YEAR,
+            match=exc_notes,
         ):
             tables.add_movie(movie_bag=movie_bag)
 
@@ -287,7 +290,7 @@ def test_edit_movie(test_database):
         stars={"O Star 10", "N Star 20"},
     )
 
-    tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag)
+    tables.edit_movie(old_movie_bag=old_movie_bag, replacement_fields=new_movie_bag)
 
     with tables.session_factory() as session:
         check_movie_assignments(session, new_movie_bag)
@@ -305,44 +308,26 @@ def test_edit_movie(test_database):
         )
 
 
-# noinspection PyPep8Naming
-def test_edit_movie_raises_NoResultFound(test_database, log_error):
-    old_movie_bag = MovieBag(
-        title="Test Edit Movie Not Found",
-        year=MovieInteger(5042),
-    )
-
-    with check:
-        with pytest.raises(tables.NoResultFound, match=tables.MOVIE_NOT_FOUND):
-            tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=old_movie_bag)
-
-    check.equal(
-        log_error,
-        [
-            (
-                (tables.MOVIE_NOT_FOUND, old_movie_bag),
-                {},
-            )
-        ],
-    )
-
-
 def test_edit_movie_with_invalid_tag(test_database, log_error):
     old_movie_bag = MovieBag(
         title="Test Edit Movie",
         year=MovieInteger(5042),
     )
     tables.add_movie(movie_bag=old_movie_bag)
-    tag_text = "garbage"
+    tag_text = "edit_movie_with_invalid_tag"
     new_movie_bag = MovieBag(
         movie_tags={tag_text},
     )
+    exc_notes = f"{tables.TAG_NOT_FOUND}\n{tag_text}"
 
     with check:
-        with pytest.raises(tables.NoResultFound, match=tables.TAG_NOT_FOUND):
+        with pytest.raises(
+            tables.NoResultFound,
+            match=exc_notes,
+        ):
             tables.edit_movie(
                 old_movie_bag=old_movie_bag,
-                new_movie_bag=new_movie_bag,
+                replacement_fields=new_movie_bag,
             )
 
     check.equal(
@@ -356,27 +341,51 @@ def test_edit_movie_with_invalid_tag(test_database, log_error):
     )
 
 
+# noinspection PyPep8Naming
+def test_edit_movie_raises_NoResultFound(test_database, log_error):
+    title = "Test Edit Movie Not Found"
+    year = MovieInteger(5042)
+    old_movie_bag = MovieBag(title=title, year=year)
+    exc_notes = f"{tables.MOVIE_NOT_FOUND}\n{title}" f"\n{year}"
+
+    with check:
+        with pytest.raises(
+            tables.NoResultFound,
+            match=exc_notes,
+        ):
+            tables.edit_movie(
+                old_movie_bag=old_movie_bag, replacement_fields=old_movie_bag
+            )
+
+    check.equal(
+        log_error,
+        [
+            (
+                (f"{tables.MOVIE_NOT_FOUND} {title}, {year}.",),
+                {},
+            )
+        ],
+    )
+
+
 def test_edit_movie_with_title_year_duplication_error(test_database, log_error):
-    old_movie_bag = MovieBag(
-        title="Test Edit Movie",
-        year=MovieInteger(5042),
-    )
-    tables.add_movie(movie_bag=old_movie_bag)
+    """Attempts to change the key of MOVIEBAG_1 to the key of MOVIEBAG_2."""
+    rep_title = MOVIEBAG_2["title"]
+    rep_year = MOVIEBAG_2["year"]
+    exc_notes = f"{tables.MOVIE_EXISTS}\n{rep_title}" f"\n{rep_year}"
 
     with check:
         with pytest.raises(
             tables.IntegrityError,
-            match=tables.MOVIE_KEY_CONSTRAINT_FAILURE,
+            match=exc_notes,
         ):
-            tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=MOVIEBAG_1)
+            tables.edit_movie(old_movie_bag=MOVIEBAG_1, replacement_fields=MOVIEBAG_2)
+
     check.equal(
         log_error,
         [
             (
-                (
-                    f"{tables.MOVIE_KEY_CONSTRAINT_FAILURE}"
-                    f" {MOVIEBAG_1['title']}, {MOVIEBAG_1['year']}.",
-                ),
+                (f"{tables.MOVIE_EXISTS}" f" {rep_title}, {rep_year}.",),
                 {},
             )
         ],
@@ -384,28 +393,26 @@ def test_edit_movie_with_title_year_duplication_error(test_database, log_error):
 
 
 # noinspection DuplicatedCode
-def test_edit_movie_with_too_early_year(test_database, log_error):
-    old_movie_bag = MovieBag(
-        title="Test Edit Movie",
-        year=MovieInteger(5042),
-    )
-    tables.add_movie(movie_bag=old_movie_bag)
-    new_movie_bag = MovieBag(
-        year=MovieInteger(0),
-    )
+def test_edit_movie_with_too_early_a_year(test_database, log_error):
+    """Attempts to change the year of MOVIEBAG_1 to 42."""
+    rep_year = MovieInteger(42)
+    rep_movie_bag = MovieBag(year=rep_year)
+    exc_notes = f"{tables.INVALID_YEAR}\n{str(int(rep_year))}"
 
     with check:
         with pytest.raises(
             tables.IntegrityError,
-            match=tables.INVALID_YEAR,
+            match=exc_notes,
         ):
-            tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag)
+            tables.edit_movie(
+                old_movie_bag=MOVIEBAG_1, replacement_fields=rep_movie_bag
+            )
 
     check.equal(
         log_error,
         [
             (
-                (f"{tables.INVALID_YEAR}. {new_movie_bag['year']}.",),
+                (f"{tables.INVALID_YEAR} {str(int(rep_year))}.",),
                 {},
             )
         ],
@@ -413,28 +420,26 @@ def test_edit_movie_with_too_early_year(test_database, log_error):
 
 
 # noinspection DuplicatedCode
-def test_edit_movie_with_too_late_year(test_database, log_error):
-    old_movie_bag = MovieBag(
-        title="Test Edit Movie",
-        year=MovieInteger(5042),
-    )
-    tables.add_movie(movie_bag=old_movie_bag)
-    new_movie_bag = MovieBag(
-        year=MovieInteger(14242),
-    )
+def test_edit_movie_with_too_late_a_year(test_database, log_error):
+    """Attempts to change the year of MOVIEBAG_1 to 424242."""
+    rep_year = MovieInteger(424242)
+    rep_movie_bag = MovieBag(year=rep_year)
+    exc_notes = f"{tables.INVALID_YEAR}\n{str(int(rep_year))}"
 
     with check:
         with pytest.raises(
             tables.IntegrityError,
-            match=tables.INVALID_YEAR,
+            match=exc_notes,
         ):
-            tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag)
+            tables.edit_movie(
+                old_movie_bag=MOVIEBAG_1, replacement_fields=rep_movie_bag
+            )
 
     check.equal(
         log_error,
         [
             (
-                (f"{tables.INVALID_YEAR}. {new_movie_bag['year']}.",),
+                (f"{tables.INVALID_YEAR} {str(int(rep_year))}.",),
                 {},
             )
         ],
@@ -529,39 +534,33 @@ def test_edit_tag(test_database):
     tables.edit_tag(old_tag_text=old_tag_text, new_tag_text=new_tag_text)
 
     tags_remaining = tables.select_all_tags()
-    check.equal(tags_remaining & {SOUGHT_TAG}, set())
-    check.equal(tags_remaining & {new_tag_text}, {new_tag_text})
+    check.is_not_in(SOUGHT_TAG, tags_remaining)
+    check.is_in(new_tag_text, tags_remaining)
 
 
 def test_edit_missing_tag_logs_and_raises_exception(test_database, log_error):
-    tag_text = "garbage"
+    """Edits a non-existent tag."""
+    tag_text = "missing tag"
+    exc_notes = f"{tables.TAG_NOT_FOUND}\n{tag_text}"
 
     with check:
-        with pytest.raises(tables.NoResultFound, match=tables.TAG_NOT_FOUND):
+        with pytest.raises(tables.NoResultFound, match=exc_notes):
             tables.edit_tag(old_tag_text=tag_text, new_tag_text=tag_text)
 
-    check.equal(
-        log_error,
-        [((tables.TAG_NOT_FOUND, tag_text), {})],
-    )
+    check.equal(log_error, [((tables.TAG_NOT_FOUND, tag_text), {})])
 
 
 def test_edit_duplicate_tag_text_logs_and_raises_exception(test_database, log_error):
+    """Edits a tag with tag text that already exists."""
     old_tag_text = SOUGHT_TAG
-    # Already present in another Tag object.
     new_tag_text = THIRD_TAG
+    exc_notes = f"{tables.TAG_EXISTS}\n{new_tag_text}"
 
     with check:
-        with pytest.raises(
-            tables.IntegrityError,
-            match=tables.TAG_EXISTS,
-        ):
+        with pytest.raises(tables.IntegrityError, match=exc_notes):
             tables.edit_tag(old_tag_text=old_tag_text, new_tag_text=new_tag_text)
 
-    check.equal(
-        log_error,
-        [((tables.TAG_EXISTS, new_tag_text), {})],
-    )
+    check.equal(log_error, [((tables.TAG_EXISTS, new_tag_text), {})])
 
 
 def test_delete_tag(test_database):

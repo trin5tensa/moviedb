@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/21/24, 7:20 AM by stephen.
+#  Last modified 11/26/24, 12:15 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,9 +23,7 @@ from database_src import schema
 from globalconstants import *
 
 MOVIE_NOT_FOUND = "This movie was not found."
-MOVIE_KEY_CONSTRAINT_FAILURE = (
-    "A movie with this title and release date is already present in the database."
-)
+MOVIE_EXISTS = "This movie is already present in the database."
 INVALID_YEAR = "This year is likely incorrect."
 TAG_NOT_FOUND = "The tag was not found."
 TAG_EXISTS = "This tag is already present in the database."
@@ -68,8 +66,8 @@ def select_movie(*, movie_bag: MovieBag) -> MovieBag:
             movie = _select_movie(session, movie_bag=movie_bag)
         except NoResultFound as exc:
             logging.error(MOVIE_NOT_FOUND, movie_bag)
-            # todo Display user info pop up.
             exc.add_note(MOVIE_NOT_FOUND)
+            # todo guidatabase must display user info pop up.
             raise
         movie_bag = _convert_to_movie_bag(movie)
 
@@ -164,20 +162,25 @@ def add_movie(*, movie_bag: MovieBag):
 
     except IntegrityError as exc:
         if "UNIQUE constraint failed: movie.title, movie.year" in exc.args[0]:
-            logging.error(
-                f"{MOVIE_KEY_CONSTRAINT_FAILURE} {movie.title}, {movie.year}."
-            )
-            exc.add_note(MOVIE_KEY_CONSTRAINT_FAILURE)
-            # todo Display user info pop up.
+            logging.error(f"{MOVIE_EXISTS} {movie.title}, {movie.year}.")
+            exc.add_note(MOVIE_EXISTS)
+            exc.add_note(movie.title)
+            exc.add_note(str(int(movie.year)))
+            # todo guidatabase must display user info pop up.
             raise
+
         elif "CHECK constraint failed: year" in exc.args[0]:
             logging.error(f"{INVALID_YEAR}. {movie.year}.")
             exc.add_note(INVALID_YEAR)
-            # todo Display user info pop up.
+            exc.add_note(str(int(movie.year)))
+            # todo guidatabase must display user info pop up.
+            raise
+
+        else:  # pragma nocover
             raise
 
 
-def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
+def edit_movie(*, old_movie_bag: MovieBag, replacement_fields: MovieBag):
     """Edits a movie. Most often.
 
     This function edits an existing movie and updates links to the tag table.
@@ -197,7 +200,7 @@ def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
             synopsis: ignored
             notes: ignored
             movie_tags: ignored
-        new_movie_bag:
+        replacement_fields:
             id: ignored
             created: ignored
             updated: ignored
@@ -218,35 +221,45 @@ def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
           If the title and year duplicate an existing movie or if the year
           is outside the valid range.
     """
+    title = replacement_fields.get("title")
+    year = replacement_fields.get("year")
+
     try:
         with session_factory() as session:
             try:
                 movie = _select_movie(session, movie_bag=old_movie_bag)
+
             except NoResultFound as exc:
-                logging.error(MOVIE_NOT_FOUND, old_movie_bag)
-                # todo Display user info pop up.
+                logging.error(f"{MOVIE_NOT_FOUND} {title}, {year}.")
                 exc.add_note(MOVIE_NOT_FOUND)
+                exc.add_note(title)
+                exc.add_note(str(int(year)))
+                # todo guidatabase must display user info pop up.
                 raise
 
             candidate_orphans = movie.directors | movie.stars
-            _edit_movie(movie=movie, edit_fields=new_movie_bag)
-            update_movie_relationships(movie, new_movie_bag, session)
+            _edit_movie(movie=movie, edit_fields=replacement_fields)
+            update_movie_relationships(movie, replacement_fields, session)
             _delete_orphans(session, candidates=candidate_orphans)
             session.commit()
 
     except IntegrityError as exc:
         if "UNIQUE constraint failed: movie.title, movie.year" in exc.args[0]:
-            logging.error(
-                f"{MOVIE_KEY_CONSTRAINT_FAILURE} {new_movie_bag["title"]}, {new_movie_bag["year"]}."
-            )
-            # todo Display user info pop up.
-            exc.add_note(MOVIE_KEY_CONSTRAINT_FAILURE)
+            logging.error(f"{MOVIE_EXISTS} {title}, {year}.")
+            exc.add_note(MOVIE_EXISTS)
+            exc.add_note(title)
+            exc.add_note(str(int(year)))
+            # todo guidatabase must display user info pop up.
             raise
 
         elif "CHECK constraint failed: year" in exc.args[0]:
-            logging.error(f"{INVALID_YEAR}. {new_movie_bag["year"]}.")
-            # todo Display user info pop up.
+            logging.error(f"{INVALID_YEAR} {year}.")
             exc.add_note(INVALID_YEAR)
+            exc.add_note(str(int(year)))
+            # todo guidatabase must display user info pop up.
+            raise
+
+        else:  # pragma nocover
             raise
 
 
@@ -273,6 +286,8 @@ def update_movie_relationships(
             except NoResultFound as exc:
                 logging.error(TAG_NOT_FOUND, tag_text)
                 exc.add_note(TAG_NOT_FOUND)
+                exc.add_note(tag_text)
+                # todo guidatabase must display user info pop up.
                 raise
 
     if directors := movie_bag.get("directors"):
@@ -412,16 +427,18 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
                 tag = _select_tag(session, text=old_tag_text)
             except NoResultFound as exc:
                 logging.error(TAG_NOT_FOUND, old_tag_text)
-                # todo Display user info pop up.
                 exc.add_note(TAG_NOT_FOUND)
+                exc.add_note(old_tag_text)
+                # todo guidatabase must display user info pop up.
                 raise
             else:
                 _edit_tag(tag=tag, replacement_text=new_tag_text)
 
     except IntegrityError as exc:
         logging.error(TAG_EXISTS, new_tag_text)
-        # todo Display user info pop up.
         exc.add_note(TAG_EXISTS)
+        exc.add_note(new_tag_text)
+        # todo guidatabase must display user info pop up.
         raise
 
 
@@ -452,10 +469,6 @@ class InvalidReleaseYear(IntegrityError):
 
 class MovieNotFound(NoResultFound):
     """A key search for a movie failed."""
-
-
-class TagNotFound(NoResultFound):
-    """A key search for a tag failed."""
 
 
 def _select_movie(session: Session, *, movie_bag: MovieBag) -> schema.Movie:
@@ -537,7 +550,7 @@ def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | N
     statements = []
     for column, criteria in match.items():
         match column:
-            case "notes":
+            case "notes":  # pragma: nocover
                 statements.append(
                     select(schema.Movie).where(schema.Movie.notes.like(f"%{criteria}%"))
                 )

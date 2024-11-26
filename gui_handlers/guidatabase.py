@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/12/24, 1:00 PM by stephen.
+#  Last modified 11/26/24, 12:15 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,6 +21,7 @@ import config
 import guiwidgets
 import guiwidgets_2
 from database_src import tables
+from database_src.tables import MOVIE_NOT_FOUND
 from globalconstants import MovieTD, MovieBag
 from gui_handlers import moviebagfacade
 from gui_handlers.handlers import (
@@ -34,18 +35,17 @@ TITLE_AND_YEAR_EXISTS_MSG = (
     "The title and release date clash with a movie already in the database"
 )
 INVALID_RELEASE_YEAR_MSG = "The release year is too early or too late."
-TAG_NOT_FOUND_MSG = "One or more tags were not found in the database."
-NO_COMPLIANT_MOVIES_FOUND_MSG = "No compliant movies were found"
 MOVIE_NO_LONGER_PRESENT = "The original movie is no longer present in the database."
 
 
 def add_movie(movie_bag: MovieBag = None):
-    """Get new movie data from the user and add it to the database.
+    """Gets new movie data from the user and adds it to the database.
+
+    The optional movie_bag argument can be used to prepopulate the movie form. This is useful
+    if the initial attempt to add a movie caused an exception. It gives the user the opportunity
 
     Args:
-        movie_bag: If the user's data causes a database exception then this function
-        will be called again with movie_bag populated with the data fields originally
-        entered by the user.
+        movie_bag
     """
     all_tags = tables.select_all_tags()
     guiwidgets_2.AddMovieGUI(
@@ -65,6 +65,7 @@ def search_for_movie():
     )
 
 
+# todo 11/21/2024 Exception review
 def add_movie_callback(gui_movie: MovieTD):
     """Add user supplied data to the database.
 
@@ -74,27 +75,39 @@ def add_movie_callback(gui_movie: MovieTD):
     Logs and raises:
         MovieExists if title and year duplicate an existing movie.
         InvalidReleaseYear for year outside valid range.
-        TagNotFound_OLD for tag not in database.
+        NoResultFound_OLD for tag not in database.
     """
     # noinspection PyUnresolvedReferences
     movie_bag = moviebagfacade.convert_from_movie_td(gui_movie)
     try:
         tables.add_movie(movie_bag=movie_bag)
-    except tables.MovieExists:
+        return
+
+    except tables.IntegrityError as exc:
+        match exc.__notes__[0]:
+            case tables.MOVIE_EXISTS:
+                guiwidgets_2.gui_messagebox(
+                    config.current.tk_root,
+                    message=exc.__notes__[0],
+                    detail=f"{exc.__notes__[1]}, {exc.__notes__[2]}.",
+                )
+
+            case tables.INVALID_YEAR:
+                guiwidgets_2.gui_messagebox(
+                    config.current.tk_root,
+                    message=exc.__notes__[0],
+                    detail=exc.__notes__[1],
+                )
+
+    except tables.NoResultFound as exc:
         guiwidgets_2.gui_messagebox(
-            config.current.tk_root, message=TITLE_AND_YEAR_EXISTS_MSG
+            config.current.tk_root, message=exc.__notes__[0], detail=exc.__notes__[1]
         )
-        add_movie(movie_bag)
-    except tables.InvalidReleaseYear:
-        guiwidgets_2.gui_messagebox(
-            config.current.tk_root, message=INVALID_RELEASE_YEAR_MSG
-        )
-        add_movie(movie_bag)
-    except tables.TagNotFound:
-        guiwidgets_2.gui_messagebox(config.current.tk_root, message=TAG_NOT_FOUND_MSG)
-        add_movie(movie_bag)
+
+    add_movie(movie_bag)
 
 
+# todo 11/21/2024 Exception review
 def search_for_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
     """Finds movies in the database which match the user entered criteria.
     Continue to the next appropriate stage of processing depending on whether no movies, one
@@ -121,7 +134,8 @@ def search_for_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequenc
         case 0:
             # Informs user and represent the search window.
             guiwidgets_2.gui_messagebox(
-                config.current.tk_root, message=NO_COMPLIANT_MOVIES_FOUND_MSG
+                config.current.tk_root,
+                message=MOVIE_NOT_FOUND,
             )
             search_for_movie()
         case 1:
@@ -148,6 +162,7 @@ def search_for_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequenc
             )
 
 
+# todo 11/21/2024 Exception review
 def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
     """Create the edit movie callback
 
@@ -179,30 +194,35 @@ def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
         new_movie_bag = moviebagfacade.convert_from_movie_td(new_movie)
 
         try:
-            tables.edit_movie(old_movie_bag=old_movie_bag, new_movie_bag=new_movie_bag)
+            tables.edit_movie(
+                old_movie_bag=old_movie_bag, replacement_fields=new_movie_bag
+            )
 
         except tables.MovieNotFound:
             # The old movie has been deleted by another process. The edit was rolled back.
-            # Since the movie selected by the user for editing is no linger available no
+            # Since the movie selected by the user for editing is no longer available no
             # further help can be provided beyond informing the user.
+            # todo fix
             guiwidgets_2.gui_messagebox(
                 config.current.tk_root,
                 message=f"{MOVIE_NO_LONGER_PRESENT} {old_movie_bag['title']}, "
                 f"{old_movie_bag['year']}",
             )
 
-        except tables.TagNotFound:
+        except tables.NoResultFound as exc:
             # A tag was deleted by another process. The edit was rolled back. Represent the
             # edit screen with the values which were entered by the user.
             guiwidgets_2.gui_messagebox(
                 config.current.tk_root,
-                message=f"{TAG_NOT_FOUND_MSG}. {new_movie['movie_tags']}",
+                message=exc.__notes__[0],
+                detail=exc.__notes__[1],
             )
             _edit_movie(old_movie, new_movie_bag)
 
         except tables.MovieExists:
             # An attempt to change the key was rejected as the new key was not unique.
             # The edit was rolled back.
+            # todo fix
             guiwidgets_2.gui_messagebox(
                 config.current.tk_root,
                 message=f"{TITLE_AND_YEAR_EXISTS_MSG}. {new_movie_bag['title']}, "
@@ -213,6 +233,7 @@ def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
         except tables.InvalidReleaseYear:
             # An attempt to change the year was rejected as impossibly early
             # or late. The edit was rolled back.
+            # todo fix
             guiwidgets_2.gui_messagebox(
                 config.current.tk_root,
                 message=f"{INVALID_RELEASE_YEAR_MSG}. {new_movie_bag['title']}, "
