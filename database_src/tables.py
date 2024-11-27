@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/26/24, 12:15 PM by stephen.
+#  Last modified 11/27/24, 11:42 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -34,7 +34,8 @@ session_factory: sessionmaker[Session] | None = None
 def select_movie(*, movie_bag: MovieBag) -> MovieBag:
     """Selects and returns a single movie.
 
-    This is not an identity function. See the 'Use Case' for a fuller explanation.
+    This is not an identity function. See the 'Use Case' for a fuller
+    explanation.
 
     Args:
         movie_bag:
@@ -51,24 +52,33 @@ def select_movie(*, movie_bag: MovieBag) -> MovieBag:
             movie_tags: ignored
 
     Returns:
-        A movie bag populated with every field that is present in the database.
+        A movie bag populated with every field in the database.
 
-    Raises:
-        A NoResultFound exception will be raised if the movie was not found
+    Raises and logs:
+        A NoResultFound exception will be raised if the movie
+        was not found. The added note list will contain:
+            MOVIE_NOT_FOUND literal,
+            movie title,
+            movie year.
 
     Use Case.
-        For a movie specified by its key of title and year this will
-        populate the movie bag with all fields in the database including id,
+        For a movie specified by its key of title and year, this will
+        populate the movie bag with all fields in the database, including id,
         date created, and date updated.
     """
     with session_factory() as session:
         try:
             movie = _select_movie(session, movie_bag=movie_bag)
+
         except NoResultFound as exc:
-            logging.error(MOVIE_NOT_FOUND, movie_bag)
+            title = movie_bag["title"]
+            year = movie_bag["year"]
+            logging.error(f"{MOVIE_NOT_FOUND} {title}, {year}.")
             exc.add_note(MOVIE_NOT_FOUND)
-            # todo guidatabase must display user info pop up.
+            exc.add_note(title)
+            exc.add_note(str(int(year)))
             raise
+
         movie_bag = _convert_to_movie_bag(movie)
 
     return movie_bag
@@ -147,11 +157,20 @@ def add_movie(*, movie_bag: MovieBag):
             notes: optional
             movie_tags: optional
 
-    Logs and reraises:
-        NoResultFound if a new movie tag is not already in the database
-        IntegrityError
-          if title and year duplicate an existing movie.
-          or if year outside valid range.
+    Raises and logs:
+        A NoResultFound exception will be raised if a tag was not
+        found. The added note list will contain:
+            TAG_NOT_FOUND literal,
+            tag text.
+        An IntegrityError will be raised if the title and year are already
+        in the database. The added note list will contain:
+            MOVIE_EXISTS literal,
+            movie title,
+            movie year.
+        An IntegrityError will be raised if the year is impossibly early or
+        late. The added note list will contain:
+            INVALID_YEAR literal,
+            movie year.
     """
     try:
         with session_factory() as session:
@@ -166,14 +185,12 @@ def add_movie(*, movie_bag: MovieBag):
             exc.add_note(MOVIE_EXISTS)
             exc.add_note(movie.title)
             exc.add_note(str(int(movie.year)))
-            # todo guidatabase must display user info pop up.
             raise
 
         elif "CHECK constraint failed: year" in exc.args[0]:
             logging.error(f"{INVALID_YEAR}. {movie.year}.")
             exc.add_note(INVALID_YEAR)
             exc.add_note(str(int(movie.year)))
-            # todo guidatabase must display user info pop up.
             raise
 
         else:  # pragma nocover
@@ -213,13 +230,26 @@ def edit_movie(*, old_movie_bag: MovieBag, replacement_fields: MovieBag):
             notes: optional
             movie_tags: optional
 
-    Logs and reraises:
-        NoResultFound
-            If the movie was not found or if a new movie tag is not
-            already in the database.
-        IntegrityError
-          If the title and year duplicate an existing movie or if the year
-          is outside the valid range.
+
+    Raises and logs:
+        A NoResultFound exception will be raised if a tag was not
+        found. The added note list will contain:
+            TAG_NOT_FOUND literal,
+            tag text.
+        A NoResultFound exception will be raised if a movie was not
+        found. The added note list will contain:
+            MOVIE_NOT_FOUND literal,
+            movie title,
+            movie year.
+        An IntegrityError will be raised if the title and year are already
+        in the database. The added note list will contain:
+            MOVIE_EXISTS literal,
+            movie title,
+            movie year.
+        An IntegrityError will be raised if the year is impossibly early or
+        late. The added note list will contain:
+            INVALID_YEAR literal,
+            movie year.
     """
     title = replacement_fields.get("title")
     year = replacement_fields.get("year")
@@ -276,7 +306,11 @@ def update_movie_relationships(
         session:
 
     Raises:
-        NoResultFound if any tag cannot be found.
+        A NoResultFound exception will be logged and raised if a tag was not
+        found. The added note list will contain:
+            TAG_NOT_FOUND literal,
+            tag text.
+
     """
     if movie_tags := movie_bag.get("movie_tags"):
         movie.tags = set()
@@ -420,6 +454,16 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
         NoResultFound if a Tag with old_tag_text cannot be found.
         IntegrityError if a Tag with the new_tag_text is already present
             in the database.
+
+    Raises and logs:
+        A NoResultFound exception will be raised if a tag was not
+        found. The added note list will contain:
+            TAG_NOT_FOUND literal,
+            old tag text.
+        An IntegrityError will be raised if the tag text is already
+        in the database. The added note list will contain:
+            TAG_EXISTS literal,
+            new tag text.
     """
     try:
         with session_factory() as session, session.begin():

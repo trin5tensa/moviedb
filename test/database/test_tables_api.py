@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/26/24, 12:15 PM by stephen.
+#  Last modified 11/27/24, 11:42 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -89,22 +89,23 @@ def test_select_movie(test_database):
 # noinspection PyPep8Naming
 def test_select_movie_raises_NoResultFound(test_database, log_error):
     movie_bag = MovieBag(
-        title="garbage",
+        title="test for NoResultFound",
         year=MOVIEBAG_2["year"],
     )
+    exc_notes = f"{tables.MOVIE_NOT_FOUND}\n{movie_bag['title']}\n{movie_bag['year']}"
 
-    with pytest.raises(tables.NoResultFound, match=tables.MOVIE_NOT_FOUND):
+    with pytest.raises(
+        tables.NoResultFound,
+        match=exc_notes,
+    ):
         tables.select_movie(movie_bag=movie_bag)
 
-    check.equal(
-        log_error,
-        [
-            (
-                (tables.MOVIE_NOT_FOUND, movie_bag),
-                {},
-            )
-        ],
-    )
+    assert log_error == [
+        (
+            (f"{tables.MOVIE_NOT_FOUND} {movie_bag['title']}, {movie_bag['year']}.",),
+            {},
+        )
+    ]
 
 
 def test_select_all_movies(test_database):

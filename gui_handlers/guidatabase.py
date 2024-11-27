@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/26/24, 12:15 PM by stephen.
+#  Last modified 11/27/24, 11:42 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -65,7 +65,6 @@ def search_for_movie():
     )
 
 
-# todo 11/21/2024 Exception review
 def add_movie_callback(gui_movie: MovieTD):
     """Add user supplied data to the database.
 
@@ -107,7 +106,6 @@ def add_movie_callback(gui_movie: MovieTD):
     add_movie(movie_bag)
 
 
-# todo 11/21/2024 Exception review
 def search_for_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
     """Finds movies in the database which match the user entered criteria.
     Continue to the next appropriate stage of processing depending on whether no movies, one
@@ -162,7 +160,6 @@ def search_for_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequenc
             )
 
 
-# todo 11/21/2024 Exception review
 def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
     """Create the edit movie callback
 
@@ -202,7 +199,6 @@ def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
             # The old movie has been deleted by another process. The edit was rolled back.
             # Since the movie selected by the user for editing is no longer available no
             # further help can be provided beyond informing the user.
-            # todo fix
             guiwidgets_2.gui_messagebox(
                 config.current.tk_root,
                 message=f"{MOVIE_NO_LONGER_PRESENT} {old_movie_bag['title']}, "
