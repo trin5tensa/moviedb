@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/27/24, 11:42 AM by stephen.
+#  Last modified 11/30/24, 12:58 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,11 +17,11 @@ This module is the glue between the user's selection of a menu item and the gui.
 
 from collections.abc import Sequence, Callable
 import config
+import logging
 
 import guiwidgets
 import guiwidgets_2
 from database_src import tables
-from database_src.tables import MOVIE_NOT_FOUND
 from globalconstants import MovieTD, MovieBag
 from gui_handlers import moviebagfacade
 from gui_handlers.handlers import (
@@ -36,6 +36,9 @@ TITLE_AND_YEAR_EXISTS_MSG = (
 )
 INVALID_RELEASE_YEAR_MSG = "The release year is too early or too late."
 MOVIE_NO_LONGER_PRESENT = "The original movie is no longer present in the database."
+MISSING_EXPLANATORY_NOTES = (
+    "Exception raised without explanatory notes needed for user alert."
+)
 
 
 def add_movie(movie_bag: MovieBag = None):
@@ -68,42 +71,28 @@ def search_for_movie():
 def add_movie_callback(gui_movie: MovieTD):
     """Add user supplied data to the database.
 
+    A user alert is raised with diagnostic information if the database
+    module rejects the addition. Then the user is presented with an
+    'add movie' input screen populated with her previously entered data.
+
     Args:
         gui_movie:
-
-    Logs and raises:
-        MovieExists if title and year duplicate an existing movie.
-        InvalidReleaseYear for year outside valid range.
-        NoResultFound_OLD for tag not in database.
     """
-    # noinspection PyUnresolvedReferences
     movie_bag = moviebagfacade.convert_from_movie_td(gui_movie)
     try:
         tables.add_movie(movie_bag=movie_bag)
-        return
 
-    except tables.IntegrityError as exc:
-        match exc.__notes__[0]:
-            case tables.MOVIE_EXISTS:
-                guiwidgets_2.gui_messagebox(
-                    config.current.tk_root,
-                    message=exc.__notes__[0],
-                    detail=f"{exc.__notes__[1]}, {exc.__notes__[2]}.",
-                )
-
-            case tables.INVALID_YEAR:
-                guiwidgets_2.gui_messagebox(
-                    config.current.tk_root,
-                    message=exc.__notes__[0],
-                    detail=exc.__notes__[1],
-                )
-
-    except tables.NoResultFound as exc:
-        guiwidgets_2.gui_messagebox(
-            config.current.tk_root, message=exc.__notes__[0], detail=exc.__notes__[1]
-        )
-
-    add_movie(movie_bag)
+    except (tables.IntegrityError, tables.NoResultFound) as exc:
+        if exc.__notes__[0] in (
+            tables.MOVIE_EXISTS,
+            tables.INVALID_YEAR,
+            tables.TAG_NOT_FOUND,
+        ):
+            exc_messagebox(exc)
+            # todo What happens to the tag selection if the edit is represented?
+            add_movie(movie_bag)
+        else:  # pragma nocover
+            raise
 
 
 def search_for_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
@@ -133,7 +122,7 @@ def search_for_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequenc
             # Informs user and represent the search window.
             guiwidgets_2.gui_messagebox(
                 config.current.tk_root,
-                message=MOVIE_NOT_FOUND,
+                message=tables.MOVIE_NOT_FOUND,
             )
             search_for_movie()
         case 1:
@@ -163,11 +152,10 @@ def search_for_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequenc
 def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
     """Create the edit movie callback
 
-
     Args:
         old_movie: The movie that is to be edited.
-            The record's key values may be altered by the user. This function will delete the old
-            record and add a new record.
+            The record's key values may be altered by the user. This function
+            will delete the old record and add a new record.
 
     Returns:
         A callback function which GUI edit can call with edits entered by the user.
@@ -176,16 +164,12 @@ def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
     def func(new_movie: MovieTD):
         """Change movie and links in database with new user supplied data,
 
-        NoResultFound
-        MovieExists
-        InvalidReleaseYear
+        A user alert is raised with diagnostic information if the database
+        module rejects the addition. Then the user is presented with an
+        'add movie' input screen populated with her previously entered data.
 
         Args:
             new_movie: Fields with either original values or values modified by the user.
-
-
-
-        Raises exception.DatabaseSearchFoundNothing
         """
         old_movie_bag = moviebagfacade.convert_from_movie_key_typed_dict(old_movie)
         new_movie_bag = moviebagfacade.convert_from_movie_td(new_movie)
@@ -195,51 +179,23 @@ def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
                 old_movie_bag=old_movie_bag, replacement_fields=new_movie_bag
             )
 
-        except tables.MovieNotFound:
-            # The old movie has been deleted by another process. The edit was rolled back.
-            # Since the movie selected by the user for editing is no longer available no
-            # further help can be provided beyond informing the user.
-            guiwidgets_2.gui_messagebox(
-                config.current.tk_root,
-                message=f"{MOVIE_NO_LONGER_PRESENT} {old_movie_bag['title']}, "
-                f"{old_movie_bag['year']}",
-            )
-
-        except tables.NoResultFound as exc:
-            # A tag was deleted by another process. The edit was rolled back. Represent the
-            # edit screen with the values which were entered by the user.
-            guiwidgets_2.gui_messagebox(
-                config.current.tk_root,
-                message=exc.__notes__[0],
-                detail=exc.__notes__[1],
-            )
-            _edit_movie(old_movie, new_movie_bag)
-
-        except tables.MovieExists:
-            # An attempt to change the key was rejected as the new key was not unique.
-            # The edit was rolled back.
-            # todo fix
-            guiwidgets_2.gui_messagebox(
-                config.current.tk_root,
-                message=f"{TITLE_AND_YEAR_EXISTS_MSG}. {new_movie_bag['title']}, "
-                f"{new_movie_bag['year']}",
-            )
-            _edit_movie(old_movie, new_movie_bag)
-
-        except tables.InvalidReleaseYear:
-            # An attempt to change the year was rejected as impossibly early
-            # or late. The edit was rolled back.
-            # todo fix
-            guiwidgets_2.gui_messagebox(
-                config.current.tk_root,
-                message=f"{INVALID_RELEASE_YEAR_MSG}. {new_movie_bag['title']}, "
-                f"{new_movie_bag['year']}",
-            )
-            _edit_movie(old_movie, new_movie_bag)
+        except (tables.NoResultFound, tables.IntegrityError) as exc:
+            if exc.__notes__[0] in (
+                tables.TAG_NOT_FOUND,
+                tables.MOVIE_NOT_FOUND,
+                tables.MOVIE_EXISTS,
+                tables.INVALID_YEAR,
+            ):
+                exc_messagebox(exc)
+                # todo What happens to the tag selection if the edit is represented?
+                _edit_movie(old_movie, new_movie_bag)
+            else:  # pragma nocover
+                raise
 
     return func
 
 
+# todo Test this function
 def _edit_movie(old_movie: config.MovieKeyTypedDict, new_movie_bag: MovieBag):
     """A helper function which calls edit movie GUI.
 
@@ -260,3 +216,36 @@ def _edit_movie(old_movie: config.MovieKeyTypedDict, new_movie_bag: MovieBag):
         edit_movie_callback=edit_movie_callback(old_movie),
         delete_movie_callback=delete_movie_callback,
     )
+
+
+def exc_messagebox(exc):
+    """This helper presents a GUI user alert with exception information.
+
+    The message is the first item in exc.__notes__. Subsequent items are
+    concatenated into the messagebox detail.
+
+    Args:
+        exc: The SQLAlchemy exception with a populated exc.__notes__
+            attribute.
+
+    Raises:
+        Logs and reraises the original exception if the explanatory notes
+        are missing.
+    """
+    if len(exc.__notes__) == 1:
+        guiwidgets_2.gui_messagebox(
+            config.current.tk_root,
+            message=exc.__notes__[0],
+        )
+
+    elif len(exc.__notes__) > 1:
+        guiwidgets_2.gui_messagebox(
+            config.current.tk_root,
+            message=exc.__notes__[0],
+            detail=", ".join(exc.__notes__[1:]) + ".",
+        )
+
+    else:  # pragma nocover
+        logging.error(MISSING_EXPLANATORY_NOTES)
+        exc.add_note(MISSING_EXPLANATORY_NOTES)
+        raise
