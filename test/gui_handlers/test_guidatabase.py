@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/2/24, 12:35 PM by stephen.
+#  Last modified 12/2/24, 1:12 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -467,6 +467,19 @@ def test_exc_messagebox_with_multiple_notes(messagebox, config_current):
         message=item_1,
         detail=f"{item_2}, {item_3}.",
     )
+
+
+def test_delete_movie_callback(monkeypatch):
+    title = "test_delete_movie_callback title"
+    year = 42
+    movie = guidatabase.config.FindMovieTypedDict(title=title, year=[str(year)])
+    movie_bag = MovieBag(title=title, year=MovieInteger(year))
+    delete_movie = MagicMock(name="delete movie")
+    monkeypatch.setattr(guidatabase.tables, "delete_movie", delete_movie)
+
+    guidatabase.delete_movie_callback(movie)
+
+    delete_movie.assert_called_once_with(movie_bag=movie_bag)
 
 
 def test__edit_movie(monkeypatch, config_current, test_tags):

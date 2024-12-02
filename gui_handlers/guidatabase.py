@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/2/24, 12:35 PM by stephen.
+#  Last modified 12/2/24, 1:12 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,11 +22,10 @@ import logging
 import guiwidgets
 import guiwidgets_2
 from database_src import tables
-from globalconstants import MovieTD, MovieBag
+from globalconstants import MovieTD, MovieBag, MovieInteger
 from gui_handlers import moviebagfacade
 from gui_handlers.handlers import (
     _tmdb_io_handler,
-    delete_movie_callback,
     _select_movie_callback,
 )
 from gui_handlers.moviebagfacade import convert_to_movie_update_def
@@ -194,6 +193,21 @@ def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
                 raise
 
     return func
+
+
+def delete_movie_callback(movie: config.FindMovieTypedDict):
+    """This callback function will delete a movie from the database.
+
+    If the movie cannot be found then no action is taken.
+
+    Args:
+        movie: Specified by title and key.
+    """
+    movie_bag = MovieBag(
+        title=movie["title"],
+        year=MovieInteger(int(movie["year"][0])),
+    )
+    tables.delete_movie(movie_bag=movie_bag)
 
 
 def _edit_movie(old_movie: config.MovieKeyTypedDict, new_movie_bag: MovieBag):
