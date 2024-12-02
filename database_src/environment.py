@@ -1,7 +1,7 @@
 """Database environment functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/19/24, 12:26 PM by stephen.
+#  Last modified 11/27/24, 11:42 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -163,6 +163,8 @@ def _update_database(old_version: str, data_dir_path: Path):
     movies, tags = update.update_old_database(old_version, old_database_fn)
     for movie in movies:
         tables.add_movie(movie_bag=movie)
+    # tables.add_movie will create tags. Next line adds 'orphan'
+    # tags. Identical tags will be silently suppressed.
     tables.add_tags(tag_texts=tags)
 
     # Update saved version file with new version number.

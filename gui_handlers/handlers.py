@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/12/24, 1:00 PM by stephen.
+#  Last modified 11/20/24, 1:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -28,7 +28,6 @@ import exception
 import guiwidgets
 import guiwidgets_2
 import tmdb
-from globalconstants import *
 
 MISSING_MOVIE = "Missing movie"
 THE_MOVIE = "The movie"
@@ -239,56 +238,6 @@ def delete_movie_callback(movie: config.FindMovieTypedDict):
 
 
 # todo Rewrite for database API change.
-def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
-    """Create the edit movie callback
-
-    Args:
-        old_movie: The movie that is to be edited.
-            The record's key values may be altered by the user. This function will delete the old
-            record and add a new record.
-
-    Returns:
-        edit_movie_callback
-    """
-
-    # noinspection PyTypedDict
-    def func(new_movie: MovieTD):
-        """Change movie and links in database with new user supplied data,
-
-        Args:
-            new_movie: Fields with either original values or values modified by the user.
-
-        Raises exception.DatabaseSearchFoundNothing
-        """
-        selected_tags = new_movie[MOVIE_TAGS]
-        del new_movie[MOVIE_TAGS]
-
-        # Edit the movie
-        # noinspection PyTypeChecker
-        database.replace_movie(old_movie, new_movie)
-
-        # Edit links
-        old_tags = database.movie_tags(old_movie)
-        # noinspection PyArgumentList
-        db_movie = MovieTD(title=new_movie[TITLE], year=new_movie[YEAR])
-
-        try:
-            # noinspection PyTypeChecker
-            database.edit_movie_tag_links(db_movie, old_tags, selected_tags)
-
-        # Can't add tags because new movie has been deleted.
-        except exception.DatabaseSearchFoundNothing:
-            missing_movie_args = (
-                config.current.tk_root,
-                MISSING_MOVIE,
-                f"{THE_MOVIE} {db_movie} {MOVIE_DELETED}",
-            )
-            guiwidgets.gui_messagebox(*missing_movie_args)
-
-    return func
-
-
-# todo Rewrite for database API change.
 def _select_movie_callback(movie_id: config.MovieKeyTypedDict):
     """Edit a movie selected by the user from a list of movies.
 
@@ -308,7 +257,7 @@ def _select_movie_callback(movie_id: config.MovieKeyTypedDict):
         _tmdb_io_handler,
         database.all_tags(),
         old_movie=movie,
-        edit_movie_callback=edit_movie_callback(movie_key),
+        # edit_movie_callback=edit_movie_callback(movie_key),
         delete_movie_callback=delete_movie_callback,
     )
 

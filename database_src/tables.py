@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/12/24, 1:00 PM by stephen.
+#  Last modified 12/2/24, 12:35 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,9 +20,13 @@ from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from database_src import schema
-from database_src.schema import Person
 from globalconstants import *
 
+MOVIE_NOT_FOUND = "This movie was not found."
+MOVIE_EXISTS = "This movie is already present in the database."
+INVALID_YEAR = "This year is likely incorrect."
+TAG_NOT_FOUND = "The tag was not found."
+TAG_EXISTS = "This tag is already present in the database."
 
 session_factory: sessionmaker[Session] | None = None
 
@@ -30,8 +34,8 @@ session_factory: sessionmaker[Session] | None = None
 def select_movie(*, movie_bag: MovieBag) -> MovieBag:
     """Selects and returns a single movie.
 
-    This is not an identity function. See the detailed description of arguments and return
-    value for a fuller explanation.
+    This is not an identity function. See the 'Use Case' for a fuller
+    explanation.
 
     Args:
         movie_bag:
@@ -48,19 +52,35 @@ def select_movie(*, movie_bag: MovieBag) -> MovieBag:
             movie_tags: ignored
 
     Returns:
-        A movie bag populated with every field that is present in the database.
+        A movie bag populated with every field in the database.
 
-    Raises:
-        MovieNotFound if movie_bag is not in the database.
+    Raises and logs:
+        A NoResultFound exception will be raised if the movie
+        was not found. The added note list will contain:
+            MOVIE_NOT_FOUND literal,
+            movie title,
+            movie year.
+
+    Use Case.
+        For a movie specified by its key of title and year, this will
+        populate the movie bag with all fields in the database, including id,
+        date created, and date updated.
     """
     with session_factory() as session:
         try:
             movie = _select_movie(session, movie_bag=movie_bag)
-        except NoResultFound:
-            logging.error(MovieNotFound.__qualname__, MovieNotFound.__doc__, movie_bag)
-            raise MovieNotFound(MovieNotFound.__doc__)
+
+        except NoResultFound as exc:
+            title = movie_bag["title"]
+            year = movie_bag["year"]
+            logging.error(f"{MOVIE_NOT_FOUND} {title}, {year}.")
+            exc.add_note(MOVIE_NOT_FOUND)
+            exc.add_note(title)
+            exc.add_note(str(int(year)))
+            raise
 
         movie_bag = _convert_to_movie_bag(movie)
+
     return movie_bag
 
 
@@ -137,10 +157,20 @@ def add_movie(*, movie_bag: MovieBag):
             notes: optional
             movie_tags: optional
 
-    Logs and raises:
-        MovieExists if title and year duplicate an existing movie.
-        InvalidReleaseYear for year outside valid range.
-        TagNotFound for tag not in database.
+    Raises and logs:
+        A NoResultFound exception will be raised if a tag was not
+        found. The added note list will contain:
+            TAG_NOT_FOUND literal,
+            tag text.
+        An IntegrityError will be raised if the title and year are already
+        in the database. The added note list will contain:
+            MOVIE_EXISTS literal,
+            movie title,
+            movie year.
+        An IntegrityError will be raised if the year is impossibly early or
+        late. The added note list will contain:
+            INVALID_YEAR literal,
+            movie year.
     """
     try:
         with session_factory() as session:
@@ -151,23 +181,28 @@ def add_movie(*, movie_bag: MovieBag):
 
     except IntegrityError as exc:
         if "UNIQUE constraint failed: movie.title, movie.year" in exc.args[0]:
-            msg = f"Duplicate title and year: {movie.title=}, {movie.year=}."
-            logging.error(str(exc.orig), msg)
-            raise MovieExists(exc.statement, exc.params, exc.orig) from exc
+            logging.error(f"{MOVIE_EXISTS} {movie.title}, {movie.year}.")
+            exc.add_note(MOVIE_EXISTS)
+            exc.add_note(movie.title)
+            exc.add_note(str(int(movie.year)))
+            raise
+
         elif "CHECK constraint failed: year" in exc.args[0]:
-            logging.error(str(exc.orig), exc.args)
-            raise InvalidReleaseYear(exc.statement, exc.params, exc.orig) from exc
+            logging.error(f"{INVALID_YEAR}. {movie.year}.")
+            exc.add_note(INVALID_YEAR)
+            exc.add_note(str(int(movie.year)))
+            raise
+
         else:  # pragma nocover
-            logging.error(exc.orig)
             raise
 
 
-def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
-    """Edits a movie.
+def edit_movie(*, old_movie_bag: MovieBag, replacement_fields: MovieBag):
+    """Edits a movie. Most often.
 
-    Edits an existing movie, updates links to tag table, updates person table
-    links for stars and directors, adds new people to person table, and deletes
-    orphans from person table.
+    This function edits an existing movie and updates links to the tag table.
+    It adds new people to the person table and removes orphans. It links the
+    people table to stars and directors.
 
     Args:
         old_movie_bag:
@@ -182,7 +217,7 @@ def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
             synopsis: ignored
             notes: ignored
             movie_tags: ignored
-        new_movie_bag:
+        replacement_fields:
             id: ignored
             created: ignored
             updated: ignored
@@ -195,38 +230,63 @@ def edit_movie(*, old_movie_bag: MovieBag, new_movie_bag: MovieBag):
             notes: optional
             movie_tags: optional
 
-    Raises:
-        MovieNotFound if old_movie_bag is not in the database.
-        MovieExists if new title and year duplicate an existing movie.
-        InvalidReleaseYear for new year outside valid range.
-        TagNotFound for new tag not in database.
+
+    Raises and logs:
+        A NoResultFound exception will be raised if a tag was not
+        found. The added note list will contain:
+            TAG_NOT_FOUND literal,
+            tag text.
+        A NoResultFound exception will be raised if a movie was not
+        found. The added note list will contain:
+            MOVIE_NOT_FOUND literal,
+            movie title,
+            movie year.
+        An IntegrityError will be raised if the title and year are already
+        in the database. The added note list will contain:
+            MOVIE_EXISTS literal,
+            movie title,
+            movie year.
+        An IntegrityError will be raised if the year is impossibly early or
+        late. The added note list will contain:
+            INVALID_YEAR literal,
+            movie year.
     """
+    title = replacement_fields.get("title")
+    year = replacement_fields.get("year")
+
     try:
         with session_factory() as session:
             try:
                 movie = _select_movie(session, movie_bag=old_movie_bag)
-            except NoResultFound:
-                logging.error(
-                    MovieNotFound.__qualname__, MovieNotFound.__doc__, old_movie_bag
-                )
-                raise MovieNotFound
+
+            except NoResultFound as exc:
+                logging.error(f"{MOVIE_NOT_FOUND} {title}, {year}.")
+                exc.add_note(MOVIE_NOT_FOUND)
+                exc.add_note(title)
+                exc.add_note(str(int(year)))
+                raise
 
             candidate_orphans = movie.directors | movie.stars
-            _edit_movie(movie=movie, edit_fields=new_movie_bag)
-            update_movie_relationships(movie, new_movie_bag, session)
+            _edit_movie(movie=movie, edit_fields=replacement_fields)
+            update_movie_relationships(movie, replacement_fields, session)
             _delete_orphans(session, candidates=candidate_orphans)
             session.commit()
 
     except IntegrityError as exc:
         if "UNIQUE constraint failed: movie.title, movie.year" in exc.args[0]:
-            msg = f"Duplicate title and year."
-            logging.error(str(exc.orig), msg)
-            raise MovieExists(exc.statement, exc.params, exc.orig) from exc
+            logging.error(f"{MOVIE_EXISTS} {title}, {year}.")
+            exc.add_note(MOVIE_EXISTS)
+            exc.add_note(title)
+            exc.add_note(str(int(year)))
+            raise
+
         elif "CHECK constraint failed: year" in exc.args[0]:
-            logging.error(str(exc.orig), exc.args)
-            raise InvalidReleaseYear(exc.statement, exc.params, exc.orig) from exc
+            logging.error(f"{INVALID_YEAR} {year}.")
+            exc.add_note(INVALID_YEAR)
+            exc.add_note(str(int(year)))
+            raise
+
         else:  # pragma nocover
-            logging.error(exc.orig)
             raise
 
 
@@ -235,7 +295,7 @@ def update_movie_relationships(
 ):
     """Updates the directors, stars, and tags relationships of the movie.
 
-    This is a support function with contains common code.
+    This is a support function which contains common code.
 
     Args:
         movie:
@@ -243,16 +303,22 @@ def update_movie_relationships(
         session:
 
     Raises:
-        TagNotFound
+        A NoResultFound exception will be logged and raised if a tag was not
+        found. The added note list will contain:
+            TAG_NOT_FOUND literal,
+            tag text.
+
     """
     if movie_tags := movie_bag.get("movie_tags"):
-        try:
-            movie.tags = {
-                _select_tag(session, text=tag_text) for tag_text in movie_tags
-            }
-        except NoResultFound as exc:
-            logging.error(TagNotFound.__qualname__, TagNotFound.__doc__, movie_tags)
-            raise TagNotFound from exc
+        movie.tags = set()
+        for tag_text in movie_tags:
+            try:
+                movie.tags.add(_select_tag(session, text=tag_text))
+            except NoResultFound as exc:
+                logging.error(TAG_NOT_FOUND, tag_text)
+                exc.add_note(TAG_NOT_FOUND)
+                exc.add_note(tag_text)
+                raise
 
     if directors := movie_bag.get("directors"):
         movie.directors = _getadd_people(session, names=directors)
@@ -270,24 +336,29 @@ def delete_movie(*, movie_bag: MovieBag):
     No exception will be raised if the movie has already been deleted. If the movie_bag
     contains orphan stars or directors they will be deleted.
 
-        Args:
-            movie_bag:
-                id: ignored
-                created: ignored
-                updated: ignored
-                title: required
-                year: required
-                duration: ignored
-                directors: ignored
-                stars: ignored
-                synopsis: ignored
-                notes: ignored
-                movie_tags: ignored
+    Args:
+        movie_bag:
+            id: ignored
+            created: ignored
+            updated: ignored
+            title: required
+            year: required
+            duration: ignored
+            directors: ignored
+            stars: ignored
+            synopsis: ignored
+            notes: ignored
+            movie_tags: ignored
+
+    Raises:
+
     """
     with session_factory() as session:
         try:
             movie = _select_movie(session, movie_bag=movie_bag)
         except NoResultFound:
+            # The movie has been deleted by another process, but we still
+            # need to remove the orphans.
             directors = movie_bag.get("directors", set())
             stars = movie_bag.get("stars", set())
             candidate_orphans = set(_select_people(session, names=stars | directors))
@@ -304,9 +375,10 @@ def delete_all_orphans():
 
     Use Case:
         It is possible for a movie to be deleted by another process without handling orphan
-        people. THis function should be run at program termination to delete any orphans
+        people. This function should be run at program termination to delete any orphans
         created in ths manner.
     """
+    # todo Call this when the program shuts down.
     with session_factory() as session:
         all_people = _select_all_people(session)
         count = _delete_orphans(session, candidates=all_people)
@@ -368,28 +440,44 @@ def add_tags(*, tag_texts: set[str]):
 
 
 def edit_tag(*, old_tag_text: str, new_tag_text: str):
-    """Edits the text of an existing tag.
+    """This function edits the text of an existing tag.
 
     Args:
         old_tag_text:
         new_tag_text:
+
     Raises:
-        Logs and raises a TagNotFound exception.
-        Logs and raises a TagExists exception.
+        NoResultFound if a Tag with old_tag_text cannot be found.
+        IntegrityError if a Tag with the new_tag_text is already present
+            in the database.
+
+    Raises and logs:
+        A NoResultFound exception will be raised if a tag was not
+        found. The added note list will contain:
+            TAG_NOT_FOUND literal,
+            old tag text.
+        An IntegrityError will be raised if the tag text is already
+        in the database. The added note list will contain:
+            TAG_EXISTS literal,
+            new tag text.
     """
     try:
         with session_factory() as session, session.begin():
             try:
                 tag = _select_tag(session, text=old_tag_text)
             except NoResultFound as exc:
-                logging.error(exc.args[0])
-                raise TagNotFound from exc
+                logging.error(TAG_NOT_FOUND, old_tag_text)
+                exc.add_note(TAG_NOT_FOUND)
+                exc.add_note(old_tag_text)
+                raise
             else:
                 _edit_tag(tag=tag, replacement_text=new_tag_text)
 
     except IntegrityError as exc:
-        logging.error(exc.args[0])
-        raise TagExists(exc.statement, exc.params, exc.orig) from exc
+        logging.error(TAG_EXISTS, new_tag_text)
+        exc.add_note(TAG_EXISTS)
+        exc.add_note(new_tag_text)
+        raise
 
 
 def delete_tag(*, tag_text: str):
@@ -421,14 +509,6 @@ class MovieNotFound(NoResultFound):
     """A key search for a movie failed."""
 
 
-class TagNotFound(NoResultFound):
-    """A key search for a tag failed."""
-
-
-class TagExists(IntegrityError):
-    """This unique tag key is already present in the database."""
-
-
 def _select_movie(session: Session, *, movie_bag: MovieBag) -> schema.Movie:
     """Selects and returns a single ORM movie.
 
@@ -446,6 +526,10 @@ def _select_movie(session: Session, *, movie_bag: MovieBag) -> schema.Movie:
             synopsis: ignored
             notes: ignored
             movie_tags: ignored
+
+    Raises:
+        NoResultFound
+        MultipleResultsFound
     """
     # noinspection PyTypeChecker
     statement = (
@@ -504,7 +588,7 @@ def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | N
     statements = []
     for column, criteria in match.items():
         match column:
-            case "notes":
+            case "notes":  # pragma: nocover
                 statements.append(
                     select(schema.Movie).where(schema.Movie.notes.like(f"%{criteria}%"))
                 )
@@ -691,13 +775,17 @@ def _select_person(session: Session, *, name: str) -> schema.Person:
     Args:
         session: The current session.
         name: Name of person
+
+    Raises:
+        NoResultFound
+        MultipleResultsFound
     """
     # noinspection PyTypeChecker
     statement = select(schema.Person).where(schema.Person.name == name)
     return session.scalars(statement).one()
 
 
-def _select_people(session: Session, *, names: set[str]) -> set[Person]:
+def _select_people(session: Session, *, names: set[str]) -> set[schema.Person]:
     """Returns a set of ORM persons matching the names.
 
     The names argument must contain full names and not substrings. See the
@@ -711,7 +799,7 @@ def _select_people(session: Session, *, names: set[str]) -> set[Person]:
     return set(session.scalars(statement).all())
 
 
-def _select_all_people(session: Session) -> set[Person]:
+def _select_all_people(session: Session) -> set[schema.Person]:
     """Returns a set of all ORM persons.
 
     Args:
@@ -806,6 +894,10 @@ def _select_tag(session: Session, *, text: str) -> schema.Tag:
     Args:
         session: The current session.
         text:
+
+    Raises:
+        NoResultFound
+        MultipleResultsFound
     """
     # noinspection PyTypeChecker
     statement = select(schema.Tag).where(schema.Tag.text == text)
