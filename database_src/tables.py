@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/27/24, 11:42 AM by stephen.
+#  Last modified 12/2/24, 12:35 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -264,7 +264,6 @@ def edit_movie(*, old_movie_bag: MovieBag, replacement_fields: MovieBag):
                 exc.add_note(MOVIE_NOT_FOUND)
                 exc.add_note(title)
                 exc.add_note(str(int(year)))
-                # todo guidatabase must display user info pop up.
                 raise
 
             candidate_orphans = movie.directors | movie.stars
@@ -279,14 +278,12 @@ def edit_movie(*, old_movie_bag: MovieBag, replacement_fields: MovieBag):
             exc.add_note(MOVIE_EXISTS)
             exc.add_note(title)
             exc.add_note(str(int(year)))
-            # todo guidatabase must display user info pop up.
             raise
 
         elif "CHECK constraint failed: year" in exc.args[0]:
             logging.error(f"{INVALID_YEAR} {year}.")
             exc.add_note(INVALID_YEAR)
             exc.add_note(str(int(year)))
-            # todo guidatabase must display user info pop up.
             raise
 
         else:  # pragma nocover
@@ -321,7 +318,6 @@ def update_movie_relationships(
                 logging.error(TAG_NOT_FOUND, tag_text)
                 exc.add_note(TAG_NOT_FOUND)
                 exc.add_note(tag_text)
-                # todo guidatabase must display user info pop up.
                 raise
 
     if directors := movie_bag.get("directors"):
@@ -473,7 +469,6 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
                 logging.error(TAG_NOT_FOUND, old_tag_text)
                 exc.add_note(TAG_NOT_FOUND)
                 exc.add_note(old_tag_text)
-                # todo guidatabase must display user info pop up.
                 raise
             else:
                 _edit_tag(tag=tag, replacement_text=new_tag_text)
@@ -482,7 +477,6 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
         logging.error(TAG_EXISTS, new_tag_text)
         exc.add_note(TAG_EXISTS)
         exc.add_note(new_tag_text)
-        # todo guidatabase must display user info pop up.
         raise
 
 

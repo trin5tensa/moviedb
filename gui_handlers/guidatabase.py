@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/30/24, 12:58 PM by stephen.
+#  Last modified 12/2/24, 12:35 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -89,7 +89,6 @@ def add_movie_callback(gui_movie: MovieTD):
             tables.TAG_NOT_FOUND,
         ):
             exc_messagebox(exc)
-            # todo What happens to the tag selection if the edit is represented?
             add_movie(movie_bag)
         else:  # pragma nocover
             raise
@@ -124,6 +123,9 @@ def search_for_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequenc
                 config.current.tk_root,
                 message=tables.MOVIE_NOT_FOUND,
             )
+            # todo Raise issue to re-populate the search form with the
+            #  faulty data. (SearchMovieGUI will be rewritten as part of a
+            #  future GUI module update)
             search_for_movie()
         case 1:
             # Presents an Edit/View/Delete window to user
@@ -187,7 +189,6 @@ def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
                 tables.INVALID_YEAR,
             ):
                 exc_messagebox(exc)
-                # todo What happens to the tag selection if the edit is represented?
                 _edit_movie(old_movie, new_movie_bag)
             else:  # pragma nocover
                 raise
@@ -195,7 +196,6 @@ def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
     return func
 
 
-# todo Test this function
 def _edit_movie(old_movie: config.MovieKeyTypedDict, new_movie_bag: MovieBag):
     """A helper function which calls edit movie GUI.
 

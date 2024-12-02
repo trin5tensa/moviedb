@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/30/24, 12:58 PM by stephen.
+#  Last modified 12/2/24, 12:35 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,6 +19,7 @@ import pytest
 from pytest_check import check
 
 import config
+from config import MovieKeyTypedDict
 from globalconstants import MovieTD, MovieInteger, MovieBag
 from gui_handlers import (
     guidatabase,
@@ -465,6 +466,26 @@ def test_exc_messagebox_with_multiple_notes(messagebox, config_current):
         guidatabase.config.current.tk_root,
         message=item_1,
         detail=f"{item_2}, {item_3}.",
+    )
+
+
+def test__edit_movie(monkeypatch, config_current, test_tags):
+    gui_edit_movie = MagicMock(name="gui_edit_movie")
+    monkeypatch.setattr(guidatabase.guiwidgets_2, "EditMovieGUI", gui_edit_movie)
+    edit_movie_callback = MagicMock(name="edit_movie_callback")
+    monkeypatch.setattr(guidatabase, "edit_movie_callback", edit_movie_callback)
+    old_movie = MovieKeyTypedDict(title="test _edit movie title", year=42)
+    new_movie_bag = MovieBag()
+    guidatabase._edit_movie(old_movie, new_movie_bag)
+
+    gui_edit_movie.assert_called_once_with(
+        config.current.tk_root,
+        guidatabase._tmdb_io_handler,
+        list(guidatabase.tables.select_all_tags()),
+        old_movie=config.MovieUpdateDef(**old_movie),
+        edited_movie_bag=new_movie_bag,
+        edit_movie_callback=guidatabase.edit_movie_callback(old_movie),
+        delete_movie_callback=guidatabase.delete_movie_callback,
     )
 
 

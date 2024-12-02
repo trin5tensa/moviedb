@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/27/24, 11:42 AM by stephen.
+#  Last modified 12/2/24, 12:35 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -602,7 +602,10 @@ def test_delete_all_orphans(test_database, log_info):
 
 
 def test_invalid_movie_regression(test_database):
-    """This is a regression test for moviedb-#261 Invalid movie returned from search selection."""
+    """Regression test.
+
+    261 Invalid movie returned from search selection.
+    """
     movie_one = MovieBag(title="Spit it Out", year=MovieInteger(2000))
     tables.add_movie(movie_bag=movie_one)
     movie_two = MovieBag(title="t", year=MovieInteger(2000))

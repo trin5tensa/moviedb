@@ -6,7 +6,7 @@ Test strategies are noted for each class.
 """
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/12/24, 1:00 PM by stephen.
+#  Last modified 12/2/24, 12:35 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -257,7 +257,6 @@ class TestSelectMovieCallback:
         monkeypatch.setattr("handlers.database.all_tags", all_tags)
         return all_tags
 
-    @pytest.mark.skip
     def test_database_find_movies_called(
         self, find_movies, movie_gui, all_tags, mock_config_current
     ):
@@ -266,7 +265,6 @@ class TestSelectMovieCallback:
             dict(title=self.TITLE, year=[str(self.YEAR)])
         )
 
-    @pytest.mark.skip
     def test_movie_gui_called(
         self, find_movies, movie_gui, all_tags, mock_config_current, check
     ):

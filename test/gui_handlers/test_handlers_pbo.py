@@ -4,7 +4,7 @@ This module contains new tests written after Brian Okken's course and book on py
 """
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/14/24, 7:03 AM by stephen.
+#  Last modified 12/2/24, 12:35 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -224,64 +224,3 @@ class TestDeleteMovieCallback:
         del_movie.side_effect = handlers.database.NoResultFound
         handlers.delete_movie_callback(self.MOVIE)
         del_movie.assert_called_once_with(self.MOVIE)
-
-
-# noinspection PyMissingOrEmptyDocstring
-class TestSelectMovieCallback:
-    """Strategy
-    Calls to database and GUI modules are mocked.
-    """
-
-    TITLE = "Mock Title"
-    YEAR = 2042
-    MOVIE = handlers.config.MovieUpdateDef(title=TITLE, year=YEAR)
-    MOVIES = [MOVIE]
-    TAGS = ["tag 1", "tag 2"]
-
-    @pytest.fixture()
-    def find_movies(self, monkeypatch):
-        find_movies = MagicMock(return_value=self.MOVIES)
-        monkeypatch.setattr("handlers.database.find_movies", find_movies)
-        return find_movies
-
-    @pytest.fixture()
-    def movie_gui(self, monkeypatch):
-        movie_gui = MagicMock()
-        monkeypatch.setattr("handlers.guiwidgets_2.EditMovieGUI", movie_gui)
-        return movie_gui
-
-    @pytest.fixture()
-    def all_tags(self, monkeypatch):
-        all_tags = MagicMock(return_value=self.TAGS)
-        monkeypatch.setattr("handlers.database.all_tags", all_tags)
-        return all_tags
-
-    @pytest.mark.skip
-    def test_database_find_movies_called(
-        self, find_movies, movie_gui, all_tags, mock_config_current
-    ):
-        handlers._select_movie_callback(self.MOVIE)
-        find_movies.assert_called_once_with(
-            dict(title=self.TITLE, year=[str(self.YEAR)])
-        )
-
-    @pytest.mark.skip
-    def test_movie_gui_called(
-        self, find_movies, movie_gui, all_tags, mock_config_current, check
-    ):
-        handlers._select_movie_callback(self.MOVIE)
-        call_args = movie_gui.call_args
-        tk_root, tmdb, all_tags = call_args.args
-        movie, edit_movie, delete_movie = call_args.kwargs.items()
-
-        msg = "Incorrect argument for guiwidgets_2.MovieGUI."
-        check.equal(tk_root, mock_config_current.tk_root, msg)
-        check.equal(tmdb, handlers._tmdb_io_handler, msg)
-        check.equal(all_tags, self.TAGS, msg)
-        check.equal(movie, ("old_movie", self.MOVIE), msg)
-        k, v = edit_movie
-        check.equal(k, "edit_movie_callback", msg)
-        check.is_in("edit_movie_callback", str(v), msg)
-        check.equal(
-            delete_movie, ("delete_movie_callback", handlers.delete_movie_callback), msg
-        )
