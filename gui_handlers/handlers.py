@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/20/24, 1:59 PM by stephen.
+#  Last modified 12/4/24, 10:27 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -201,7 +201,6 @@ def add_tag():
 
 
 # todo Rewrite for database API change.
-# noinspection PyMissingOrEmptyDocstring
 def edit_tag():
     """Get tag string pattern from the user and search for compliant records."""
     guiwidgets_2.SearchTagGUI(
@@ -219,47 +218,6 @@ def _settings_callback(tmdb_api_key: str, use_tmdb: bool):
     """
     config.persistent.tmdb_api_key = tmdb_api_key
     config.persistent.use_tmdb = use_tmdb
-
-
-# todo Rewrite for database API change.
-def delete_movie_callback(movie: config.FindMovieTypedDict):
-    """Delete a movie.
-
-    Args:
-        movie:
-    """
-    try:
-        database.del_movie(movie)
-
-    except database.NoResultFound:
-        # This can happen if the movie was deleted by another process between the user retrieving
-        # a record for deletion and the call to actually delete it.
-        pass
-
-
-# todo Rewrite for database API change.
-def _select_movie_callback(movie_id: config.MovieKeyTypedDict):
-    """Edit a movie selected by the user from a list of movies.
-
-    Args:
-        movie_id:
-    """
-    # Get one movie from the database
-    criteria = config.FindMovieTypedDict(
-        title=movie_id["title"], year=[str(movie_id["year"])]
-    )
-    movie = database.find_movies(criteria)[0]
-
-    # Display the movie in the edit movie form.
-    movie_key = config.MovieKeyTypedDict(title=movie["title"], year=movie["year"])
-    guiwidgets_2.EditMovieGUI(
-        config.current.tk_root,
-        _tmdb_io_handler,
-        database.all_tags(),
-        old_movie=movie,
-        # edit_movie_callback=edit_movie_callback(movie_key),
-        delete_movie_callback=delete_movie_callback,
-    )
 
 
 # todo Rewrite for database API change.

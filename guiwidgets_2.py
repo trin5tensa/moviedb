@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/28/24, 4:01 PM by stephen.
+#  Last modified 12/4/24, 10:27 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -335,31 +335,37 @@ class MovieGUI:
 class AddMovieGUI(MovieGUI):
     """Create and manage a GUI form for entering a new movie."""
 
-    movie_bag: MovieBag | None = field(default=None, kw_only=True)
+    prepopulate_bag: MovieBag | None = field(default=None, kw_only=True)
     add_movie_callback: Callable[[MovieTD], None] = field(default=None, kw_only=True)
 
     # noinspection DuplicatedCode
     def __post_init__(self):
         super().__post_init__()
-        if self.movie_bag:
-            if self.movie_bag.get("title"):
-                self.entry_fields["title"].original_value = self.movie_bag["title"]
-            if self.movie_bag.get("year"):
-                self.entry_fields["year"].original_value = int(self.movie_bag["year"])
-            if self.movie_bag.get("directors"):
+        if self.prepopulate_bag:
+            if self.prepopulate_bag.get("title"):
+                self.entry_fields["title"].original_value = self.prepopulate_bag[
+                    "title"
+                ]
+            if self.prepopulate_bag.get("year"):
+                self.entry_fields["year"].original_value = int(
+                    self.prepopulate_bag["year"]
+                )
+            if self.prepopulate_bag.get("directors"):
                 self.entry_fields["director"].original_value = ", ".join(
-                    director for director in self.movie_bag["directors"]
+                    director for director in self.prepopulate_bag["directors"]
                 )
-            if self.movie_bag.get("duration"):
+            if self.prepopulate_bag.get("duration"):
                 self.entry_fields["minutes"].original_value = int(
-                    self.movie_bag["duration"]
+                    self.prepopulate_bag["duration"]
                 )
-            if self.movie_bag.get("notes"):
-                self.entry_fields["notes"].original_value = self.movie_bag[
+            if self.prepopulate_bag.get("notes"):
+                self.entry_fields["notes"].original_value = self.prepopulate_bag[
                     "notes"
                 ]  # pragma nocover
-            if self.movie_bag.get("movie_tags"):
-                self.entry_fields["tags"].original_value = self.movie_bag["movie_tags"]
+            if self.prepopulate_bag.get("movie_tags"):
+                self.entry_fields["tags"].original_value = self.prepopulate_bag[
+                    "movie_tags"
+                ]
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         commit_button = create_button(
@@ -448,7 +454,12 @@ class EditMovieGUI(MovieGUI):
     """Create and manage a GUI form for editing an existing movie."""
 
     old_movie: config.MovieUpdateDef | None = field(default=None, kw_only=True)
-    edited_movie_bag: MovieBag | None = field(default=None, kw_only=True)
+    # todo
+    #  prepopulate is meaningful for add movie i.e. It allows the user
+    #  to fix mistakes in a newly entered movie. But does it have any role
+    #  to play in editing a movie? If the user wants to revert, she can do
+    #  that by aborting and reloading the original movie.
+    prepopulate_bag: MovieBag | None = field(default=None, kw_only=True)
     edit_movie_callback: Callable[[config.FindMovieTypedDict], None] = field(
         default=None, kw_only=True
     )
@@ -463,29 +474,29 @@ class EditMovieGUI(MovieGUI):
             for k in self.entry_fields.keys():
                 # noinspection PyTypedDict
                 self.entry_fields[k].original_value = self.old_movie[k]
-        elif self.edited_movie_bag:
-            if self.edited_movie_bag.get("title"):
-                self.entry_fields["title"].original_value = self.edited_movie_bag[
+        elif self.prepopulate_bag:
+            if self.prepopulate_bag.get("title"):
+                self.entry_fields["title"].original_value = self.prepopulate_bag[
                     "title"
                 ]
-            if self.edited_movie_bag.get("year"):
+            if self.prepopulate_bag.get("year"):
                 self.entry_fields["year"].original_value = int(
-                    self.edited_movie_bag["year"]
+                    self.prepopulate_bag["year"]
                 )
-            if self.edited_movie_bag.get("directors"):
+            if self.prepopulate_bag.get("directors"):
                 self.entry_fields["director"].original_value = ", ".join(
-                    director for director in self.edited_movie_bag["directors"]
+                    director for director in self.prepopulate_bag["directors"]
                 )
-            if self.edited_movie_bag.get("duration"):
+            if self.prepopulate_bag.get("duration"):
                 self.entry_fields["minutes"].original_value = int(
-                    self.edited_movie_bag["duration"]
+                    self.prepopulate_bag["duration"]
                 )
-            if self.edited_movie_bag.get("notes"):
-                self.entry_fields["notes"].original_value = self.edited_movie_bag[
+            if self.prepopulate_bag.get("notes"):
+                self.entry_fields["notes"].original_value = self.prepopulate_bag[
                     "notes"
                 ]  # pragma nocover
-            if self.edited_movie_bag.get("movie_tags"):
-                self.entry_fields["tags"].original_value = self.edited_movie_bag[
+            if self.prepopulate_bag.get("movie_tags"):
+                self.entry_fields["tags"].original_value = self.prepopulate_bag[
                     "movie_tags"
                 ]
         else:

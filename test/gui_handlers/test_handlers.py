@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/2/24, 12:35 PM by stephen.
+#  Last modified 12/4/24, 10:27 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,12 +13,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from collections import deque
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from functools import partial
-from typing import Callable, List, Literal, Sequence
-from unittest.mock import MagicMock
+from typing import Callable, List, Sequence
 
 import pytest
 
@@ -218,88 +216,6 @@ class TestTmdbIOHandler:
             assert mock_executor.fut.add_done_callback_calls == [
                 (handlers._tmdb_search_exception_callback,)
             ]
-
-
-# # @pytest.mark.skip
-# class TestAddMovie:
-#     TAGS = ["Movie night candidate"]
-#     movie_gui_args = []
-#
-#     @pytest.mark.skip
-#     def test_movie_gui_called(self, monkeypatch):
-#         monkeypatch.setattr(handlers.database, "all_tags", lambda *args: self.TAGS)
-#         mock_gui = MagicMock()
-#         monkeypatch.setattr(handlers.guiwidgets_2, "AddMovieGUI", mock_gui)
-#
-#         with self.add_movie_context():
-#             mock_gui.assert_called_once_with(
-#                 DummyParent(),
-#                 handlers._tmdb_io_handler,
-#                 self.TAGS,
-#                 add_movie_callback=handlers.add_movie_callback,
-#             )
-#
-#     # noinspection PyMissingOrEmptyDocstring
-#     @contextmanager
-#     def add_movie_context(self):
-#         hold_persistent = handlers.config.persistent
-#         hold_current = handlers.config.current
-#
-#         handlers.config.persistent = handlers.config.PersistentConfig(
-#             "Test program name", "Test program version"
-#         )
-#         handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
-#         try:
-#             yield handlers.add_movie()
-#         finally:
-#             handlers.config.persistent = hold_persistent
-#             handlers.config.current = hold_current
-
-
-class TestDeleteMovie:
-    def test_delete_movie_called(self, monkeypatch):
-        calls = []
-        # noinspection PyTypeChecker
-        movie = handlers.config.FindMovieTypedDict(title="test title", year=[2042])
-        monkeypatch.setattr(
-            handlers.database, "del_movie", lambda *args: calls.append(args)
-        )
-        handlers.delete_movie_callback(movie)
-        assert calls == [(movie,)]
-
-
-# @pytest.mark.skip
-# class TestEditMovie:
-#     TAGS = ["Movie night candidate"]
-#
-#     search_gui_args = []
-#
-#     def test_edit_gui_called(self, monkeypatch):
-#         monkeypatch.setattr(handlers.database, "all_tags", lambda *args: self.TAGS)
-#         monkeypatch.setattr(
-#             handlers.guiwidgets,
-#             "SearchMovieGUI",
-#             lambda parent, callback, tags: self.search_gui_args.append(
-#                 (parent, callback, tags)
-#             ),
-#         )
-#         with self.edit_movie_context():
-#             assert self.search_gui_args == [
-#                 (DummyParent(), handlers._search_movie_callback, self.TAGS)
-#             ]
-#
-#     # noinspection PyMissingOrEmptyDocstring
-#     @contextmanager
-#     def edit_movie_context(self):
-#         hold_app = handlers.config.current
-#         handlers.config.current = handlers.config.PersistentConfig(
-#             "Test program name", "Test program version"
-#         )
-#         handlers.config.current.tk_root = DummyParent()
-#         try:
-#             yield handlers.edit_movie()
-#         finally:
-#             handlers.config.current = hold_app
 
 
 # noinspection PyMissingOrEmptyDocstring

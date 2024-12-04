@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/2/24, 1:12 PM by stephen.
+#  Last modified 12/4/24, 10:27 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -39,7 +39,7 @@ def test_add_movie(monkeypatch, config_current, test_tags):
         guidatabase.config.current.tk_root,
         guidatabase._tmdb_io_handler,
         list(test_tags),
-        movie_bag=movie_bag,
+        prepopulate_bag=movie_bag,
         add_movie_callback=guidatabase.add_movie_callback,
     )
 
@@ -77,7 +77,7 @@ def test_add_movie_callback_handles_NoResultFound_for_missing_tag(
     handler_add_movie = MagicMock(name="handler_add_movie")
     monkeypatch.setattr(guidatabase, "add_movie", handler_add_movie)
     exc_messagebox = MagicMock(name="exc_messagebox")
-    monkeypatch.setattr(guidatabase, "exc_messagebox", exc_messagebox)
+    monkeypatch.setattr(guidatabase, "_exc_messagebox", exc_messagebox)
 
     guidatabase.add_movie_callback(movie_td)
 
@@ -105,7 +105,7 @@ def test_add_movie_callback_handles_IntegrityError_for_existing_movie(monkeypatc
     ]
     monkeypatch.setattr(guidatabase.tables, "add_movie", db_add_movie)
     exc_messagebox = MagicMock(name="exc_messagebox")
-    monkeypatch.setattr(guidatabase, "exc_messagebox", exc_messagebox)
+    monkeypatch.setattr(guidatabase, "_exc_messagebox", exc_messagebox)
     handler_add_movie = MagicMock(name="handler_add_movie")
     monkeypatch.setattr(guidatabase, "add_movie", handler_add_movie)
 
@@ -134,7 +134,7 @@ def test_add_movie_callback_handles_IntegrityError_for_invalid_year(monkeypatch)
     ]
     monkeypatch.setattr(guidatabase.tables, "add_movie", db_add_movie)
     exc_messagebox = MagicMock(name="exc_messagebox")
-    monkeypatch.setattr(guidatabase, "exc_messagebox", exc_messagebox)
+    monkeypatch.setattr(guidatabase, "_exc_messagebox", exc_messagebox)
     handler_add_movie = MagicMock(name="handler_add_movie")
     monkeypatch.setattr(guidatabase, "add_movie", handler_add_movie)
 
@@ -264,7 +264,7 @@ def test_search_for_movie_callback_returning_1_movie(
     monkeypatch.setattr(guidatabase.guiwidgets_2, "EditMovieGUI", edit_movie_gui)
     edit_movie_callback = MagicMock(name="edit_movie_callback")
     monkeypatch.setattr(guidatabase, "edit_movie_callback", edit_movie_callback)
-    old_movie = guidatabase.convert_to_movie_update_def(movie_1)
+    old_movie = guidatabase.moviebagfacade.convert_to_movie_update_def(movie_1)
 
     guidatabase.search_for_movie_callback(criteria, list(test_tags))
 
@@ -299,7 +299,7 @@ def test_search_for_movie_callback_returning_2_movies(monkeypatch, config_curren
     select_movie_gui = MagicMock(name="select_movie_gui")
     monkeypatch.setattr(guidatabase.guiwidgets, "SelectMovieGUI", select_movie_gui)
     monkeypatch.setattr(
-        guidatabase, "_select_movie_callback", MagicMock(name="select_movie_callback")
+        guidatabase, "select_movie_callback", MagicMock(name="select_movie_callback")
     )
 
     guidatabase.search_for_movie_callback(criteria, tags)
@@ -307,7 +307,7 @@ def test_search_for_movie_callback_returning_2_movies(monkeypatch, config_curren
     select_movie_gui.assert_called_once_with(
         guidatabase.config.current.tk_root,
         movies_found,
-        guidatabase._select_movie_callback,
+        guidatabase.select_movie_callback,
     )
 
 
@@ -387,14 +387,17 @@ def edit_movie_exception_handler(
 
     # Patch call to messagebox
     exc_messagebox = MagicMock(name="exc_messagebox")
-    monkeypatch.setattr(guidatabase, "exc_messagebox", exc_messagebox)
+    monkeypatch.setattr(guidatabase, "_exc_messagebox", exc_messagebox)
 
     guidatabase.edit_movie_callback(old_movie)(new_movie)
 
     with check:
         exc_messagebox.assert_called_once_with(db_edit_movie.side_effect)
     with check:
-        gui_edit_movie.assert_called_once_with(old_movie, new_movie_bag)
+        gui_edit_movie.assert_called_once_with(
+            old_movie,
+            prepopulate_bag=new_movie_bag,
+        )
 
 
 def common_edit_movie_gui_test(
@@ -423,7 +426,7 @@ def common_edit_movie_gui_test(
 
     kwargs = call[0][1]
     check.equal(kwargs["old_movie"], old_movie)
-    check.equal(kwargs["edited_movie_bag"], new_movie_bag)
+    check.equal(kwargs["prepopulate_bag"], new_movie_bag)
     check.equal(
         kwargs["edit_movie_callback"].__qualname__[:19],
         "edit_movie_callback",
@@ -434,14 +437,14 @@ def common_edit_movie_gui_test(
     )
 
 
-def test_exc_messagebox_with_one_note(messagebox, config_current):
+def test__exc_messagebox_with_one_note(messagebox, config_current):
     item_1 = "item_1"
 
     try:
         raise Exception
     except Exception as exc:
         exc.add_note(item_1)
-        guidatabase.exc_messagebox(exc)
+        guidatabase._exc_messagebox(exc)
 
     messagebox.assert_called_once_with(
         guidatabase.config.current.tk_root,
@@ -449,7 +452,7 @@ def test_exc_messagebox_with_one_note(messagebox, config_current):
     )
 
 
-def test_exc_messagebox_with_multiple_notes(messagebox, config_current):
+def test__exc_messagebox_with_multiple_notes(messagebox, config_current):
     item_1 = "item_1"
     item_2 = "item_2"
     item_3 = "item_3"
@@ -460,7 +463,7 @@ def test_exc_messagebox_with_multiple_notes(messagebox, config_current):
         exc.add_note(item_1)
         exc.add_note(item_2)
         exc.add_note(item_3)
-        guidatabase.exc_messagebox(exc)
+        guidatabase._exc_messagebox(exc)
 
     messagebox.assert_called_once_with(
         guidatabase.config.current.tk_root,
@@ -482,21 +485,64 @@ def test_delete_movie_callback(monkeypatch):
     delete_movie.assert_called_once_with(movie_bag=movie_bag)
 
 
+def test_select_movie_callback(monkeypatch):
+    title = "test title for test_select_movie_callback"
+    year = 42
+    movie = config.MovieKeyTypedDict(title=title, year=year)
+    movie_bag = MovieBag(title=title, year=MovieInteger(year))
+
+    select_movie = MagicMock(name="select_movie")
+    monkeypatch.setattr(guidatabase.tables, "select_movie", select_movie)
+    select_movie.return_value = movie_bag
+
+    edit_movie = MagicMock(name="edit_movie")
+    monkeypatch.setattr(guidatabase, "_edit_movie", edit_movie)
+
+    guidatabase.select_movie_callback(movie)
+
+    with check:
+        select_movie.assert_called_once_with(movie_bag=movie_bag)
+    with check:
+        edit_movie.assert_called_once_with(movie, prepopulate_bag=movie_bag)
+
+
+def test_select_movie_callback_handles_missing_movie_exception(
+    monkeypatch, messagebox, config_current
+):
+    title = "test title for test_select_movie_callback"
+    year = 42
+    movie = config.MovieKeyTypedDict(title=title, year=year)
+    notes_0 = guidatabase.tables.MOVIE_NOT_FOUND
+    notes_1 = "note 1"
+    notes_2 = "note 2"
+    select_movie = MagicMock(name="select_movie")
+    select_movie.side_effect = guidatabase.tables.NoResultFound()
+    select_movie.side_effect.__notes__ = [notes_0, notes_1, notes_2]
+    monkeypatch.setattr(guidatabase.tables, "select_movie", select_movie)
+
+    guidatabase.select_movie_callback(movie)
+
+    messagebox.assert_called_once_with(
+        guidatabase.config.current.tk_root,
+        message=notes_0,
+        detail=f"{notes_1}, {notes_2}.",
+    )
+
+
 def test__edit_movie(monkeypatch, config_current, test_tags):
     gui_edit_movie = MagicMock(name="gui_edit_movie")
     monkeypatch.setattr(guidatabase.guiwidgets_2, "EditMovieGUI", gui_edit_movie)
     edit_movie_callback = MagicMock(name="edit_movie_callback")
     monkeypatch.setattr(guidatabase, "edit_movie_callback", edit_movie_callback)
     old_movie = MovieKeyTypedDict(title="test _edit movie title", year=42)
-    new_movie_bag = MovieBag()
-    guidatabase._edit_movie(old_movie, new_movie_bag)
+    guidatabase._edit_movie(old_movie)
 
     gui_edit_movie.assert_called_once_with(
         config.current.tk_root,
         guidatabase._tmdb_io_handler,
         list(guidatabase.tables.select_all_tags()),
         old_movie=config.MovieUpdateDef(**old_movie),
-        edited_movie_bag=new_movie_bag,
+        prepopulate_bag=None,
         edit_movie_callback=guidatabase.edit_movie_callback(old_movie),
         delete_movie_callback=guidatabase.delete_movie_callback,
     )
