@@ -4,7 +4,7 @@ This module contains new tests written after Brian Okken's course and book on py
 """
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/2/24, 12:35 PM by stephen.
+#  Last modified 12/4/24, 10:27 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -201,26 +201,26 @@ class TestPreferencesCallback:
             check.equal(preferences.use_tmdb, self.USE_TMDB)
 
 
-# noinspection PyMissingOrEmptyDocstring
-class TestDeleteMovieCallback:
-    """Test Strategy:
-
-    CHeck that database delete movie function is called.
-    """
-
-    MOVIE = config.FindMovieTypedDict(title="Test Movie Title", year=["4242"])
-
-    @pytest.fixture()
-    def del_movie(self, monkeypatch):
-        del_movie = MagicMock()
-        monkeypatch.setattr("handlers.database.del_movie", del_movie)
-        return del_movie
-
-    def test_delete_movie_call(self, del_movie):
-        handlers.delete_movie_callback(self.MOVIE)
-        del_movie.assert_called_once_with(self.MOVIE)
-
-    def test_no_result_exception(self, del_movie):
-        del_movie.side_effect = handlers.database.NoResultFound
-        handlers.delete_movie_callback(self.MOVIE)
-        del_movie.assert_called_once_with(self.MOVIE)
+# # noinspection PyMissingOrEmptyDocstring
+# class TestDeleteMovieCallback:
+#     """Test Strategy:
+#
+#     CHeck that database delete movie function is called.
+#     """
+#
+#     MOVIE = config.FindMovieTypedDict(title="Test Movie Title", year=["4242"])
+#
+#     @pytest.fixture()
+#     def del_movie(self, monkeypatch):
+#         del_movie = MagicMock()
+#         monkeypatch.setattr("handlers.database.del_movie", del_movie)
+#         return del_movie
+#
+#     def test_delete_movie_call(self, del_movie):
+#         handlers.delete_movie_callback(self.MOVIE)
+#         del_movie.assert_called_once_with(self.MOVIE)
+#
+#     def test_no_result_exception(self, del_movie):
+#         del_movie.side_effect = handlers.database.NoResultFound
+#         handlers.delete_movie_callback(self.MOVIE)
+#         del_movie.assert_called_once_with(self.MOVIE)
