@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/4/24, 10:27 AM by stephen.
+#  Last modified 12/5/24, 8:55 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -400,43 +400,6 @@ def edit_movie_exception_handler(
         )
 
 
-def common_edit_movie_gui_test(
-    call, test_tags: set, old_movie, new_movie_bag: MovieBag
-):
-    """This function contains common code assertion code.
-
-    The call to EditMovieGUI recurses into the function under test so the
-    parameters to the call have to be individually tested.
-    Args:
-        call:
-        test_tags:
-        old_movie:
-        new_movie_bag:
-    """
-    args = call[0][0]
-    # noinspection PyProtectedMember
-    check.equal(
-        args,
-        (
-            guidatabase.config.current.tk_root,
-            guidatabase._tmdb_io_handler,
-            list(test_tags),
-        ),
-    )
-
-    kwargs = call[0][1]
-    check.equal(kwargs["old_movie"], old_movie)
-    check.equal(kwargs["prepopulate_bag"], new_movie_bag)
-    check.equal(
-        kwargs["edit_movie_callback"].__qualname__[:19],
-        "edit_movie_callback",
-    )
-    check.equal(
-        kwargs["delete_movie_callback"],
-        guidatabase.delete_movie_callback,
-    )
-
-
 def test__exc_messagebox_with_one_note(messagebox, config_current):
     item_1 = "item_1"
 
@@ -529,6 +492,16 @@ def test_select_movie_callback_handles_missing_movie_exception(
     )
 
 
+def test_add_tag_callback(monkeypatch):
+    tag_text = "test_add_tag_callback"
+    add_tag = MagicMock(name="add_tag")
+    monkeypatch.setattr(guidatabase.tables, "add_tag", add_tag)
+
+    guidatabase.add_tag_callback(tag_text)
+
+    add_tag.assert_called_once_with(tag_text=tag_text)
+
+
 def test__edit_movie(monkeypatch, config_current, test_tags):
     gui_edit_movie = MagicMock(name="gui_edit_movie")
     monkeypatch.setattr(guidatabase.guiwidgets_2, "EditMovieGUI", gui_edit_movie)
@@ -573,34 +546,6 @@ def test_tags(monkeypatch):
     mock_select_tags = MagicMock(name="mock_select_tags", return_value=test_tags)
     monkeypatch.setattr(guidatabase.tables, "select_all_tags", mock_select_tags)
     return test_tags
-
-
-@pytest.fixture(scope="function")
-def add_movie_setup(monkeypatch):
-    """This fixture provides common code associated with the add_movie_callback tests.
-
-    Args:
-        monkeypatch:
-
-    Returns:
-        A test movie dict.
-        A mock of guidatabase.add_movie.
-        A conversion of the test movie dict into MovieBag format.
-        A mock of guidatabase.guiwidgets_2.gui_messagebox.
-    """
-    guid_add_movie = MagicMock(name="guid_add_movie")
-    monkeypatch.setattr(guidatabase, "add_movie", guid_add_movie)
-    messagebox = MagicMock(name="messagebox")
-    monkeypatch.setattr(guidatabase.guiwidgets_2, "gui_messagebox", messagebox)
-    gui_movie = MovieTD(title="Add movie test", year="4242")
-    # noinspection PyUnresolvedReferences
-    movie_bag = moviebagfacade.convert_from_movie_td(gui_movie)
-    return (
-        gui_movie,
-        guid_add_movie,
-        movie_bag,
-        messagebox,
-    )
 
 
 @pytest.fixture(scope="function")
@@ -653,23 +598,3 @@ def messagebox(monkeypatch):
     mock = MagicMock(name="messagebox")
     monkeypatch.setattr(guidatabase.guiwidgets_2, "gui_messagebox", mock)
     return mock
-
-
-@pytest.fixture(scope="function")
-def edit_movie_gui_call(monkeypatch):
-    """This fixture mocks guidatabase.guiwidgets_2.EditMovieGUI
-
-    Args:
-        monkeypatch:
-
-    Returns:
-        A list of tuples for each call to EditMovieGUI. Each tuple contains
-        the arguments for the call.
-    """
-    call = []
-    monkeypatch.setattr(
-        guidatabase.guiwidgets_2,
-        "EditMovieGUI",
-        lambda *args_, **kwargs_: call.append((args_, kwargs_)),
-    )
-    return call
