@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/5/24, 8:55 AM by stephen.
+#  Last modified 12/9/24, 6:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,7 +25,13 @@ from config import MovieKeyTypedDict
 from database_src import tables
 from globalconstants import MovieTD, MovieBag, MovieInteger
 from gui_handlers import moviebagfacade
-from gui_handlers.handlers import _tmdb_io_handler
+from gui_handlers.handlers import (
+    _tmdb_io_handler,
+    _delete_tag_callback_wrapper,
+    _edit_tag_callback_wrapper,
+    _select_tag_callback,
+    edit_tag,
+)
 
 
 TITLE_AND_YEAR_EXISTS_MSG = (
@@ -240,6 +246,44 @@ def add_tag_callback(tag_text: str):
         tag_text:
     """
     tables.add_tag(tag_text=tag_text)
+
+
+def search_tag_callback(match: str):
+    """Gets matching tag texts from the database.
+
+    If no tags match the user is alerted and the tag editing process will
+    be restarted. If a single match is found the 'edit tag' screen will
+    be presented. If multiple tags match, a selectable list of the matches
+    will be displayed.
+
+    Args:
+        match:
+    """
+    tags = tables.match_tags(match=match)
+
+    if len(tags) == 0:
+        guiwidgets_2.gui_messagebox(
+            config.current.tk_root, message=tables.TAG_NOT_FOUND
+        )
+        edit_tag()
+
+    elif len(tags) == 1:
+        tag = tags.pop()
+        delete_callback = _delete_tag_callback_wrapper(tag)
+        edit_callback = _edit_tag_callback_wrapper(tag)
+        guiwidgets_2.EditTagGUI(
+            config.current.tk_root,
+            delete_tag_callback=delete_callback,
+            edit_tag_callback=edit_callback,
+            tag=tag,
+        )
+
+    else:
+        guiwidgets_2.SelectTagGUI(
+            config.current.tk_root,
+            select_tag_callback=_select_tag_callback,
+            tags_to_show=list(tags),
+        )
 
 
 def _edit_movie(
