@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/5/24, 8:55 AM by stephen.
+#  Last modified 12/9/24, 6:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -500,6 +500,67 @@ def test_add_tag_callback(monkeypatch):
     guidatabase.add_tag_callback(tag_text)
 
     add_tag.assert_called_once_with(tag_text=tag_text)
+
+
+def test_search_tag_callback_finding_nothing(monkeypatch, config_current):
+    messagebox = MagicMock(name="messagebox")
+    monkeypatch.setattr(guidatabase.guiwidgets_2, "gui_messagebox", messagebox)
+    edit_tag = MagicMock(name="edit_tag")
+    monkeypatch.setattr(guidatabase, "edit_tag", edit_tag)
+    match_tags = MagicMock(name="match_tags")
+    match_tags.return_value = {}
+    monkeypatch.setattr(guidatabase.tables, "match_tags", match_tags)
+    match = "match pattern"
+
+    guidatabase.search_tag_callback(match)
+
+    messagebox.assert_called_once_with(
+        config.current.tk_root, message=guidatabase.tables.TAG_NOT_FOUND
+    )
+    edit_tag.assert_called_once_with()
+
+
+def test_search_tag_callback_finding_one_match(monkeypatch, config_current):
+    tag_found = "tag_found"
+    edit_tag_gui = MagicMock(name="edit_tag_gui")
+    monkeypatch.setattr(guidatabase.guiwidgets_2, "EditTagGUI", edit_tag_gui)
+    delete_tag_callback = MagicMock(name="delete_tag_callback")
+    monkeypatch.setattr(
+        guidatabase, "_delete_tag_callback_wrapper", delete_tag_callback
+    )
+    edit_tag_callback = MagicMock(name="edit_tag_callback")
+    monkeypatch.setattr(guidatabase, "_edit_tag_callback_wrapper", edit_tag_callback)
+    match = "match pattern"
+    match_tags = MagicMock(name="match_tags")
+    match_tags.return_value = {tag_found}
+    monkeypatch.setattr(guidatabase.tables, "match_tags", match_tags)
+
+    guidatabase.search_tag_callback(match)
+
+    edit_tag_gui.assert_called_once_with(
+        config.current.tk_root,
+        delete_tag_callback=delete_tag_callback(tag_found),
+        edit_tag_callback=edit_tag_callback(tag_found),
+        tag=tag_found,
+    )
+
+
+def test_search_tag_callback_finding_multiple_matches(monkeypatch, config_current):
+    select_tag_gui = MagicMock(name="select_tag_gui")
+    monkeypatch.setattr(guidatabase.guiwidgets_2, "SelectTagGUI", select_tag_gui)
+    tags = {"tag 1", "tag 2"}
+    match_tags = MagicMock(name="match_tags")
+    match_tags.return_value = tags
+    monkeypatch.setattr(guidatabase.tables, "match_tags", match_tags)
+    match = "match pattern"
+
+    guidatabase.search_tag_callback(match)
+
+    select_tag_gui.assert_called_once_with(
+        config.current.tk_root,
+        select_tag_callback=guidatabase._select_tag_callback,
+        tags_to_show=list(tags),
+    )
 
 
 def test__edit_movie(monkeypatch, config_current, test_tags):

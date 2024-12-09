@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/2/24, 12:35 PM by stephen.
+#  Last modified 12/9/24, 6:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -404,7 +404,7 @@ def match_tags(*, match: str) -> set[str]:
         match:
 
     Returns:
-        A set of complaint tag texts.
+        A set of compliant tag texts.
     """
     with session_factory() as session:
         tags = _match_tags(session, match=match)
