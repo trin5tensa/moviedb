@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/10/24, 7:55 AM by stephen.
+#  Last modified 12/10/24, 1:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -194,14 +194,6 @@ def _get_tmdb_api_key() -> Optional[str]:
         return tmdb_api_key
 
 
-# todo Rewrite for database API change.
-def edit_tag():
-    """Get tag string pattern from the user and search for compliant records."""
-    guiwidgets_2.SearchTagGUI(
-        config.current.tk_root, search_tag_callback=_search_tag_callback
-    )
-
-
 def _settings_callback(tmdb_api_key: str, use_tmdb: bool):
     """
     Update the config file with the user's changes.
@@ -291,33 +283,6 @@ def _edit_tag_callback_wrapper(old_tag: str) -> Callable:
             guiwidgets.gui_messagebox(*missing_tag_args)
 
     return edit_tag_callback
-
-
-# todo Rewrite for database API change.
-def _delete_tag_callback_wrapper(tag: str) -> Callable:
-    """Create the edit tag callback.
-
-    Args:
-        tag:
-
-    Returns:
-        The callback function delete_tag_callback.
-    """
-
-    def delete_tag_callback():
-        """Change the tag column of a record of the Tag table.
-
-        If the tag is no longer in the database this function assumes that it has been deleted by
-        another process. The database error is silently suppressed.
-        """
-        try:
-            database.del_tag(tag)
-
-        # The record has already been deleted by another process:
-        except exception.DatabaseSearchFoundNothing:
-            pass
-
-    return delete_tag_callback
 
 
 def _select_tag_callback(old_tag: str):

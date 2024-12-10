@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/10/24, 7:55 AM by stephen.
+#  Last modified 12/10/24, 1:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -503,6 +503,22 @@ def test_add_tag(monkeypatch, config_current):
     )
 
 
+def test_edit_tag(monkeypatch, config_current):
+    search_tag_gui = MagicMock(name="search_tag_gui")
+    monkeypatch.setattr(
+        guidatabase.guiwidgets_2,
+        "SearchTagGUI",
+        search_tag_gui,
+    )
+
+    guidatabase.edit_tag()
+
+    search_tag_gui.assert_called_once_with(
+        config.current.tk_root,
+        search_tag_callback=guidatabase.search_tag_callback,
+    )
+
+
 def test_add_tag_callback(monkeypatch):
     tag_text = "test_add_tag_callback"
     add_tag = MagicMock(name="add_tag")
@@ -536,9 +552,7 @@ def test_search_tag_callback_finding_one_match(monkeypatch, config_current):
     edit_tag_gui = MagicMock(name="edit_tag_gui")
     monkeypatch.setattr(guidatabase.guiwidgets_2, "EditTagGUI", edit_tag_gui)
     delete_tag_callback = MagicMock(name="delete_tag_callback")
-    monkeypatch.setattr(
-        guidatabase, "_delete_tag_callback_wrapper", delete_tag_callback
-    )
+    monkeypatch.setattr(guidatabase, "delete_tag", delete_tag_callback)
     edit_tag_callback = MagicMock(name="edit_tag_callback")
     monkeypatch.setattr(guidatabase, "_edit_tag_callback_wrapper", edit_tag_callback)
     match = "match pattern"
@@ -572,6 +586,16 @@ def test_search_tag_callback_finding_multiple_matches(monkeypatch, config_curren
         select_tag_callback=guidatabase._select_tag_callback,
         tags_to_show=list(tags),
     )
+
+
+def test_delete_tag_callback(monkeypatch):
+    tag_text = "tag_text"
+    delete_tag = MagicMock(name="delete_tag")
+    monkeypatch.setattr(guidatabase.tables, "delete_tag", delete_tag)
+
+    guidatabase.delete_tag(tag_text)()
+
+    delete_tag.assert_called_once_with(tag_text=tag_text)
 
 
 def test__edit_movie(monkeypatch, config_current, test_tags):

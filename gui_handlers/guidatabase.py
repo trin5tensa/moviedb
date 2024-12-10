@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/10/24, 7:55 AM by stephen.
+#  Last modified 12/10/24, 1:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -27,10 +27,8 @@ from globalconstants import MovieTD, MovieBag, MovieInteger
 from gui_handlers import moviebagfacade
 from gui_handlers.handlers import (
     _tmdb_io_handler,
-    _delete_tag_callback_wrapper,
     _edit_tag_callback_wrapper,
     _select_tag_callback,
-    edit_tag,
 )
 
 
@@ -247,6 +245,14 @@ def add_tag():
     )
 
 
+def edit_tag():
+    """Searches for tags with a user's match pattern."""
+    guiwidgets_2.SearchTagGUI(
+        config.current.tk_root,
+        search_tag_callback=search_tag_callback,
+    )
+
+
 def add_tag_callback(tag_text: str):
     """Calls the database to add a new tag.
 
@@ -277,7 +283,7 @@ def search_tag_callback(match: str):
 
     elif len(tags) == 1:
         tag = tags.pop()
-        delete_callback = _delete_tag_callback_wrapper(tag)
+        delete_callback = delete_tag(tag)
         edit_callback = _edit_tag_callback_wrapper(tag)
         guiwidgets_2.EditTagGUI(
             config.current.tk_root,
@@ -292,6 +298,16 @@ def search_tag_callback(match: str):
             select_tag_callback=_select_tag_callback,
             tags_to_show=list(tags),
         )
+
+
+def delete_tag(tag_text: str):
+    """Creates a callback to delete a tag."""
+
+    def func():
+        """Deletes a tag."""
+        tables.delete_tag(tag_text=tag_text)
+
+    return func
 
 
 def _edit_movie(

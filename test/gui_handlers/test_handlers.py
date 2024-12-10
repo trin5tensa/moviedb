@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/10/24, 7:55 AM by stephen.
+#  Last modified 12/10/24, 1:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -218,45 +218,6 @@ class TestTmdbIOHandler:
             ]
 
 
-# noinspection PyMissingOrEmptyDocstring
-class TestTags:
-
-    def test_edit_tag(self, monkeypatch):
-        edit_tag_args = []
-        monkeypatch.setattr(
-            handlers.guiwidgets_2,
-            "SearchTagGUI",
-            lambda *args, **kwargs: edit_tag_args.append((args, kwargs)),
-        )
-
-        tk_parent = DummyParent()
-        search_tag_callback = handlers._search_tag_callback
-        with self.tag_func_context(handlers.edit_tag):
-            assert edit_tag_args == [
-                (
-                    (tk_parent,),
-                    {"search_tag_callback": search_tag_callback},
-                ),
-            ]
-
-    @contextmanager
-    def tag_func_context(self, tag_func):
-        hold_persistent = handlers.config.persistent
-        hold_current = handlers.config.current
-
-        handlers.config.persistent = handlers.config.PersistentConfig(
-            program_name="Test program name", program_version="Test program version"
-        )
-        handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
-
-        try:
-            yield tag_func()
-
-        finally:
-            handlers.config.persistent = hold_persistent
-            handlers.config.current = hold_current
-
-
 class TestAddTagCallback:
     def test_(self, monkeypatch):
         calls = []
@@ -320,72 +281,6 @@ class TestEditTagCallback:
         finally:
             handlers.config.persistent = hold_persistent
             handlers.config.current = hold_current
-
-
-# noinspection PyMissingOrEmptyDocstring
-class TestDeleteTagCallback:
-    tag = "test tag"
-
-    def test_database_delete_tag_called(self, monkeypatch):
-        del_tag_args = []
-        monkeypatch.setattr(
-            handlers.database, "del_tag", lambda *args: del_tag_args.append(args)
-        )
-        with self.delete_tag_callback_context():
-            assert del_tag_args == [(self.tag,)]
-
-    def test_database_search_found_nothing_ignored(self, monkeypatch):
-        # noinspection PyUnusedLocal
-        def raise_exception(*args):
-            raise handlers.database.exception.DatabaseSearchFoundNothing
-
-        monkeypatch.setattr(handlers.database, "del_tag", raise_exception)
-        try:
-            with self.delete_tag_callback_context():
-                pass
-        except handlers.database.exception.DatabaseSearchFoundNothing:
-            assert False, (
-                "Exception 'handlers.database.exception.DatabaseSearchFoundNothing'"
-                " was not suppressed."
-            )
-
-    @contextmanager
-    def delete_tag_callback_context(self):
-        callback = handlers._delete_tag_callback_wrapper(self.tag)
-        yield callback()
-
-
-# noinspection PyMissingOrEmptyDocstring
-class TestSearchTagCallbackWrapper:
-    tag = "Test tag"
-
-    def test_select_tag_callback_calls_edit_tag_gui(self, monkeypatch):
-        monkeypatch.setattr(handlers.guiwidgets_2, "EditTagGUI", DummyEditTagGUI)
-
-        with self.callback_context():
-            args = dummy_edit_tag_gui_instance[0]
-            assert args[0] == DummyParent()
-            assert args[1] == self.tag
-            assert args[2].__code__.co_name == "delete_tag_callback"
-            assert args[3].__code__.co_name == "edit_tag_callback"
-
-    @contextmanager
-    def callback_context(self):
-        global dummy_edit_tag_gui_instance
-        dummy_edit_tag_gui_instance = []
-        hold_persistent = handlers.config.persistent
-        hold_current = handlers.config.current
-
-        handlers.config.persistent = handlers.config.PersistentConfig(
-            program_name="Test program name", program_version="Test program version"
-        )
-        handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
-        try:
-            yield handlers._select_tag_callback(self.tag)
-        finally:
-            handlers.config.persistent = hold_persistent
-            handlers.config.current = hold_current
-            dummy_edit_tag_gui_instance = []
 
 
 @dataclass
