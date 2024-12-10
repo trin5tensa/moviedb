@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/10/24, 7:55 AM by stephen.
+#  Last modified 12/10/24, 11:03 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -500,6 +500,22 @@ def test_add_tag(monkeypatch, config_current):
 
     add_tag_gui.assert_called_once_with(
         config.current.tk_root, add_tag_callback=guidatabase.add_tag_callback
+    )
+
+
+def test_edit_tag(monkeypatch, config_current):
+    search_tag_gui = MagicMock(name="search_tag_gui")
+    monkeypatch.setattr(
+        guidatabase.guiwidgets_2,
+        "SearchTagGUI",
+        search_tag_gui,
+    )
+
+    guidatabase.edit_tag()
+
+    search_tag_gui.assert_called_once_with(
+        config.current.tk_root,
+        search_tag_callback=guidatabase.search_tag_callback,
     )
 
 

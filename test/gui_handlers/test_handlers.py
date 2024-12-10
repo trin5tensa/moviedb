@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/10/24, 7:55 AM by stephen.
+#  Last modified 12/10/24, 11:03 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -216,45 +216,6 @@ class TestTmdbIOHandler:
             assert mock_executor.fut.add_done_callback_calls == [
                 (handlers._tmdb_search_exception_callback,)
             ]
-
-
-# noinspection PyMissingOrEmptyDocstring
-class TestTags:
-
-    def test_edit_tag(self, monkeypatch):
-        edit_tag_args = []
-        monkeypatch.setattr(
-            handlers.guiwidgets_2,
-            "SearchTagGUI",
-            lambda *args, **kwargs: edit_tag_args.append((args, kwargs)),
-        )
-
-        tk_parent = DummyParent()
-        search_tag_callback = handlers._search_tag_callback
-        with self.tag_func_context(handlers.edit_tag):
-            assert edit_tag_args == [
-                (
-                    (tk_parent,),
-                    {"search_tag_callback": search_tag_callback},
-                ),
-            ]
-
-    @contextmanager
-    def tag_func_context(self, tag_func):
-        hold_persistent = handlers.config.persistent
-        hold_current = handlers.config.current
-
-        handlers.config.persistent = handlers.config.PersistentConfig(
-            program_name="Test program name", program_version="Test program version"
-        )
-        handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
-
-        try:
-            yield tag_func()
-
-        finally:
-            handlers.config.persistent = hold_persistent
-            handlers.config.current = hold_current
 
 
 class TestAddTagCallback:

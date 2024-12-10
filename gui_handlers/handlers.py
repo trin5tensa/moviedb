@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/10/24, 7:55 AM by stephen.
+#  Last modified 12/10/24, 11:03 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -192,14 +192,6 @@ def _get_tmdb_api_key() -> Optional[str]:
         settings_dialog()
     else:
         return tmdb_api_key
-
-
-# todo Rewrite for database API change.
-def edit_tag():
-    """Get tag string pattern from the user and search for compliant records."""
-    guiwidgets_2.SearchTagGUI(
-        config.current.tk_root, search_tag_callback=_search_tag_callback
-    )
 
 
 def _settings_callback(tmdb_api_key: str, use_tmdb: bool):
