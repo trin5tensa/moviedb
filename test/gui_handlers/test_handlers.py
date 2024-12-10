@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/4/24, 10:27 AM by stephen.
+#  Last modified 12/10/24, 7:55 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -220,23 +220,6 @@ class TestTmdbIOHandler:
 
 # noinspection PyMissingOrEmptyDocstring
 class TestTags:
-    def test_add_tag(self, monkeypatch):
-        tag_gui_args = []
-        monkeypatch.setattr(
-            handlers.guiwidgets_2,
-            "AddTagGUI",
-            lambda *args, **kwargs: tag_gui_args.append((args, kwargs)),
-        )
-
-        tk_parent = DummyParent()
-        add_tag_callback = handlers._add_tag_callback
-        with self.tag_func_context(handlers.add_tag):
-            assert tag_gui_args == [
-                (
-                    (tk_parent,),
-                    {"add_tag_callback": add_tag_callback},
-                )
-            ]
 
     def test_edit_tag(self, monkeypatch):
         edit_tag_args = []
@@ -283,59 +266,6 @@ class TestAddTagCallback:
         test_tag = "Test tag"
         handlers._add_tag_callback(test_tag)
         assert calls == [(test_tag,)]
-
-
-# noinspection PyMissingOrEmptyDocstring
-class TestSearchTagCallback:
-    def test_zero_tags_found_raises_exception(self, monkeypatch):
-        tags_found = []
-        monkeypatch.setattr(handlers.database, "find_tags", lambda *args: tags_found)
-        tag_pattern = "42"
-        with pytest.raises(exception.DatabaseSearchFoundNothing):
-            with self.search_tag_context(tag_pattern):
-                pass
-
-    def test_one_tag_found_calls_edit_tag_gui(self, monkeypatch, class_patches):
-        tags_found = ["42"]
-        monkeypatch.setattr(handlers.database, "find_tags", lambda *args: tags_found)
-        tag_pattern = "42"
-        with self.search_tag_context(tag_pattern):
-            args_ = dummy_edit_tag_gui_instance[0]
-            assert args_[0] == DummyParent()
-            assert args_[1] == "42"
-            assert isinstance(args_[2], Callable)
-            assert isinstance(args_[3], Callable)
-
-    def test_multiple_tags_found_calls_select_tag_gui(self, monkeypatch, class_patches):
-        tags_found = ["42", "43"]
-        monkeypatch.setattr(handlers.database, "find_tags", lambda *args: tags_found)
-        tag_pattern = "42"
-        with self.search_tag_context(tag_pattern):
-            args_ = dummy_select_tag_gui_instance[0]
-            assert args_[0] == DummyParent()
-            assert isinstance(args_[1], Callable)
-            assert args_[2] == ["42", "43"]
-
-    @pytest.fixture
-    def class_patches(self, monkeypatch):
-        monkeypatch.setattr(handlers.guiwidgets_2, "EditTagGUI", DummyEditTagGUI)
-        monkeypatch.setattr(handlers.guiwidgets_2, "SelectTagGUI", DummySelectTagGUI)
-
-    @contextmanager
-    def search_tag_context(self, tag_pattern: str):
-        hold_persistent = handlers.config.persistent
-        hold_current = handlers.config.current
-
-        handlers.config.persistent = handlers.config.PersistentConfig(
-            program_name="Test program name", program_version="Test program version"
-        )
-        handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
-
-        try:
-            yield handlers._search_tag_callback(tag_pattern)
-        finally:
-            handlers.config.persistent = hold_persistent
-            handlers.config.current = hold_current
 
 
 class TestEditTagCallback:
