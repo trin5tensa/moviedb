@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/9/24, 6:16 AM by stephen.
+#  Last modified 12/10/24, 7:55 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -237,6 +237,14 @@ def select_movie_callback(movie: MovieKeyTypedDict):
     else:
         old_movie = moviebagfacade.convert_to_movie_update_def(movie_bag)
         _edit_movie(old_movie, prepopulate_bag=movie_bag)
+
+
+def add_tag():
+    """Adds a new tag to the database."""
+    guiwidgets_2.AddTagGUI(
+        config.current.tk_root,
+        add_tag_callback=add_tag_callback,
+    )
 
 
 def add_tag_callback(tag_text: str):
