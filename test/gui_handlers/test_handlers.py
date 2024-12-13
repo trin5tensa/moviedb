@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/10/24, 1:00 PM by stephen.
+#  Last modified 12/13/24, 8:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -216,71 +216,6 @@ class TestTmdbIOHandler:
             assert mock_executor.fut.add_done_callback_calls == [
                 (handlers._tmdb_search_exception_callback,)
             ]
-
-
-class TestAddTagCallback:
-    def test_(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(
-            handlers.database, "add_tag", lambda *args: calls.append(args)
-        )
-        test_tag = "Test tag"
-        handlers._add_tag_callback(test_tag)
-        assert calls == [(test_tag,)]
-
-
-class TestEditTagCallback:
-    old_tag = "test old tag"
-    new_tag = "test new tag"
-
-    def test_database_edit_tag_called(self, monkeypatch):
-        edit_tags_args = []
-        monkeypatch.setattr(
-            handlers.database, "edit_tag", lambda *args: edit_tags_args.append(args)
-        )
-        with self.add_tag_callback_context():
-            assert edit_tags_args == [(self.old_tag, self.new_tag)]
-
-    def test_database_search_found_nothing_raised(self, monkeypatch):
-        # noinspection PyMissingOrEmptyDocstring,PyUnusedLocal
-        def raise_exception(*args):
-            raise handlers.database.exception.DatabaseSearchFoundNothing
-
-        message_args = []
-
-        monkeypatch.setattr(handlers.database, "edit_tag", raise_exception)
-        monkeypatch.setattr(
-            handlers.guiwidgets,
-            "gui_messagebox",
-            lambda *args: message_args.append(args),
-        )
-        with self.add_tag_callback_context():
-            assert message_args == [
-                (
-                    DummyParent(),
-                    "Missing tag",
-                    "The tag test old tag is no longer available. "
-                    "It may have been deleted by another process.",
-                )
-            ]
-
-    # noinspection PyMissingOrEmptyDocstring
-    @contextmanager
-    def add_tag_callback_context(self):
-        hold_persistent = handlers.config.persistent
-        hold_current = handlers.config.current
-
-        handlers.config.persistent = handlers.config.PersistentConfig(
-            program_name="Test program name", program_version="Test program version"
-        )
-        handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
-        callback = handlers._edit_tag_callback_wrapper(self.old_tag)
-
-        try:
-            yield callback(self.new_tag)
-        finally:
-            handlers.config.persistent = hold_persistent
-            handlers.config.current = hold_current
 
 
 @dataclass

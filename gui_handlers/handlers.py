@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/10/24, 1:00 PM by stephen.
+#  Last modified 12/13/24, 8:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -206,97 +206,19 @@ def _settings_callback(tmdb_api_key: str, use_tmdb: bool):
     config.persistent.use_tmdb = use_tmdb
 
 
-# todo Rewrite for database API change.
-def _add_tag_callback(tag: str):
-    """Add a new user supplied tag to the database.
-
-    Args:
-        tag:
-
-    """
-    database.add_tag(tag)
-
-
-# todo Rewrite for database API change.
-def _search_tag_callback(tag_pattern: str):
-    """Search for tags matching a supplied substring pattern.
-
-    Args:
-        tag_pattern:
-
-    Raises:
-        DatabaseSearchFoundNothing if no matching tags are found.
-    """
-    tags = database.find_tags(tag_pattern)
-    tags_found = len(tags)
-    if tags_found <= 0:
-        raise exception.DatabaseSearchFoundNothing
-    elif tags_found == 1:
-        tag = tags[0]
-        delete_callback = _delete_tag_callback_wrapper(tag)
-        edit_callback = _edit_tag_callback_wrapper(tag)
-        guiwidgets_2.EditTagGUI(
-            config.current.tk_root,
-            delete_tag_callback=delete_callback,
-            edit_tag_callback=edit_callback,
-            tag=tag,
-        )
-    else:
-        guiwidgets_2.SelectTagGUI(
-            config.current.tk_root,
-            select_tag_callback=_select_tag_callback,
-            tags_to_show=tags,
-        )
-
-
-# todo Rewrite for database API change.
-def _edit_tag_callback_wrapper(old_tag: str) -> Callable:
-    """Create the edit tag callback.
-
-    Args:
-        old_tag:
-
-    Returns:
-        The callback function edit_tag_callback.
-    """
-
-    def edit_tag_callback(new_tag: str):
-        """Change the tag column of a record of the Tag table.
-
-        If the tag is no longer in the database this function assumes that it has been deleted by
-        another process. A user alert is raised.
-
-        Args:
-            new_tag:
-        """
-
-        missing_tag_args = (
-            config.current.tk_root,
-            "Missing tag",
-            f"The tag {old_tag} is no longer available. It may have been "
-            f"deleted by another process.",
-        )
-
-        try:
-            database.edit_tag(old_tag, new_tag)
-        except exception.DatabaseSearchFoundNothing:
-            guiwidgets.gui_messagebox(*missing_tag_args)
-
-    return edit_tag_callback
-
-
+# todo Replace this old function
 def _select_tag_callback(old_tag: str):
     """Change the tag column of a record of the Tag table.
 
     If the tag is no longer in the database this function assumes that it has been deleted by
     another process. A user alert is raised.
     """
-    delete_callback = _delete_tag_callback_wrapper(old_tag)
-    edit_callback = _edit_tag_callback_wrapper(old_tag)
+    # delete_callback = _delete_tag_callback_wrapper(old_tag)
+    # edit_callback = _edit_tag_callback_wrapper(old_tag)
     guiwidgets_2.EditTagGUI(
         config.current.tk_root,
-        delete_tag_callback=delete_callback,
-        edit_tag_callback=edit_callback,
+        # delete_tag_callback=delete_callback,
+        # edit_tag_callback=edit_callback,
         tag=old_tag,
     )
 

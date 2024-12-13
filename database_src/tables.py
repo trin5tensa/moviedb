@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/9/24, 6:16 AM by stephen.
+#  Last modified 12/13/24, 8:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -313,6 +313,7 @@ def update_movie_relationships(
         movie.tags = set()
         for tag_text in movie_tags:
             try:
+                # noinspection PyUnresolvedReferences
                 movie.tags.add(_select_tag(session, text=tag_text))
             except NoResultFound as exc:
                 logging.error(TAG_NOT_FOUND, tag_text)
