@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/10/24, 1:00 PM by stephen.
+#  Last modified 12/13/24, 8:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,11 +25,7 @@ from config import MovieKeyTypedDict
 from database_src import tables
 from globalconstants import MovieTD, MovieBag, MovieInteger
 from gui_handlers import moviebagfacade
-from gui_handlers.handlers import (
-    _tmdb_io_handler,
-    _edit_tag_callback_wrapper,
-    _select_tag_callback,
-)
+from gui_handlers.handlers import _tmdb_io_handler, _select_tag_callback
 
 
 TITLE_AND_YEAR_EXISTS_MSG = (
@@ -283,8 +279,8 @@ def search_tag_callback(match: str):
 
     elif len(tags) == 1:
         tag = tags.pop()
-        delete_callback = delete_tag(tag)
-        edit_callback = _edit_tag_callback_wrapper(tag)
+        delete_callback = delete_tag_callback(tag)
+        edit_callback = edit_tag_callback(tag)
         guiwidgets_2.EditTagGUI(
             config.current.tk_root,
             delete_tag_callback=delete_callback,
@@ -300,12 +296,53 @@ def search_tag_callback(match: str):
         )
 
 
-def delete_tag(tag_text: str):
-    """Creates a callback to delete a tag."""
+def delete_tag_callback(tag_text: str) -> Callable:
+    """Creates a callback to delete a tag.
+
+    Args:
+        tag_text:
+
+    Returns:
+        The callback function.
+    """
 
     def func():
         """Deletes a tag."""
         tables.delete_tag(tag_text=tag_text)
+
+    return func
+
+
+def edit_tag_callback(old_tag_text: str) -> Callable:
+    """Creates a callback for editing a tag.
+
+    Args:
+        old_tag_text:
+
+    Returns:
+        The callback function.
+    """
+
+    def func(new_tag_text: str):
+        """Changes a tag text from old_tag_text to new_tag_text.
+
+        The user will be alerted if the old tag text cannot be found, and
+        the edit_tag process will be restarted. The user will also be alerted
+        if the new tag text duplicates an existing tag, but no other
+        action will be taken.
+
+        Args:
+            new_tag_text:
+        """
+        try:
+            tables.edit_tag(old_tag_text=old_tag_text, new_tag_text=new_tag_text)
+
+        except tables.NoResultFound as exc:
+            _exc_messagebox(exc)
+            edit_tag()
+
+        except tables.IntegrityError as exc:
+            _exc_messagebox(exc)
 
     return func
 

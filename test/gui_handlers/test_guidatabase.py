@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/10/24, 1:00 PM by stephen.
+#  Last modified 12/13/24, 8:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -552,9 +552,9 @@ def test_search_tag_callback_finding_one_match(monkeypatch, config_current):
     edit_tag_gui = MagicMock(name="edit_tag_gui")
     monkeypatch.setattr(guidatabase.guiwidgets_2, "EditTagGUI", edit_tag_gui)
     delete_tag_callback = MagicMock(name="delete_tag_callback")
-    monkeypatch.setattr(guidatabase, "delete_tag", delete_tag_callback)
+    monkeypatch.setattr(guidatabase, "delete_tag_callback", delete_tag_callback)
     edit_tag_callback = MagicMock(name="edit_tag_callback")
-    monkeypatch.setattr(guidatabase, "_edit_tag_callback_wrapper", edit_tag_callback)
+    monkeypatch.setattr(guidatabase, "edit_tag_callback", edit_tag_callback)
     match = "match pattern"
     match_tags = MagicMock(name="match_tags")
     match_tags.return_value = {tag_found}
@@ -588,12 +588,80 @@ def test_search_tag_callback_finding_multiple_matches(monkeypatch, config_curren
     )
 
 
+def test_edit_tag_callback(monkeypatch):
+    old_tag_text = "old_tag_text"
+    new_tag_text = "new_tag_text"
+    db_edit_tag = MagicMock(name="db_edit_tag")
+    monkeypatch.setattr(guidatabase.tables, "edit_tag", db_edit_tag)
+
+    guidatabase.edit_tag_callback(old_tag_text)(new_tag_text)
+
+    db_edit_tag.assert_called_once_with(
+        old_tag_text=old_tag_text, new_tag_text=new_tag_text
+    )
+
+
+# noinspection DuplicatedCode
+def test_edit_tag_callback_with_old_tag_not_found(
+    monkeypatch, messagebox, config_current
+):
+    old_tag_text = "old_tag_text"
+    new_tag_text = notes_1 = "new_tag_text"
+    db_edit_tag = MagicMock(name="db_edit_tag")
+    monkeypatch.setattr(guidatabase.tables, "edit_tag", db_edit_tag)
+    db_edit_tag.side_effect = guidatabase.tables.NoResultFound
+    notes_0 = guidatabase.tables.TAG_NOT_FOUND
+    db_edit_tag.side_effect.__notes__ = [notes_0, notes_1]
+    edit_tag = MagicMock(name="edit_tag")
+    monkeypatch.setattr(guidatabase, "edit_tag", edit_tag)
+
+    guidatabase.edit_tag_callback(old_tag_text)(new_tag_text)
+
+    with check:
+        messagebox.assert_called_once_with(
+            guidatabase.config.current.tk_root,
+            message=notes_0,
+            detail=f"{notes_1}.",
+        )
+    with check:
+        edit_tag.assert_called_once_with()
+
+
+# noinspection DuplicatedCode
+def test_edit_tag_callback_with_duplicate_new_tag(
+    monkeypatch, messagebox, config_current
+):
+    # Arrange
+    old_tag_text = "old_tag_text"
+    new_tag_text = notes_1 = "new_tag_text"
+    db_edit_tag = MagicMock(name="db_edit_tag")
+    monkeypatch.setattr(guidatabase.tables, "edit_tag", db_edit_tag)
+    db_edit_tag.side_effect = guidatabase.tables.IntegrityError(
+        "",
+        "",
+        Exception(),
+    )
+    notes_0 = guidatabase.tables.TAG_EXISTS
+    db_edit_tag.side_effect.__notes__ = [notes_0, notes_1]
+
+    # Act
+    guidatabase.edit_tag_callback(old_tag_text)(new_tag_text)
+
+    # Assert
+    with check:
+        messagebox.assert_called_once_with(
+            guidatabase.config.current.tk_root,
+            message=notes_0,
+            detail=f"{notes_1}.",
+        )
+
+
 def test_delete_tag_callback(monkeypatch):
     tag_text = "tag_text"
     delete_tag = MagicMock(name="delete_tag")
     monkeypatch.setattr(guidatabase.tables, "delete_tag", delete_tag)
 
-    guidatabase.delete_tag(tag_text)()
+    guidatabase.delete_tag_callback(tag_text)()
 
     delete_tag.assert_called_once_with(tag_text=tag_text)
 
