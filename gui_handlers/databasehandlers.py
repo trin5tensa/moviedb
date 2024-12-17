@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/13/24, 8:41 AM by stephen.
+#  Last modified 12/17/24, 11:29 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,6 +16,8 @@ This module is the glue between the user's selection of a menu item and the gui.
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from collections.abc import Sequence, Callable
+from functools import partial
+
 import config
 import logging
 
@@ -38,35 +40,53 @@ MISSING_EXPLANATORY_NOTES = (
 )
 
 
-def add_movie(movie_bag: MovieBag = None):
-    """Gets new movie data from the user and adds it to the database.
-
-    The optional movie_bag argument can be used to prepopulate the movie
-    form. This is useful if the initial attempt to add a movie caused an
-    exception. It gives the user the opportunity to fix input errors.
+def gui_add_movie(prepopulate_bag: MovieBag = None):
+    """Presents a GUI form for adding a new movie.
 
     Args:
-        movie_bag
+        prepopulate_bag: This argument can be used to prepopulate the movie form.
+        This is useful if the initial attempt to add a movie caused an
+        exception. It gives the user the opportunity to fix input errors.
     """
     all_tags = tables.select_all_tags()
     guiwidgets_2.AddMovieGUI(
         config.current.tk_root,
         _tmdb_io_handler,
         list(all_tags),
-        prepopulate_bag=movie_bag,
-        add_movie_callback=add_movie_callback,
+        prepopulate_bag=prepopulate_bag,
+        add_movie_callback=db_add_movie,
     )
 
 
-def search_for_movie():
-    """Get search movie data from the user and search for compliant records"""
+def gui_search_movie():
+    """Presents a GUI form for searching for movies."""
     all_tags = tables.select_all_tags()
-    guiwidgets.SearchMovieGUI(
-        config.current.tk_root, search_for_movie_callback, list(all_tags)
+    guiwidgets.SearchMovieGUI(config.current.tk_root, db_match_movies, list(all_tags))
+
+
+def gui_edit_movie(
+    old_movie: config.MovieKeyTypedDict, *, prepopulate_bag: MovieBag = None
+):
+    """Presents a GUI form for editing movies which are in the database.
+
+    Args:
+        old_movie:
+        prepopulate_bag: This argument can be used to prepopulate the movie form.
+        This is useful if the initial attempt to add a movie caused an
+        exception. It gives the user the opportunity to fix input errors.
+    """
+    guiwidgets_2.EditMovieGUI(
+        config.current.tk_root,
+        _tmdb_io_handler,
+        list(tables.select_all_tags()),
+        old_movie=config.MovieUpdateDef(**old_movie),
+        prepopulate_bag=prepopulate_bag,
+        edit_movie_callback=partial(db_edit_movie, old_movie),
+        delete_movie_callback=db_delete_movie,
     )
 
 
-def add_movie_callback(gui_movie: MovieTD):
+def db_add_movie(gui_movie: MovieTD):
     """Add user supplied data to the database.
 
     A user alert is raised with diagnostic information if the database
@@ -87,15 +107,23 @@ def add_movie_callback(gui_movie: MovieTD):
             tables.TAG_NOT_FOUND,
         ):
             _exc_messagebox(exc)
-            add_movie(movie_bag)
+            gui_add_movie(movie_bag)
         else:  # pragma nocover
             raise
 
 
-def search_for_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
-    """Finds movies in the database which match the user entered criteria.
-    Continue to the next appropriate stage of processing depending on whether no movies, one
-    movie, or more than one movie is found.
+def db_match_movies(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
+    """Selects movies from the database which match user-entered
+    criteria and tags.
+
+    Subsequent actions depend on the number of movies found. The user is
+    informed if no movies are found before being returned to an input
+    form which allows her to continue her search for a movie to edit.
+
+    A single movie is presented to the user ready for her edits.
+
+    In the case where multiple movies match the criteria, then they'll
+    be listed for the user to select one for editing.
 
     Args:
         criteria:
@@ -108,7 +136,7 @@ def search_for_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequenc
         k: v
         for k, v in criteria.items()
         if v != "" and v != [] and v != () and v != ["", ""]
-    }
+    }  # pragma nocover
 
     # Converts old style arguments to new movie_bag argument
     movie_bag = moviebagfacade.convert_from_find_movie_typed_dict(criteria)
@@ -124,92 +152,24 @@ def search_for_movie_callback(criteria: config.FindMovieTypedDict, tags: Sequenc
             # todo Raise issue to re-populate the search form with the
             #  faulty data. (SearchMovieGUI will be rewritten as part of a
             #  future GUI module update)
-            search_for_movie()
+            gui_search_movie()
+
         case 1:
             # Presents an Edit/View/Delete window to user
             movie_bag = movies_found[0]
-            movie = moviebagfacade.convert_to_movie_update_def(movie_bag)
+            movie = moviebagfacade.convert_to_movie_key_typed_dict(movie_bag)
+            gui_edit_movie(movie)
 
-            guiwidgets_2.EditMovieGUI(
-                config.current.tk_root,
-                _tmdb_io_handler,
-                list(tables.select_all_tags()),
-                old_movie=movie,
-                edit_movie_callback=edit_movie_callback(movie),
-                delete_movie_callback=delete_movie_callback,
-            )
         case _:
             # Presents a selection window showing the multiple compliant movies.
             movies = [
                 moviebagfacade.convert_to_movie_update_def(movie_bag)
                 for movie_bag in movies_found
-            ]
-            guiwidgets.SelectMovieGUI(
-                config.current.tk_root, movies, select_movie_callback
-            )
+            ]  # pragma nocover
+            guiwidgets.SelectMovieGUI(config.current.tk_root, movies, db_select_movies)
 
 
-def edit_movie_callback(old_movie: config.MovieKeyTypedDict) -> Callable:
-    """Create the edit movie callback
-
-    Args:
-        old_movie: The movie that is to be edited.
-            The record's key values may be altered by the user. This function
-            will delete the old record and add a new record.
-
-    Returns:
-        A callback function which GUI edit can call with edits entered by the user.
-    """
-
-    def func(new_movie: MovieTD):
-        """Change movie and links in database with new user supplied data,
-
-        A user alert is raised with diagnostic information if the database
-        module rejects the addition. Then the user is presented with an
-        'edit movie' input screen populated with her previously entered data.
-
-        Args:
-            new_movie: Fields with either original values or values modified by the user.
-        """
-        old_movie_bag = moviebagfacade.convert_from_movie_key_typed_dict(old_movie)
-        new_movie_bag = moviebagfacade.convert_from_movie_td(new_movie)
-
-        try:
-            tables.edit_movie(
-                old_movie_bag=old_movie_bag, replacement_fields=new_movie_bag
-            )
-
-        except (tables.NoResultFound, tables.IntegrityError) as exc:
-            if exc.__notes__[0] in (
-                tables.TAG_NOT_FOUND,
-                tables.MOVIE_NOT_FOUND,
-                tables.MOVIE_EXISTS,
-                tables.INVALID_YEAR,
-            ):
-                _exc_messagebox(exc)
-                _edit_movie(old_movie, prepopulate_bag=new_movie_bag)
-            else:  # pragma nocover
-                raise
-
-    return func
-
-
-def delete_movie_callback(movie: config.FindMovieTypedDict):
-    """This callback function will delete a movie from the database.
-
-    If the movie cannot be found then no action is taken.
-
-    Args:
-        movie: Specified by title and key.
-    """
-    movie_bag = MovieBag(
-        title=movie["title"],
-        year=MovieInteger(int(movie["year"][0])),
-    )
-    tables.delete_movie(movie_bag=movie_bag)
-
-
-def select_movie_callback(movie: MovieKeyTypedDict):
+def db_select_movies(movie: MovieKeyTypedDict):
     """Selects a single movie and presents a GUI edit form.
 
     If the movie is not found this function assumes the movie was deleted
@@ -230,7 +190,55 @@ def select_movie_callback(movie: MovieKeyTypedDict):
 
     else:
         old_movie = moviebagfacade.convert_to_movie_update_def(movie_bag)
-        _edit_movie(old_movie, prepopulate_bag=movie_bag)
+        gui_edit_movie(old_movie, prepopulate_bag=movie_bag)
+
+
+def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie: MovieTD):
+    """Change movie and links in database with new user supplied data.
+
+    A user alert is raised with diagnostic information if the database
+    module rejects the addition. Then the user is presented with an
+    'edit movie' input screen populated with her previously entered data.
+
+    Args:
+        old_movie: The old movie key.
+        new_movie: Fields with either original values or values modified by the user.
+
+    Returns:
+
+    """
+    old_movie_bag = moviebagfacade.convert_from_movie_key_typed_dict(old_movie)
+    new_movie_bag = moviebagfacade.convert_from_movie_td(new_movie)
+
+    try:
+        tables.edit_movie(old_movie_bag=old_movie_bag, replacement_fields=new_movie_bag)
+
+    except (tables.NoResultFound, tables.IntegrityError) as exc:
+        if exc.__notes__[0] in (
+            tables.TAG_NOT_FOUND,
+            tables.MOVIE_NOT_FOUND,
+            tables.MOVIE_EXISTS,
+            tables.INVALID_YEAR,
+        ):
+            _exc_messagebox(exc)
+            gui_edit_movie(old_movie, prepopulate_bag=new_movie_bag)
+        else:  # pragma nocover
+            raise
+
+
+def db_delete_movie(movie: config.FindMovieTypedDict):
+    """This callback function will delete a movie from the database.
+
+    If the movie cannot be found then no action is taken.
+
+    Args:
+        movie: Specified by title and key.
+    """
+    movie_bag = MovieBag(
+        title=movie["title"],
+        year=MovieInteger(int(movie["year"][0])),
+    )
+    tables.delete_movie(movie_bag=movie_bag)
 
 
 def add_tag():
@@ -243,6 +251,7 @@ def add_tag():
 
 def edit_tag():
     """Searches for tags with a user's match pattern."""
+    # todo rename to search_tag for consistency
     guiwidgets_2.SearchTagGUI(
         config.current.tk_root,
         search_tag_callback=search_tag_callback,
@@ -275,6 +284,7 @@ def search_tag_callback(match: str):
         guiwidgets_2.gui_messagebox(
             config.current.tk_root, message=tables.TAG_NOT_FOUND
         )
+        # todo Should this be repopulating the field for ease of error correction?
         edit_tag()
 
     elif len(tags) == 1:
@@ -345,30 +355,6 @@ def edit_tag_callback(old_tag_text: str) -> Callable:
             _exc_messagebox(exc)
 
     return func
-
-
-def _edit_movie(
-    old_movie: config.MovieKeyTypedDict, *, prepopulate_bag: MovieBag = None
-):
-    """A helper function which calls edit movie GUI.
-
-    Args:
-        old_movie:
-        prepopulate_bag:
-
-    Use Case:
-        This supports exception cases handled by the edit_movie_callback.
-        They need to redisplay the user edit which caused the exceptions.
-    """
-    guiwidgets_2.EditMovieGUI(
-        config.current.tk_root,
-        _tmdb_io_handler,
-        list(tables.select_all_tags()),
-        old_movie=config.MovieUpdateDef(**old_movie),
-        prepopulate_bag=prepopulate_bag,
-        edit_movie_callback=edit_movie_callback(old_movie),
-        delete_movie_callback=delete_movie_callback,
-    )
 
 
 def _exc_messagebox(exc):

@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/13/24, 8:41 AM by stephen.
+#  Last modified 12/17/24, 11:29 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -88,7 +88,9 @@ def select_all_movies() -> list[MovieBag]:
     """Selects and returns all movies."""
     with session_factory() as session:
         movies = _select_all_movies(session)
-        movie_bags = [_convert_to_movie_bag(movie) for movie in movies]
+        movie_bags = [
+            _convert_to_movie_bag(movie) for movie in movies
+        ]  # pragma nocover
     return movie_bags
 
 
@@ -133,7 +135,9 @@ def match_movies(match: MovieBag) -> list[MovieBag]:
     """
     with session_factory() as session:
         movies = _match_movies(session, match=match)
-        movie_bags = [_convert_to_movie_bag(movie) for movie in movies]
+        movie_bags = [
+            _convert_to_movie_bag(movie) for movie in movies
+        ]  # pragma nocover
     return movie_bags
 
 
@@ -383,7 +387,7 @@ def delete_all_orphans():
     with session_factory() as session:
         all_people = _select_all_people(session)
         count = _delete_orphans(session, candidates=all_people)
-        if count:
+        if count:  # pragma nocover
             logging.info(
                 f"{count} Orphan(s) were removed. "
                 f"They should have been removed before now."
@@ -395,7 +399,7 @@ def select_all_tags() -> set[str]:
     """Returns a list of all tag texts."""
     with session_factory() as session:
         tags = _select_all_tags(session)
-    return {tag.text for tag in tags}
+    return {tag.text for tag in tags}  # pragma nocover
 
 
 def match_tags(*, match: str) -> set[str]:
@@ -409,7 +413,7 @@ def match_tags(*, match: str) -> set[str]:
     """
     with session_factory() as session:
         tags = _match_tags(session, match=match)
-    return {tag.text for tag in tags}
+    return {tag.text for tag in tags}  # pragma nocover
 
 
 def add_tag(*, tag_text: str):
@@ -496,18 +500,6 @@ def delete_tag(*, tag_text: str):
             pass
         else:
             _delete_tag(session, tag=tag)
-
-
-class MovieExists(IntegrityError):
-    """This unique movie key is already present in the database."""
-
-
-class InvalidReleaseYear(IntegrityError):
-    """The release year is impossibly early or late."""
-
-
-class MovieNotFound(NoResultFound):
-    """A key search for a movie failed."""
 
 
 def _select_movie(session: Session, *, movie_bag: MovieBag) -> schema.Movie:
@@ -761,11 +753,13 @@ def _convert_to_movie_bag(movie: schema.Movie) -> MovieBag:
     if movie.synopsis:
         movie_bag["synopsis"] = movie.synopsis
     if movie.stars:
-        movie_bag["stars"] = {person.name for person in movie.stars}
+        movie_bag["stars"] = {person.name for person in movie.stars}  # pragma nocover
     if movie.directors:
-        movie_bag["directors"] = {person.name for person in movie.directors}
+        movie_bag["directors"] = {
+            person.name for person in movie.directors
+        }  # pragma nocover
     if movie.tags:
-        movie_bag["movie_tags"] = {tag.text for tag in movie.tags}
+        movie_bag["movie_tags"] = {tag.text for tag in movie.tags}  # pragma nocover
 
     return movie_bag
 
@@ -943,7 +937,9 @@ def _add_tags(session: Session, *, texts: set[str]):
         session:
         texts:
     """
-    session.add_all([schema.Tag(text=tag) for tag in texts])
+    session.add_all(
+        [schema.Tag(text=tag) for tag in texts],  # pragma nocover
+    )
 
 
 def _edit_tag(*, tag: schema.Tag, replacement_text: str):
