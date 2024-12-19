@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/17/24, 11:29 AM by stephen.
+#  Last modified 12/19/24, 8:58 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -403,10 +403,10 @@ def select_all_tags() -> set[str]:
 
 
 def match_tags(*, match: str) -> set[str]:
-    """Returns tag texts which contain a substring.
+    """Returns tag texts which match the substring.
 
     Args:
-        match:
+        match: A substring which will be used to select matching tag texts.
 
     Returns:
         A set of compliant tag texts.

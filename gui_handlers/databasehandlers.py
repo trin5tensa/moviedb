@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/17/24, 11:29 AM by stephen.
+#  Last modified 12/19/24, 8:58 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,7 @@ This module is the glue between the user's selection of a menu item and the gui.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from collections.abc import Sequence, Callable
+from collections.abc import Sequence
 from functools import partial
 
 import config
@@ -59,7 +59,8 @@ def gui_add_movie(prepopulate_bag: MovieBag = None):
 
 
 def gui_search_movie():
-    """Presents a GUI form for searching for movies."""
+    """Presents a GUI form for movie searches."""
+    # todo Prepopulation covered in moviedb-#459 Repopulate search form.
     all_tags = tables.select_all_tags()
     guiwidgets.SearchMovieGUI(config.current.tk_root, db_match_movies, list(all_tags))
 
@@ -87,7 +88,7 @@ def gui_edit_movie(
 
 
 def db_add_movie(gui_movie: MovieTD):
-    """Add user supplied data to the database.
+    """Adds user supplied movie data to the database.
 
     A user alert is raised with diagnostic information if the database
     module rejects the addition. Then the user is presented with an
@@ -194,18 +195,15 @@ def db_select_movies(movie: MovieKeyTypedDict):
 
 
 def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie: MovieTD):
-    """Change movie and links in database with new user supplied data.
+    """Changes a movie and its links in database with new user supplied data.
 
     A user alert is raised with diagnostic information if the database
     module rejects the addition. Then the user is presented with an
-    'edit movie' input screen populated with her previously entered data.
+    'edit movie' input screen populated with previously entered data.
 
     Args:
         old_movie: The old movie key.
         new_movie: Fields with either original values or values modified by the user.
-
-    Returns:
-
     """
     old_movie_bag = moviebagfacade.convert_from_movie_key_typed_dict(old_movie)
     new_movie_bag = moviebagfacade.convert_from_movie_td(new_movie)
@@ -227,9 +225,9 @@ def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie: MovieTD):
 
 
 def db_delete_movie(movie: config.FindMovieTypedDict):
-    """This callback function will delete a movie from the database.
+    """Deletes a movie from the database.
 
-    If the movie cannot be found then no action is taken.
+    No action will be taken if the movie does not exist.
 
     Args:
         movie: Specified by title and key.
@@ -241,24 +239,25 @@ def db_delete_movie(movie: config.FindMovieTypedDict):
     tables.delete_movie(movie_bag=movie_bag)
 
 
-def add_tag():
-    """Adds a new tag to the database."""
+def gui_add_tag():
+    """Presents a GUI form for adding a new movie."""
+    # todo Prepopulate
     guiwidgets_2.AddTagGUI(
         config.current.tk_root,
-        add_tag_callback=add_tag_callback,
+        add_tag_callback=db_add_tag,
     )
 
 
-def edit_tag():
-    """Searches for tags with a user's match pattern."""
-    # todo rename to search_tag for consistency
+def gui_search_tag():
+    """Presents a GUI form for tag searches."""
+    # todo Prepopulate
     guiwidgets_2.SearchTagGUI(
         config.current.tk_root,
-        search_tag_callback=search_tag_callback,
+        search_tag_callback=db_match_tags,
     )
 
 
-def add_tag_callback(tag_text: str):
+def db_add_tag(tag_text: str):
     """Calls the database to add a new tag.
 
     Args:
@@ -267,8 +266,9 @@ def add_tag_callback(tag_text: str):
     tables.add_tag(tag_text=tag_text)
 
 
-def search_tag_callback(match: str):
-    """Gets matching tag texts from the database.
+def db_match_tags(match: str):
+    """Selects movies from the database which match user-entered
+    criteria and tags.
 
     If no tags match the user is alerted and the tag editing process will
     be restarted. If a single match is found the 'edit tag' screen will
@@ -276,7 +276,7 @@ def search_tag_callback(match: str):
     will be displayed.
 
     Args:
-        match:
+        match: match pattern
     """
     tags = tables.match_tags(match=match)
 
@@ -285,16 +285,14 @@ def search_tag_callback(match: str):
             config.current.tk_root, message=tables.TAG_NOT_FOUND
         )
         # todo Should this be repopulating the field for ease of error correction?
-        edit_tag()
+        gui_search_tag()
 
     elif len(tags) == 1:
         tag = tags.pop()
-        delete_callback = delete_tag_callback(tag)
-        edit_callback = edit_tag_callback(tag)
         guiwidgets_2.EditTagGUI(
             config.current.tk_root,
-            delete_tag_callback=delete_callback,
-            edit_tag_callback=edit_callback,
+            delete_tag_callback=partial(db_delete_tag, tag),
+            edit_tag_callback=partial(db_edit_tag, tag),
             tag=tag,
         )
 
@@ -306,55 +304,36 @@ def search_tag_callback(match: str):
         )
 
 
-def delete_tag_callback(tag_text: str) -> Callable:
-    """Creates a callback to delete a tag.
+def db_delete_tag(tag_text: str):
+    """Deletes a tag.
 
     Args:
         tag_text:
-
-    Returns:
-        The callback function.
     """
-
-    def func():
-        """Deletes a tag."""
-        tables.delete_tag(tag_text=tag_text)
-
-    return func
+    tables.delete_tag(tag_text=tag_text)
 
 
-def edit_tag_callback(old_tag_text: str) -> Callable:
-    """Creates a callback for editing a tag.
-
-    Args:
-        old_tag_text:
-
-    Returns:
-        The callback function.
-    """
-
-    def func(new_tag_text: str):
-        """Changes a tag text from old_tag_text to new_tag_text.
+def db_edit_tag(old_tag_text: str, new_tag_text: str):
+    """Changes a tag text from old_tag_text to new_tag_text.
 
         The user will be alerted if the old tag text cannot be found, and
         the edit_tag process will be restarted. The user will also be alerted
         if the new tag text duplicates an existing tag, but no other
         action will be taken.
 
-        Args:
-            new_tag_text:
-        """
-        try:
-            tables.edit_tag(old_tag_text=old_tag_text, new_tag_text=new_tag_text)
+    Args:
+        old_tag_text:
+        new_tag_text:
+    """
+    try:
+        tables.edit_tag(old_tag_text=old_tag_text, new_tag_text=new_tag_text)
 
-        except tables.NoResultFound as exc:
-            _exc_messagebox(exc)
-            edit_tag()
+    except tables.NoResultFound as exc:
+        _exc_messagebox(exc)
+        gui_search_tag()
 
-        except tables.IntegrityError as exc:
-            _exc_messagebox(exc)
-
-    return func
+    except tables.IntegrityError as exc:
+        _exc_messagebox(exc)
 
 
 def _exc_messagebox(exc):
