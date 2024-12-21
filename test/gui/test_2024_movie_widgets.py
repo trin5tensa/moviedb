@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/4/24, 10:27 AM by stephen.
+#  Last modified 12/21/24, 1:31 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -520,7 +520,7 @@ def test_add_movie_init_with_movie_bag(monkeypatch):
         MagicMock(name="tk/tcl parent"),
         tmdb_search_callback=MagicMock(),
         all_tags=[],
-        prepopulate_bag=movie_bag,
+        prepopulate=movie_bag,
     )
 
     # Assert
@@ -759,7 +759,7 @@ def test_edit_movie_init_with_movie_bag(monkeypatch):
         MagicMock(name="tk/tcl parent"),
         tmdb_search_callback=MagicMock(),
         all_tags=[],
-        prepopulate_bag=movie_bag,
+        prepopulate=movie_bag,
     )
 
     # Assert

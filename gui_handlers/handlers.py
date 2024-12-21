@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/13/24, 8:41 AM by stephen.
+#  Last modified 12/21/24, 1:31 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -204,23 +204,6 @@ def _settings_callback(tmdb_api_key: str, use_tmdb: bool):
     """
     config.persistent.tmdb_api_key = tmdb_api_key
     config.persistent.use_tmdb = use_tmdb
-
-
-# todo Replace this old function
-def _select_tag_callback(old_tag: str):
-    """Change the tag column of a record of the Tag table.
-
-    If the tag is no longer in the database this function assumes that it has been deleted by
-    another process. A user alert is raised.
-    """
-    # delete_callback = _delete_tag_callback_wrapper(old_tag)
-    # edit_callback = _edit_tag_callback_wrapper(old_tag)
-    guiwidgets_2.EditTagGUI(
-        config.current.tk_root,
-        # delete_tag_callback=delete_callback,
-        # edit_tag_callback=edit_callback,
-        tag=old_tag,
-    )
 
 
 def _tmdb_search_exception_callback(fut: concurrent.futures.Future):
