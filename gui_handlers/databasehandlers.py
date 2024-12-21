@@ -3,7 +3,7 @@
 This module is the glue between the user's selection of a menu item and the gui."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/19/24, 8:58 AM by stephen.
+#  Last modified 12/21/24, 1:31 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -27,7 +27,7 @@ from config import MovieKeyTypedDict
 from database_src import tables
 from globalconstants import MovieTD, MovieBag, MovieInteger
 from gui_handlers import moviebagfacade
-from gui_handlers.handlers import _tmdb_io_handler, _select_tag_callback
+from gui_handlers.handlers import _tmdb_io_handler
 
 
 TITLE_AND_YEAR_EXISTS_MSG = (
@@ -40,48 +40,62 @@ MISSING_EXPLANATORY_NOTES = (
 )
 
 
-def gui_add_movie(prepopulate_bag: MovieBag = None):
+def gui_add_movie(*, prepopulate: MovieBag = None):
     """Presents a GUI form for adding a new movie.
 
     Args:
-        prepopulate_bag: This argument can be used to prepopulate the movie form.
-        This is useful if the initial attempt to add a movie caused an
-        exception. It gives the user the opportunity to fix input errors.
+        prepopulate:
+            This argument can be used to prepopulate the movie widget. This
+            is useful if the initial attempt to add a movie caused an
+            exception. It gives the user the opportunity to fix input errors.
     """
     all_tags = tables.select_all_tags()
     guiwidgets_2.AddMovieGUI(
         config.current.tk_root,
         _tmdb_io_handler,
         list(all_tags),
-        prepopulate_bag=prepopulate_bag,
+        prepopulate=prepopulate,
         add_movie_callback=db_add_movie,
     )
 
 
-def gui_search_movie():
-    """Presents a GUI form for movie searches."""
-    # todo Prepopulation covered in moviedb-#459 Repopulate search form.
+# noinspection PyUnusedLocal
+def gui_search_movie(*, prepopulate: MovieBag = None):
+    """Presents a GUI form for movie searches.
+
+    Args:
+        prepopulate:
+            This argument can be used to prepopulate the movie widget. This
+            is useful if the initial attempt to search for a movie caused
+            an exception. It gives the user the opportunity to fix
+            input errors.
+    """
+    # moviedb-#459 Repopulate
+    #  The class SearchMovieGUI is not currently able to support
+    #  prepopulation, so the prepopulate parameter is ignored for now.
     all_tags = tables.select_all_tags()
     guiwidgets.SearchMovieGUI(config.current.tk_root, db_match_movies, list(all_tags))
 
 
 def gui_edit_movie(
-    old_movie: config.MovieKeyTypedDict, *, prepopulate_bag: MovieBag = None
+    old_movie: config.MovieKeyTypedDict, *, prepopulate: MovieBag = None
 ):
-    """Presents a GUI form for editing movies which are in the database.
+    """Presents a GUI form for editing movies from the database.
 
     Args:
         old_movie:
-        prepopulate_bag: This argument can be used to prepopulate the movie form.
-        This is useful if the initial attempt to add a movie caused an
-        exception. It gives the user the opportunity to fix input errors.
+        prepopulate:
+            This argument can be used to prepopulate the movie widget. This
+            is useful if the initial attempt to edit a movie caused an
+            exception. It gives the user the opportunity to fix
+            input errors.
     """
     guiwidgets_2.EditMovieGUI(
         config.current.tk_root,
         _tmdb_io_handler,
         list(tables.select_all_tags()),
         old_movie=config.MovieUpdateDef(**old_movie),
-        prepopulate_bag=prepopulate_bag,
+        prepopulate=prepopulate,
         edit_movie_callback=partial(db_edit_movie, old_movie),
         delete_movie_callback=db_delete_movie,
     )
@@ -108,7 +122,7 @@ def db_add_movie(gui_movie: MovieTD):
             tables.TAG_NOT_FOUND,
         ):
             _exc_messagebox(exc)
-            gui_add_movie(movie_bag)
+            gui_add_movie(prepopulate=movie_bag)
         else:  # pragma nocover
             raise
 
@@ -150,9 +164,6 @@ def db_match_movies(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
                 config.current.tk_root,
                 message=tables.MOVIE_NOT_FOUND,
             )
-            # todo Raise issue to re-populate the search form with the
-            #  faulty data. (SearchMovieGUI will be rewritten as part of a
-            #  future GUI module update)
             gui_search_movie()
 
         case 1:
@@ -191,7 +202,7 @@ def db_select_movies(movie: MovieKeyTypedDict):
 
     else:
         old_movie = moviebagfacade.convert_to_movie_update_def(movie_bag)
-        gui_edit_movie(old_movie, prepopulate_bag=movie_bag)
+        gui_edit_movie(old_movie, prepopulate=movie_bag)
 
 
 def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie: MovieTD):
@@ -219,7 +230,7 @@ def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie: MovieTD):
             tables.INVALID_YEAR,
         ):
             _exc_messagebox(exc)
-            gui_edit_movie(old_movie, prepopulate_bag=new_movie_bag)
+            gui_edit_movie(old_movie, prepopulate=new_movie_bag)
         else:  # pragma nocover
             raise
 
@@ -241,19 +252,52 @@ def db_delete_movie(movie: config.FindMovieTypedDict):
 
 def gui_add_tag():
     """Presents a GUI form for adding a new movie."""
-    # todo Prepopulate
     guiwidgets_2.AddTagGUI(
         config.current.tk_root,
         add_tag_callback=db_add_tag,
     )
 
 
-def gui_search_tag():
-    """Presents a GUI form for tag searches."""
-    # todo Prepopulate
+# noinspection PyUnusedLocal
+def gui_search_tag(*, prepopulate: str = None):
+    """Presents a GUI form for tag searches.
+
+    Args:
+        prepopulate:
+            This argument can be used to prepopulate the tag widget. This
+            is useful if the initial attempt to search for a tag caused
+            an exception. It gives the user the opportunity to fix
+            input errors.
+    """
+    # moviedb-#460 Repopulate
+    #  The class SearchTagGUI is not currently able to support
+    #  prepopulation, so the prepopulate parameter is ignored for now.
     guiwidgets_2.SearchTagGUI(
         config.current.tk_root,
         search_tag_callback=db_match_tags,
+    )
+
+
+# noinspection PyUnusedLocal
+def gui_edit_tag(tag: str, *, prepopulate: str = None):
+    """Presents a GUI form for editing tags.
+
+    Args:
+        tag:
+        prepopulate:
+            This argument can be used to prepopulate the tag widget. This
+            is useful if the initial attempt to edit a tag caused
+            an exception. It gives the user the opportunity to fix
+            input errors.
+    """
+    # moviedb-#461 Repopulate
+    #  The class EditTagGUI is not currently able to support
+    #  prepopulation, so the prepopulate parameter is ignored for now.
+    guiwidgets_2.EditTagGUI(
+        config.current.tk_root,
+        edit_tag_callback=partial(db_edit_tag, tag),
+        delete_tag_callback=partial(db_delete_tag, tag),
+        tag=tag,
     )
 
 
@@ -284,22 +328,16 @@ def db_match_tags(match: str):
         guiwidgets_2.gui_messagebox(
             config.current.tk_root, message=tables.TAG_NOT_FOUND
         )
-        # todo Should this be repopulating the field for ease of error correction?
-        gui_search_tag()
+        gui_search_tag(prepopulate=match)
 
     elif len(tags) == 1:
         tag = tags.pop()
-        guiwidgets_2.EditTagGUI(
-            config.current.tk_root,
-            delete_tag_callback=partial(db_delete_tag, tag),
-            edit_tag_callback=partial(db_edit_tag, tag),
-            tag=tag,
-        )
+        gui_edit_tag(tag, prepopulate=match)
 
     else:
         guiwidgets_2.SelectTagGUI(
             config.current.tk_root,
-            select_tag_callback=_select_tag_callback,
+            select_tag_callback=gui_edit_tag,
             tags_to_show=list(tags),
         )
 
@@ -330,7 +368,7 @@ def db_edit_tag(old_tag_text: str, new_tag_text: str):
 
     except tables.NoResultFound as exc:
         _exc_messagebox(exc)
-        gui_search_tag()
+        gui_search_tag(prepopulate=old_tag_text)
 
     except tables.IntegrityError as exc:
         _exc_messagebox(exc)
