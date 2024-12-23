@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
-#  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/20/24, 2:31 PM by stephen.
+#  Copyright© 2024. Stephen Rigden.
+#  Last modified 12/2/24, 12:35 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,6 +15,7 @@
 
 from unittest.mock import MagicMock, call
 
+import pytest
 from pytest_check import check
 
 import handlers
