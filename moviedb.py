@@ -1,7 +1,7 @@
 """Main movie database program"""
 
-#  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 5/30/24, 8:08 AM by stephen.
+#  Copyright© 2024. Stephen Rigden.
+#  Last modified 12/24/24, 2:20 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +13,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import argparse
 import concurrent.futures
 import json
 import logging
@@ -24,13 +23,13 @@ from pathlib import Path
 from typing import Any
 
 import config
-import database
+import database_src
 import mainwindow
 from threadsafe_printer import SafePrinter
 
 
 # Program version.
-VERSION = "1.0.0.dev"
+VERSION = "1.0.0"
 
 
 def main():
@@ -51,7 +50,7 @@ def start_up():
     start_logger(program_path.cwd(), program_path)
     config.current = config.CurrentConfig()
     load_config_file(program_path)
-    database.connect_to_database()
+    database_src.environment.start_engine()
 
 
 def close_down():
@@ -112,6 +111,7 @@ def _json_load() -> dict:
 
 def save_config_file():
     """Save the persistent config object."""
+    # noinspection PyTypeChecker
     _json_dump(asdict(config.persistent), _json_path())
 
 
@@ -135,6 +135,7 @@ def _json_dump(obj: Any, path: Path):
         path: Path of config file.
     """
     with open(path, "w") as fp:
+        # noinspection PyTypeChecker
         json.dump(obj, fp)
 
 

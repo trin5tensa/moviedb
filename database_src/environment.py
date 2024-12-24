@@ -1,7 +1,7 @@
 """Database environment functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 11/27/24, 11:42 AM by stephen.
+#  Last modified 12/24/24, 2:20 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,7 +22,7 @@ from sqlalchemy.orm import sessionmaker
 
 from database_src import schema, tables, update
 
-DATA_DIR_NAME = "Movie Data"
+DATA_DIR_NAME = "Movies-Database"
 SAVED_VERSION = "saved_version"
 DATABASE_STEM = "movie_database_"
 NO_MOVIE_DATA_DIRECTORY_MSG = "Missing movie data directory."
@@ -125,6 +125,7 @@ def _getcreate_metadata(data_dir: Path) -> str:
     except FileNotFoundError:
         data = {SAVED_VERSION: schema.VERSION}
         with open(saved_version_fn, "w") as fp:
+            # noinspection PyTypeChecker
             json.dump(data, fp)
         with open(saved_version_fn) as fp:
             from_json = json.load(fp)
@@ -173,6 +174,7 @@ def _update_database(old_version: str, data_dir_path: Path):
         data = json.load(fp)
     data[SAVED_VERSION] = schema.VERSION
     with open(saved_version_fn, "w") as fp:
+        # noinspection PyTypeChecker
         json.dump(data, fp)
 
     # Log the update as being successfully completed.
