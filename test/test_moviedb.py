@@ -1,7 +1,7 @@
 """Tests for movie database."""
 
-#  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/22/24, 7:44 AM by stephen.
+#  Copyright© 2024. Stephen Rigden.
+#  Last modified 12/24/24, 2:20 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -118,7 +118,9 @@ class TestStartUp:
         )
         connect_calls = []
         monkeypatch.setattr(
-            moviedb.database, "connect_to_database", lambda: connect_calls.append(True)
+            moviedb.database_src.environment,
+            "start_engine",
+            lambda: connect_calls.append(True),
         )
         return logger_calls, load_config_calls, connect_calls
 
@@ -156,6 +158,7 @@ class TestLoadConfigFile:
         expected = config.PersistentConfig(
             program_name=self.program, program_version=self.version
         )
+        # noinspection PyTypeChecker
         data = moviedb.asdict(expected)
         with self.fut_runner(self.program, data, monkeypatch):
             assert config.persistent == expected
@@ -253,6 +256,7 @@ def test__json_load(monkeypatch, tmp_path):
     persistent = moviedb.config.PersistentConfig(
         program_name="test_program", program_version="42"
     )
+    # noinspection PyTypeChecker
     moviedb._json_dump(moviedb.asdict(persistent), fn)
 
     # Call json_load
@@ -281,6 +285,7 @@ def test__json_dump(monkeypatch, tmp_path):
     persistent = moviedb.config.PersistentConfig(
         program_name="test_program", program_version="42"
     )
+    # noinspection PyTypeChecker
     json_obj = moviedb.asdict(persistent)
     path = tmp_path / "dummy_file.df"
 
