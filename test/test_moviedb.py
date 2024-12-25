@@ -1,7 +1,7 @@
 """Tests for movie database."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/24/24, 2:20 PM by stephen.
+#  Last modified 12/25/24, 10:31 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,8 +18,10 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial
 from typing import Tuple
+from unittest.mock import MagicMock
 
 import pytest
+from pytest_check import check
 
 import config
 import moviedb
@@ -79,7 +81,10 @@ class TestMain:
         assert {"moviedb.start_up"} & self.func_calls == {"moviedb.start_up"}
 
     def test_successful_start_message_is_logged(self, main):
-        assert "The program started successfully." == self.logging_calls.pop()
+        assert (
+            f"The program started successfully. Version {moviedb.PROGRAM_VERSION}"
+            == self.logging_calls.pop()
+        )
 
     def test_safeprint_is_stored_in_config(self, main):
         assert (
@@ -164,7 +169,7 @@ class TestLoadConfigFile:
             assert config.persistent == expected
 
     def test_absent_file_initializes_config_persistent(self, monkeypatch):
-        expected = moviedb.VERSION = "test first use"
+        expected = moviedb.PROGRAM_VERSION = "test first use"
         data = None
         with self.fut_runner(self.program, data, monkeypatch, file_not_found=True):
             assert config.persistent.program_version == expected
@@ -184,6 +189,28 @@ class TestLoadConfigFile:
         raise FileNotFoundError
 
 
+def test_close_down(monkeypatch):
+    delete_all_orphans = MagicMock(name="delete_all_orphans")
+    monkeypatch.setattr(
+        moviedb.database_src.tables, "delete_all_orphans", delete_all_orphans
+    )
+    save_config_file = MagicMock(name="save_config_file")
+    monkeypatch.setattr(moviedb, "save_config_file", save_config_file)
+    logging = MagicMock(name="logging")
+    monkeypatch.setattr(moviedb, "logging", logging)
+
+    moviedb.close_down()
+
+    with check:
+        delete_all_orphans.assert_called_once_with()
+    with check:
+        save_config_file.assert_called_once_with()
+    with check:
+        logging.info.assert_called_once_with("The program is ending.")
+    with check:
+        logging.shutdown.assert_called_once_with()
+
+
 def test_save_config_file(monkeypatch):
     persistent = moviedb.config.PersistentConfig(
         program_name="test_program", program_version="42"
@@ -194,33 +221,6 @@ def test_save_config_file(monkeypatch):
     moviedb._json_dump(persistent, path)
 
     assert calls == [(persistent, path)]
-
-
-def test_save_config_file_called(monkeypatch):
-    calls = []
-    monkeypatch.setattr(moviedb, "save_config_file", lambda *args: calls.append(True))
-    monkeypatch.setattr(moviedb.logging, "info", lambda *args: None)
-    monkeypatch.setattr(moviedb.logging, "shutdown", lambda: None)
-    moviedb.close_down()
-    assert calls == [True]
-
-
-def test_ending_of_program_logged(monkeypatch):
-    monkeypatch.setattr(moviedb, "save_config_file", lambda *args: None)
-    calls = []
-    monkeypatch.setattr(moviedb.logging, "info", lambda *args: calls.append(args))
-    monkeypatch.setattr(moviedb.logging, "shutdown", lambda: None)
-    moviedb.close_down()
-    assert calls == [("The program is ending.",)]
-
-
-def test_start_logger_called(monkeypatch):
-    monkeypatch.setattr(moviedb, "save_config_file", lambda *args: None)
-    monkeypatch.setattr(moviedb.logging, "info", lambda *args: None)
-    calls = []
-    monkeypatch.setattr(moviedb.logging, "shutdown", lambda: calls.append(True))
-    moviedb.close_down()
-    assert calls == [True]
 
 
 def test_start_logger(monkeypatch):
@@ -298,15 +298,3 @@ def test__json_dump(monkeypatch, tmp_path):
     assert isinstance(fp, io.TextIOWrapper)
     path = moviedb.Path(fp.name)
     assert path.name == "dummy_file.df"
-
-
-@dataclass
-class ArgParser:
-    """Test dummy for Argument Parser"""
-
-    verbosity: int = 0
-    import_csv: str = None
-    database: str = None
-
-    def __call__(self):
-        return self

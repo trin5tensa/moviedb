@@ -1,7 +1,7 @@
 """Main movie database program"""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/24/24, 2:20 PM by stephen.
+#  Last modified 12/25/24, 10:31 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -28,14 +28,13 @@ import mainwindow
 from threadsafe_printer import SafePrinter
 
 
-# Program version.
-VERSION = "1.0.0"
+PROGRAM_VERSION = "1.0.0"
 
 
 def main():
     """Initializes the program, runs it, and executes close down actions."""
     start_up()
-    logging.info("The program started successfully.")
+    logging.info(f"The program started successfully. Version {PROGRAM_VERSION}")
     with SafePrinter() as safeprint:
         config.current.safeprint = safeprint
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -55,6 +54,8 @@ def start_up():
 
 def close_down():
     """Execute close down activities."""
+    # Check the database for orphans.
+    database_src.tables.delete_all_orphans()
 
     # Save the config.Config pickle file
     save_config_file()
@@ -92,7 +93,7 @@ def load_config_file(program: Path):
         # Initialise persistent application data for first use
         _, name = os.path.split(program)
         name, _ = os.path.splitext(name)
-        config.persistent = config.PersistentConfig(name.title(), VERSION)
+        config.persistent = config.PersistentConfig(name.title(), PROGRAM_VERSION)
 
     else:
         config.persistent = config.PersistentConfig(**data)
