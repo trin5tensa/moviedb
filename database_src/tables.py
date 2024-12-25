@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/19/24, 8:58 AM by stephen.
+#  Last modified 12/25/24, 10:31 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -383,7 +383,6 @@ def delete_all_orphans():
         people. This function should be run at program termination to delete any orphans
         created in ths manner.
     """
-    # todo Call this when the program shuts down.
     with session_factory() as session:
         all_people = _select_all_people(session)
         count = _delete_orphans(session, candidates=all_people)
@@ -875,9 +874,12 @@ def _delete_orphans(session: Session, candidates: set[schema.Person]) -> int:
     count = 0
     for person in candidates:
         if person.star_of_movies != set():
+            # The person is a star of one or more movies.
             continue
         if person.director_of_movies != set():
+            # The person is a director of one or more movies.
             continue
+        # The person is not a star or a director of any movie.
         count = +1
         session.delete(person)
     return count
