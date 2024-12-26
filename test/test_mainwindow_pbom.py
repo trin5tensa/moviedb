@@ -3,8 +3,8 @@
 This module contains new tests written after Brian Okken's course and book on pytest in Fall 2022.
 """
 
-#  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 11/18/23, 5:44 AM by stephen.
+#  Copyright© 2024. Stephen Rigden.
+#  Last modified 12/26/24, 11:22 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -36,7 +36,9 @@ class TestMainWindow:
         )
         monkeypatch.setattr(mainwindow.MainWindow, "place_menubar", MagicMock())
         monkeypatch.setattr(
-            mainwindow.handlers, "EscapeKeyDict", mock_escape_key_dict := MagicMock()
+            mainwindow.gui_handlers.sundries,
+            "EscapeKeyDict",
+            mock_escape_key_dict := MagicMock(),
         )
 
         with main_window(monkeypatch) as cut:
@@ -55,8 +57,9 @@ class TestMainWindow:
                 )
 
     def test_place_menubar(self, monkeypatch):
-        """Strategy: Menu construction is tested by checking that each expected menu item is present and in the
-        correct order. Meta calls connecting the menu system to tkinter are also tested.
+        """Strategy: Menu construction is tested by checking that each
+        expected menu item is present and in the correct order. Meta calls
+        connecting the menu system to tkinter are also tested.
         """
         with main_window(monkeypatch) as cut:
             # Meta
@@ -72,7 +75,7 @@ class TestMainWindow:
                         call("tk::mac::Quit", cut.tk_shutdown),
                         call(
                             "tk::mac::ShowPreferences",
-                            mainwindow.handlers.settings_dialog,
+                            mainwindow.gui_handlers.sundries.settings_dialog,
                         ),
                     ]
                 )
@@ -99,12 +102,12 @@ class TestMainWindow:
                     [
                         call.add_command(
                             label="About " + TEST_TITLE + "…",
-                            command=mainwindow.handlers.about_dialog,
+                            command=mainwindow.gui_handlers.sundries.about_dialog,
                         ),
                         call.add_separator(),
                         call.add_command(
                             label="Settings for Moviedb…",
-                            command=mainwindow.handlers.settings_dialog,
+                            command=mainwindow.gui_handlers.sundries.settings_dialog,
                         ),
                         call.add_separator(),
                         call.add_command(label="Quit Moviedb", command=cut.tk_shutdown),

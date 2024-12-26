@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/26/24, 7:02 AM by stephen.
+#  Last modified 12/26/24, 11:22 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,7 +25,7 @@ from config import MovieKeyTypedDict
 from database_src import tables
 from globalconstants import MovieTD, MovieBag, MovieInteger
 from gui_handlers import moviebagfacade
-from gui_handlers.handlers import _tmdb_io_handler
+from gui_handlers.sundries import _tmdb_io_handler
 
 
 TITLE_AND_YEAR_EXISTS_MSG = (

@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/13/24, 8:41 AM by stephen.
+#  Last modified 12/26/24, 11:22 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,11 +18,9 @@ from dataclasses import dataclass, field
 from functools import partial
 from typing import Callable, List, Sequence
 
-import pytest
 
 import config
-import exception
-from gui_handlers import handlers
+from gui_handlers import sundries
 from test.dummytk import DummyTk
 
 
@@ -32,7 +30,7 @@ class TestAboutDialog:
 
     def test_about_dialog_called(self, monkeypatch):
         monkeypatch.setattr(
-            handlers.guiwidgets_2, "gui_messagebox", self.gui_messagebox
+            sundries.guiwidgets_2, "gui_messagebox", self.gui_messagebox
         )
         with self.about_context():
             assert self.messagebox_calls == [
@@ -41,19 +39,19 @@ class TestAboutDialog:
 
     @contextmanager
     def about_context(self):
-        hold_persistent = handlers.config.persistent
-        hold_current = handlers.config.current
+        hold_persistent = sundries.config.persistent
+        hold_current = sundries.config.current
 
-        handlers.config.persistent = handlers.config.PersistentConfig(
+        sundries.config.persistent = sundries.config.PersistentConfig(
             program_name="Test program name", program_version="Test program version"
         )
-        handlers.config.current = handlers.config.CurrentConfig(tk_root=DummyParent())
+        sundries.config.current = sundries.config.CurrentConfig(tk_root=DummyParent())
         try:
-            handlers.about_dialog()
+            sundries.about_dialog()
             yield
         finally:
-            handlers.config.persistent = hold_persistent
-            handlers.config.current = hold_current
+            sundries.config.persistent = hold_persistent
+            sundries.config.current = hold_current
 
     def gui_messagebox(self, *args):
         self.messagebox_calls.append(args)
@@ -65,14 +63,14 @@ class TestGetTmdbGetApiKey:
 
     @contextmanager
     def get_tmdb_key(self, monkeypatch, api_key=TEST_KEY, use_tmdb=True):
-        dummy_persistent_config = handlers.config.PersistentConfig(
+        dummy_persistent_config = sundries.config.PersistentConfig(
             "test_prog", "test_vers"
         )
         dummy_persistent_config.use_tmdb = use_tmdb
         dummy_persistent_config.tmdb_api_key = api_key
-        monkeypatch.setattr(handlers.config, "persistent", dummy_persistent_config)
+        monkeypatch.setattr(sundries.config, "persistent", dummy_persistent_config)
         # noinspection PyProtectedMember
-        yield handlers._get_tmdb_api_key()
+        yield sundries._get_tmdb_api_key()
 
     def test_key_returned(self, monkeypatch):
         with self.get_tmdb_key(monkeypatch) as ctx:
@@ -86,7 +84,7 @@ class TestGetTmdbGetApiKey:
 
     def test_key_needs_setting_calls_preferences_dialog(self, monkeypatch):
         calls = []
-        monkeypatch.setattr(handlers, "settings_dialog", lambda: calls.append(True))
+        monkeypatch.setattr(sundries, "settings_dialog", lambda: calls.append(True))
         with self.get_tmdb_key(monkeypatch, api_key=""):
             assert calls[0]
 
@@ -104,32 +102,32 @@ class TestTmdbIOExceptionHandler:
         self.preference_dialog_calls = []
 
         # Patch config.current
-        dummy_current_config = handlers.config.CurrentConfig()
+        dummy_current_config = sundries.config.CurrentConfig()
         dummy_current_config.tk_root = DummyTk
-        monkeypatch.setattr(handlers.config, "current", dummy_current_config)
+        monkeypatch.setattr(sundries.config, "current", dummy_current_config)
 
         # Patch config.persistent
-        dummy_persistent_config = handlers.config.PersistentConfig(
+        dummy_persistent_config = sundries.config.PersistentConfig(
             "test_prog", "test_vers"
         )
         dummy_persistent_config.use_tmdb = True
-        monkeypatch.setattr(handlers.config, "persistent", dummy_persistent_config)
+        monkeypatch.setattr(sundries.config, "persistent", dummy_persistent_config)
 
         monkeypatch.setattr(
-            handlers.guiwidgets_2,
+            sundries.guiwidgets_2,
             "gui_askyesno",
             partial(self.dummy_askyesno, askyesno=askyesno),
         )
         monkeypatch.setattr(
-            handlers.guiwidgets_2, "gui_messagebox", partial(self.dummy_messagebox)
+            sundries.guiwidgets_2, "gui_messagebox", partial(self.dummy_messagebox)
         )
         monkeypatch.setattr(
-            handlers,
+            sundries,
             "settings_dialog",
             lambda: self.preference_dialog_calls.append(True),
         )
         # noinspection PyProtectedMember
-        handlers._tmdb_search_exception_callback(mock_fut)
+        sundries._tmdb_search_exception_callback(mock_fut)
         yield
 
     def dummy_askyesno(self, *args, askyesno=True):
@@ -156,7 +154,7 @@ class TestTmdbIOExceptionHandler:
     ):
         with self.tmdb_search_exception_callback(mock_fut_bad_key, monkeypatch):
             expected = (
-                handlers.config.current.tk_root,
+                sundries.config.current.tk_root,
                 "Invalid API key for TMDB.",
                 "Do you want to set the key?",
             )
@@ -173,7 +171,7 @@ class TestTmdbIOExceptionHandler:
     ):
         with self.tmdb_search_exception_callback(mock_fut_timeout, monkeypatch):
             expected = (
-                handlers.config.current.tk_root,
+                sundries.config.current.tk_root,
                 "TMDB database cannot be reached.",
             )
             assert self.messagebox_calls[0] == expected
@@ -182,31 +180,31 @@ class TestTmdbIOExceptionHandler:
 # noinspection PyMissingOrEmptyDocstring
 class TestTmdbIOHandler:
     search_string = "test search string"
-    work_queue = handlers.queue.LifoQueue()
+    work_queue = sundries.queue.LifoQueue()
 
     @contextmanager
     def tmdb_io_handler(self, monkeypatch, mock_executor):
         # Patch config.current
-        dummy_current_config = handlers.config.CurrentConfig()
+        dummy_current_config = sundries.config.CurrentConfig()
         dummy_current_config.threadpool_executor = mock_executor
-        monkeypatch.setattr(handlers.config, "current", dummy_current_config)
+        monkeypatch.setattr(sundries.config, "current", dummy_current_config)
 
         # Patch config.persistent
-        dummy_persistent_config = handlers.config.PersistentConfig(
+        dummy_persistent_config = sundries.config.PersistentConfig(
             "test_prog", "test_vers"
         )
         dummy_persistent_config.use_tmdb = True
         dummy_persistent_config.tmdb_api_key = "test tmdb key"
-        monkeypatch.setattr(handlers.config, "persistent", dummy_persistent_config)
+        monkeypatch.setattr(sundries.config, "persistent", dummy_persistent_config)
 
         # noinspection PyProtectedMember
-        handlers._tmdb_io_handler(self.search_string, self.work_queue)
+        sundries._tmdb_io_handler(self.search_string, self.work_queue)
         yield
 
     def test_submit_called(self, monkeypatch, mock_executor):
         with self.tmdb_io_handler(monkeypatch, mock_executor):
-            func = handlers.tmdb.search_tmdb
-            key = handlers.config.persistent._tmdb_api_key
+            func = sundries.tmdb.search_tmdb
+            key = sundries.config.persistent._tmdb_api_key
             assert mock_executor.submit_calls == [
                 (func, key, self.search_string, self.work_queue)
             ]
@@ -214,7 +212,7 @@ class TestTmdbIOHandler:
     def test_callback_set(self, monkeypatch, mock_executor):
         with self.tmdb_io_handler(monkeypatch, mock_executor):
             assert mock_executor.fut.add_done_callback_calls == [
-                (handlers._tmdb_search_exception_callback,)
+                (sundries._tmdb_search_exception_callback,)
             ]
 
 
@@ -260,8 +258,8 @@ dummy_select_movie_gui_instance = []
 @dataclass
 class DummySelectMovieGUI:
     parent: DummyParent
-    movies: List[handlers.config.MovieUpdateDef]
-    callback: Callable[[handlers.config.MovieUpdateDef, Sequence[str]], None]
+    movies: List[sundries.config.MovieUpdateDef]
+    callback: Callable[[sundries.config.MovieUpdateDef, Sequence[str]], None]
 
     def __post_init__(self):
         dummy_select_movie_gui_instance.append(

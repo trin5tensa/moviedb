@@ -33,7 +33,7 @@ removed as part of the next GUI upgrade.
 """
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/26/24, 7:02 AM by stephen.
+#  Last modified 12/26/24, 11:22 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -45,4 +45,4 @@ removed as part of the next GUI upgrade.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from gui_handlers import handlers, databasehandlers
+from gui_handlers import sundries, databasehandlers

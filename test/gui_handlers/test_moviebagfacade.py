@@ -1,12 +1,12 @@
 """test module.
 
 This module contains tests written after the major database upgrade and
-reflects the changes to handlers.py needed to support the changed API of
+reflects the changes to sundries.py needed to support the changed API of
 the DBv1 database.
 """
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/18/24, 2:25 PM by stephen.
+#  Last modified 12/26/24, 11:22 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or

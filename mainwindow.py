@@ -1,7 +1,7 @@
 """Main Window."""
 
-#  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/22/24, 7:44 AM by stephen.
+#  Copyright© 2024. Stephen Rigden.
+#  Last modified 12/26/24, 11:22 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,7 +21,9 @@ from dataclasses import dataclass, field
 from typing import Tuple
 
 import config
+
 import handlers
+import gui_handlers
 
 
 @dataclass
@@ -47,10 +49,14 @@ class MainWindow:
         self.place_menubar()
 
         # Set up handling of <Escape> and <Command-.>
-        config.current.escape_key_dict = escape_key_dict = handlers.EscapeKeyDict()
+        config.current.escape_key_dict = escape_key_dict = (
+            gui_handlers.sundries.EscapeKeyDict()
+        )
+        # noinspection PyTypeChecker
         self.parent.bind_all(
             key := "<Escape>", escape_key_dict.escape(self.parent, key)
         )
+        # noinspection PyTypeChecker
         self.parent.bind_all(
             key := "<Command-.>", escape_key_dict.escape(self.parent, key)
         )
@@ -117,23 +123,31 @@ class MainWindow:
         return str(length), f"{offset:+}"
 
     def place_menubar(self):
+        # noinspection GrazieInspection
         """Create menubar and menu items.
 
         An unorthodox menu design.
-        The apple menu (aka 'the application menu' but not the apple icon menu) always takes the name of the binary
-        which is 'Python'. The only way around this is to rename the binary. The solution adopted here is to accept
-        the now inevitable 'Python' menu following the apple icon menu. This is ameliorated with a third 'Moviedb'
-        application menu. The 'Moviedb' menu has the items 'About…', 'Settings…', and 'Quit. Neither the 'Quit' nor
-        the 'Settings…' items will accept the standard accelerator keys of <Command-Q> or <Command-,> presumably
-        because these are reserved for the 'Python' menu. For that reason these two accelerator keys have been
-        attached to the 'Python' menu with 'tk::mac::Quit' and 'tk::mac::ShowPreferences'.
+        The Apple menu (aka 'the application menu' but not the Apple icon
+        menu) always takes the name of the binary which is 'Python'. The
+        only way around this is to rename the binary. The solution adopted
+        here is to accept the now inevitable 'Python' menu following the
+        Apple icon menu. This is ameliorated with a third 'Moviedb'
+        application menu. The 'Moviedb' menu has the items 'About…',
+        'Settings…', and 'Quit. Neither the 'Quit' nor the 'Settings…'
+        items will accept the standard accelerator keys of <Command-Q> or
+        <Command-,> presumably because these are reserved for the 'Python'
+        menu. For that reason, these two accelerator keys have been attached
+        to the 'Python' menu with 'tk::mac::Quit' and
+        'tk::mac::ShowPreferences'.
 
         tk_shutdown is Moviedb's final cleanup function.
-        The quit accelerator is particularly important as Moviedb's shutdown procedure would not be invoked if the
-        user presses <Command-Q>. Of the four different ways of quitting a program which are <Command-Q>,
-        Application menu item 'Quit', dock application popup, and close box (red 'x' button at top of window);
-        only the first three are intercepted by the command tk::mac::Quit. The close box is intercepted by the
-        protocol 'WM_DELETE_WINDOW'.
+        The quit accelerator is particularly important as Moviedb's shutdown
+        procedure would not be invoked if the user presses <Command-Q>. Of
+        the four different ways of quitting a program which are <Command-Q>,
+        Application menu item 'Quit', dock application popup, and close box
+        (red 'x' button at top of window); only the first three are
+        intercepted by the command tk::mac::Quit. The close box is
+        intercepted by the protocol 'WM_DELETE_WINDOW'.
         """
         self.parent.option_add("*tearOff", False)
         # Intercepts the window close button (red 'x')
@@ -141,18 +155,20 @@ class MainWindow:
         # Intercepts the <Command-Q> key press, the application menu item 'Quit',
         # and the dock application popup 'Quit' item.
         self.parent.createcommand("tk::mac::Quit", self.tk_shutdown)
-        self.parent.createcommand("tk::mac::ShowPreferences", handlers.settings_dialog)
+        self.parent.createcommand(
+            "tk::mac::ShowPreferences", gui_handlers.sundries.settings_dialog
+        )
         self.menubar = tk.Menu(self.parent)
 
         self.moviedb_menu = tk.Menu(self.menubar)
         self.menubar.add_cascade(menu=self.moviedb_menu, label="Moviedb")
         self.moviedb_menu.add_command(
             label="About " + config.persistent.program_name + "…",
-            command=handlers.about_dialog,
+            command=gui_handlers.sundries.about_dialog,
         )
         self.moviedb_menu.add_separator()
         self.moviedb_menu.add_command(
-            label="Settings for Moviedb…", command=handlers.settings_dialog
+            label="Settings for Moviedb…", command=gui_handlers.sundries.settings_dialog
         )
         self.moviedb_menu.add_separator()
         self.moviedb_menu.add_command(label="Quit Moviedb", command=self.tk_shutdown)
