@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/26/24, 1:07 PM by stephen.
+#  Last modified 12/26/24, 1:20 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -168,7 +168,8 @@ class MainWindow:
         )
         self.moviedb_menu.add_separator()
         self.moviedb_menu.add_command(
-            label="Settings for Moviedb…", command=gui_handlers.sundries.settings_dialog
+            label="Settings for Moviedb…",
+            command=gui_handlers.sundries.settings_dialog,
         )
         self.moviedb_menu.add_separator()
         self.moviedb_menu.add_command(label="Quit Moviedb", command=self.tk_shutdown)
@@ -202,12 +203,17 @@ class MainWindow:
         self.movie_menu.add_command(label="Delete Movie…", command=handlers.edit_movie)
         self.movie_menu.add_separator()
         self.movie_menu.add_command(
-            label="Add Tag…", command=gui_handlers.databasehandlers.gui_add_tag
+            label="Add Tag…",
+            command=gui_handlers.databasehandlers.gui_add_tag,
         )
         self.movie_menu.add_command(
-            label="Edit Tag…", command=gui_handlers.databasehandlers.gui_search_tag
+            label="Edit Tag…",
+            command=gui_handlers.databasehandlers.gui_search_tag,
         )
-        self.movie_menu.add_command(label="Delete Tag…", command=handlers.edit_tag)
+        self.movie_menu.add_command(
+            label="Delete Tag…",
+            command=gui_handlers.databasehandlers.gui_search_tag,
+        )
 
         self.window_menu = tk.Menu(self.menubar, name="window")
         self.menubar.add_cascade(menu=self.window_menu, label="Window")
