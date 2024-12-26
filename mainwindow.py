@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/26/24, 12:48 PM by stephen.
+#  Last modified 12/26/24, 1:07 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -204,7 +204,9 @@ class MainWindow:
         self.movie_menu.add_command(
             label="Add Tag…", command=gui_handlers.databasehandlers.gui_add_tag
         )
-        self.movie_menu.add_command(label="Edit Tag…", command=handlers.edit_tag)
+        self.movie_menu.add_command(
+            label="Edit Tag…", command=gui_handlers.databasehandlers.gui_search_tag
+        )
         self.movie_menu.add_command(label="Delete Tag…", command=handlers.edit_tag)
 
         self.window_menu = tk.Menu(self.menubar, name="window")
