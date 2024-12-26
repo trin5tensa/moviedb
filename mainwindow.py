@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/26/24, 11:22 AM by stephen.
+#  Last modified 12/26/24, 12:48 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -177,25 +177,21 @@ class MainWindow:
         self.menubar.add_cascade(menu=self.edit_menu, label="Edit")
         self.cut_command = lambda: self.parent.focus_get().event_generate(
             "<<Cut>>"
-        )  # pragma no branch
+        )  # pragma nocover
         self.edit_menu.add_command(
             label="Cut", command=self.cut_command, accelerator="Command+X"
-        )
-        self.copy_command = lambda: self.parent.focus_get().event_generate(
-            "<<Copy>>"
-        )  # pragma no branch
+        )  # pragma nocover
+        self.copy_command = lambda: self.parent.focus_get().event_generate("<<Copy>>")
         self.edit_menu.add_command(
             label="Copy", command=self.copy_command, accelerator="Command+C"
-        )
-        self.paste_command = lambda: self.parent.focus_get().event_generate(
-            "<<Paste>>"
-        )  # pragma no branch
+        )  # pragma nocover
+        self.paste_command = lambda: self.parent.focus_get().event_generate("<<Paste>>")
         self.edit_menu.add_command(
             label="Paste", command=self.paste_command, accelerator="Command+V"
-        )
+        )  # pragma nocover
         self.clear_command = lambda: self.parent.focus_get().event_generate(
-            "<<Clear>>"
-        )  # pragma no branch
+            "<<Clear>>",
+        )  # pragma nocover
         self.edit_menu.add_command(label="Clear", command=self.clear_command)
 
         self.movie_menu = tk.Menu(self.menubar)
@@ -205,7 +201,9 @@ class MainWindow:
         self.movie_menu.add_command(label="View Movie…", command=handlers.edit_movie)
         self.movie_menu.add_command(label="Delete Movie…", command=handlers.edit_movie)
         self.movie_menu.add_separator()
-        self.movie_menu.add_command(label="Add Tag…", command=handlers.add_tag)
+        self.movie_menu.add_command(
+            label="Add Tag…", command=gui_handlers.databasehandlers.gui_add_tag
+        )
         self.movie_menu.add_command(label="Edit Tag…", command=handlers.edit_tag)
         self.movie_menu.add_command(label="Delete Tag…", command=handlers.edit_tag)
 

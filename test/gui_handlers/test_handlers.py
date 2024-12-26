@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/26/24, 11:22 AM by stephen.
+#  Last modified 12/26/24, 12:48 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -221,83 +221,6 @@ class DummyParent:
     """Provide a dummy for Tk root."""
 
     pass
-
-
-dummy_edit_movie_gui_instance = []
-
-
-# noinspection PyMissingOrEmptyDocstring
-@dataclass
-class DummyMovieGUI:
-    parent: DummyParent
-    tmdb_search_callback: Callable
-    all_tags: Sequence[str]
-    add_movie_callback: Callable = field(default=None, kw_only=True)
-    old_movie: config.MovieUpdateDef = field(default=None, kw_only=True)
-    edit_movie_callback: Callable = field(default=None, kw_only=True)
-    delete_movie_callback: Callable = field(default=None, kw_only=True)
-
-    def __post_init__(self):
-        dummy_edit_movie_gui_instance.append(
-            (
-                self.parent,
-                self.tmdb_search_callback,
-                self.all_tags,
-                self.add_movie_callback,
-                self.old_movie,
-                self.edit_movie_callback.__qualname__,
-                self.delete_movie_callback,
-            )
-        )
-
-
-dummy_select_movie_gui_instance = []
-
-
-# noinspection PyMissingOrEmptyDocstring
-@dataclass
-class DummySelectMovieGUI:
-    parent: DummyParent
-    movies: List[sundries.config.MovieUpdateDef]
-    callback: Callable[[sundries.config.MovieUpdateDef, Sequence[str]], None]
-
-    def __post_init__(self):
-        dummy_select_movie_gui_instance.append(
-            (self.parent, self.movies, self.callback)
-        )
-
-
-dummy_edit_tag_gui_instance = []
-
-
-# noinspection PyMissingOrEmptyDocstring
-@dataclass
-class DummyEditTagGUI:
-    parent: DummyParent
-    tag: str
-    delete_tag_callback: Callable[[str], None]
-    edit_tag_callback: Callable[[str], None]
-
-    def __post_init__(self):
-        dummy_edit_tag_gui_instance.append(
-            (self.parent, self.tag, self.delete_tag_callback, self.edit_tag_callback)
-        )
-
-
-dummy_select_tag_gui_instance = []
-
-
-# noinspection PyMissingOrEmptyDocstring
-@dataclass
-class DummySelectTagGUI:
-    parent: DummyParent
-    select_tag_callback: Callable[[str], None]
-    tags_to_show: Sequence[str]
-
-    def __post_init__(self):
-        dummy_select_tag_gui_instance.append(
-            (self.parent, self.select_tag_callback, self.tags_to_show)
-        )
 
 
 dummy_gui_messagebox_calls = []

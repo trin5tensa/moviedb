@@ -1,7 +1,7 @@
 """Database table functions."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/25/24, 10:31 AM by stephen.
+#  Last modified 12/26/24, 12:48 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -422,8 +422,9 @@ def add_tag(*, tag_text: str):
         tag_text:
     """
     try:
-        with session_factory() as session, session.begin():
+        with session_factory() as session:
             _add_tag(session, text=tag_text)
+            session.commit()
     except IntegrityError:
         # Identical tags are silently suppressed.
         pass
@@ -436,8 +437,9 @@ def add_tags(*, tag_texts: set[str]):
         tag_texts:
     """
     try:
-        with session_factory() as session, session.begin():
+        with session_factory() as session:
             _add_tags(session, texts=tag_texts)
+            session.commit()
     except IntegrityError:
         # Identical tags are silently suppressed.
         pass
@@ -466,7 +468,7 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
             new tag text.
     """
     try:
-        with session_factory() as session, session.begin():
+        with session_factory() as session:
             try:
                 tag = _select_tag(session, text=old_tag_text)
             except NoResultFound as exc:
@@ -476,6 +478,7 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
                 raise
             else:
                 _edit_tag(tag=tag, replacement_text=new_tag_text)
+            session.commit()
 
     except IntegrityError as exc:
         logging.error(TAG_EXISTS, new_tag_text)
@@ -492,13 +495,14 @@ def delete_tag(*, tag_text: str):
     Args:
         tag_text:
     """
-    with session_factory() as session, session.begin():
+    with session_factory() as session:
         try:
             tag = _select_tag(session, text=tag_text)
         except NoResultFound:
             pass
         else:
             _delete_tag(session, tag=tag)
+        session.commit()
 
 
 def _select_movie(session: Session, *, movie_bag: MovieBag) -> schema.Movie:
