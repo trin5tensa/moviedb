@@ -1,9 +1,7 @@
-"""Menu handlers.
-
-This module is the glue between the user's selection of a menu item and the gui."""
+"""Menu handlers for the database."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/21/24, 1:31 PM by stephen.
+#  Last modified 12/26/24, 7:02 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
