@@ -6,7 +6,7 @@ the DBv1 database.
 """
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/26/24, 11:22 AM by stephen.
+#  Last modified 12/28/24, 12:45 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -46,9 +46,9 @@ def test_convert_from_movie_td():
         title=title,
         year=year,
         director=director,
-        duration=duration,
+        minutes=duration,
         notes=notes,
-        movie_tags=tags,
+        tags=tags,
     )
 
     # noinspection PyUnresolvedReferences
@@ -60,8 +60,18 @@ def test_convert_from_movie_td():
         directors={director},
         duration=MovieInteger(duration),
         notes=notes,
+        synopsis=notes,
         movie_tags=set(tags),
     )
+
+
+def test_convert_from_movie_td_with_no_data():
+    movie = MovieTD()
+
+    # noinspection PyUnresolvedReferences
+    movie_bag = moviebagfacade.convert_from_movie_td(movie)
+
+    assert movie_bag == MovieBag()
 
 
 def test_convert_to_movie_key():

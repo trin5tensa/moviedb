@@ -4,7 +4,7 @@ This module contains new tests written after Brian Okken's course and book on py
 """
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/26/24, 1:20 PM by stephen.
+#  Last modified 12/28/24, 12:45 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -144,7 +144,8 @@ class TestMainWindow:
                 cut.movie_menu.assert_has_calls(
                     [
                         call.add_command(
-                            label="Add Movie…", command=mainwindow.handlers.add_movie
+                            label="Add Movie…",
+                            command=mainwindow.gui_handlers.databasehandlers.gui_add_movie,
                         ),
                         call.add_command(
                             label="Edit Movie…", command=mainwindow.handlers.edit_movie

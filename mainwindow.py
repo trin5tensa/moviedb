@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/26/24, 1:20 PM by stephen.
+#  Last modified 12/28/24, 12:45 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -197,7 +197,10 @@ class MainWindow:
 
         self.movie_menu = tk.Menu(self.menubar)
         self.menubar.add_cascade(menu=self.movie_menu, label="Movie")
-        self.movie_menu.add_command(label="Add Movie…", command=handlers.add_movie)
+        self.movie_menu.add_command(
+            label="Add Movie…",
+            command=gui_handlers.databasehandlers.gui_add_movie,
+        )
         self.movie_menu.add_command(label="Edit Movie…", command=handlers.edit_movie)
         self.movie_menu.add_command(label="View Movie…", command=handlers.edit_movie)
         self.movie_menu.add_command(label="Delete Movie…", command=handlers.edit_movie)

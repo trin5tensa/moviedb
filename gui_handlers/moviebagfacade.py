@@ -1,7 +1,7 @@
 """MovieBag Facade."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/19/24, 10:33 AM by stephen.
+#  Last modified 12/28/24, 12:45 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -70,12 +70,13 @@ def convert_from_movie_td(movie: MovieTD) -> MovieBag:
         movie_bag["directors"] = set(movie["director"].split(", "))
     if movie.get("notes"):
         movie_bag["notes"] = movie["notes"]
+        movie_bag["synopsis"] = movie["notes"]
     if movie.get("year"):
         movie_bag["year"] = MovieInteger(movie["year"])
-    if movie.get("duration"):
-        movie_bag["duration"] = MovieInteger(movie["duration"])
-    if movie.get("movie_tags"):
-        movie_bag["movie_tags"] = {movie for movie in movie["movie_tags"]}
+    if movie.get("minutes"):
+        movie_bag["duration"] = MovieInteger(movie["minutes"])
+    if movie.get("tags"):
+        movie_bag["movie_tags"] = {movie for movie in movie["tags"]}  # pragma no branch
     return movie_bag
 
 
@@ -105,7 +106,7 @@ def convert_from_find_movie_typed_dict(movie: FindMovieTypedDict) -> MovieBag:
     if movie.get("minutes"):
         movie_bag["duration"] = _range_converter(movie["minutes"])
     if movie.get("tags"):
-        movie_bag["movie_tags"] = {movie for movie in movie["tags"]}
+        movie_bag["movie_tags"] = {movie for movie in movie["tags"]}  # pragma no branch
     return movie_bag
 
 
