@@ -4,7 +4,7 @@ This module contains new tests written after Brian Okken's course and book on py
 """
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/28/24, 12:45 PM by stephen.
+#  Last modified 12/31/24, 1:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -56,6 +56,7 @@ class TestMainWindow:
                     ]
                 )
 
+    # noinspection PyUnresolvedReferences
     def test_place_menubar(self, monkeypatch):
         """Strategy: Menu construction is tested by checking that each
         expected menu item is present and in the correct order. Meta calls
@@ -148,7 +149,8 @@ class TestMainWindow:
                             command=mainwindow.gui_handlers.databasehandlers.gui_add_movie,
                         ),
                         call.add_command(
-                            label="Edit Movie…", command=mainwindow.handlers.edit_movie
+                            label="Edit Movie…",
+                            command=mainwindow.gui_handlers.databasehandlers.gui_search_movie,
                         ),
                         call.add_command(
                             label="View Movie…", command=mainwindow.handlers.edit_movie

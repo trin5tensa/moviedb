@@ -6,7 +6,7 @@ the DBv1 database.
 """
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/28/24, 12:45 PM by stephen.
+#  Last modified 12/31/24, 1:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -107,7 +107,7 @@ def test_convert_to_movie_update_def():
     assert movie == config.MovieUpdateDef(
         title=title,
         year=int(year),
-        director=[director_1, director_2],
+        director=", ".join([director_1, director_2]),
         minutes=int(duration),
         notes=notes,
         tags=list(tags),

@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/28/24, 12:45 PM by stephen.
+#  Last modified 12/31/24, 1:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -201,7 +201,9 @@ class MainWindow:
             label="Add Movie…",
             command=gui_handlers.databasehandlers.gui_add_movie,
         )
-        self.movie_menu.add_command(label="Edit Movie…", command=handlers.edit_movie)
+        self.movie_menu.add_command(
+            label="Edit Movie…", command=gui_handlers.databasehandlers.gui_search_movie
+        )
         self.movie_menu.add_command(label="View Movie…", command=handlers.edit_movie)
         self.movie_menu.add_command(label="Delete Movie…", command=handlers.edit_movie)
         self.movie_menu.add_separator()

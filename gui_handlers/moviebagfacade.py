@@ -1,7 +1,7 @@
 """MovieBag Facade."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/28/24, 12:45 PM by stephen.
+#  Last modified 12/31/24, 1:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -125,7 +125,7 @@ def convert_to_movie_update_def(movie_bag: MovieBag) -> MovieUpdateDef:
     """
     movie = MovieUpdateDef(**convert_to_movie_key_typed_dict(movie_bag))
     if movie_bag.get("directors"):
-        movie["director"] = list(movie_bag.get("directors"))
+        movie["director"] = ", ".join(movie_bag.get("directors"))
     if movie_bag.get("duration"):
         movie["minutes"] = int(movie_bag.get("duration"))
     if movie_bag.get("notes"):

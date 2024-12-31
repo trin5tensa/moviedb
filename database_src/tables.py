@@ -1,7 +1,13 @@
-"""Database table functions."""
+"""Database table functions.
+
+This module provides functions to interact with the database tables for the
+MovieDB application. It includes operations for selecting, adding, editing,
+and deleting movies and tags, as well as managing relationships between
+movies, tags, and people (directors and stars).
+"""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/28/24, 12:45 PM by stephen.
+#  Last modified 12/31/24, 1:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or

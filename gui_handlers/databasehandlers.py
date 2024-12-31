@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/26/24, 11:22 AM by stephen.
+#  Last modified 12/31/24, 1:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -167,7 +167,7 @@ def db_match_movies(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
         case 1:
             # Presents an Edit/View/Delete window to user
             movie_bag = movies_found[0]
-            movie = moviebagfacade.convert_to_movie_key_typed_dict(movie_bag)
+            movie = moviebagfacade.convert_to_movie_update_def(movie_bag)
             gui_edit_movie(movie)
 
         case _:
