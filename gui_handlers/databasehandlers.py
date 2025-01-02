@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/2/25, 7:48 AM by stephen.
+#  Last modified 1/2/25, 1:42 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -73,6 +73,15 @@ def gui_search_movie(*, prepopulate: MovieBag = None):
     #  prepopulation, so the prepopulate parameter is ignored for now.
     all_tags = tables.select_all_tags()
     guiwidgets.SearchMovieGUI(config.current.tk_root, db_match_movies, list(all_tags))
+
+
+def gui_select_movie(*, movies: list[config.MovieUpdateDef]):
+    """Presents a user dialog for selecting a movie from a list.
+
+    Args:
+        movies:
+    """
+    guiwidgets.SelectMovieGUI(config.current.tk_root, movies, db_select_movies)
 
 
 def gui_edit_movie(
@@ -176,8 +185,7 @@ def db_match_movies(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
                 moviebagfacade.convert_to_movie_update_def(movie_bag)
                 for movie_bag in movies_found
             ]  # pragma nocover
-            # todo Move to new function gui_select_movie
-            guiwidgets.SelectMovieGUI(config.current.tk_root, movies, db_select_movies)
+            gui_select_movie(movies=movies)
 
 
 def db_select_movies(movie: MovieKeyTypedDict):
@@ -278,7 +286,11 @@ def gui_search_tag(*, prepopulate: str = None):
 
 
 def gui_select_tag(*, tags: set[str]):
-    """Presents a user dialog for selecting a tag from a list."""
+    """Presents a user dialog for selecting a tag from a list.
+
+    Args:
+        tags:
+    """
     guiwidgets_2.SelectTagGUI(
         config.current.tk_root,
         select_tag_callback=gui_edit_tag,

@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/2/25, 7:48 AM by stephen.
+#  Last modified 1/2/25, 1:42 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -165,6 +165,18 @@ def test_gui_search_movie(monkeypatch, config_current, test_tags):
     )
 
 
+def test_gui_select_movie(monkeypatch, config_current):
+    select_movie_gui = MagicMock(name="select_movie_gui")
+    monkeypatch.setattr(databasehandlers.guiwidgets, "SelectMovieGUI", select_movie_gui)
+    movies = [config.MovieUpdateDef(title="", year=0)]
+
+    databasehandlers.gui_select_movie(movies=movies)
+
+    select_movie_gui.assert_called_once_with(
+        config.current.tk_root, movies, databasehandlers.db_select_movies
+    )
+
+
 def test_db_match_movies(monkeypatch, config_current, messagebox):
     # Arrange
     match_movies = MagicMock(name="match_movies", return_value=[])
@@ -262,7 +274,10 @@ def test_db_match_movies_returning_1_movie(monkeypatch, config_current, test_tag
 
 
 def test_db_match_movies_returning_2_movies(monkeypatch, config_current):
-    movie_1 = databasehandlers.MovieBag(title="Old Movie", year=MovieInteger(4242))
+    movie_1 = databasehandlers.MovieBag(
+        title="Old Movie",
+        year=MovieInteger(4242),
+    )
     movie_2 = databasehandlers.MovieBag(
         title="Son of Old Movie", year=MovieInteger(4243)
     )
@@ -277,19 +292,12 @@ def test_db_match_movies_returning_2_movies(monkeypatch, config_current):
     )
     criteria = config.FindMovieTypedDict()
     tags = []
-
-    select_movie_gui = MagicMock(name="select_movie_gui")
-    monkeypatch.setattr(databasehandlers.guiwidgets, "SelectMovieGUI", select_movie_gui)
-    db_select_movies = MagicMock(name="db_select_movies")
-    monkeypatch.setattr(databasehandlers, "db_select_movies", db_select_movies)
+    gui_select_movie = MagicMock(name="gui_select_movie")
+    monkeypatch.setattr(databasehandlers, "gui_select_movie", gui_select_movie)
 
     databasehandlers.db_match_movies(criteria, tags)
 
-    select_movie_gui.assert_called_once_with(
-        databasehandlers.config.current.tk_root,
-        movies_found,
-        databasehandlers.db_select_movies,
-    )
+    gui_select_movie.assert_called_once_with(movies=movies_found)
 
 
 def test_db_edit_movie(monkeypatch, old_movie, new_movie):
