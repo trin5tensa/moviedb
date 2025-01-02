@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/21/24, 1:31 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/2/25, 7:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -525,6 +525,20 @@ def test_gui_edit_tag(monkeypatch, config_current):
         )
 
 
+def test_gui_select_tag(monkeypatch, config_current):
+    select_tag_gui = MagicMock(name="select_tag_gui")
+    monkeypatch.setattr(databasehandlers.guiwidgets_2, "SelectTagGUI", select_tag_gui)
+    tags = {"tag 1", "tag 2"}
+
+    databasehandlers.gui_select_tag(tags=tags)
+
+    select_tag_gui.assert_called_once_with(
+        config.current.tk_root,
+        select_tag_callback=databasehandlers.gui_edit_tag,
+        tags_to_show=list(tags),
+    )
+
+
 def test_db_add_tag(monkeypatch):
     tag_text = "test_add_tag_callback"
     add_tag = MagicMock(name="add_tag")
@@ -568,8 +582,8 @@ def test_db_match_tags_finding_one_match(monkeypatch, config_current):
 
 
 def test_db_match_tags_finding_multiple_matches(monkeypatch, config_current):
-    select_tag_gui = MagicMock(name="select_tag_gui")
-    monkeypatch.setattr(databasehandlers.guiwidgets_2, "SelectTagGUI", select_tag_gui)
+    gui_select_tag = MagicMock(name="gui_select_tag")
+    monkeypatch.setattr(databasehandlers, "gui_select_tag", gui_select_tag)
     tags = {"tag 1", "tag 2"}
     match_tags = MagicMock(name="match_tags")
     match_tags.return_value = tags
@@ -578,11 +592,7 @@ def test_db_match_tags_finding_multiple_matches(monkeypatch, config_current):
 
     databasehandlers.db_match_tags(match)
 
-    select_tag_gui.assert_called_once_with(
-        config.current.tk_root,
-        select_tag_callback=databasehandlers.gui_edit_tag,
-        tags_to_show=list(tags),
-    )
+    gui_select_tag.assert_called_once_with(tags=tags)
 
 
 def test_db_edit_tag(monkeypatch):
@@ -744,9 +754,9 @@ def new_movie():
         title=new_title,
         year=new_year,
         director=new_director,
-        duration=new_duration,
+        minutes=new_duration,
         notes=new_notes,
-        movie_tags=new_movie_tags,
+        tags=new_movie_tags,
     )
 
 

@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/2/25, 7:08 AM by stephen.
+#  Last modified 1/2/25, 7:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -277,6 +277,15 @@ def gui_search_tag(*, prepopulate: str = None):
     )
 
 
+def gui_select_tag(*, tags: set[str]):
+    """Presents a user dialog for selecting a tag from a list."""
+    guiwidgets_2.SelectTagGUI(
+        config.current.tk_root,
+        select_tag_callback=gui_edit_tag,
+        tags_to_show=list(tags),
+    )
+
+
 # noinspection PyUnusedLocal
 def gui_edit_tag(tag: str, *, prepopulate: str = None):
     """Presents a GUI form for editing tags.
@@ -334,12 +343,7 @@ def db_match_tags(match: str):
         gui_edit_tag(tag, prepopulate=match)
 
     else:
-        # todo Move to new function gui_select_tag
-        guiwidgets_2.SelectTagGUI(
-            config.current.tk_root,
-            select_tag_callback=gui_edit_tag,
-            tags_to_show=list(tags),
-        )
+        gui_select_tag(tags=tags)
 
 
 def db_delete_tag(tag_text: str):
