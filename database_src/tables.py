@@ -6,8 +6,8 @@ and deleting movies and tags, as well as managing relationships between
 movies, tags, and people (directors and stars).
 """
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/31/24, 1:01 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/2/25, 7:08 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -28,7 +28,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from database_src import schema
 from globalconstants import *
 
-MOVIE_NOT_FOUND = "This movie was not found."
+MOVIE_NOT_FOUND = "No matching movies were found."
 MOVIE_EXISTS = "This movie is already present in the database."
 INVALID_YEAR = "This year is likely incorrect."
 TAG_NOT_FOUND = "The tag was not found."

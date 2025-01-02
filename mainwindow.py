@@ -1,7 +1,7 @@
 """Main Window."""
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/31/24, 1:01 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/2/25, 7:08 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,7 +22,6 @@ from typing import Tuple
 
 import config
 
-import handlers
 import gui_handlers
 
 
@@ -202,10 +201,17 @@ class MainWindow:
             command=gui_handlers.databasehandlers.gui_add_movie,
         )
         self.movie_menu.add_command(
-            label="Edit Movie…", command=gui_handlers.databasehandlers.gui_search_movie
+            label="Edit Movie…",
+            command=gui_handlers.databasehandlers.gui_search_movie,
         )
-        self.movie_menu.add_command(label="View Movie…", command=handlers.edit_movie)
-        self.movie_menu.add_command(label="Delete Movie…", command=handlers.edit_movie)
+        self.movie_menu.add_command(
+            label="View Movie…",
+            command=gui_handlers.databasehandlers.gui_search_movie,
+        )
+        self.movie_menu.add_command(
+            label="Delete Movie…",
+            command=gui_handlers.databasehandlers.gui_search_movie,
+        )
         self.movie_menu.add_separator()
         self.movie_menu.add_command(
             label="Add Tag…",

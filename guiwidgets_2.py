@@ -3,8 +3,8 @@
 This module includes windows for presenting data and returning entered data to its callers.
 """
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/21/24, 1:31 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/2/25, 7:08 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -461,10 +461,24 @@ class EditMovieGUI(MovieGUI):
     # noinspection DuplicatedCode
     def __post_init__(self):
         super().__post_init__()
+        # DayBreak: This is wrong.
+        #  On first call the old movie is used to populate the form fields.
+        #  If prepopulate is present then its vales should be used instead.
+        #  Also 1: The old movie data is used for two purposes.
+        #   a) In the call to the database so it can be updated with new data That purpose is
+        #   fulfilled before this method is called.
+        #   b) For prepopulating the data fields of this form.
+        #   So only one lot of data will ever be used for prepopulation.
+        #  Also 2: There really shouldn't be two completely different approaches to the same
+        #  problem. Correct approach is…
+        #   self.entry_fields[k].original_value = self.old_movie.get(k, "")
+
+        # todo AddMovieGUI has the same problem.
+
         if self.old_movie:
             for k in self.entry_fields.keys():
                 # noinspection PyTypedDict
-                self.entry_fields[k].original_value = self.old_movie[k]
+                self.entry_fields[k].original_value = self.old_movie.get(k, "")
         elif self.prepopulate:
             if self.prepopulate.get("title"):
                 self.entry_fields["title"].original_value = self.prepopulate["title"]
@@ -487,7 +501,7 @@ class EditMovieGUI(MovieGUI):
                     "movie_tags"
                 ]
         else:
-            raise ValueError(f"")
+            raise ValueError
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         commit_button = create_button(

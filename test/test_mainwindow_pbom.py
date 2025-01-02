@@ -3,8 +3,8 @@
 This module contains new tests written after Brian Okken's course and book on pytest in Fall 2022.
 """
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/31/24, 1:01 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/2/25, 7:08 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -153,11 +153,12 @@ class TestMainWindow:
                             command=mainwindow.gui_handlers.databasehandlers.gui_search_movie,
                         ),
                         call.add_command(
-                            label="View Movie…", command=mainwindow.handlers.edit_movie
+                            label="View Movie…",
+                            command=mainwindow.gui_handlers.databasehandlers.gui_search_movie,
                         ),
                         call.add_command(
                             label="Delete Movie…",
-                            command=mainwindow.handlers.edit_movie,
+                            command=mainwindow.gui_handlers.databasehandlers.gui_search_movie,
                         ),
                         call.add_separator(),
                         call.add_command(

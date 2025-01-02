@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/31/24, 1:01 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/2/25, 7:08 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -176,6 +176,7 @@ def db_match_movies(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
                 moviebagfacade.convert_to_movie_update_def(movie_bag)
                 for movie_bag in movies_found
             ]  # pragma nocover
+            # todo Move to new function gui_select_movie
             guiwidgets.SelectMovieGUI(config.current.tk_root, movies, db_select_movies)
 
 
@@ -333,6 +334,7 @@ def db_match_tags(match: str):
         gui_edit_tag(tag, prepopulate=match)
 
     else:
+        # todo Move to new function gui_select_tag
         guiwidgets_2.SelectTagGUI(
             config.current.tk_root,
             select_tag_callback=gui_edit_tag,
