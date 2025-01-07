@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/2/25, 7:08 AM by stephen.
+#  Last modified 1/7/25, 7:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -73,6 +73,8 @@ class MovieGUI:
     # This is a complete list of the tags in the database
     all_tags: Sequence[str]
 
+    prepopulate: MovieBag | None = field(default=None, kw_only=True)
+
     # All widgets created by this class will be enclosed in this frame.
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
     # A more convenient data structure for entry fields.
@@ -106,6 +108,8 @@ class MovieGUI:
     def __post_init__(self):
         self.outer_frame, body_frame, buttonbox, tmdb_frame = self.framing(self.parent)
         self.user_input_frame(body_frame)
+        if self.prepopulate:
+            self.populate()
         self.fill_buttonbox(buttonbox)
         self.tmdb_results_frame(tmdb_frame)
         init_button_enablements(self.entry_fields)
@@ -179,6 +183,23 @@ class MovieGUI:
         # Create a label and treeview for movie tags.
         self.entry_fields[MOVIE_TAGS] = tk_facade.Treeview(MOVIE_TAGS_TEXT, body_frame)
         input_zone.add_treeview_row(self.entry_fields[MOVIE_TAGS], self.all_tags)
+
+    def populate(self):
+        """Initialises field values."""
+        self.entry_fields["title"].original_value = self.prepopulate["title"]
+        self.entry_fields["year"].original_value = int(self.prepopulate["year"])
+        self.entry_fields["director"].original_value = ", ".join(
+            director for director in self.prepopulate.get("directors", "")
+        )
+        self.entry_fields["minutes"].original_value = (
+            int(self.prepopulate["duration"])
+            if (self.prepopulate.get("duration"))
+            else ""
+        )
+        self.entry_fields["notes"].original_value = self.prepopulate.get("notes", "")
+        self.entry_fields["tags"].original_value = list(
+            self.prepopulate.get("movie_tags", "")
+        )
 
     def tmdb_results_frame(self, tmdb_frame: tk.Frame):
         """
@@ -335,33 +356,8 @@ class MovieGUI:
 class AddMovieGUI(MovieGUI):
     """Create and manage a GUI form for entering a new movie."""
 
-    prepopulate: MovieBag | None = field(default=None, kw_only=True)
+    # prepopulate: MovieBag | None = field(default=None, kw_only=True)
     add_movie_callback: Callable[[MovieTD], None] = field(default=None, kw_only=True)
-
-    # noinspection DuplicatedCode
-    def __post_init__(self):
-        super().__post_init__()
-        if self.prepopulate:
-            if self.prepopulate.get("title"):
-                self.entry_fields["title"].original_value = self.prepopulate["title"]
-            if self.prepopulate.get("year"):
-                self.entry_fields["year"].original_value = int(self.prepopulate["year"])
-            if self.prepopulate.get("directors"):
-                self.entry_fields["director"].original_value = ", ".join(
-                    director for director in self.prepopulate["directors"]
-                )
-            if self.prepopulate.get("duration"):
-                self.entry_fields["minutes"].original_value = int(
-                    self.prepopulate["duration"]
-                )
-            if self.prepopulate.get("notes"):
-                self.entry_fields["notes"].original_value = self.prepopulate[
-                    "notes"
-                ]  # pragma nocover
-            if self.prepopulate.get("movie_tags"):
-                self.entry_fields["tags"].original_value = self.prepopulate[
-                    "movie_tags"
-                ]
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         commit_button = create_button(
@@ -449,8 +445,6 @@ class AddMovieGUI(MovieGUI):
 class EditMovieGUI(MovieGUI):
     """Create and manage a GUI form for editing an existing movie."""
 
-    old_movie: config.MovieUpdateDef | None = field(default=None, kw_only=True)
-    prepopulate: MovieBag | None = field(default=None, kw_only=True)
     edit_movie_callback: Callable[[config.FindMovieTypedDict], None] = field(
         default=None, kw_only=True
     )
@@ -459,49 +453,6 @@ class EditMovieGUI(MovieGUI):
     )
 
     # noinspection DuplicatedCode
-    def __post_init__(self):
-        super().__post_init__()
-        # DayBreak: This is wrong.
-        #  On first call the old movie is used to populate the form fields.
-        #  If prepopulate is present then its vales should be used instead.
-        #  Also 1: The old movie data is used for two purposes.
-        #   a) In the call to the database so it can be updated with new data That purpose is
-        #   fulfilled before this method is called.
-        #   b) For prepopulating the data fields of this form.
-        #   So only one lot of data will ever be used for prepopulation.
-        #  Also 2: There really shouldn't be two completely different approaches to the same
-        #  problem. Correct approach is…
-        #   self.entry_fields[k].original_value = self.old_movie.get(k, "")
-
-        # todo AddMovieGUI has the same problem.
-
-        if self.old_movie:
-            for k in self.entry_fields.keys():
-                # noinspection PyTypedDict
-                self.entry_fields[k].original_value = self.old_movie.get(k, "")
-        elif self.prepopulate:
-            if self.prepopulate.get("title"):
-                self.entry_fields["title"].original_value = self.prepopulate["title"]
-            if self.prepopulate.get("year"):
-                self.entry_fields["year"].original_value = int(self.prepopulate["year"])
-            if self.prepopulate.get("directors"):
-                self.entry_fields["director"].original_value = ", ".join(
-                    director for director in self.prepopulate["directors"]
-                )
-            if self.prepopulate.get("duration"):
-                self.entry_fields["minutes"].original_value = int(
-                    self.prepopulate["duration"]
-                )
-            if self.prepopulate.get("notes"):
-                self.entry_fields["notes"].original_value = self.prepopulate[
-                    "notes"
-                ]  # pragma nocover
-            if self.prepopulate.get("movie_tags"):
-                self.entry_fields["tags"].original_value = self.prepopulate[
-                    "movie_tags"
-                ]
-        else:
-            raise ValueError
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         commit_button = create_button(

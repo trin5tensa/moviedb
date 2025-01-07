@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/2/25, 1:42 PM by stephen.
+#  Last modified 1/7/25, 7:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -46,6 +46,8 @@ def gui_add_movie(*, prepopulate: MovieBag = None):
             This argument can be used to prepopulate the movie widget. This
             is useful if the initial attempt to add a movie caused an
             exception. It gives the user the opportunity to fix input errors.
+            If present, the item "prepopulate['movie_tags']" contains the
+            tag selection.
     """
     all_tags = tables.select_all_tags()
     guiwidgets_2.AddMovieGUI(
@@ -90,18 +92,20 @@ def gui_edit_movie(
     """Presents a GUI form for editing movies from the database.
 
     Args:
-        old_movie:
+        old_movie: The old movie will be retrieved from the database and
+            updated.
         prepopulate:
             This argument can be used to prepopulate the movie widget. This
             is useful if the initial attempt to edit a movie caused an
-            exception. It gives the user the opportunity to fix
-            input errors.
+            exception. It gives the user the opportunity to fix input errors.
+            If present, the item "prepopulate['movie_tags']" contains the
+            tag selection.
     """
+    all_tags = tables.select_all_tags()
     guiwidgets_2.EditMovieGUI(
         config.current.tk_root,
         _tmdb_io_handler,
-        list(tables.select_all_tags()),
-        old_movie=config.MovieUpdateDef(**old_movie),
+        list(all_tags),
         prepopulate=prepopulate,
         edit_movie_callback=partial(db_edit_movie, old_movie),
         delete_movie_callback=db_delete_movie,
@@ -177,7 +181,7 @@ def db_match_movies(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
             # Presents an Edit/View/Delete window to user
             movie_bag = movies_found[0]
             movie = moviebagfacade.convert_to_movie_update_def(movie_bag)
-            gui_edit_movie(movie)
+            gui_edit_movie(movie, prepopulate=movie_bag)
 
         case _:
             # Presents a selection window showing the multiple compliant movies.

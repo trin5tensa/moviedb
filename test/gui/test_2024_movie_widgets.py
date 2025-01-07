@@ -1,7 +1,7 @@
 """Test Module."""
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/21/24, 1:31 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/7/25, 7:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -32,6 +32,15 @@ from guiwidgets_2 import (
 
 # noinspection PyMissingOrEmptyDocstring
 class TestMovieGUI:
+    title = "dummy old title"
+    year = 42
+    director_1 = "dummy old director"
+    director_2 = "dummy new director"
+    director = {director_1, director_2}
+    minutes = 142
+    notes = "dummy old notes"
+    movie_tags = {"test tag 1", "test tag 2"}
+
     def test_post_init(
         self,
         mock_tk,
@@ -789,38 +798,6 @@ class TestEditMovieGUI:
     notes = "dummy old notes"
     tags = ("test tag 1", "test tag 2")
 
-    def test_post_init(
-        self,
-        mock_tk,
-        ttk,
-        moviegui_framing,
-        movie_fill_buttonbox,
-        movie_tmdb_results_frame,
-        input_zone,
-        patterns,
-    ):
-        # noinspection PyTypeChecker
-        cut = guiwidgets_2.EditMovieGUI(
-            mock_tk,
-            tmdb_search_callback=lambda: None,
-            all_tags=None,
-            old_movie=(self.old_movie()),
-        )
-
-        # patterns.Entry is mocked once and used four times.
-        # mock.original_value retains the last update of `minutes`.
-        check.equal(
-            [cut.entry_fields[v].original_value for v in self.old_movie().keys()],
-            [
-                self.minutes,
-                self.minutes,
-                self.minutes,
-                self.minutes,
-                self.notes,
-                self.tags,
-            ],
-        )
-
     def test_create_buttons(
         self,
         mock_tk,
@@ -839,7 +816,6 @@ class TestEditMovieGUI:
             mock_tk,
             tmdb_search_callback=lambda: None,
             all_tags=None,
-            old_movie=self.old_movie(),
         )
         column_num = guiwidgets_2.itertools.count()
         for k in cut.entry_fields.keys():
@@ -904,7 +880,6 @@ class TestEditMovieGUI:
             mock_tk,
             tmdb_search_callback=lambda: None,
             all_tags=None,
-            old_movie=self.old_movie(),
         )
         for k in cut.entry_fields.keys():
             cut.entry_fields[k] = MagicMock()
@@ -969,7 +944,6 @@ class TestEditMovieGUI:
             mock_tk,
             tmdb_search_callback=lambda: None,
             all_tags=None,
-            old_movie=self.old_movie(),
             edit_movie_callback=edit_movie_callback,
             delete_movie_callback=delete_movie_callback,
         )
@@ -1039,7 +1013,6 @@ class TestEditMovieGUI:
             mock_tk,
             tmdb_search_callback=lambda: None,
             all_tags=None,
-            old_movie=self.old_movie(),
             delete_movie_callback=delete_movie_callback,
         )
         monkeypatch.setattr(cut, "destroy", MagicMock())

@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/2/25, 1:42 PM by stephen.
+#  Last modified 1/7/25, 7:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -270,7 +270,7 @@ def test_db_match_movies_returning_1_movie(monkeypatch, config_current, test_tag
 
     databasehandlers.db_match_movies(criteria, list(test_tags))
 
-    gui_edit_movie.assert_called_once_with(old_movie)
+    gui_edit_movie.assert_called_once_with(old_movie, prepopulate=movie_1)
 
 
 def test_db_match_movies_returning_2_movies(monkeypatch, config_current):
@@ -697,7 +697,6 @@ def test_gui_edit_movie(monkeypatch, config_current, test_tags):
             config.current.tk_root,
             databasehandlers._tmdb_io_handler,
             list(databasehandlers.tables.select_all_tags()),
-            old_movie=config.MovieUpdateDef(**old_movie),
             prepopulate=None,
             edit_movie_callback=partial(),
             delete_movie_callback=databasehandlers.db_delete_movie,
