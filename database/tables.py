@@ -7,7 +7,7 @@ movies, tags, and people (directors and stars).
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/2/25, 7:08 AM by stephen.
+#  Last modified 1/8/25, 1:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,7 +25,7 @@ from sqlalchemy import select, intersect
 from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
-from database_src import schema
+from database import schema
 from globalconstants import *
 
 MOVIE_NOT_FOUND = "No matching movies were found."

@@ -1,7 +1,7 @@
 """Schema v1"""
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 9/19/24, 12:26 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/8/25, 1:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or

@@ -1,7 +1,7 @@
 """Database environment functions."""
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/24/24, 2:20 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/8/25, 1:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +20,7 @@ from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from database_src import schema, tables, update
+from database import schema, tables, update
 
 DATA_DIR_NAME = "Movies-Database"
 SAVED_VERSION = "saved_version"
