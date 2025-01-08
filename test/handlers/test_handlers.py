@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/26/24, 12:48 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/8/25, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +20,7 @@ from typing import Callable, List, Sequence
 
 
 import config
-from gui_handlers import sundries
+from handlers import sundries
 from test.dummytk import DummyTk
 
 

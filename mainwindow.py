@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/2/25, 7:08 AM by stephen.
+#  Last modified 1/8/25, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,7 +22,7 @@ from typing import Tuple
 
 import config
 
-import gui_handlers
+import handlers
 
 
 @dataclass
@@ -49,7 +49,7 @@ class MainWindow:
 
         # Set up handling of <Escape> and <Command-.>
         config.current.escape_key_dict = escape_key_dict = (
-            gui_handlers.sundries.EscapeKeyDict()
+            handlers.sundries.EscapeKeyDict()
         )
         # noinspection PyTypeChecker
         self.parent.bind_all(
@@ -155,7 +155,7 @@ class MainWindow:
         # and the dock application popup 'Quit' item.
         self.parent.createcommand("tk::mac::Quit", self.tk_shutdown)
         self.parent.createcommand(
-            "tk::mac::ShowPreferences", gui_handlers.sundries.settings_dialog
+            "tk::mac::ShowPreferences", handlers.sundries.settings_dialog
         )
         self.menubar = tk.Menu(self.parent)
 
@@ -163,12 +163,12 @@ class MainWindow:
         self.menubar.add_cascade(menu=self.moviedb_menu, label="Moviedb")
         self.moviedb_menu.add_command(
             label="About " + config.persistent.program_name + "…",
-            command=gui_handlers.sundries.about_dialog,
+            command=handlers.sundries.about_dialog,
         )
         self.moviedb_menu.add_separator()
         self.moviedb_menu.add_command(
             label="Settings for Moviedb…",
-            command=gui_handlers.sundries.settings_dialog,
+            command=handlers.sundries.settings_dialog,
         )
         self.moviedb_menu.add_separator()
         self.moviedb_menu.add_command(label="Quit Moviedb", command=self.tk_shutdown)
@@ -198,32 +198,32 @@ class MainWindow:
         self.menubar.add_cascade(menu=self.movie_menu, label="Movie")
         self.movie_menu.add_command(
             label="Add Movie…",
-            command=gui_handlers.databasehandlers.gui_add_movie,
+            command=handlers.database.gui_add_movie,
         )
         self.movie_menu.add_command(
             label="Edit Movie…",
-            command=gui_handlers.databasehandlers.gui_search_movie,
+            command=handlers.database.gui_search_movie,
         )
         self.movie_menu.add_command(
             label="View Movie…",
-            command=gui_handlers.databasehandlers.gui_search_movie,
+            command=handlers.database.gui_search_movie,
         )
         self.movie_menu.add_command(
             label="Delete Movie…",
-            command=gui_handlers.databasehandlers.gui_search_movie,
+            command=handlers.database.gui_search_movie,
         )
         self.movie_menu.add_separator()
         self.movie_menu.add_command(
             label="Add Tag…",
-            command=gui_handlers.databasehandlers.gui_add_tag,
+            command=handlers.database.gui_add_tag,
         )
         self.movie_menu.add_command(
             label="Edit Tag…",
-            command=gui_handlers.databasehandlers.gui_search_tag,
+            command=handlers.database.gui_search_tag,
         )
         self.movie_menu.add_command(
             label="Delete Tag…",
-            command=gui_handlers.databasehandlers.gui_search_tag,
+            command=handlers.database.gui_search_tag,
         )
 
         self.window_menu = tk.Menu(self.menubar, name="window")

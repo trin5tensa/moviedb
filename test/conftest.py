@@ -1,7 +1,7 @@
 """pytest fixture plugin."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 6:45 AM by stephen.
+#  Last modified 1/8/25, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -66,7 +66,7 @@ def mock_executor():
 def mock_config_current(monkeypatch):
     """Mock handlers.config.current."""
     current = MagicMock()
-    monkeypatch.setattr("gui_handlers.sundries.config.current", current)
+    monkeypatch.setattr("handlers.sundries.config.current", current)
     return current
 
 

@@ -1,7 +1,7 @@
 """Sundry Menu handlers."""
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/26/24, 11:22 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/8/25, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or

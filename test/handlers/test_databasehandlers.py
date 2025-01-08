@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/7/25, 7:17 AM by stephen.
+#  Last modified 1/8/25, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,39 +21,39 @@ from pytest_check import check
 import config
 from config import MovieKeyTypedDict
 from globalconstants import MovieTD, MovieInteger, MovieBag
-from gui_handlers import (
-    databasehandlers,
-    moviebagfacade,
-)
+import handlers
 
 
 # noinspection
 def test_gui_add_movie(monkeypatch, config_current, test_tags):
     mock_add_movie_gui = MagicMock(name="mock_add_movie_gui")
     monkeypatch.setattr(
-        databasehandlers.guiwidgets_2, "AddMovieGUI", mock_add_movie_gui
+        handlers.database.guiwidgets_2,
+        "AddMovieGUI",
+        mock_add_movie_gui,
+        # handlers.database.guiwidgets_2, "AddMovieGUI", mock_add_movie_gui
     )
-    movie_bag = databasehandlers.MovieBag()
+    movie_bag = handlers.database.MovieBag()
 
-    databasehandlers.gui_add_movie(prepopulate=movie_bag)
+    handlers.database.gui_add_movie(prepopulate=movie_bag)
 
     mock_add_movie_gui.assert_called_once_with(
-        databasehandlers.config.current.tk_root,
-        databasehandlers._tmdb_io_handler,
+        handlers.database.config.current.tk_root,
+        handlers.sundries._tmdb_io_handler,
         list(test_tags),
         prepopulate=movie_bag,
-        add_movie_callback=databasehandlers.db_add_movie,
+        add_movie_callback=handlers.database.db_add_movie,
     )
 
 
 def test_db_add_movie(monkeypatch):
     add_movie = MagicMock(name="add_movie")
-    monkeypatch.setattr(databasehandlers.tables, "add_movie", add_movie)
+    monkeypatch.setattr(handlers.database.tables, "add_movie", add_movie)
     gui_movie = MovieTD(title="Add movie test", year="4242")
     # noinspection PyUnresolvedReferences
-    movie_bag = moviebagfacade.convert_from_movie_td(gui_movie)
+    movie_bag = handlers.moviebagfacade.convert_from_movie_td(gui_movie)
 
-    databasehandlers.db_add_movie(gui_movie)
+    handlers.database.db_add_movie(gui_movie)
 
     add_movie.assert_called_once_with(movie_bag=movie_bag)
 
@@ -64,24 +64,24 @@ def test_db_add_movie_handles_NoResultFound_for_missing_tag(
     config_current,
 ):
     """Attempts to add a movie with a tag that is not in the database"""
-    movie_td = databasehandlers.MovieTD(
+    movie_td = handlers.database.MovieTD(
         title="title",
         year="4242",
     )
-    movie_bag = moviebagfacade.convert_from_movie_td(movie_td)
+    movie_bag = handlers.moviebagfacade.convert_from_movie_td(movie_td)
     db_add_movie = MagicMock(name="mock_add_movie")
-    db_add_movie.side_effect = databasehandlers.tables.NoResultFound()
+    db_add_movie.side_effect = handlers.database.tables.NoResultFound()
     db_add_movie.side_effect.__notes__ = [
-        databasehandlers.tables.TAG_NOT_FOUND,
+        handlers.database.tables.TAG_NOT_FOUND,
         "Note 2",
     ]
-    monkeypatch.setattr(databasehandlers.tables, "add_movie", db_add_movie)
+    monkeypatch.setattr(handlers.database.tables, "add_movie", db_add_movie)
     gui_add_movie = MagicMock(name="gui_add_movie")
-    monkeypatch.setattr(databasehandlers, "gui_add_movie", gui_add_movie)
+    monkeypatch.setattr(handlers.database, "gui_add_movie", gui_add_movie)
     exc_messagebox = MagicMock(name="exc_messagebox")
-    monkeypatch.setattr(databasehandlers, "_exc_messagebox", exc_messagebox)
+    monkeypatch.setattr(handlers.database, "_exc_messagebox", exc_messagebox)
 
-    databasehandlers.db_add_movie(movie_td)
+    handlers.database.db_add_movie(movie_td)
 
     with check:
         exc_messagebox.assert_called_once_with(db_add_movie.side_effect)
@@ -92,27 +92,27 @@ def test_db_add_movie_handles_NoResultFound_for_missing_tag(
 # noinspection DuplicatedCode,PyPep8Naming
 def test_db_add_movie_handles_IntegrityError_for_existing_movie(monkeypatch):
     """Attempts to add a movie with a key that is already present in the database."""
-    movie_td = databasehandlers.MovieTD(
+    movie_td = handlers.database.MovieTD(
         title="title",
         year="4242",
     )
-    movie_bag = moviebagfacade.convert_from_movie_td(movie_td)
+    movie_bag = handlers.moviebagfacade.convert_from_movie_td(movie_td)
     db_add_movie = MagicMock(name="mock_add_movie")
-    db_add_movie.side_effect = databasehandlers.tables.IntegrityError(
+    db_add_movie.side_effect = handlers.database.tables.IntegrityError(
         "", "", Exception()
     )
     db_add_movie.side_effect.__notes__ = [
-        databasehandlers.tables.MOVIE_EXISTS,
+        handlers.database.tables.MOVIE_EXISTS,
         "Note 2",
         "Note 3",
     ]
-    monkeypatch.setattr(databasehandlers.tables, "add_movie", db_add_movie)
+    monkeypatch.setattr(handlers.database.tables, "add_movie", db_add_movie)
     exc_messagebox = MagicMock(name="exc_messagebox")
-    monkeypatch.setattr(databasehandlers, "_exc_messagebox", exc_messagebox)
+    monkeypatch.setattr(handlers.database, "_exc_messagebox", exc_messagebox)
     gui_add_movie = MagicMock(name="gui_add_movie")
-    monkeypatch.setattr(databasehandlers, "gui_add_movie", gui_add_movie)
+    monkeypatch.setattr(handlers.database, "gui_add_movie", gui_add_movie)
 
-    databasehandlers.db_add_movie(movie_td)
+    handlers.database.db_add_movie(movie_td)
 
     with check:
         exc_messagebox.assert_called_once_with(db_add_movie.side_effect)
@@ -123,26 +123,26 @@ def test_db_add_movie_handles_IntegrityError_for_existing_movie(monkeypatch):
 # noinspection DuplicatedCode,PyPep8Naming
 def test_db_add_movie_handles_IntegrityError_for_invalid_year(monkeypatch):
     """Attempts to add a movie with a key that is already present in the database."""
-    movie_td = databasehandlers.MovieTD(
+    movie_td = handlers.database.MovieTD(
         title="title",
         year="4242",
     )
-    movie_bag = moviebagfacade.convert_from_movie_td(movie_td)
+    movie_bag = handlers.moviebagfacade.convert_from_movie_td(movie_td)
     db_add_movie = MagicMock(name="mock_add_movie")
-    db_add_movie.side_effect = databasehandlers.tables.IntegrityError(
+    db_add_movie.side_effect = handlers.database.tables.IntegrityError(
         "", "", Exception()
     )
     db_add_movie.side_effect.__notes__ = [
-        databasehandlers.tables.INVALID_YEAR,
+        handlers.database.tables.INVALID_YEAR,
         "Note 2",
     ]
-    monkeypatch.setattr(databasehandlers.tables, "add_movie", db_add_movie)
+    monkeypatch.setattr(handlers.database.tables, "add_movie", db_add_movie)
     exc_messagebox = MagicMock(name="exc_messagebox")
-    monkeypatch.setattr(databasehandlers, "_exc_messagebox", exc_messagebox)
+    monkeypatch.setattr(handlers.database, "_exc_messagebox", exc_messagebox)
     gui_add_movie = MagicMock(name="gui_add_movie")
-    monkeypatch.setattr(databasehandlers, "gui_add_movie", gui_add_movie)
+    monkeypatch.setattr(handlers.database, "gui_add_movie", gui_add_movie)
 
-    databasehandlers.db_add_movie(movie_td)
+    handlers.database.db_add_movie(movie_td)
 
     with check:
         exc_messagebox.assert_called_once_with(db_add_movie.side_effect)
@@ -153,34 +153,36 @@ def test_db_add_movie_handles_IntegrityError_for_invalid_year(monkeypatch):
 def test_gui_search_movie(monkeypatch, config_current, test_tags):
     mock_search_movie_gui = MagicMock(name="mock_search_movie_gui")
     monkeypatch.setattr(
-        databasehandlers.guiwidgets, "SearchMovieGUI", mock_search_movie_gui
+        handlers.database.guiwidgets, "SearchMovieGUI", mock_search_movie_gui
     )
 
-    databasehandlers.gui_search_movie()
+    handlers.database.gui_search_movie()
 
     mock_search_movie_gui.assert_called_once_with(
-        databasehandlers.config.current.tk_root,
-        databasehandlers.db_match_movies,
+        handlers.database.config.current.tk_root,
+        handlers.database.db_match_movies,
         list(test_tags),
     )
 
 
 def test_gui_select_movie(monkeypatch, config_current):
     select_movie_gui = MagicMock(name="select_movie_gui")
-    monkeypatch.setattr(databasehandlers.guiwidgets, "SelectMovieGUI", select_movie_gui)
+    monkeypatch.setattr(
+        handlers.database.guiwidgets, "SelectMovieGUI", select_movie_gui
+    )
     movies = [config.MovieUpdateDef(title="", year=0)]
 
-    databasehandlers.gui_select_movie(movies=movies)
+    handlers.database.gui_select_movie(movies=movies)
 
     select_movie_gui.assert_called_once_with(
-        config.current.tk_root, movies, databasehandlers.db_select_movies
+        config.current.tk_root, movies, handlers.database.db_select_movies
     )
 
 
 def test_db_match_movies(monkeypatch, config_current, messagebox):
     # Arrange
     match_movies = MagicMock(name="match_movies", return_value=[])
-    monkeypatch.setattr(databasehandlers.tables, "match_movies", match_movies)
+    monkeypatch.setattr(handlers.database.tables, "match_movies", match_movies)
 
     title = "title search"
     year = "4242"
@@ -197,7 +199,7 @@ def test_db_match_movies(monkeypatch, config_current, messagebox):
     )
     tags = ["test tag 1", "test tag 2"]
 
-    match = databasehandlers.MovieBag(
+    match = handlers.database.MovieBag(
         title=title,
         year=MovieInteger(year),
         directors={director_1, director_2},
@@ -206,10 +208,10 @@ def test_db_match_movies(monkeypatch, config_current, messagebox):
         movie_tags=set(tags),
     )
 
-    monkeypatch.setattr(databasehandlers, "gui_search_movie", lambda: None)
+    monkeypatch.setattr(handlers.database, "gui_search_movie", lambda: None)
 
     # Act
-    databasehandlers.db_match_movies(criteria, tags)
+    handlers.database.db_match_movies(criteria, tags)
 
     # Assert
     match_movies.assert_called_once_with(match=match)
@@ -217,20 +219,20 @@ def test_db_match_movies(monkeypatch, config_current, messagebox):
 
 def test_db_match_movies_with_year_range(monkeypatch, config_current, messagebox):
     match_movies = MagicMock(name="match_movies", return_value=[])
-    monkeypatch.setattr(databasehandlers.tables, "match_movies", match_movies)
+    monkeypatch.setattr(handlers.database.tables, "match_movies", match_movies)
     title = "title search"
     year_1 = "4242"
     year_2 = "4247"
     criteria = config.FindMovieTypedDict(title=title, year=[year_1, year_2])
     tags = ["test tag 1", "test tag 2"]
-    match = databasehandlers.MovieBag(
+    match = handlers.database.MovieBag(
         title=title,
         year=(MovieInteger(f"{year_1}-{year_2}")),
         movie_tags=set(tags),
     )
-    monkeypatch.setattr(databasehandlers, "gui_search_movie", lambda: None)
+    monkeypatch.setattr(handlers.database, "gui_search_movie", lambda: None)
 
-    databasehandlers.db_match_movies(criteria, tags)
+    handlers.database.db_match_movies(criteria, tags)
 
     match_movies.assert_called_once_with(match=match)
 
@@ -241,16 +243,16 @@ def test_db_match_movies_returning_0_movies(monkeypatch, config_current, message
     criteria = config.FindMovieTypedDict(title=title, year=[year])
     tags = ["test tag 1"]
     match_movies = MagicMock(name="match_movies", return_value=[])
-    monkeypatch.setattr(databasehandlers.tables, "match_movies", match_movies)
+    monkeypatch.setattr(handlers.database.tables, "match_movies", match_movies)
     gui_search_movie = MagicMock(name="gui_search_movie")
-    monkeypatch.setattr(databasehandlers, "gui_search_movie", gui_search_movie)
+    monkeypatch.setattr(handlers.database, "gui_search_movie", gui_search_movie)
 
-    databasehandlers.db_match_movies(criteria, tags)
+    handlers.database.db_match_movies(criteria, tags)
 
     with check:
         messagebox.assert_called_once_with(
-            databasehandlers.config.current.tk_root,
-            message=databasehandlers.tables.MOVIE_NOT_FOUND,
+            handlers.database.config.current.tk_root,
+            message=handlers.database.tables.MOVIE_NOT_FOUND,
         )
     with check:
         gui_search_movie.assert_called_once_with()
@@ -259,56 +261,56 @@ def test_db_match_movies_returning_0_movies(monkeypatch, config_current, message
 def test_db_match_movies_returning_1_movie(monkeypatch, config_current, test_tags):
     year = "4242"
     title = "title search"
-    movie_1 = databasehandlers.MovieBag(title=title, year=MovieInteger(year))
+    movie_1 = handlers.database.MovieBag(title=title, year=MovieInteger(year))
     match_movies = MagicMock(name="match_movies")
     match_movies.return_value = [movie_1]
-    monkeypatch.setattr(databasehandlers.tables, "match_movies", match_movies)
+    monkeypatch.setattr(handlers.database.tables, "match_movies", match_movies)
     gui_edit_movie = MagicMock(name="gui_edit_movie")
-    monkeypatch.setattr(databasehandlers, "gui_edit_movie", gui_edit_movie)
+    monkeypatch.setattr(handlers.database, "gui_edit_movie", gui_edit_movie)
     criteria = config.FindMovieTypedDict(title=title, year=[year])
-    old_movie = databasehandlers.moviebagfacade.convert_to_movie_update_def(movie_1)
+    old_movie = handlers.moviebagfacade.convert_to_movie_update_def(movie_1)
 
-    databasehandlers.db_match_movies(criteria, list(test_tags))
+    handlers.database.db_match_movies(criteria, list(test_tags))
 
     gui_edit_movie.assert_called_once_with(old_movie, prepopulate=movie_1)
 
 
 def test_db_match_movies_returning_2_movies(monkeypatch, config_current):
-    movie_1 = databasehandlers.MovieBag(
+    movie_1 = handlers.database.MovieBag(
         title="Old Movie",
         year=MovieInteger(4242),
     )
-    movie_2 = databasehandlers.MovieBag(
+    movie_2 = handlers.database.MovieBag(
         title="Son of Old Movie", year=MovieInteger(4243)
     )
     movies_found = [
-        databasehandlers.moviebagfacade.convert_to_movie_update_def(movie_1),
-        databasehandlers.moviebagfacade.convert_to_movie_update_def(movie_2),
+        handlers.moviebagfacade.convert_to_movie_update_def(movie_1),
+        handlers.moviebagfacade.convert_to_movie_update_def(movie_2),
     ]
     monkeypatch.setattr(
-        databasehandlers.tables,
+        handlers.database.tables,
         "match_movies",
         MagicMock(name="match_movies", return_value=movies_found),
     )
     criteria = config.FindMovieTypedDict()
     tags = []
     gui_select_movie = MagicMock(name="gui_select_movie")
-    monkeypatch.setattr(databasehandlers, "gui_select_movie", gui_select_movie)
+    monkeypatch.setattr(handlers.database, "gui_select_movie", gui_select_movie)
 
-    databasehandlers.db_match_movies(criteria, tags)
+    handlers.database.db_match_movies(criteria, tags)
 
     gui_select_movie.assert_called_once_with(movies=movies_found)
 
 
 def test_db_edit_movie(monkeypatch, old_movie, new_movie):
     # Arrange
-    old_movie_bag = moviebagfacade.convert_from_movie_key_typed_dict(old_movie)
-    new_movie_bag = moviebagfacade.convert_from_movie_td(new_movie)
+    old_movie_bag = handlers.moviebagfacade.convert_from_movie_key_typed_dict(old_movie)
+    new_movie_bag = handlers.moviebagfacade.convert_from_movie_td(new_movie)
     db_edit_movie = MagicMock(name="db_edit_movie")
-    monkeypatch.setattr(databasehandlers.tables, "edit_movie", db_edit_movie)
+    monkeypatch.setattr(handlers.database.tables, "edit_movie", db_edit_movie)
 
     # Act
-    databasehandlers.db_edit_movie(old_movie, new_movie)
+    handlers.database.db_edit_movie(old_movie, new_movie)
 
     # Assert
     db_edit_movie.assert_called_once_with(
@@ -318,29 +320,29 @@ def test_db_edit_movie(monkeypatch, old_movie, new_movie):
 
 # noinspection PyPep8Naming
 def test_db_edit_movie_handles_NoResultFound_for_missing_tag(monkeypatch):
-    exception = databasehandlers.tables.NoResultFound()
-    exc_context = databasehandlers.tables.TAG_NOT_FOUND
+    exception = handlers.database.tables.NoResultFound()
+    exc_context = handlers.database.tables.TAG_NOT_FOUND
     edit_movie_exception_handler(exception, exc_context, monkeypatch)
 
 
 # noinspection PyPep8Naming
 def test_db_edit_movie_handles_NoResultFound_for_missing_movie(monkeypatch):
-    exception = databasehandlers.tables.NoResultFound()
-    exc_context = databasehandlers.tables.MOVIE_NOT_FOUND
+    exception = handlers.database.tables.NoResultFound()
+    exc_context = handlers.database.tables.MOVIE_NOT_FOUND
     edit_movie_exception_handler(exception, exc_context, monkeypatch)
 
 
 # noinspection PyPep8Naming
 def test_db_edit_movie_handles_IntegrityError_for_duplicate_movie(monkeypatch):
-    exception = databasehandlers.tables.IntegrityError("", "", Exception())
-    exc_context = databasehandlers.tables.MOVIE_EXISTS
+    exception = handlers.database.tables.IntegrityError("", "", Exception())
+    exc_context = handlers.database.tables.MOVIE_EXISTS
     edit_movie_exception_handler(exception, exc_context, monkeypatch)
 
 
 # noinspection PyPep8Naming
 def test_db_edit_movie_handles_IntegrityError_for_invalid_year(monkeypatch):
-    exception = databasehandlers.tables.IntegrityError("", "", Exception())
-    exc_context = databasehandlers.tables.INVALID_YEAR
+    exception = handlers.database.tables.IntegrityError("", "", Exception())
+    exc_context = handlers.database.tables.INVALID_YEAR
     edit_movie_exception_handler(exception, exc_context, monkeypatch)
 
 
@@ -366,19 +368,19 @@ def edit_movie_exception_handler(
 
     # Patch call to database
     db_edit_movie = MagicMock(name="db_edit_movie")
-    monkeypatch.setattr(databasehandlers.tables, "edit_movie", db_edit_movie)
+    monkeypatch.setattr(handlers.database.tables, "edit_movie", db_edit_movie)
     db_edit_movie.side_effect = exception
     db_edit_movie.side_effect.__notes__ = [exc_context, "Note 2", "Note 3"]
 
-    # Patch call to databasehandlers.gui_edit_movie
+    # Patch call to handlers.database.gui_edit_movie
     gui_edit_movie = MagicMock(name="gui_edit_movie")
-    monkeypatch.setattr(databasehandlers, "gui_edit_movie", gui_edit_movie)
+    monkeypatch.setattr(handlers.database, "gui_edit_movie", gui_edit_movie)
 
     # Patch call to messagebox
     exc_messagebox = MagicMock(name="exc_messagebox")
-    monkeypatch.setattr(databasehandlers, "_exc_messagebox", exc_messagebox)
+    monkeypatch.setattr(handlers.database, "_exc_messagebox", exc_messagebox)
 
-    databasehandlers.db_edit_movie(old_movie, new_movie)
+    handlers.database.db_edit_movie(old_movie, new_movie)
 
     with check:
         exc_messagebox.assert_called_once_with(db_edit_movie.side_effect)
@@ -396,10 +398,10 @@ def test_exc_messagebox_with_one_note(messagebox, config_current):
         raise Exception
     except Exception as exc:
         exc.add_note(item_1)
-        databasehandlers._exc_messagebox(exc)
+        handlers.database._exc_messagebox(exc)
 
     messagebox.assert_called_once_with(
-        databasehandlers.config.current.tk_root,
+        handlers.database.config.current.tk_root,
         message=item_1,
     )
 
@@ -415,10 +417,10 @@ def test_exc_messagebox_with_multiple_notes(messagebox, config_current):
         exc.add_note(item_1)
         exc.add_note(item_2)
         exc.add_note(item_3)
-        databasehandlers._exc_messagebox(exc)
+        handlers.database._exc_messagebox(exc)
 
     messagebox.assert_called_once_with(
-        databasehandlers.config.current.tk_root,
+        handlers.database.config.current.tk_root,
         message=item_1,
         detail=f"{item_2}, {item_3}.",
     )
@@ -427,12 +429,12 @@ def test_exc_messagebox_with_multiple_notes(messagebox, config_current):
 def test_db_delete_movie_callback(monkeypatch):
     title = "test_delete_movie_callback title"
     year = 42
-    movie = databasehandlers.config.FindMovieTypedDict(title=title, year=[str(year)])
+    movie = handlers.database.config.FindMovieTypedDict(title=title, year=[str(year)])
     movie_bag = MovieBag(title=title, year=MovieInteger(year))
     delete_movie = MagicMock(name="delete movie")
-    monkeypatch.setattr(databasehandlers.tables, "delete_movie", delete_movie)
+    monkeypatch.setattr(handlers.database.tables, "delete_movie", delete_movie)
 
-    databasehandlers.db_delete_movie(movie)
+    handlers.database.db_delete_movie(movie)
 
     delete_movie.assert_called_once_with(movie_bag=movie_bag)
 
@@ -444,13 +446,13 @@ def test_db_select_movies(monkeypatch):
     movie_bag = MovieBag(title=title, year=MovieInteger(year))
 
     select_movie = MagicMock(name="select_movie")
-    monkeypatch.setattr(databasehandlers.tables, "select_movie", select_movie)
+    monkeypatch.setattr(handlers.database.tables, "select_movie", select_movie)
     select_movie.return_value = movie_bag
 
     gui_edit_movie = MagicMock(name="gui_edit_movie")
-    monkeypatch.setattr(databasehandlers, "gui_edit_movie", gui_edit_movie)
+    monkeypatch.setattr(handlers.database, "gui_edit_movie", gui_edit_movie)
 
-    databasehandlers.db_select_movies(movie)
+    handlers.database.db_select_movies(movie)
 
     with check:
         select_movie.assert_called_once_with(movie_bag=movie_bag)
@@ -464,18 +466,18 @@ def test_db_select_movies_handles_missing_movie_exception(
     title = "test title for test_select_movie_callback"
     year = 42
     movie = config.MovieKeyTypedDict(title=title, year=year)
-    notes_0 = databasehandlers.tables.MOVIE_NOT_FOUND
+    notes_0 = handlers.database.tables.MOVIE_NOT_FOUND
     notes_1 = "note 1"
     notes_2 = "note 2"
     select_movie = MagicMock(name="select_movie")
-    select_movie.side_effect = databasehandlers.tables.NoResultFound()
+    select_movie.side_effect = handlers.database.tables.NoResultFound()
     select_movie.side_effect.__notes__ = [notes_0, notes_1, notes_2]
-    monkeypatch.setattr(databasehandlers.tables, "select_movie", select_movie)
+    monkeypatch.setattr(handlers.database.tables, "select_movie", select_movie)
 
-    databasehandlers.db_select_movies(movie)
+    handlers.database.db_select_movies(movie)
 
     messagebox.assert_called_once_with(
-        databasehandlers.config.current.tk_root,
+        handlers.database.config.current.tk_root,
         message=notes_0,
         detail=f"{notes_1}, {notes_2}.",
     )
@@ -483,45 +485,45 @@ def test_db_select_movies_handles_missing_movie_exception(
 
 def test_gui_add_tag(monkeypatch, config_current):
     add_tag_gui = MagicMock(name="add_tag_gui")
-    monkeypatch.setattr(databasehandlers.guiwidgets_2, "AddTagGUI", add_tag_gui)
+    monkeypatch.setattr(handlers.database.guiwidgets_2, "AddTagGUI", add_tag_gui)
 
-    databasehandlers.gui_add_tag()
+    handlers.database.gui_add_tag()
 
     add_tag_gui.assert_called_once_with(
-        config.current.tk_root, add_tag_callback=databasehandlers.db_add_tag
+        config.current.tk_root, add_tag_callback=handlers.database.db_add_tag
     )
 
 
 def test_gui_search_tag(monkeypatch, config_current):
     search_tag_gui = MagicMock(name="search_tag_gui")
     monkeypatch.setattr(
-        databasehandlers.guiwidgets_2,
+        handlers.database.guiwidgets_2,
         "SearchTagGUI",
         search_tag_gui,
     )
 
-    databasehandlers.gui_search_tag()
+    handlers.database.gui_search_tag()
 
     search_tag_gui.assert_called_once_with(
         config.current.tk_root,
-        search_tag_callback=databasehandlers.db_match_tags,
+        search_tag_callback=handlers.database.db_match_tags,
     )
 
 
 def test_gui_edit_tag(monkeypatch, config_current):
     widget_edit_tag = MagicMock(name="widget_edit_tag")
-    monkeypatch.setattr(databasehandlers.guiwidgets_2, "EditTagGUI", widget_edit_tag)
+    monkeypatch.setattr(handlers.database.guiwidgets_2, "EditTagGUI", widget_edit_tag)
     tag = "old_tag"
     partial = MagicMock(name="partial")
-    monkeypatch.setattr(databasehandlers, "partial", partial)
+    monkeypatch.setattr(handlers.database, "partial", partial)
 
-    databasehandlers.gui_edit_tag(tag)
+    handlers.database.gui_edit_tag(tag)
 
     check.equal(
         partial.mock_calls,
         [
-            call(databasehandlers.db_edit_tag, tag),
-            call(databasehandlers.db_delete_tag, tag),
+            call(handlers.database.db_edit_tag, tag),
+            call(handlers.database.db_delete_tag, tag),
         ],
     )
     with check:
@@ -535,14 +537,14 @@ def test_gui_edit_tag(monkeypatch, config_current):
 
 def test_gui_select_tag(monkeypatch, config_current):
     select_tag_gui = MagicMock(name="select_tag_gui")
-    monkeypatch.setattr(databasehandlers.guiwidgets_2, "SelectTagGUI", select_tag_gui)
+    monkeypatch.setattr(handlers.database.guiwidgets_2, "SelectTagGUI", select_tag_gui)
     tags = {"tag 1", "tag 2"}
 
-    databasehandlers.gui_select_tag(tags=tags)
+    handlers.database.gui_select_tag(tags=tags)
 
     select_tag_gui.assert_called_once_with(
         config.current.tk_root,
-        select_tag_callback=databasehandlers.gui_edit_tag,
+        select_tag_callback=handlers.database.gui_edit_tag,
         tags_to_show=list(tags),
     )
 
@@ -550,55 +552,55 @@ def test_gui_select_tag(monkeypatch, config_current):
 def test_db_add_tag(monkeypatch):
     tag_text = "test_add_tag_callback"
     add_tag = MagicMock(name="add_tag")
-    monkeypatch.setattr(databasehandlers.tables, "add_tag", add_tag)
+    monkeypatch.setattr(handlers.database.tables, "add_tag", add_tag)
 
-    databasehandlers.db_add_tag(tag_text)
+    handlers.database.db_add_tag(tag_text)
 
     add_tag.assert_called_once_with(tag_text=tag_text)
 
 
 def test_db_match_tags_finding_nothing(monkeypatch, config_current):
     messagebox = MagicMock(name="messagebox")
-    monkeypatch.setattr(databasehandlers.guiwidgets_2, "gui_messagebox", messagebox)
+    monkeypatch.setattr(handlers.database.guiwidgets_2, "gui_messagebox", messagebox)
     gui_search_tag = MagicMock(name="gui_search_tag")
-    monkeypatch.setattr(databasehandlers, "gui_search_tag", gui_search_tag)
+    monkeypatch.setattr(handlers.database, "gui_search_tag", gui_search_tag)
     match_tags = MagicMock(name="match_tags")
     match_tags.return_value = {}
-    monkeypatch.setattr(databasehandlers.tables, "match_tags", match_tags)
+    monkeypatch.setattr(handlers.database.tables, "match_tags", match_tags)
     match = "match pattern"
 
-    databasehandlers.db_match_tags(match)
+    handlers.database.db_match_tags(match)
 
     messagebox.assert_called_once_with(
-        config.current.tk_root, message=databasehandlers.tables.TAG_NOT_FOUND
+        config.current.tk_root, message=handlers.database.tables.TAG_NOT_FOUND
     )
     gui_search_tag.assert_called_once_with(prepopulate=match)
 
 
 def test_db_match_tags_finding_one_match(monkeypatch, config_current):
     gui_edit_tag = MagicMock(name="gui_edit_tag")
-    monkeypatch.setattr(databasehandlers, "gui_edit_tag", gui_edit_tag)
+    monkeypatch.setattr(handlers.database, "gui_edit_tag", gui_edit_tag)
     match_tags = MagicMock(name="match_tags")
     tag_found = "tag_found"
     match_tags.return_value = {tag_found}
-    monkeypatch.setattr(databasehandlers.tables, "match_tags", match_tags)
+    monkeypatch.setattr(handlers.database.tables, "match_tags", match_tags)
     match = "Something, anything"
 
-    databasehandlers.db_match_tags(match)
+    handlers.database.db_match_tags(match)
 
     gui_edit_tag.assert_called_once_with(tag_found, prepopulate=match)
 
 
 def test_db_match_tags_finding_multiple_matches(monkeypatch, config_current):
     gui_select_tag = MagicMock(name="gui_select_tag")
-    monkeypatch.setattr(databasehandlers, "gui_select_tag", gui_select_tag)
+    monkeypatch.setattr(handlers.database, "gui_select_tag", gui_select_tag)
     tags = {"tag 1", "tag 2"}
     match_tags = MagicMock(name="match_tags")
     match_tags.return_value = tags
-    monkeypatch.setattr(databasehandlers.tables, "match_tags", match_tags)
+    monkeypatch.setattr(handlers.database.tables, "match_tags", match_tags)
     match = "match pattern"
 
-    databasehandlers.db_match_tags(match)
+    handlers.database.db_match_tags(match)
 
     gui_select_tag.assert_called_once_with(tags=tags)
 
@@ -607,9 +609,9 @@ def test_db_edit_tag(monkeypatch):
     old_tag_text = "old_tag_text"
     new_tag_text = "new_tag_text"
     db_edit_tag = MagicMock(name="db_edit_tag")
-    monkeypatch.setattr(databasehandlers.tables, "edit_tag", db_edit_tag)
+    monkeypatch.setattr(handlers.database.tables, "edit_tag", db_edit_tag)
 
-    databasehandlers.db_edit_tag(old_tag_text, new_tag_text)
+    handlers.database.db_edit_tag(old_tag_text, new_tag_text)
 
     db_edit_tag.assert_called_once_with(
         old_tag_text=old_tag_text, new_tag_text=new_tag_text
@@ -621,18 +623,18 @@ def test_db_edit_tag_with_old_tag_not_found(monkeypatch, messagebox, config_curr
     old_tag_text = "old_tag_text"
     new_tag_text = notes_1 = "new_tag_text"
     db_edit_tag = MagicMock(name="db_edit_tag")
-    monkeypatch.setattr(databasehandlers.tables, "edit_tag", db_edit_tag)
-    db_edit_tag.side_effect = databasehandlers.tables.NoResultFound
-    notes_0 = databasehandlers.tables.TAG_NOT_FOUND
+    monkeypatch.setattr(handlers.database.tables, "edit_tag", db_edit_tag)
+    db_edit_tag.side_effect = handlers.database.tables.NoResultFound
+    notes_0 = handlers.database.tables.TAG_NOT_FOUND
     db_edit_tag.side_effect.__notes__ = [notes_0, notes_1]
     gui_search_tag = MagicMock(name="gui_search_tag")
-    monkeypatch.setattr(databasehandlers, "gui_search_tag", gui_search_tag)
+    monkeypatch.setattr(handlers.database, "gui_search_tag", gui_search_tag)
 
-    databasehandlers.db_edit_tag(old_tag_text, new_tag_text)
+    handlers.database.db_edit_tag(old_tag_text, new_tag_text)
 
     with check:
         messagebox.assert_called_once_with(
-            databasehandlers.config.current.tk_root,
+            handlers.database.config.current.tk_root,
             message=notes_0,
             detail=f"{notes_1}.",
         )
@@ -646,22 +648,22 @@ def test_db_edit_tag_with_duplicate_new_tag(monkeypatch, messagebox, config_curr
     old_tag_text = "old_tag_text"
     new_tag_text = notes_1 = "new_tag_text"
     db_edit_tag = MagicMock(name="db_edit_tag")
-    monkeypatch.setattr(databasehandlers.tables, "edit_tag", db_edit_tag)
-    db_edit_tag.side_effect = databasehandlers.tables.IntegrityError(
+    monkeypatch.setattr(handlers.database.tables, "edit_tag", db_edit_tag)
+    db_edit_tag.side_effect = handlers.database.tables.IntegrityError(
         "",
         "",
         Exception(),
     )
-    notes_0 = databasehandlers.tables.TAG_EXISTS
+    notes_0 = handlers.database.tables.TAG_EXISTS
     db_edit_tag.side_effect.__notes__ = [notes_0, notes_1]
 
     # Act
-    databasehandlers.db_edit_tag(old_tag_text, new_tag_text)
+    handlers.database.db_edit_tag(old_tag_text, new_tag_text)
 
     # Assert
     with check:
         messagebox.assert_called_once_with(
-            databasehandlers.config.current.tk_root,
+            handlers.database.config.current.tk_root,
             message=notes_0,
             detail=f"{notes_1}.",
         )
@@ -670,9 +672,9 @@ def test_db_edit_tag_with_duplicate_new_tag(monkeypatch, messagebox, config_curr
 def test_db_delete_tag(monkeypatch):
     tag_text = "tag_text"
     delete_tag = MagicMock(name="delete_tag")
-    monkeypatch.setattr(databasehandlers.tables, "delete_tag", delete_tag)
+    monkeypatch.setattr(handlers.database.tables, "delete_tag", delete_tag)
 
-    databasehandlers.db_delete_tag(tag_text)
+    handlers.database.db_delete_tag(tag_text)
 
     delete_tag.assert_called_once_with(tag_text=tag_text)
 
@@ -680,26 +682,26 @@ def test_db_delete_tag(monkeypatch):
 def test_gui_edit_movie(monkeypatch, config_current, test_tags):
     widget_edit_movie = MagicMock(name="widget_edit_movie")
     monkeypatch.setattr(
-        databasehandlers.guiwidgets_2, "EditMovieGUI", widget_edit_movie
+        handlers.database.guiwidgets_2, "EditMovieGUI", widget_edit_movie
     )
     db_edit_movie = MagicMock(name="db_edit_movie")
-    monkeypatch.setattr(databasehandlers, "db_edit_movie", db_edit_movie)
+    monkeypatch.setattr(handlers.database, "db_edit_movie", db_edit_movie)
     old_movie = MovieKeyTypedDict(title="test gui movie title", year=42)
     partial = MagicMock(name="partial")
-    monkeypatch.setattr(databasehandlers, "partial", partial)
+    monkeypatch.setattr(handlers.database, "partial", partial)
 
-    databasehandlers.gui_edit_movie(old_movie)
+    handlers.database.gui_edit_movie(old_movie)
 
     with check:
         partial.assert_called_once_with(db_edit_movie, old_movie)
     with check:
         widget_edit_movie.assert_called_once_with(
             config.current.tk_root,
-            databasehandlers._tmdb_io_handler,
-            list(databasehandlers.tables.select_all_tags()),
+            handlers.sundries._tmdb_io_handler,
+            list(handlers.database.tables.select_all_tags()),
             prepopulate=None,
             edit_movie_callback=partial(),
-            delete_movie_callback=databasehandlers.db_delete_movie,
+            delete_movie_callback=handlers.database.db_delete_movie,
         )
 
 
@@ -710,12 +712,12 @@ def config_current(monkeypatch):
     Args:
         monkeypatch:
     """
-    monkeypatch.setattr(databasehandlers.config, "current", MagicMock(name="current"))
+    monkeypatch.setattr(handlers.database.config, "current", MagicMock(name="current"))
 
 
 @pytest.fixture(scope="function")
 def test_tags(monkeypatch):
-    """This fixture mocks a call to databasehandlers.tables.select_all_tags and
+    """This fixture mocks a call to handlers.database.tables.select_all_tags and
     returns a set of test tags.
 
     Args:
@@ -726,7 +728,7 @@ def test_tags(monkeypatch):
     """
     test_tags = {"tag 1", "tag 2", "tag 3"}
     mock_select_tags = MagicMock(name="mock_select_tags", return_value=test_tags)
-    monkeypatch.setattr(databasehandlers.tables, "select_all_tags", mock_select_tags)
+    monkeypatch.setattr(handlers.database.tables, "select_all_tags", mock_select_tags)
     return test_tags
 
 
@@ -757,7 +759,7 @@ def new_movie():
     new_duration = "142"
     new_notes = "New Notes"
     new_movie_tags = ["new", "movie", "tags"]
-    return databasehandlers.MovieTD(
+    return handlers.database.MovieTD(
         title=new_title,
         year=new_year,
         director=new_director,
@@ -769,14 +771,14 @@ def new_movie():
 
 @pytest.fixture(scope="function")
 def messagebox(monkeypatch):
-    """This fixture patches databasehandlers.guiwidgets_2.gui_messagebox
+    """This fixture patches handlers.database.guiwidgets_2.gui_messagebox
 
     Args:
         monkeypatch:
 
     Returns:
-        A mock of databasehandlers.guiwidgets_2.gui_messagebox
+        A mock of handlers.database.guiwidgets_2.gui_messagebox
     """
     mock = MagicMock(name="messagebox")
-    monkeypatch.setattr(databasehandlers.guiwidgets_2, "gui_messagebox", mock)
+    monkeypatch.setattr(handlers.database.guiwidgets_2, "gui_messagebox", mock)
     return mock

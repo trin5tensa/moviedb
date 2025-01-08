@@ -1,7 +1,7 @@
 """."""
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/25/24, 7:06 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/8/25, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,4 +13,4 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from database_src import schema, environment, tables, update
+from . import schema, environment, tables, update

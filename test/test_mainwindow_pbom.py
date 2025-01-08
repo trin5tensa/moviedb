@@ -4,7 +4,7 @@ This module contains new tests written after Brian Okken's course and book on py
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/2/25, 7:08 AM by stephen.
+#  Last modified 1/8/25, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -36,7 +36,7 @@ class TestMainWindow:
         )
         monkeypatch.setattr(mainwindow.MainWindow, "place_menubar", MagicMock())
         monkeypatch.setattr(
-            mainwindow.gui_handlers.sundries,
+            mainwindow.handlers.sundries,
             "EscapeKeyDict",
             mock_escape_key_dict := MagicMock(),
         )
@@ -76,7 +76,7 @@ class TestMainWindow:
                         call("tk::mac::Quit", cut.tk_shutdown),
                         call(
                             "tk::mac::ShowPreferences",
-                            mainwindow.gui_handlers.sundries.settings_dialog,
+                            mainwindow.handlers.sundries.settings_dialog,
                         ),
                     ]
                 )
@@ -103,12 +103,12 @@ class TestMainWindow:
                     [
                         call.add_command(
                             label="About " + TEST_TITLE + "…",
-                            command=mainwindow.gui_handlers.sundries.about_dialog,
+                            command=mainwindow.handlers.sundries.about_dialog,
                         ),
                         call.add_separator(),
                         call.add_command(
                             label="Settings for Moviedb…",
-                            command=mainwindow.gui_handlers.sundries.settings_dialog,
+                            command=mainwindow.handlers.sundries.settings_dialog,
                         ),
                         call.add_separator(),
                         call.add_command(label="Quit Moviedb", command=cut.tk_shutdown),
@@ -146,32 +146,32 @@ class TestMainWindow:
                     [
                         call.add_command(
                             label="Add Movie…",
-                            command=mainwindow.gui_handlers.databasehandlers.gui_add_movie,
+                            command=mainwindow.handlers.database.gui_add_movie,
                         ),
                         call.add_command(
                             label="Edit Movie…",
-                            command=mainwindow.gui_handlers.databasehandlers.gui_search_movie,
+                            command=mainwindow.handlers.database.gui_search_movie,
                         ),
                         call.add_command(
                             label="View Movie…",
-                            command=mainwindow.gui_handlers.databasehandlers.gui_search_movie,
+                            command=mainwindow.handlers.database.gui_search_movie,
                         ),
                         call.add_command(
                             label="Delete Movie…",
-                            command=mainwindow.gui_handlers.databasehandlers.gui_search_movie,
+                            command=mainwindow.handlers.database.gui_search_movie,
                         ),
                         call.add_separator(),
                         call.add_command(
                             label="Add Tag…",
-                            command=mainwindow.gui_handlers.databasehandlers.gui_add_tag,
+                            command=mainwindow.handlers.database.gui_add_tag,
                         ),
                         call.add_command(
                             label="Edit Tag…",
-                            command=mainwindow.gui_handlers.databasehandlers.gui_search_tag,
+                            command=mainwindow.handlers.database.gui_search_tag,
                         ),
                         call.add_command(
                             label="Delete Tag…",
-                            command=mainwindow.gui_handlers.databasehandlers.gui_search_tag,
+                            command=mainwindow.handlers.database.gui_search_tag,
                         ),
                     ]
                 )

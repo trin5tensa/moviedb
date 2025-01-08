@@ -32,8 +32,8 @@ The functionally redundant database knowledge within the GUI will be
 removed as part of the next GUI upgrade.
 """
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/26/24, 11:22 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/8/25, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -45,4 +45,5 @@ removed as part of the next GUI upgrade.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from gui_handlers import sundries, databasehandlers
+
+from handlers import sundries, database, moviebagfacade

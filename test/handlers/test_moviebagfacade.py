@@ -5,8 +5,8 @@ reflects the changes to sundries.py needed to support the changed API of
 the DBv1 database.
 """
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/31/24, 1:01 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/8/25, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,7 +21,7 @@ the DBv1 database.
 
 import config
 from globalconstants import *
-from gui_handlers import moviebagfacade
+from handlers import moviebagfacade
 
 
 def test_convert_from_movie_key_typed_dict():
