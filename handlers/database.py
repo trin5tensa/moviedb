@@ -1,9 +1,7 @@
-"""Menu handlers.
+"""Menu handlers for the database."""
 
-This module is the glue between the user's selection of a menu item and the gui."""
-
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/21/24, 1:31 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/8/25, 1:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,10 +22,10 @@ import logging
 import guiwidgets
 import guiwidgets_2
 from config import MovieKeyTypedDict
-from database_src import tables
+from database import tables
 from globalconstants import MovieTD, MovieBag, MovieInteger
-from gui_handlers import moviebagfacade
-from gui_handlers.handlers import _tmdb_io_handler
+from handlers import moviebagfacade
+from handlers.sundries import _tmdb_io_handler
 
 
 TITLE_AND_YEAR_EXISTS_MSG = (
@@ -48,6 +46,8 @@ def gui_add_movie(*, prepopulate: MovieBag = None):
             This argument can be used to prepopulate the movie widget. This
             is useful if the initial attempt to add a movie caused an
             exception. It gives the user the opportunity to fix input errors.
+            If present, the item "prepopulate['movie_tags']" contains the
+            tag selection.
     """
     all_tags = tables.select_all_tags()
     guiwidgets_2.AddMovieGUI(
@@ -77,24 +77,35 @@ def gui_search_movie(*, prepopulate: MovieBag = None):
     guiwidgets.SearchMovieGUI(config.current.tk_root, db_match_movies, list(all_tags))
 
 
+def gui_select_movie(*, movies: list[config.MovieUpdateDef]):
+    """Presents a user dialog for selecting a movie from a list.
+
+    Args:
+        movies:
+    """
+    guiwidgets.SelectMovieGUI(config.current.tk_root, movies, db_select_movies)
+
+
 def gui_edit_movie(
     old_movie: config.MovieKeyTypedDict, *, prepopulate: MovieBag = None
 ):
     """Presents a GUI form for editing movies from the database.
 
     Args:
-        old_movie:
+        old_movie: The old movie will be retrieved from the database and
+            updated.
         prepopulate:
             This argument can be used to prepopulate the movie widget. This
             is useful if the initial attempt to edit a movie caused an
-            exception. It gives the user the opportunity to fix
-            input errors.
+            exception. It gives the user the opportunity to fix input errors.
+            If present, the item "prepopulate['movie_tags']" contains the
+            tag selection.
     """
+    all_tags = tables.select_all_tags()
     guiwidgets_2.EditMovieGUI(
         config.current.tk_root,
         _tmdb_io_handler,
-        list(tables.select_all_tags()),
-        old_movie=config.MovieUpdateDef(**old_movie),
+        list(all_tags),
         prepopulate=prepopulate,
         edit_movie_callback=partial(db_edit_movie, old_movie),
         delete_movie_callback=db_delete_movie,
@@ -169,8 +180,8 @@ def db_match_movies(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
         case 1:
             # Presents an Edit/View/Delete window to user
             movie_bag = movies_found[0]
-            movie = moviebagfacade.convert_to_movie_key_typed_dict(movie_bag)
-            gui_edit_movie(movie)
+            movie = moviebagfacade.convert_to_movie_update_def(movie_bag)
+            gui_edit_movie(movie, prepopulate=movie_bag)
 
         case _:
             # Presents a selection window showing the multiple compliant movies.
@@ -178,7 +189,7 @@ def db_match_movies(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
                 moviebagfacade.convert_to_movie_update_def(movie_bag)
                 for movie_bag in movies_found
             ]  # pragma nocover
-            guiwidgets.SelectMovieGUI(config.current.tk_root, movies, db_select_movies)
+            gui_select_movie(movies=movies)
 
 
 def db_select_movies(movie: MovieKeyTypedDict):
@@ -278,6 +289,19 @@ def gui_search_tag(*, prepopulate: str = None):
     )
 
 
+def gui_select_tag(*, tags: set[str]):
+    """Presents a user dialog for selecting a tag from a list.
+
+    Args:
+        tags:
+    """
+    guiwidgets_2.SelectTagGUI(
+        config.current.tk_root,
+        select_tag_callback=gui_edit_tag,
+        tags_to_show=list(tags),
+    )
+
+
 # noinspection PyUnusedLocal
 def gui_edit_tag(tag: str, *, prepopulate: str = None):
     """Presents a GUI form for editing tags.
@@ -335,11 +359,7 @@ def db_match_tags(match: str):
         gui_edit_tag(tag, prepopulate=match)
 
     else:
-        guiwidgets_2.SelectTagGUI(
-            config.current.tk_root,
-            select_tag_callback=gui_edit_tag,
-            tags_to_show=list(tags),
-        )
+        gui_select_tag(tags=tags)
 
 
 def db_delete_tag(tag_text: str):

@@ -1,7 +1,7 @@
 """Main Window."""
 
-#  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/22/24, 7:44 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/8/25, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from typing import Tuple
 
 import config
+
 import handlers
 
 
@@ -47,10 +48,14 @@ class MainWindow:
         self.place_menubar()
 
         # Set up handling of <Escape> and <Command-.>
-        config.current.escape_key_dict = escape_key_dict = handlers.EscapeKeyDict()
+        config.current.escape_key_dict = escape_key_dict = (
+            handlers.sundries.EscapeKeyDict()
+        )
+        # noinspection PyTypeChecker
         self.parent.bind_all(
             key := "<Escape>", escape_key_dict.escape(self.parent, key)
         )
+        # noinspection PyTypeChecker
         self.parent.bind_all(
             key := "<Command-.>", escape_key_dict.escape(self.parent, key)
         )
@@ -117,23 +122,31 @@ class MainWindow:
         return str(length), f"{offset:+}"
 
     def place_menubar(self):
+        # noinspection GrazieInspection
         """Create menubar and menu items.
 
         An unorthodox menu design.
-        The apple menu (aka 'the application menu' but not the apple icon menu) always takes the name of the binary
-        which is 'Python'. The only way around this is to rename the binary. The solution adopted here is to accept
-        the now inevitable 'Python' menu following the apple icon menu. This is ameliorated with a third 'Moviedb'
-        application menu. The 'Moviedb' menu has the items 'About…', 'Settings…', and 'Quit. Neither the 'Quit' nor
-        the 'Settings…' items will accept the standard accelerator keys of <Command-Q> or <Command-,> presumably
-        because these are reserved for the 'Python' menu. For that reason these two accelerator keys have been
-        attached to the 'Python' menu with 'tk::mac::Quit' and 'tk::mac::ShowPreferences'.
+        The Apple menu (aka 'the application menu' but not the Apple icon
+        menu) always takes the name of the binary which is 'Python'. The
+        only way around this is to rename the binary. The solution adopted
+        here is to accept the now inevitable 'Python' menu following the
+        Apple icon menu. This is ameliorated with a third 'Moviedb'
+        application menu. The 'Moviedb' menu has the items 'About…',
+        'Settings…', and 'Quit. Neither the 'Quit' nor the 'Settings…'
+        items will accept the standard accelerator keys of <Command-Q> or
+        <Command-,> presumably because these are reserved for the 'Python'
+        menu. For that reason, these two accelerator keys have been attached
+        to the 'Python' menu with 'tk::mac::Quit' and
+        'tk::mac::ShowPreferences'.
 
         tk_shutdown is Moviedb's final cleanup function.
-        The quit accelerator is particularly important as Moviedb's shutdown procedure would not be invoked if the
-        user presses <Command-Q>. Of the four different ways of quitting a program which are <Command-Q>,
-        Application menu item 'Quit', dock application popup, and close box (red 'x' button at top of window);
-        only the first three are intercepted by the command tk::mac::Quit. The close box is intercepted by the
-        protocol 'WM_DELETE_WINDOW'.
+        The quit accelerator is particularly important as Moviedb's shutdown
+        procedure would not be invoked if the user presses <Command-Q>. Of
+        the four different ways of quitting a program which are <Command-Q>,
+        Application menu item 'Quit', dock application popup, and close box
+        (red 'x' button at top of window); only the first three are
+        intercepted by the command tk::mac::Quit. The close box is
+        intercepted by the protocol 'WM_DELETE_WINDOW'.
         """
         self.parent.option_add("*tearOff", False)
         # Intercepts the window close button (red 'x')
@@ -141,18 +154,21 @@ class MainWindow:
         # Intercepts the <Command-Q> key press, the application menu item 'Quit',
         # and the dock application popup 'Quit' item.
         self.parent.createcommand("tk::mac::Quit", self.tk_shutdown)
-        self.parent.createcommand("tk::mac::ShowPreferences", handlers.settings_dialog)
+        self.parent.createcommand(
+            "tk::mac::ShowPreferences", handlers.sundries.settings_dialog
+        )
         self.menubar = tk.Menu(self.parent)
 
         self.moviedb_menu = tk.Menu(self.menubar)
         self.menubar.add_cascade(menu=self.moviedb_menu, label="Moviedb")
         self.moviedb_menu.add_command(
             label="About " + config.persistent.program_name + "…",
-            command=handlers.about_dialog,
+            command=handlers.sundries.about_dialog,
         )
         self.moviedb_menu.add_separator()
         self.moviedb_menu.add_command(
-            label="Settings for Moviedb…", command=handlers.settings_dialog
+            label="Settings for Moviedb…",
+            command=handlers.sundries.settings_dialog,
         )
         self.moviedb_menu.add_separator()
         self.moviedb_menu.add_command(label="Quit Moviedb", command=self.tk_shutdown)
@@ -161,37 +177,54 @@ class MainWindow:
         self.menubar.add_cascade(menu=self.edit_menu, label="Edit")
         self.cut_command = lambda: self.parent.focus_get().event_generate(
             "<<Cut>>"
-        )  # pragma no branch
+        )  # pragma nocover
         self.edit_menu.add_command(
             label="Cut", command=self.cut_command, accelerator="Command+X"
-        )
-        self.copy_command = lambda: self.parent.focus_get().event_generate(
-            "<<Copy>>"
-        )  # pragma no branch
+        )  # pragma nocover
+        self.copy_command = lambda: self.parent.focus_get().event_generate("<<Copy>>")
         self.edit_menu.add_command(
             label="Copy", command=self.copy_command, accelerator="Command+C"
-        )
-        self.paste_command = lambda: self.parent.focus_get().event_generate(
-            "<<Paste>>"
-        )  # pragma no branch
+        )  # pragma nocover
+        self.paste_command = lambda: self.parent.focus_get().event_generate("<<Paste>>")
         self.edit_menu.add_command(
             label="Paste", command=self.paste_command, accelerator="Command+V"
-        )
+        )  # pragma nocover
         self.clear_command = lambda: self.parent.focus_get().event_generate(
-            "<<Clear>>"
-        )  # pragma no branch
+            "<<Clear>>",
+        )  # pragma nocover
         self.edit_menu.add_command(label="Clear", command=self.clear_command)
 
         self.movie_menu = tk.Menu(self.menubar)
         self.menubar.add_cascade(menu=self.movie_menu, label="Movie")
-        self.movie_menu.add_command(label="Add Movie…", command=handlers.add_movie)
-        self.movie_menu.add_command(label="Edit Movie…", command=handlers.edit_movie)
-        self.movie_menu.add_command(label="View Movie…", command=handlers.edit_movie)
-        self.movie_menu.add_command(label="Delete Movie…", command=handlers.edit_movie)
+        self.movie_menu.add_command(
+            label="Add Movie…",
+            command=handlers.database.gui_add_movie,
+        )
+        self.movie_menu.add_command(
+            label="Edit Movie…",
+            command=handlers.database.gui_search_movie,
+        )
+        self.movie_menu.add_command(
+            label="View Movie…",
+            command=handlers.database.gui_search_movie,
+        )
+        self.movie_menu.add_command(
+            label="Delete Movie…",
+            command=handlers.database.gui_search_movie,
+        )
         self.movie_menu.add_separator()
-        self.movie_menu.add_command(label="Add Tag…", command=handlers.add_tag)
-        self.movie_menu.add_command(label="Edit Tag…", command=handlers.edit_tag)
-        self.movie_menu.add_command(label="Delete Tag…", command=handlers.edit_tag)
+        self.movie_menu.add_command(
+            label="Add Tag…",
+            command=handlers.database.gui_add_tag,
+        )
+        self.movie_menu.add_command(
+            label="Edit Tag…",
+            command=handlers.database.gui_search_tag,
+        )
+        self.movie_menu.add_command(
+            label="Delete Tag…",
+            command=handlers.database.gui_search_tag,
+        )
 
         self.window_menu = tk.Menu(self.menubar, name="window")
         self.menubar.add_cascade(menu=self.window_menu, label="Window")

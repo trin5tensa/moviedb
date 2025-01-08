@@ -4,8 +4,8 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/19/24, 10:33 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/2/25, 7:08 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -439,9 +439,9 @@ class SelectMovieGUI(MovieGUIBase):
                 text=movie["title"],
                 values=(
                     movie["year"],
-                    movie["director"],
-                    movie["minutes"],
-                    movie["notes"],
+                    movie.get("director", ""),
+                    movie.get("minutes", ""),
+                    movie.get("notes", ""),
                 ),
                 tags="title",
             )
@@ -469,8 +469,9 @@ class SelectMovieGUI(MovieGUIBase):
                 *args: Not used. Needed for compatibility with Tk:Tcl caller.
             """
             (item_id,) = tree.selection()
-            # noinspection PyArgumentList
-            self.callback(self.treeview_items[item_id])
+            # Return control to Tk/Tcl and delete this dialog *before*
+            #   running the callback.
+            self.parent.after(0, self.callback, self.treeview_items[item_id])
             self.destroy()
 
         return func

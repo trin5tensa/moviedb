@@ -1,7 +1,7 @@
 """Test module."""
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/2/24, 12:35 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/8/25, 1:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,8 +19,8 @@ from pytest_check import check
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.exc import NoResultFound
 
-from database_src import schema, tables
-from database_src.tables import sessionmaker
+from database import schema, tables
+from database.tables import sessionmaker
 from globalconstants import *
 
 TEST_DIRECTORS = {"Donald Director"}

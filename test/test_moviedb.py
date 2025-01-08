@@ -1,7 +1,7 @@
 """Tests for movie database."""
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/25/24, 10:31 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/8/25, 1:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,6 @@
 
 import io
 from contextlib import contextmanager
-from dataclasses import dataclass
 from functools import partial
 from typing import Tuple
 from unittest.mock import MagicMock
@@ -123,7 +122,7 @@ class TestStartUp:
         )
         connect_calls = []
         monkeypatch.setattr(
-            moviedb.database_src.environment,
+            moviedb.database.environment,
             "start_engine",
             lambda: connect_calls.append(True),
         )
@@ -192,7 +191,7 @@ class TestLoadConfigFile:
 def test_close_down(monkeypatch):
     delete_all_orphans = MagicMock(name="delete_all_orphans")
     monkeypatch.setattr(
-        moviedb.database_src.tables, "delete_all_orphans", delete_all_orphans
+        moviedb.database.tables, "delete_all_orphans", delete_all_orphans
     )
     save_config_file = MagicMock(name="save_config_file")
     monkeypatch.setattr(moviedb, "save_config_file", save_config_file)

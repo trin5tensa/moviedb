@@ -1,34 +1,7 @@
-"""Menu handlers.
+"""Sundry Menu handlers."""
 
-This module is the glue between the user's selection of a menu item and the gui.
-
-Historical Note 12/23/2024:
-This module was originally located at the top level of the movie project. It
-contained handler functions for every menu item, as they were not permitted
-to call any other module directly. It also contained the callbacks needed
-to complete tasks outside the scope of the called module.
-It was connecting everything to everything and was every bit as bad as that
-sounds.
-
-For example, the 'Add Movie' function needed to call a widget in the GUI
-module. It supplied a callback function to be used when the user
-clicked the 'Commit' button in the widget. The callback function further
-called a function in the database module to commit the record to the
-database. If the commit was successful, the process
-ended. If not, the database module function would raise an exception. This
-was handled within the GUI module, which meant the GUI module needed to have
-knowledge of the database module. This caused problems for a major
-database upgrade in late 2024.
-
-As part of the DB1 upgrade, all database 'knowledge' was moved to the
-database module and the new handlers.databasehandlers module. All functions
-and callbacks dealing with data that is bound for the database have been
-removed from this module and rewritten for the handlers.databasehandlers
-module.
-"""
-
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/23/24, 1:52 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/8/25, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or

@@ -1,7 +1,13 @@
-"""Database table functions."""
+"""Database table functions.
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/25/24, 10:31 AM by stephen.
+This module provides functions to interact with the database tables for the
+MovieDB application. It includes operations for selecting, adding, editing,
+and deleting movies and tags, as well as managing relationships between
+movies, tags, and people (directors and stars).
+"""
+
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/8/25, 1:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,10 +25,10 @@ from sqlalchemy import select, intersect
 from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
-from database_src import schema
+from database import schema
 from globalconstants import *
 
-MOVIE_NOT_FOUND = "This movie was not found."
+MOVIE_NOT_FOUND = "No matching movies were found."
 MOVIE_EXISTS = "This movie is already present in the database."
 INVALID_YEAR = "This year is likely incorrect."
 TAG_NOT_FOUND = "The tag was not found."
@@ -88,9 +94,9 @@ def select_all_movies() -> list[MovieBag]:
     """Selects and returns all movies."""
     with session_factory() as session:
         movies = _select_all_movies(session)
-        movie_bags = [
+        movie_bags = [  # pragma no branch
             _convert_to_movie_bag(movie) for movie in movies
-        ]  # pragma nocover
+        ]
     return movie_bags
 
 
@@ -135,9 +141,9 @@ def match_movies(match: MovieBag) -> list[MovieBag]:
     """
     with session_factory() as session:
         movies = _match_movies(session, match=match)
-        movie_bags = [
+        movie_bags = [  # pragma no branch
             _convert_to_movie_bag(movie) for movie in movies
-        ]  # pragma nocover
+        ]
     return movie_bags
 
 
@@ -179,8 +185,8 @@ def add_movie(*, movie_bag: MovieBag):
     try:
         with session_factory() as session:
             movie = _add_movie(movie_bag=movie_bag)
-            update_movie_relationships(movie, movie_bag, session)
             session.add(movie)
+            update_movie_relationships(movie, movie_bag, session)
             session.commit()
 
     except IntegrityError as exc:
@@ -386,7 +392,7 @@ def delete_all_orphans():
     with session_factory() as session:
         all_people = _select_all_people(session)
         count = _delete_orphans(session, candidates=all_people)
-        if count:  # pragma nocover
+        if count:  # pragma no branch
             logging.info(
                 f"{count} Orphan(s) were removed. "
                 f"They should have been removed before now."
@@ -398,7 +404,7 @@ def select_all_tags() -> set[str]:
     """Returns a list of all tag texts."""
     with session_factory() as session:
         tags = _select_all_tags(session)
-    return {tag.text for tag in tags}  # pragma nocover
+    return {tag.text for tag in tags}  # pragma no branch
 
 
 def match_tags(*, match: str) -> set[str]:
@@ -412,7 +418,7 @@ def match_tags(*, match: str) -> set[str]:
     """
     with session_factory() as session:
         tags = _match_tags(session, match=match)
-    return {tag.text for tag in tags}  # pragma nocover
+    return {tag.text for tag in tags}  # pragma no branch
 
 
 def add_tag(*, tag_text: str):
@@ -422,8 +428,9 @@ def add_tag(*, tag_text: str):
         tag_text:
     """
     try:
-        with session_factory() as session, session.begin():
+        with session_factory() as session:
             _add_tag(session, text=tag_text)
+            session.commit()
     except IntegrityError:
         # Identical tags are silently suppressed.
         pass
@@ -436,8 +443,9 @@ def add_tags(*, tag_texts: set[str]):
         tag_texts:
     """
     try:
-        with session_factory() as session, session.begin():
+        with session_factory() as session:
             _add_tags(session, texts=tag_texts)
+            session.commit()
     except IntegrityError:
         # Identical tags are silently suppressed.
         pass
@@ -466,7 +474,7 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
             new tag text.
     """
     try:
-        with session_factory() as session, session.begin():
+        with session_factory() as session:
             try:
                 tag = _select_tag(session, text=old_tag_text)
             except NoResultFound as exc:
@@ -476,6 +484,7 @@ def edit_tag(*, old_tag_text: str, new_tag_text: str):
                 raise
             else:
                 _edit_tag(tag=tag, replacement_text=new_tag_text)
+            session.commit()
 
     except IntegrityError as exc:
         logging.error(TAG_EXISTS, new_tag_text)
@@ -492,13 +501,14 @@ def delete_tag(*, tag_text: str):
     Args:
         tag_text:
     """
-    with session_factory() as session, session.begin():
+    with session_factory() as session:
         try:
             tag = _select_tag(session, text=tag_text)
         except NoResultFound:
             pass
         else:
             _delete_tag(session, tag=tag)
+        session.commit()
 
 
 def _select_movie(session: Session, *, movie_bag: MovieBag) -> schema.Movie:
@@ -580,7 +590,7 @@ def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | N
     statements = []
     for column, criteria in match.items():
         match column:
-            case "notes":  # pragma: nocover
+            case "notes":
                 statements.append(
                     select(schema.Movie).where(schema.Movie.notes.like(f"%{criteria}%"))
                 )
@@ -707,11 +717,11 @@ def _edit_movie(*, movie: schema.Movie, edit_fields: MovieBag):
                 movie.title = value
             case "year":
                 movie.year = int(value)
-            case "duration":  # pragma nocover
+            case "duration":  # pragma no branch
                 movie.duration = int(value)
-            case "synopsis":  # pragma nocover
+            case "synopsis":  # pragma no branch
                 movie.synopsis = value
-            case "notes":  # pragma nocover
+            case "notes":  # pragma no branch
                 movie.notes = value
 
 
@@ -752,13 +762,13 @@ def _convert_to_movie_bag(movie: schema.Movie) -> MovieBag:
     if movie.synopsis:
         movie_bag["synopsis"] = movie.synopsis
     if movie.stars:
-        movie_bag["stars"] = {person.name for person in movie.stars}  # pragma nocover
+        movie_bag["stars"] = {person.name for person in movie.stars}  # pragma no branch
     if movie.directors:
         movie_bag["directors"] = {
             person.name for person in movie.directors
         }  # pragma nocover
     if movie.tags:
-        movie_bag["movie_tags"] = {tag.text for tag in movie.tags}  # pragma nocover
+        movie_bag["movie_tags"] = {tag.text for tag in movie.tags}  # pragma no branch
 
     return movie_bag
 
@@ -939,8 +949,8 @@ def _add_tags(session: Session, *, texts: set[str]):
         session:
         texts:
     """
-    session.add_all(
-        [schema.Tag(text=tag) for tag in texts],  # pragma nocover
+    session.add_all(  # pragma no branch
+        [schema.Tag(text=tag) for tag in texts],
     )
 
 

@@ -1,12 +1,12 @@
 """test module.
 
 This module contains tests written after the major database upgrade and
-reflects the changes to handlers.py needed to support the changed API of
+reflects the changes to sundries.py needed to support the changed API of
 the DBv1 database.
 """
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 10/18/24, 2:25 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/8/25, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,7 +21,7 @@ the DBv1 database.
 
 import config
 from globalconstants import *
-from gui_handlers import moviebagfacade
+from handlers import moviebagfacade
 
 
 def test_convert_from_movie_key_typed_dict():
@@ -46,9 +46,9 @@ def test_convert_from_movie_td():
         title=title,
         year=year,
         director=director,
-        duration=duration,
+        minutes=duration,
         notes=notes,
-        movie_tags=tags,
+        tags=tags,
     )
 
     # noinspection PyUnresolvedReferences
@@ -60,8 +60,18 @@ def test_convert_from_movie_td():
         directors={director},
         duration=MovieInteger(duration),
         notes=notes,
+        synopsis=notes,
         movie_tags=set(tags),
     )
+
+
+def test_convert_from_movie_td_with_no_data():
+    movie = MovieTD()
+
+    # noinspection PyUnresolvedReferences
+    movie_bag = moviebagfacade.convert_from_movie_td(movie)
+
+    assert movie_bag == MovieBag()
 
 
 def test_convert_to_movie_key():
@@ -97,7 +107,7 @@ def test_convert_to_movie_update_def():
     assert movie == config.MovieUpdateDef(
         title=title,
         year=int(year),
-        director=[director_1, director_2],
+        director=", ".join([director_1, director_2]),
         minutes=int(duration),
         notes=notes,
         tags=list(tags),
