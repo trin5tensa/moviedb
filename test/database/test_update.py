@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/15/25, 7:01 AM by stephen.
+#  Last modified 1/15/25, 8:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -227,18 +227,18 @@ def test__reflect_old_tags(create_test_database, db_session):
 
 
 def test__reflect_old_movie_tag_links(create_test_database, db_session):
-    tag_table, movie_tag_table, _ = create_test_database
+    metadata_obj, tag_table, movie_tag_table, _ = create_test_database
     old_tags = _get_old_tags(tag_table, db_session)
     expected_links, old_movie_links = _get_old_movie_tag_links(
         old_tags, movie_tag_table, db_session
     )
 
     expanded_links, check_count = update._reflect_old_movie_tag_links(
-        old_tags, db_session
+        old_tags, db_session, metadata_obj
     )
 
     check.equal(expanded_links, expected_links)
-    check.equal(check_count, len(old_movie_links))
+    check.equal(check_count, len(expanded_links))
 
 
 def test__reflect_old_movie(create_test_database, db_session):

@@ -1,7 +1,7 @@
 """Database update functions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/15/25, 7:01 AM by stephen.
+#  Last modified 1/15/25, 8:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -189,24 +189,23 @@ def _reflect_old_movie_tag_links(
     Args:
         tags:
         session:
+        metadata_obj:
 
     Returns:
         Sets of tag texts indexed by Movie object id.
-        A check count of movie tag objects.
+        A check count of movie objects.
     """
     movie_tags_table = Table("movie_tag", metadata_obj, autoload_with=engine)
     old_movie_tags = session.execute(select(movie_tags_table)).all()
-    movie_id_keys = {movie_tag[0] for movie_tag in old_movie_tags}
-    movie_tags_sets = {movie_id: set() for movie_id in movie_id_keys}
+    movie_id_keys = {movie_tag[0] for movie_tag in old_movie_tags}  # pragma no branch
+    movie_tags_sets = {movie_id: set() for movie_id in movie_id_keys}  # pragma nocover
     for movie_id, tag_id in old_movie_tags:
-        # todo Test the KeyError handling
         try:
             tag = tags[tag_id]
-        except KeyError:
+        except KeyError:  # pragma nocover
             # The tag_id points to a nonexistent tag.
             pass
         else:
-            # movie_tags_sets.get(movie_id, set()).add(tag)
             movie_tags_sets[movie_id].add(tag)
     return movie_tags_sets, len(movie_id_keys)
 
