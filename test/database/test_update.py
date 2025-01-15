@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 1:01 PM by stephen.
+#  Last modified 1/15/25, 7:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -217,10 +217,10 @@ def test__reflect_data_with_bad_movie_count(
 
 
 def test__reflect_old_tags(create_test_database, db_session):
-    tag_table, _, _ = create_test_database
+    metadata_obj, tag_table, _, _ = create_test_database
     expected_tags = _get_old_tags(tag_table, db_session)
 
-    tags, check_count = update._reflect_old_tags(db_session)
+    tags, check_count = update._reflect_old_tags(db_session, metadata_obj)
 
     check.equal(tags, expected_tags)
     check.equal(check_count, len(expected_tags))
@@ -444,7 +444,7 @@ def create_test_database(session_engine: Engine):
 
         session.commit()
 
-    return tag_table, movie_tag_table, movies_table
+    return metadata_obj, tag_table, movie_tag_table, movies_table
 
 
 @pytest.fixture(scope="function")

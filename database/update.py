@@ -1,7 +1,7 @@
 """Database update functions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 1:01 PM by stephen.
+#  Last modified 1/15/25, 7:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -122,24 +122,32 @@ def _reflect_data() -> tuple[list[MovieBag], set[str]]:
         A list of movie bags.
         A set of tag texts.
     """
+    # todo Document and test the changed metadata_obj position
+    metadata_obj = MetaData()
     with Session(engine) as session:
-        old_tags, old_tags_check_count = _reflect_old_tags(session)
-        old_movie_tag_links, old_movie_tag_links_count = _reflect_old_movie_tag_links(
-            old_tags, session
+        tags, old_tags_check_count = _reflect_old_tags(
+            session,
+            metadata_obj,
         )
-        movie_bags, movie_bags_count = _reflect_old_movie(old_movie_tag_links, session)
+        movie_tags_sets, movie_id_keys_count = _reflect_old_movie_tag_links(
+            tags,
+            session,
+            metadata_obj,
+        )
+        movie_bags, movie_bags_count = _reflect_old_movie(
+            movie_tags_sets,
+            session,
+            metadata_obj,
+        )
 
         # Check zero for tags
-        if old_tags_check_count != len(old_tags):
+        if old_tags_check_count != len(tags):
             logging.error(DatabaseUpdateCheckZeroError, CHECK_ZERO_TAGS)
             raise DatabaseUpdateCheckZeroError(CHECK_ZERO_TAGS)
 
         # Check zero for movie tag links
-        links_count = 0
-        for movie_bag in movie_bags:
-            movie_tag_count = len(movie_bag.get("movie_tags", set()))
-            links_count += movie_tag_count
-        if old_movie_tag_links_count != links_count:
+        # todo test this changed code suite
+        if len(movie_tags_sets) != movie_id_keys_count:
             logging.error(DatabaseUpdateCheckZeroError, CHECK_ZERO_MOVIE_TAG_LINKS)
             raise DatabaseUpdateCheckZeroError(CHECK_ZERO_MOVIE_TAG_LINKS)
 
@@ -148,51 +156,65 @@ def _reflect_data() -> tuple[list[MovieBag], set[str]]:
             logging.error(DatabaseUpdateCheckZeroError, CHECK_ZERO_MOVIES)
             raise DatabaseUpdateCheckZeroError(CHECK_ZERO_MOVIES)
 
-    return movie_bags, set(old_tags.values())
+    return movie_bags, set(tags.values())
 
 
-def _reflect_old_tags(session: Session) -> tuple[dict[int, str], int]:
+def _reflect_old_tags(
+    session: Session,
+    metadata_obj: MetaData,
+) -> tuple[dict[int, str], int]:
     """Returns tag texts indexed by tag object id.
 
     Args:
         session:
+        metadata_obj:
 
     Returns
         Tag texts indexed by tag object id.
         A check count of tag objects.
     """
-    metadata_obj = MetaData()
     old_tags_table = Table("tags", metadata_obj, autoload_with=engine)
     old_tags = session.execute(select(old_tags_table)).all()
-    new_tags = {tag_id: tag_tag for tag_id, tag_tag in old_tags}
-    return new_tags, len(old_tags)
+    tags = {tag_id: tag_tag for tag_id, tag_tag in old_tags}  # pragma: no branch
+    return tags, len(old_tags)
 
 
 def _reflect_old_movie_tag_links(
-    tags: dict[int, str], session: Session
+    tags: dict[int, str],
+    session: Session,
+    metadata_obj: MetaData,
 ) -> tuple[dict[int, set[str]], int]:
-    """Returns lists of tag texts indexed by Movie object id.
+    """Returns sets of tag texts indexed by Movie object id.
 
     Args:
         tags:
         session:
 
     Returns:
-        Lists of tag texts indexed by Movie object id.
+        Sets of tag texts indexed by Movie object id.
         A check count of movie tag objects.
     """
-    metadata_obj = MetaData()
-    old_movie_tags = Table("movie_tag", metadata_obj, autoload_with=engine)
-    links = session.execute(select(old_movie_tags)).all()
-    movie_id_keys = {movie_tag[0] for movie_tag in links}
-    movie_tag_links = {movie_id: set() for movie_id in movie_id_keys}
-    for movie_id, tag_id in links:
-        movie_tag_links[movie_id].add(tags[tag_id])
-    return movie_tag_links, len(links)
+    movie_tags_table = Table("movie_tag", metadata_obj, autoload_with=engine)
+    old_movie_tags = session.execute(select(movie_tags_table)).all()
+    movie_id_keys = {movie_tag[0] for movie_tag in old_movie_tags}
+    movie_tags_sets = {movie_id: set() for movie_id in movie_id_keys}
+    for movie_id, tag_id in old_movie_tags:
+        # todo Test the KeyError handling
+        try:
+            tag = tags[tag_id]
+        except KeyError:
+            # The tag_id points to a nonexistent tag.
+            pass
+        else:
+            # movie_tags_sets.get(movie_id, set()).add(tag)
+            movie_tags_sets[movie_id].add(tag)
+    return movie_tags_sets, len(movie_id_keys)
 
 
 def _reflect_old_movie(
-    movie_tags: dict[int, set[str]], session: Session
+    movie_tags: dict[int, set[str]],
+    session: Session,
+    metadata_obj: MetaData,
 ) -> tuple[list[MovieBag], int]:
     """Returns a list of movie_bags.
 
@@ -204,24 +226,30 @@ def _reflect_old_movie(
         A list of movie bags.
         A check count of movie records.
     """
-    metadata_obj = MetaData()
+    # todo Rewrite test (Extensive rewrite)
     old_movies_table = Table("movies", metadata_obj, autoload_with=engine)
     old_movies = session.execute(select(old_movies_table)).all()
 
     movie_bags = []
     for movie in old_movies:
-        m_id, m_title, m_year, m_directors, m_notes = movie
-        movie_bag = MovieBag(
-            title=m_title,
-            year=MovieInteger(m_year),
-        )
-        if m_directors:
-            movie_bag["directors"] = m_directors
-        if m_notes:
-            movie_bag["notes"] = m_notes
-            movie_bag["synopsis"] = m_notes
-        if tags := movie_tags.get(m_id):
-            movie_bag["movie_tags"] = tags
-        movie_bags.append(movie_bag)
 
+        new_movie = MovieBag(
+            id=movie[0],
+            title=movie[1],
+            directors={s.strip() for s in movie[2].split(",")},
+            duration=movie[3],
+            year=movie[4],
+            # Old movies put the synopsis in the 'notes' column.
+            synopsis=movie[5],
+            # Retain synopsis in 'notes' as the synopsis column is not yet handled in GUI.
+            notes=movie[5],
+        )
+
+        # movie_tags = movie_tags[movie[0]]
+        try:
+            new_movie["movie_tags"] = movie_tags[movie[0]]
+        except KeyError:
+            pass
+
+        movie_bags.append(new_movie)
     return movie_bags, len(old_movies)
