@@ -1,7 +1,7 @@
 """Database update functions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/16/25, 11:59 AM by stephen.
+#  Last modified 1/16/25, 1:20 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -112,7 +112,6 @@ def _reflect_data() -> tuple[list[MovieBag], set[str]]:
         A list of movie bags.
         A set of tag texts.
     """
-    # todo Document and test the changed metadata_obj position
     metadata_obj = MetaData()
     with Session(engine) as session:
         tags, old_tags_check_count = _reflect_old_tags(
@@ -136,7 +135,6 @@ def _reflect_data() -> tuple[list[MovieBag], set[str]]:
             raise DatabaseUpdateCheckZeroError(CHECK_ZERO_TAGS)
 
         # Check zero for movie tag links
-        # todo test this changed code suite
         if len(movie_tags_sets) != movie_id_keys_count:
             logging.error(DatabaseUpdateCheckZeroError, CHECK_ZERO_MOVIE_TAG_LINKS)
             raise DatabaseUpdateCheckZeroError(CHECK_ZERO_MOVIE_TAG_LINKS)
