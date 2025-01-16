@@ -1,7 +1,7 @@
 """Database update functions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/15/25, 8:57 AM by stephen.
+#  Last modified 1/16/25, 11:59 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -71,19 +71,9 @@ def _reflect_database_v0(
     """Updates v0 database to v1.
 
     Version v0 is not automatically recognizable. This update will not be
-    invoked unless certain external environment changes are made before running the program.
-        1) The 'Movies Data' directory which holds the database files must be
-        present in its expected location. This is currently in the parent of
-        the source code directory (../Movies Data)
-        2) A file 'schema_version.json' located within the 'Movies Data'
-        directory and containing the dictionary entry {"schema_version": "v0"}.
-        (../Movies Data/schema_version.json)
-
-    The v0 database and its enclosing folder are required to be in the following locations:
-        1) The database directory 'DBv0' located within the 'Movies Data' directory.
-        (../Movies Data/DBv0)
-        2) The database named 'movie_database.sqlite3' located within the 'DBv0' directory.
-        ( ../Movies Data/DBv0/movie_database.sqlite3)
+    invoked unless certain external environment changes are made before
+    running the program. See the environment.start_engine for more
+    information.
 
     Returns:
         A list of movie bags
@@ -220,19 +210,19 @@ def _reflect_old_movie(
     Args:
         movie_tags: Lists of tag texts indexed by Movie object id.
         session:
+        metadata_obj:
 
     Returns:
         A list of movie bags.
         A check count of movie records.
     """
-    # todo Rewrite test (Extensive rewrite)
     old_movies_table = Table("movies", metadata_obj, autoload_with=engine)
     old_movies = session.execute(select(old_movies_table)).all()
 
     movie_bags = []
     for movie in old_movies:
 
-        new_movie = MovieBag(
+        new_movie = MovieBag(  # pragma no branch
             id=movie[0],
             title=movie[1],
             directors={s.strip() for s in movie[2].split(",")},
