@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/16/25, 11:59 AM by stephen.
+#  Last modified 1/16/25, 1:20 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -75,11 +75,10 @@ def test_update_old_database_with_match_fail(log_error):
     )
 
 
-@pytest.mark.skip
 def test__reflect_database_v0(
     create_test_database, db_session, monkeypatch, tmp_path, log_info
 ):
-    tag_table, movie_tag_table, movies_table = create_test_database
+    _, tag_table, movie_tag_table, movies_table = create_test_database
     old_tags = _get_old_tags(tag_table, db_session)
     tag_links, _ = _get_old_movie_tag_links(old_tags, movie_tag_table, db_session)
     expected_bags, _ = _get_old_movies(movies_table, tag_links, db_session)
@@ -111,9 +110,8 @@ def test__register_engine(tmp_path):
     assert f"{update.engine.url}" == f"{update.DIALECT}{tmp_path}"
 
 
-@pytest.mark.skip
 def test__reflect_data(create_test_database, db_session):
-    tag_table, movie_tag_table, movies_table = create_test_database
+    _, tag_table, movie_tag_table, movies_table = create_test_database
     old_tags = _get_old_tags(tag_table, db_session)
     tag_links, _ = _get_old_movie_tag_links(old_tags, movie_tag_table, db_session)
     expected_bags, _ = _get_old_movies(movies_table, tag_links, db_session)
@@ -125,11 +123,10 @@ def test__reflect_data(create_test_database, db_session):
     check.equal(tags, expected_tags)
 
 
-@pytest.mark.skip
 def test__reflect_data_with_bad_tag_count(
     create_test_database, db_session, monkeypatch, log_error
 ):
-    tag_table, movie_tag_table, movies_table = create_test_database
+    _, tag_table, movie_tag_table, movies_table = create_test_database
     old_tags = _get_old_tags(tag_table, db_session)
     monkeypatch.setattr(
         update, "_reflect_old_tags", partial(_reflect_old_tags_badly, old_tags)
@@ -152,11 +149,10 @@ def test__reflect_data_with_bad_tag_count(
     )
 
 
-@pytest.mark.skip
 def test__reflect_data_with_bad_movie_tag_link_count(
     create_test_database, db_session, monkeypatch, log_error
 ):
-    tag_table, movie_tag_table, movies_table = create_test_database
+    _, tag_table, movie_tag_table, movies_table = create_test_database
     old_tags = _get_old_tags(tag_table, db_session)
     tag_links, _ = _get_old_movie_tag_links(old_tags, movie_tag_table, db_session)
 
@@ -186,11 +182,10 @@ def test__reflect_data_with_bad_movie_tag_link_count(
     )
 
 
-@pytest.mark.skip
 def test__reflect_data_with_bad_movie_count(
     create_test_database, db_session, monkeypatch, log_error
 ):
-    tag_table, movie_tag_table, movies_table = create_test_database
+    _, tag_table, movie_tag_table, movies_table = create_test_database
     old_tags = _get_old_tags(tag_table, db_session)
     tag_links, _ = _get_old_movie_tag_links(old_tags, movie_tag_table, db_session)
     expected_bags, _ = _get_old_movies(movies_table, tag_links, db_session)
@@ -351,20 +346,20 @@ def _get_old_movies(
 
 
 # noinspection PyUnusedLocal
-def _reflect_old_tags_badly(old_tags, session) -> tuple[Any, float]:
+def _reflect_old_tags_badly(old_tags, session, metadata_obj) -> tuple[Any, float]:
     return old_tags, math.nan
 
 
 # noinspection PyUnusedLocal
 def _reflect_old_movie_tag_links_badly(
-    tag_links, old_tags, session
+    tag_links, old_tags, session, metadata_obj
 ) -> tuple[dict[int, str], float]:
     return tag_links, math.nan
 
 
 # noinspection PyUnusedLocal
 def _reflect_old_movie_badly(
-    expected_bags, movie_tags, session
+    expected_bags, movie_tags, session, metadata_obj
 ) -> tuple[dict[int, str], float]:
     return expected_bags, math.nan
 
