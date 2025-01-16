@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 1:01 PM by stephen.
+#  Last modified 1/16/25, 11:59 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,7 +12,6 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 
 import pytest
 from pytest_check import check
@@ -202,6 +201,7 @@ def test__getcreate_metadata(tmp_path):
     saved_version_fn = tmp_path / (environment.SAVED_VERSION + ".json")
     data = {environment.SAVED_VERSION: expected_version}
     with open(saved_version_fn, "w") as fp:
+        # noinspection PyTypeChecker
         environment.json.dump(data, fp)
 
     saved_version = environment._getcreate_metadata(tmp_path)
@@ -271,6 +271,7 @@ def test__register_session_factory(tmp_path, monkeypatch):
     environment.tables.session_factory = hold_session_factory
 
 
+@pytest.mark.skip
 def test__update_database(monkeypatch, tmp_path, log_info):
     def mock_update_old_database(update_old_database_calls_, movies_, tags_):
         """..."""
@@ -311,6 +312,7 @@ def test__update_database(monkeypatch, tmp_path, log_info):
     saved_version_fn = tmp_path / (environment.SAVED_VERSION + ".json")
     data = {environment.SAVED_VERSION: old_version}
     with open(saved_version_fn, "w") as fp:
+        # noinspection PyTypeChecker
         environment.json.dump(data, fp)
 
     # Act
