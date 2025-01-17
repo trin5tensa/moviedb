@@ -1,7 +1,7 @@
 """Database environment functions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 1:01 PM by stephen.
+#  Last modified 1/17/25, 7:27 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -39,28 +39,34 @@ def start_engine():
         or prepare an existing database for use,
         or update an older version ready for use.
 
-    If the data directory 'Movie Data' does not exist in the expected location a new database
-    will be created and readied for first use.
+    If the data directory DATA_DIR_NAME does not exist in the expected
+    location a new database will be created and readied for first use.
 
-    If the data directory 'Movie Data' exists then the version number of the saved database
-    will be retrieved from 'saved_version.json'. If it is the current version the SQL database
-    will be started ready for use.
+    If the data directory DATA_DIR_NAME exists then the version number of
+    the saved database will be retrieved from 'saved_version.json'. If it is
+    the current version the SQL database will be started ready for use.
 
-    Otherwise, a new current version database will be created. Data from the old database will
-    be copied and transformed before loading into the new database.
+    Otherwise, a new current version database will be created. Data from
+    the old database will be copied and transformed before loading into
+    the new database.
 
     Naming conventions:
-        data_dir_name = "Movie Data"
-        database_dir_name = schema.VERSION (The current version from the schema module.)
+        data_dir_name = DATA_DIR_NAME
+        database_dir_name = schema.VERSION
+            (The current version from the schema module.)
         metadata_name = "saved_version"
         movie_database_name = "movie_database"
 
-    Directory and file structure:
-        Movie Data
-        Movie Data / schema.VERSION
-        Movie Data / schema.VERSION / movie_database_DBv1.sqlite3
-        Movie Data / saved_version.json
-            1 dict entry → {SAVED_VERSION: schema.VERSION}
+    The directory and file structure which are located at the same directory
+    level as the source code.:
+        DATA_DIR_NAME
+        DATA_DIR_NAME / schema.VERSION
+        DATA_DIR_NAME / schema.VERSION / movie_database_DBv1.sqlite3
+        DATA_DIR_NAME / saved_version.json
+            with one dict entry → {SAVED_VERSION: schema.VERSION}
+
+        Note: 'movie_database_DBv1' will change depending on the actual
+        version.
     """
     data_dir_path, database_dir_path = _getcreate_directories(
         DATA_DIR_NAME, DATABASE_STEM + schema.VERSION
@@ -93,12 +99,12 @@ def _getcreate_directories(
     program_path = Path(__file__)
 
     movie_data_path = program_path.parents[2] / data_dir_name
-    if not movie_data_path.is_dir():
+    if not movie_data_path.is_dir():  # pragma no branch
         logging.info(NO_MOVIE_DATA_DIRECTORY_MSG)
     movie_data_path.mkdir(exist_ok=True)
 
     database_dir_path = movie_data_path / database_dir_name
-    if not database_dir_path.is_dir():
+    if not database_dir_path.is_dir():  # pragma no branch
         logging.info(NO_DATABASE_DIRECTORY_MSG)
     database_dir_path.mkdir(exist_ok=True)
 
@@ -157,16 +163,17 @@ def _update_database(old_version: str, data_dir_path: Path):
 
     Args:
         old_version: example 'DBv42'
-        data_dir_path: example 'Movie Data'
+        data_dir_path: example
     """
+    old_database_dir_name = DATABASE_STEM + old_version
+    old_database_dir = data_dir_path / old_database_dir_name
     old_database_name = DATABASE_STEM + old_version + ".sqlite3"
-    old_database_fn = data_dir_path / old_version / old_database_name
+    old_database_fn = data_dir_path / old_database_dir / old_database_name
+
     movies, tags = update.update_old_database(old_version, old_database_fn)
+    tables.add_tags(tag_texts=tags)
     for movie in movies:
         tables.add_movie(movie_bag=movie)
-    # tables.add_movie will create tags. Next line adds 'orphan'
-    # tags. Identical tags will be silently suppressed.
-    tables.add_tags(tag_texts=tags)
 
     # Update saved version file with new version number.
     saved_version_fn = data_dir_path / (SAVED_VERSION + ".json")

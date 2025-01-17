@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/16/25, 11:59 AM by stephen.
+#  Last modified 1/17/25, 7:27 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -271,7 +271,6 @@ def test__register_session_factory(tmp_path, monkeypatch):
     environment.tables.session_factory = hold_session_factory
 
 
-@pytest.mark.skip
 def test__update_database(monkeypatch, tmp_path, log_info):
     def mock_update_old_database(update_old_database_calls_, movies_, tags_):
         """..."""
@@ -285,9 +284,9 @@ def test__update_database(monkeypatch, tmp_path, log_info):
 
     # Arrange
     old_version = "DBv42"
-    data_dir_path = tmp_path
-    old_version_name = environment.DATABASE_STEM + old_version + ".sqlite3"
-    old_version_fn = data_dir_path / old_version / old_version_name
+    stem_version = environment.DATABASE_STEM + old_version
+    old_version_name = stem_version + ".sqlite3"
+    old_version_fn = tmp_path / stem_version / old_version_name
     movies = ["movie 1", "movie 2", "movie 3"]
     tags = {"tag 1", "tag 2", "tag 3"}
     update_old_database_calls = []
@@ -316,7 +315,7 @@ def test__update_database(monkeypatch, tmp_path, log_info):
         environment.json.dump(data, fp)
 
     # Act
-    environment._update_database(old_version, data_dir_path)
+    environment._update_database(old_version, tmp_path)
 
     # Assert update_old_database
     check.equal(update_old_database_calls, [((old_version, old_version_fn), {})])
