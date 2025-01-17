@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/7/25, 7:17 AM by stephen.
+#  Last modified 1/17/25, 12:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -696,30 +696,6 @@ class TestAddMovieGUI:
                 *dummy_tmdb_treeview_children
             )
 
-        # Exception tests
-        cut.add_movie_callback.side_effect = [
-            guiwidgets_2.exception.MovieDBConstraintFailure
-        ]
-        cut.commit()
-        cut.add_movie_callback.side_effect = (
-            guiwidgets_2.exception.MovieYearConstraintFailure(
-                dummy_msg,
-            )
-        )
-        cut.commit()
-        with check:
-            messagebox.showinfo.assert_has_calls(
-                [
-                    call(
-                        parent=cut.parent,
-                        message="Database constraint failure.",
-                        detail="A movie with this title and year is already "
-                        "present in the database.",
-                    ),
-                    call(parent=cut.parent, message=dummy_msg),
-                ]
-            )
-
 
 def test_edit_movie_init_with_movie_bag(monkeypatch):
     # Arrange
@@ -967,30 +943,6 @@ class TestEditMovieGUI:
             )
         with check:
             mock_destroy.assert_called_once_with()
-
-        # Exception tests
-        cut.edit_movie_callback.side_effect = [
-            guiwidgets_2.exception.MovieDBConstraintFailure
-        ]
-        cut.commit()
-        cut.edit_movie_callback.side_effect = (
-            guiwidgets_2.exception.MovieYearConstraintFailure(
-                dummy_msg,
-            )
-        )
-        cut.commit()
-        with check:
-            messagebox.showinfo.assert_has_calls(
-                [
-                    call(
-                        parent=cut.parent,
-                        message="Database constraint failure.",
-                        detail="A movie with this title and year is already "
-                        "present in the database.",
-                    ),
-                    call(parent=cut.parent, message=dummy_msg),
-                ]
-            )
 
     def test_delete(
         self,

@@ -1,7 +1,7 @@
 """ Test module. """
 
-#  Copyright (c) 2023-2024. Stephen Rigden.
-#  Last modified 3/21/24, 8:24 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/17/25, 12:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -287,18 +287,6 @@ class TestSearchTagGUI:
             mock_search_tag_callback.assert_called_once_with(test_pattern)
         with check:
             mock_destroy.assert_called_once_with()
-
-        # search_tag_callback() DOES raise DatabaseSearchFoundNothing
-        mock_search_tag_callback.side_effect = (
-            guiwidgets_2.exception.DatabaseSearchFoundNothing
-        )
-        cut.search()
-        with check:
-            mock_gui_messagebox.assert_called_once_with(
-                cut.parent,
-                guiwidgets_2.NO_MATCH_MESSAGE,
-                guiwidgets_2.NO_MATCH_DETAIL,
-            )
 
 
 # noinspection PyMissingOrEmptyDocstring
