@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 1:01 PM by stephen.
+#  Last modified 1/17/25, 11:34 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -70,9 +70,6 @@ def gui_search_movie(*, prepopulate: MovieBag = None):
             an exception. It gives the user the opportunity to fix
             input errors.
     """
-    # moviedb-#459 Repopulate
-    #  The class SearchMovieGUI is not currently able to support
-    #  prepopulation, so the prepopulate parameter is ignored for now.
     all_tags = tables.select_all_tags()
     guiwidgets.SearchMovieGUI(config.current.tk_root, db_match_movies, list(all_tags))
 
@@ -280,9 +277,6 @@ def gui_search_tag(*, prepopulate: str = None):
             an exception. It gives the user the opportunity to fix
             input errors.
     """
-    # moviedb-#460 Repopulate
-    #  The class SearchTagGUI is not currently able to support
-    #  prepopulation, so the prepopulate parameter is ignored for now.
     guiwidgets_2.SearchTagGUI(
         config.current.tk_root,
         search_tag_callback=db_match_tags,
@@ -314,9 +308,6 @@ def gui_edit_tag(tag: str, *, prepopulate: str = None):
             an exception. It gives the user the opportunity to fix
             input errors.
     """
-    # moviedb-#461 Repopulate
-    #  The class EditTagGUI is not currently able to support
-    #  prepopulation, so the prepopulate parameter is ignored for now.
     guiwidgets_2.EditTagGUI(
         config.current.tk_root,
         edit_tag_callback=partial(db_edit_tag, tag),
