@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/7/25, 7:17 AM by stephen.
+#  Last modified 1/17/25, 12:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -36,7 +36,6 @@ from typing import (
 )
 
 import config
-import exception
 import tk_facade
 from tk_facade import TkParentType
 from globalconstants import *
@@ -420,25 +419,11 @@ class AddMovieGUI(MovieGUI):
             name: entry_field.current_value
             for name, entry_field in self.entry_fields.items()
         }
-        try:
-            self.add_movie_callback(self.return_fields)
-
-        # Alert user to title and year constraint failure.
-        except exception.MovieDBConstraintFailure:
-            exc = exception.MovieDBConstraintFailure
-            messagebox.showinfo(parent=self.parent, message=exc.msg, detail=exc.detail)
-
-        # Alert user to invalid year (not YYYY within range).
-        except exception.MovieYearConstraintFailure as exc:
-            msg = exc.args[0]
-            messagebox.showinfo(parent=self.parent, message=msg)
-
-        # Clear fields ready for next entry.
-        else:
-            for v in self.entry_fields.values():
-                v.clear_current_value()
-            items = self.tmdb_treeview.get_children()
-            self.tmdb_treeview.delete(*items)
+        self.add_movie_callback(self.return_fields)
+        for v in self.entry_fields.values():
+            v.clear_current_value()
+        items = self.tmdb_treeview.get_children()
+        self.tmdb_treeview.delete(*items)
 
 
 @dataclass
@@ -520,23 +505,8 @@ class EditMovieGUI(MovieGUI):
             name: entry_field.current_value  # pragma no cover
             for name, entry_field in self.entry_fields.items()
         }
-
-        try:
-            # noinspection PyArgumentList
-            self.edit_movie_callback(self.return_fields)
-
-        # Alert user to title and year constraint failure.
-        except exception.MovieDBConstraintFailure:
-            exc = exception.MovieDBConstraintFailure
-            messagebox.showinfo(parent=self.parent, message=exc.msg, detail=exc.detail)
-
-        # Alert user to invalid year (not YYYY within range).
-        except exception.MovieYearConstraintFailure as exc:
-            msg = exc.args[0]
-            messagebox.showinfo(parent=self.parent, message=msg)
-
-        else:
-            self.destroy()
+        self.edit_movie_callback(self.return_fields)
+        self.destroy()
 
     def delete(self):
         """The user clicked the 'Delete' button."""
@@ -748,13 +718,8 @@ class SearchTagGUI(TagGUI):
     def search(self):
         """Respond to the user's click of the 'Search' button."""
         search_pattern = self.entry_fields[MOVIE_TAG].current_value
-        try:
-            self.search_tag_callback(search_pattern)
-        except exception.DatabaseSearchFoundNothing:
-            # Warn user and give user the opportunity to reenter the search criteria.
-            gui_messagebox(self.parent, NO_MATCH_MESSAGE, NO_MATCH_DETAIL)
-        else:
-            self.destroy()
+        self.search_tag_callback(search_pattern)
+        self.destroy()
 
 
 @dataclass

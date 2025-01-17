@@ -1,7 +1,7 @@
 """Test module."""
 
-#  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/9/24, 9:39 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/17/25, 12:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -384,34 +384,6 @@ class TestSearchMovieGUI:
             outerframe = movie_gui.parent.children[0]
             buttonbox = outerframe.children[1]
             assert calls == [((movie_gui, buttonbox), dict(column=1))]
-
-    # Test search
-
-    # @pytest.mark.skip('Test dependency discovered')
-    # def test_callback_called(self, patch_tk):
-    #     with self.movie_context() as something:
-    #         something.selected_tags = ['tag 1', 'tag 2']
-    #         something.search()
-    #         assert commit_callback_calls == [(dict(director='4242', minutes=['4242', '4242'],
-    #                                                notes='4242', title='4242', year=['4242', '4242'], ),
-    #                                           ['tag 1', 'tag 2'])]
-
-    def test_callback_raises_movie_search_found_nothing(self, patch_tk, monkeypatch):
-        # noinspection PyUnusedLocal
-        def callback(*args):
-            raise exception.DatabaseSearchFoundNothing
-
-        messagebox_calls = []
-        monkeypatch.setattr(
-            guiwidgets, "gui_messagebox", lambda *args: messagebox_calls.append(args)
-        )
-        tags = []
-        # noinspection PyTypeChecker
-        movie_gui = guiwidgets.SearchMovieGUI(DummyTk(), callback, tags)
-        movie_gui.search()
-        assert messagebox_calls == [
-            (DummyTk(), "No matches", "There are no matching movies in the database.")
-        ]
 
     def test_destroy_called(self, patch_tk, monkeypatch):
         called = []

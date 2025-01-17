@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/2/25, 7:08 AM by stephen.
+#  Last modified 1/17/25, 12:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,6 @@ from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Sequence
 
 import config
-import exception
 import neurons
 from guiwidgets_2 import (
     CANCEL_TEXT,
@@ -41,7 +40,6 @@ from guiwidgets_2 import (
     SEARCH_TEXT,
     MOVIE_TAGS_TEXT,
     focus_set,
-    gui_messagebox,
 )
 
 TAG_TREEVIEW_INTERNAL_NAME = "tag treeview"
@@ -370,16 +368,8 @@ class SearchMovieGUI(MovieGUIBase):
         del return_fields["minutes_max"]
 
         # Commit and exit
-        try:
-            self.callback(return_fields, self.selected_tags)
-        except exception.DatabaseSearchFoundNothing:
-            # Warn user and give user the opportunity to reenter the search criteria.
-            parent = self.parent
-            message = "No matches"
-            detail = "There are no matching movies in the database."
-            gui_messagebox(parent, message, detail)
-        else:
-            self.destroy()
+        self.callback(return_fields, self.selected_tags)
+        self.destroy()
 
 
 @dataclass
