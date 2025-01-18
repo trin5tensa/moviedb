@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 1:01 PM by stephen.
+#  Last modified 1/18/25, 6:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -620,7 +620,6 @@ def test_invalid_movie_regression(test_database):
     assert found["title"] == movie_two["title"]
 
 
-# noinspection DuplicatedCode
 def check_movie_assignments(session: tables.Session, movie_bag: tables.MovieBag):
     """This function runs common code for the add_movie and edit movie tests.
 
@@ -631,6 +630,7 @@ def check_movie_assignments(session: tables.Session, movie_bag: tables.MovieBag)
     movie = tables._select_movie(session, movie_bag=movie_bag)
 
     # Check eight non-relationship fields
+    # noinspection DuplicatedCode
     check.is_instance(movie.id, int)
     check.is_instance(movie.created, schema.datetime)
     check.is_instance(movie.updated, schema.datetime)

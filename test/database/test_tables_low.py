@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 1:01 PM by stephen.
+#  Last modified 1/18/25, 6:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,7 +19,6 @@ from sqlalchemy import create_engine, Engine
 
 from database import schema, tables
 from database.tables import (
-    sessionmaker,
     Session,
     NoResultFound,
 )
@@ -43,6 +42,7 @@ PEOPLE_NAMES = {
 }
 TEST_DIRECTORS = {"Donald Director"}
 TEST_STARS = {"Edgar Ethelred", "Fanny Fullworthy"}
+# noinspection DuplicatedCode
 MOVIEBAG_1 = MovieBag(
     title="First Movie",
     year=MovieInteger("4241"),
@@ -77,6 +77,7 @@ def test__add_movie(db_session):
     db_session.add(movie)
     db_session.flush()
 
+    # noinspection DuplicatedCode
     check.is_instance(movie.id, int)
     check.is_instance(movie.created, schema.datetime)
     check.is_instance(movie.updated, schema.datetime)
@@ -355,9 +356,11 @@ def load_people(db_session: Session):
     db_session.add_all([schema.Person(name=name) for name in PEOPLE_NAMES])
 
 
+# noinspection DuplicatedCode
 @pytest.fixture(scope="function")
 def load_movies(load_tags, db_session: Session):
-    """Add test movies to the database"""
+    """Add test movies to the database."""
+
     for movie_bag in [MOVIEBAG_1, MOVIEBAG_2, MOVIEBAG_3, MOVIEBAG_4]:
         duration = movie_bag.get("duration")
 

@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/16/25, 1:20 PM by stephen.
+#  Last modified 1/18/25, 6:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -78,6 +78,7 @@ def test_update_old_database_with_match_fail(log_error):
 def test__reflect_database_v0(
     create_test_database, db_session, monkeypatch, tmp_path, log_info
 ):
+    # noinspection DuplicatedCode
     _, tag_table, movie_tag_table, movies_table = create_test_database
     old_tags = _get_old_tags(tag_table, db_session)
     tag_links, _ = _get_old_movie_tag_links(old_tags, movie_tag_table, db_session)
@@ -156,6 +157,7 @@ def test__reflect_data_with_bad_movie_tag_link_count(
     old_tags = _get_old_tags(tag_table, db_session)
     tag_links, _ = _get_old_movie_tag_links(old_tags, movie_tag_table, db_session)
 
+    # noinspection DuplicatedCode
     monkeypatch.setattr(
         update,
         "_reflect_old_movie_tag_links",
@@ -185,6 +187,7 @@ def test__reflect_data_with_bad_movie_tag_link_count(
 def test__reflect_data_with_bad_movie_count(
     create_test_database, db_session, monkeypatch, log_error
 ):
+    # noinspection DuplicatedCode
     _, tag_table, movie_tag_table, movies_table = create_test_database
     old_tags = _get_old_tags(tag_table, db_session)
     tag_links, _ = _get_old_movie_tag_links(old_tags, movie_tag_table, db_session)
