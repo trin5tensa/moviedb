@@ -1,7 +1,7 @@
 """ Test module"""
 
-#  Copyright (c) 2024-2024. Stephen Rigden.
-#  Last modified 3/9/24, 10:00 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/18/25, 6:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -66,6 +66,7 @@ class TestEntry:
 
     def test_all_init(self, tk, ttk, tk_parent_type):
         with self.entry(tk) as cut:
+            # noinspection DuplicatedCode
             check.equal(cut.label_text, self.label_text)
             check.equal(cut.parent, tk)
             check.is_instance(cut.observer, tk_facade.Observer)
@@ -266,6 +267,7 @@ class TestCheckbutton:
 
     def test_all_init(self, tk, ttk, tk_parent_type):
         with self.checkbutton(tk) as cut:
+            # noinspection DuplicatedCode
             check.equal(cut.label_text, self.label_text)
             check.equal(cut.parent, tk)
             check.is_instance(cut.observer, tk_facade.Observer)

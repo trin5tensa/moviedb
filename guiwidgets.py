@@ -4,8 +4,8 @@ This module includes windows for presenting data supplied to it and returning en
 callers.
 """
 
-#  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 3/21/24, 8:24 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/17/25, 12:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,6 @@ from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Sequence
 
 import config
-import exception
 import neurons
 from guiwidgets_2 import (
     CANCEL_TEXT,
@@ -41,7 +40,6 @@ from guiwidgets_2 import (
     SEARCH_TEXT,
     MOVIE_TAGS_TEXT,
     focus_set,
-    gui_messagebox,
 )
 
 TAG_TREEVIEW_INTERNAL_NAME = "tag treeview"
@@ -370,16 +368,8 @@ class SearchMovieGUI(MovieGUIBase):
         del return_fields["minutes_max"]
 
         # Commit and exit
-        try:
-            self.callback(return_fields, self.selected_tags)
-        except exception.DatabaseSearchFoundNothing:
-            # Warn user and give user the opportunity to reenter the search criteria.
-            parent = self.parent
-            message = "No matches"
-            detail = "There are no matching movies in the database."
-            gui_messagebox(parent, message, detail)
-        else:
-            self.destroy()
+        self.callback(return_fields, self.selected_tags)
+        self.destroy()
 
 
 @dataclass
@@ -396,7 +386,7 @@ class SelectMovieGUI(MovieGUIBase):
     # Movie records retrieved from the database.
     movies: List[config.MovieUpdateDef]
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[str, int], None]
+    callback: Callable
     # Attributes for managing the treeview
     treeview: ttk.Treeview = field(default=None, init=False, repr=False)
     treeview_items: dict[str : config.MovieKeyTypedDict] = field(
@@ -439,9 +429,9 @@ class SelectMovieGUI(MovieGUIBase):
                 text=movie["title"],
                 values=(
                     movie["year"],
-                    movie["director"],
-                    movie["minutes"],
-                    movie["notes"],
+                    movie.get("director", ""),
+                    movie.get("minutes", ""),
+                    movie.get("notes", ""),
                 ),
                 tags="title",
             )
@@ -469,8 +459,9 @@ class SelectMovieGUI(MovieGUIBase):
                 *args: Not used. Needed for compatibility with Tk:Tcl caller.
             """
             (item_id,) = tree.selection()
-            # noinspection PyArgumentList
-            self.callback(self.treeview_items[item_id])
+            # Return control to Tk/Tcl and delete this dialog *before*
+            #   running the callback.
+            self.parent.after(0, self.callback, self.treeview_items[item_id])
             self.destroy()
 
         return func

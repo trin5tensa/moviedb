@@ -3,8 +3,8 @@
 This module contains new tests written after Brian Okken's course and book on pytest in Fall 2022.
 """
 
-#  Copyright (c) 2023-2023. Stephen Rigden.
-#  Last modified 11/18/23, 5:44 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/8/25, 8:50 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -36,7 +36,9 @@ class TestMainWindow:
         )
         monkeypatch.setattr(mainwindow.MainWindow, "place_menubar", MagicMock())
         monkeypatch.setattr(
-            mainwindow.handlers, "EscapeKeyDict", mock_escape_key_dict := MagicMock()
+            mainwindow.handlers.sundries,
+            "EscapeKeyDict",
+            mock_escape_key_dict := MagicMock(),
         )
 
         with main_window(monkeypatch) as cut:
@@ -54,9 +56,11 @@ class TestMainWindow:
                     ]
                 )
 
+    # noinspection PyUnresolvedReferences
     def test_place_menubar(self, monkeypatch):
-        """Strategy: Menu construction is tested by checking that each expected menu item is present and in the
-        correct order. Meta calls connecting the menu system to tkinter are also tested.
+        """Strategy: Menu construction is tested by checking that each
+        expected menu item is present and in the correct order. Meta calls
+        connecting the menu system to tkinter are also tested.
         """
         with main_window(monkeypatch) as cut:
             # Meta
@@ -72,7 +76,7 @@ class TestMainWindow:
                         call("tk::mac::Quit", cut.tk_shutdown),
                         call(
                             "tk::mac::ShowPreferences",
-                            mainwindow.handlers.settings_dialog,
+                            mainwindow.handlers.sundries.settings_dialog,
                         ),
                     ]
                 )
@@ -99,12 +103,12 @@ class TestMainWindow:
                     [
                         call.add_command(
                             label="About " + TEST_TITLE + "…",
-                            command=mainwindow.handlers.about_dialog,
+                            command=mainwindow.handlers.sundries.about_dialog,
                         ),
                         call.add_separator(),
                         call.add_command(
                             label="Settings for Moviedb…",
-                            command=mainwindow.handlers.settings_dialog,
+                            command=mainwindow.handlers.sundries.settings_dialog,
                         ),
                         call.add_separator(),
                         call.add_command(label="Quit Moviedb", command=cut.tk_shutdown),
@@ -141,27 +145,33 @@ class TestMainWindow:
                 cut.movie_menu.assert_has_calls(
                     [
                         call.add_command(
-                            label="Add Movie…", command=mainwindow.handlers.add_movie
+                            label="Add Movie…",
+                            command=mainwindow.handlers.database.gui_add_movie,
                         ),
                         call.add_command(
-                            label="Edit Movie…", command=mainwindow.handlers.edit_movie
+                            label="Edit Movie…",
+                            command=mainwindow.handlers.database.gui_search_movie,
                         ),
                         call.add_command(
-                            label="View Movie…", command=mainwindow.handlers.edit_movie
+                            label="View Movie…",
+                            command=mainwindow.handlers.database.gui_search_movie,
                         ),
                         call.add_command(
                             label="Delete Movie…",
-                            command=mainwindow.handlers.edit_movie,
+                            command=mainwindow.handlers.database.gui_search_movie,
                         ),
                         call.add_separator(),
                         call.add_command(
-                            label="Add Tag…", command=mainwindow.handlers.add_tag
+                            label="Add Tag…",
+                            command=mainwindow.handlers.database.gui_add_tag,
                         ),
                         call.add_command(
-                            label="Edit Tag…", command=mainwindow.handlers.edit_tag
+                            label="Edit Tag…",
+                            command=mainwindow.handlers.database.gui_search_tag,
                         ),
                         call.add_command(
-                            label="Delete Tag…", command=mainwindow.handlers.edit_tag
+                            label="Delete Tag…",
+                            command=mainwindow.handlers.database.gui_search_tag,
                         ),
                     ]
                 )

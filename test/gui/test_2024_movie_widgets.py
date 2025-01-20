@@ -1,7 +1,7 @@
 """Test Module."""
 
-#  Copyright (c) 2024-2024. Stephen Rigden.
-#  Last modified 3/21/24, 8:24 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/17/25, 12:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -32,6 +32,15 @@ from guiwidgets_2 import (
 
 # noinspection PyMissingOrEmptyDocstring
 class TestMovieGUI:
+    title = "dummy old title"
+    year = 42
+    director_1 = "dummy old director"
+    director_2 = "dummy new director"
+    director = {director_1, director_2}
+    minutes = 142
+    notes = "dummy old notes"
+    movie_tags = {"test tag 1", "test tag 2"}
+
     def test_post_init(
         self,
         mock_tk,
@@ -317,7 +326,7 @@ class TestMovieGUI:
         with check:
             cut.tmdb_treeview.delete.assert_not_called()
 
-        # Test 'finally 'clause
+        # Test 'finally' clause
         with check:
             # noinspection PyUnresolvedReferences
             cut.parent.after.assert_called_once_with(
@@ -471,6 +480,76 @@ class TestMovieGUI:
         guiwidgets_2.config.current = hold_dict
 
 
+def test_add_movie_init_with_movie_bag(monkeypatch):
+    # Arrange
+    monkeypatch.setattr(guiwidgets_2.ttk, "Entry", MagicMock(name="Entry"))
+    monkeypatch.setattr(guiwidgets_2.tk, "StringVar", MagicMock(name="StringVar"))
+
+    monkeypatch.setattr(
+        guiwidgets_2.MovieGUI,
+        "framing",
+        MagicMock(
+            name="framing",
+            return_value=(
+                MagicMock(name="outer_frame"),
+                MagicMock(name="body_frame"),
+                MagicMock(name="buttonbox"),
+                MagicMock(name="tmdb_frame"),
+            ),
+        ),
+    )
+    monkeypatch.setattr(guiwidgets_2, "InputZone", MagicMock(name="InputZone"))
+
+    monkeypatch.setattr(
+        guiwidgets_2.MovieGUI, "fill_buttonbox", MagicMock(name="fill_buttonbox")
+    )
+    monkeypatch.setattr(
+        guiwidgets_2.MovieGUI,
+        "tmdb_results_frame",
+        MagicMock(name="tmdb_results_frame"),
+    )
+    monkeypatch.setattr(
+        guiwidgets_2,
+        "init_button_enablements",
+        MagicMock(name="init_button_enablements"),
+    )
+
+    movie_bag = MovieBag(
+        title="test title",
+        year=MovieInteger(4242),
+        directors={"Donald Director", "Delphine Directrice"},
+        duration=MovieInteger("42"),
+        # Notes intentionally omitted
+        synopsis="Boy meets girl.",
+        movie_tags={"tag 1", "tag 2"},
+    )
+
+    # Act
+    cut = guiwidgets_2.AddMovieGUI(
+        MagicMock(name="tk/tcl parent"),
+        tmdb_search_callback=MagicMock(),
+        all_tags=[],
+        prepopulate=movie_bag,
+    )
+
+    # Assert
+    check.equal(cut.entry_fields["title"].original_value, movie_bag["title"])
+    check.equal(cut.entry_fields["year"].original_value, str(int(movie_bag["year"])))
+    check.equal(
+        cut.entry_fields["director"].original_value,
+        ", ".join(director for director in movie_bag["directors"]),
+    )
+    check.equal(
+        cut.entry_fields["minutes"].original_value, str(int(movie_bag["duration"]))
+    )
+    # check.equal(cut.entry_fields["notes"].original_value, movie_bag["notes"])
+    # synopsis is not used in GUI2 but is expected for GUI3.
+    # This test will fail when GUI3 is implemented.
+    check.equal(cut.entry_fields.get("synopsis"), None)
+
+    check.equal(cut.entry_fields["tags"].original_value, movie_bag["movie_tags"])
+
+
 # noinspection PyMissingOrEmptyDocstring
 class TestAddMovieGUI:
     def test_create_buttons(
@@ -617,29 +696,73 @@ class TestAddMovieGUI:
                 *dummy_tmdb_treeview_children
             )
 
-        # Exception tests
-        cut.add_movie_callback.side_effect = [
-            guiwidgets_2.exception.MovieDBConstraintFailure
-        ]
-        cut.commit()
-        cut.add_movie_callback.side_effect = (
-            guiwidgets_2.exception.MovieYearConstraintFailure(
-                dummy_msg,
-            )
-        )
-        cut.commit()
-        with check:
-            messagebox.showinfo.assert_has_calls(
-                [
-                    call(
-                        parent=cut.parent,
-                        message="Database constraint failure.",
-                        detail="A movie with this title and year is already "
-                        "present in the database.",
-                    ),
-                    call(parent=cut.parent, message=dummy_msg),
-                ]
-            )
+
+def test_edit_movie_init_with_movie_bag(monkeypatch):
+    # Arrange
+    monkeypatch.setattr(guiwidgets_2.ttk, "Entry", MagicMock(name="Entry"))
+    monkeypatch.setattr(guiwidgets_2.tk, "StringVar", MagicMock(name="StringVar"))
+    monkeypatch.setattr(
+        guiwidgets_2.MovieGUI,
+        "framing",
+        MagicMock(
+            name="framing",
+            return_value=(
+                MagicMock(name="outer_frame"),
+                MagicMock(name="body_frame"),
+                MagicMock(name="buttonbox"),
+                MagicMock(name="tmdb_frame"),
+            ),
+        ),
+    )
+    monkeypatch.setattr(guiwidgets_2, "InputZone", MagicMock(name="InputZone"))
+    monkeypatch.setattr(
+        guiwidgets_2.MovieGUI, "fill_buttonbox", MagicMock(name="fill_buttonbox")
+    )
+    monkeypatch.setattr(
+        guiwidgets_2.MovieGUI,
+        "tmdb_results_frame",
+        MagicMock(name="tmdb_results_frame"),
+    )
+    monkeypatch.setattr(
+        guiwidgets_2,
+        "init_button_enablements",
+        MagicMock(name="init_button_enablements"),
+    )
+
+    movie_bag = MovieBag(
+        title="test title",
+        year=MovieInteger(4242),
+        directors={"Donald Director", "Delphine Directrice"},
+        duration=MovieInteger("42"),
+        # Notes intentionally omitted
+        synopsis="Boy meets girl.",
+        movie_tags={"tag 1", "tag 2"},
+    )
+
+    # Act
+    cut = guiwidgets_2.EditMovieGUI(
+        MagicMock(name="tk/tcl parent"),
+        tmdb_search_callback=MagicMock(),
+        all_tags=[],
+        prepopulate=movie_bag,
+    )
+
+    # Assert
+    check.equal(cut.entry_fields["title"].original_value, movie_bag["title"])
+    check.equal(cut.entry_fields["year"].original_value, str(int(movie_bag["year"])))
+    check.equal(
+        cut.entry_fields["director"].original_value,
+        ", ".join(director for director in movie_bag["directors"]),
+    )
+    check.equal(
+        cut.entry_fields["minutes"].original_value, str(int(movie_bag["duration"]))
+    )
+    # check.equal(cut.entry_fields["notes"].original_value, movie_bag["notes"])
+    # synopsis is not used in GUI2 but is expected for GUI3.
+    # This test will fail when GUI3 is implemented.
+    check.equal(cut.entry_fields.get("synopsis"), None)
+
+    check.equal(cut.entry_fields["tags"].original_value, movie_bag["movie_tags"])
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -650,38 +773,6 @@ class TestEditMovieGUI:
     minutes = 142
     notes = "dummy old notes"
     tags = ("test tag 1", "test tag 2")
-
-    def test_post_init(
-        self,
-        mock_tk,
-        ttk,
-        moviegui_framing,
-        movie_fill_buttonbox,
-        movie_tmdb_results_frame,
-        input_zone,
-        patterns,
-    ):
-        # noinspection PyTypeChecker
-        cut = guiwidgets_2.EditMovieGUI(
-            mock_tk,
-            tmdb_search_callback=lambda: None,
-            all_tags=None,
-            old_movie=(self.old_movie()),
-        )
-
-        # patterns.Entry is mocked once and used four times. mock.original_value retains the last
-        # update which is `minutes`.
-        check.equal(
-            [cut.entry_fields[v].original_value for v in self.old_movie().keys()],
-            [
-                self.minutes,
-                self.minutes,
-                self.minutes,
-                self.minutes,
-                self.notes,
-                self.tags,
-            ],
-        )
 
     def test_create_buttons(
         self,
@@ -701,7 +792,6 @@ class TestEditMovieGUI:
             mock_tk,
             tmdb_search_callback=lambda: None,
             all_tags=None,
-            old_movie=self.old_movie(),
         )
         column_num = guiwidgets_2.itertools.count()
         for k in cut.entry_fields.keys():
@@ -766,7 +856,6 @@ class TestEditMovieGUI:
             mock_tk,
             tmdb_search_callback=lambda: None,
             all_tags=None,
-            old_movie=self.old_movie(),
         )
         for k in cut.entry_fields.keys():
             cut.entry_fields[k] = MagicMock()
@@ -831,7 +920,6 @@ class TestEditMovieGUI:
             mock_tk,
             tmdb_search_callback=lambda: None,
             all_tags=None,
-            old_movie=self.old_movie(),
             edit_movie_callback=edit_movie_callback,
             delete_movie_callback=delete_movie_callback,
         )
@@ -856,30 +944,6 @@ class TestEditMovieGUI:
         with check:
             mock_destroy.assert_called_once_with()
 
-        # Exception tests
-        cut.edit_movie_callback.side_effect = [
-            guiwidgets_2.exception.MovieDBConstraintFailure
-        ]
-        cut.commit()
-        cut.edit_movie_callback.side_effect = (
-            guiwidgets_2.exception.MovieYearConstraintFailure(
-                dummy_msg,
-            )
-        )
-        cut.commit()
-        with check:
-            messagebox.showinfo.assert_has_calls(
-                [
-                    call(
-                        parent=cut.parent,
-                        message="Database constraint failure.",
-                        detail="A movie with this title and year is already "
-                        "present in the database.",
-                    ),
-                    call(parent=cut.parent, message=dummy_msg),
-                ]
-            )
-
     def test_delete(
         self,
         mock_tk,
@@ -901,7 +965,6 @@ class TestEditMovieGUI:
             mock_tk,
             tmdb_search_callback=lambda: None,
             all_tags=None,
-            old_movie=self.old_movie(),
             delete_movie_callback=delete_movie_callback,
         )
         monkeypatch.setattr(cut, "destroy", MagicMock())

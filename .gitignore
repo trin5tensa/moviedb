@@ -9,8 +9,9 @@
 /test/tmdb/.coverage
 /htmlcov/
 /.coverage
-/movie_database.sqlite3
+/Database/DBv0/movie_database.sqlite3
 /docs/
 /Database Exports/
 /venv_3_12_a/
 /Database Export/movies.csv
+/Database Export/
