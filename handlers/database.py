@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/17/25, 11:34 AM by stephen.
+#  Last modified 1/23/25, 1:06 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,6 +23,8 @@ import guiwidgets
 import guiwidgets_2
 from config import MovieKeyTypedDict
 from database import tables
+
+# todo MovieTD
 from globalconstants import MovieTD, MovieBag, MovieInteger
 from handlers import moviebagfacade
 from handlers.sundries import _tmdb_io_handler
@@ -109,6 +111,7 @@ def gui_edit_movie(
     )
 
 
+# todo MovieTD (should become automatically obsolete when other code is fixed)
 def db_add_movie(gui_movie: MovieTD):
     """Adds user supplied movie data to the database.
 
@@ -119,6 +122,7 @@ def db_add_movie(gui_movie: MovieTD):
     Args:
         gui_movie:
     """
+    # todo MovieTD (should become automatically obsolete when other code is fixed)
     movie_bag = moviebagfacade.convert_from_movie_td(gui_movie)
     try:
         tables.add_movie(movie_bag=movie_bag)
@@ -213,6 +217,7 @@ def db_select_movies(movie: MovieKeyTypedDict):
         gui_edit_movie(old_movie, prepopulate=movie_bag)
 
 
+# todo MovieTD (should become automatically obsolete when other code is fixed)
 def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie: MovieTD):
     """Changes a movie and its links in database with new user supplied data.
 
@@ -224,6 +229,7 @@ def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie: MovieTD):
         old_movie: The old movie key.
         new_movie: Fields with either original values or values modified by the user.
     """
+    # todo MovieTD (should become automatically obsolete when other code is fixed)
     old_movie_bag = moviebagfacade.convert_from_movie_key_typed_dict(old_movie)
     new_movie_bag = moviebagfacade.convert_from_movie_td(new_movie)
 

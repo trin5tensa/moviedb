@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/17/25, 12:36 PM by stephen.
+#  Last modified 1/23/25, 1:06 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -356,6 +356,7 @@ class AddMovieGUI(MovieGUI):
     """Create and manage a GUI form for entering a new movie."""
 
     # prepopulate: MovieBag | None = field(default=None, kw_only=True)
+    # todo MovieTD (should become automatically obsolete when other code is fixed)
     add_movie_callback: Callable[[MovieTD], None] = field(default=None, kw_only=True)
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
@@ -415,6 +416,10 @@ class AddMovieGUI(MovieGUI):
 
     def commit(self):
         """Commit a new movie to the database."""
+        # todo MovieTD: A muddle
+        #  self.return_fields is type dict not MovieTD
+        #  keys are the names used for self.entry_fields from globalconstants
+        #  TITLE, YEAR, DIRECTOR, DURATION, NOTES, and MOVIE_TAGS
         self.return_fields = {
             name: entry_field.current_value
             for name, entry_field in self.entry_fields.items()

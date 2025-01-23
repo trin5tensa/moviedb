@@ -1,7 +1,7 @@
 """MovieBag Facade."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 8:50 AM by stephen.
+#  Last modified 1/23/25, 1:06 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,6 +16,8 @@
 from collections.abc import Sequence
 
 from config import MovieKeyTypedDict, FindMovieTypedDict, MovieUpdateDef
+
+# todo MovieTD (should become automatically obsolete when other code is fixed)
 from globalconstants import MovieBag, MovieInteger, MovieTD
 
 
@@ -50,6 +52,7 @@ def convert_to_movie_key_typed_dict(movie_bag: MovieBag) -> MovieKeyTypedDict:
 
 
 # noinspection DuplicatedCode
+# todo MovieTD (should become automatically obsolete when other code is fixed)
 def convert_from_movie_td(movie: MovieTD) -> MovieBag:
     """Converts a MovieTD into a MovieBag object.
 
