@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/23/25, 1:06 PM by stephen.
+#  Last modified 1/27/25, 2:15 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,19 +30,6 @@ SYNOPSIS = "synopsis"
 TITLE = "title"
 YEAR = "year"
 
-# Field name constants
-MB_TITLE = "title"
-MB_YEAR = "year"
-MB_DURATION = "duration"
-MB_DIRECTORS = "directors"
-MB_STARS = "stars"
-MB_SYNOPSIS = "synopsis"
-MB_NOTES = "notes"
-MB_TAGS = "movie_tags"
-MB_ID = "id"
-MB_CREATED = "created"
-MB_UPDATED = "updated"
-
 NO_INTEGER_VALUE = "This object cannot provide an integer value"
 
 
@@ -69,19 +56,19 @@ class MovieBag(TypedDict, total=False):
     data consumer.
     """
 
-    MB_TITLE: str
-    MB_YEAR: "MovieInteger"
-    MB_DURATION: "MovieInteger"
-    MB_DIRECTORS: set[str]
-    MB_STARS: set[str]
-    MB_SYNOPSIS: str
-    MB_NOTES: str
-    MB_TAGS: set[str]
+    title: str
+    year: "MovieInteger"
+    duration: "MovieInteger"
+    directors: set[str]
+    stars: set[str]
+    synopsis: str
+    notes: str
+    tags: set[str]
 
     # Database fields
-    MD_ID: int
-    MB_CREATED: datetime
-    MB_UPDATED: datetime
+    id: int
+    created: datetime
+    updated: datetime
 
 
 @dataclass

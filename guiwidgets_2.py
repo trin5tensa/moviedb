@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/23/25, 1:06 PM by stephen.
+#  Last modified 1/27/25, 2:15 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,6 +16,7 @@ This module includes windows for presenting data and returning entered data to i
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import itertools
+import logging
 import queue
 
 # This tkinter import method supports accurate test mocking of tk and ttk.
@@ -58,6 +59,7 @@ MOVIE_DELETE_MESSAGE = "Do you want to delete this movie?"
 TAG_DELETE_MESSAGE = "Do you want to delete this tag?"
 NO_MATCH_MESSAGE = "No matches"
 NO_MATCH_DETAIL = "There are no matching tags in the database."
+UNEXPECTED_KEY = "Unexpected key"
 
 DefaultLiteral = Literal["normal", "active", "disabled"]
 StateFlags = Optional[list[Literal["active", "normal", "disabled", "!disabled"]]]
@@ -339,6 +341,33 @@ class MovieGUI:
         for k, v in self.tmdb_movies[item_id].items():
             self.entry_fields[k].current_value = v
 
+    def as_movie_bag(self) -> MovieBag:
+        """Returns the form data as a movie bag
+
+        Returns:
+            movie bag
+        """
+        movie_bag = MovieBag()
+        for name, widget in self.entry_fields.items():
+            if widget.current_value:
+                match name:
+                    case "title":
+                        movie_bag["title"] = widget.current_value
+                    case "year":
+                        movie_bag["year"] = MovieInteger(widget.current_value)
+                    case "minutes":
+                        movie_bag["duration"] = MovieInteger(widget.current_value)
+                    case "director":
+                        movie_bag["directors"] = set(widget.current_value.split(", "))
+                    case "notes":
+                        movie_bag["notes"] = widget.current_value
+                    case "tags":
+                        movie_bag["tags"] = {tag for tag in widget.current_value}
+                    case _:
+                        logging.error(f"Unexpected key: {name}")
+                        raise KeyError(f"Unexpected key: {name}")
+        return movie_bag
+
     # noinspection PyUnusedLocal
     def destroy(self, *args):
         """
@@ -425,6 +454,8 @@ class AddMovieGUI(MovieGUI):
             for name, entry_field in self.entry_fields.items()
         }
         self.add_movie_callback(self.return_fields)
+
+        # todo Is it still necessary to clean up after DB1?
         for v in self.entry_fields.values():
             v.clear_current_value()
         items = self.tmdb_treeview.get_children()
