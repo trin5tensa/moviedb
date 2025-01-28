@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/28/25, 8:35 AM by stephen.
+#  Last modified 1/28/25, 2:39 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -643,58 +643,6 @@ class TestAddMovieGUI:
                     call(create_button(), False),
                     call(create_button(), True),
                 ]
-            )
-
-    @pytest.mark.skip
-    def test_commit(
-        self,
-        mock_tk,
-        ttk,
-        moviegui_framing,
-        movie_fill_buttonbox,
-        movie_tmdb_results_frame,
-        input_zone,
-        patterns,
-        messagebox,
-    ):
-        dummy_current_values = iter("abcdef")
-        dummy_tmdb_treeview_children = ("x", "y", "z")
-        dummy_msg = "dummy message"
-        add_movie_callback = MagicMock()
-
-        # noinspection PyTypeChecker
-        cut = guiwidgets_2.AddMovieGUI(
-            mock_tk,
-            tmdb_search_callback=lambda: None,
-            all_tags=None,
-            add_movie_callback=add_movie_callback,
-        )
-        for k in cut.entry_fields.keys():
-            cut.entry_fields[k] = MagicMock()
-            cut.entry_fields[k].current_value = next(dummy_current_values)
-        cut.tmdb_treeview = MagicMock()
-        cut.tmdb_treeview.get_children.return_value = dummy_tmdb_treeview_children
-
-        cut.commit()
-        with check:
-            # noinspection PyUnresolvedReferences
-            cut.add_movie_callback.assert_called_once_with(
-                {
-                    TITLE: "a",
-                    YEAR: "b",
-                    DIRECTOR: "c",
-                    DURATION: "d",
-                    NOTES: "e",
-                    MOVIE_TAGS: "f",
-                }
-            )
-        for v in cut.entry_fields.values():
-            with check:
-                # noinspection PyUnresolvedReferences
-                v.clear_current_value.assert_called_once_with()
-        with check:
-            cut.tmdb_treeview.delete.assert_called_once_with(
-                *dummy_tmdb_treeview_children
             )
 
 
