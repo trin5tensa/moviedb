@@ -7,7 +7,7 @@ movies, tags, and people (directors and stars).
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 1:01 PM by stephen.
+#  Last modified 1/28/25, 8:35 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -319,9 +319,9 @@ def update_movie_relationships(
             tag text.
 
     """
-    if movie_tags := movie_bag.get("movie_tags"):
+    if tags := movie_bag.get("tags"):
         movie.tags = set()
-        for tag_text in movie_tags:
+        for tag_text in tags:
             try:
                 # noinspection PyUnresolvedReferences
                 movie.tags.add(_select_tag(session, text=tag_text))

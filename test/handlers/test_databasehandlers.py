@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/23/25, 1:06 PM by stephen.
+#  Last modified 1/28/25, 8:35 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -51,12 +51,9 @@ def test_gui_add_movie(monkeypatch, config_current, test_tags):
 def test_db_add_movie(monkeypatch):
     add_movie = MagicMock(name="add_movie")
     monkeypatch.setattr(handlers.database.tables, "add_movie", add_movie)
-    # todo MovieTD
-    gui_movie = MovieTD(title="Add movie test", year="4242")
-    # noinspection PyUnresolvedReferences
-    movie_bag = handlers.moviebagfacade.convert_from_movie_td(gui_movie)
+    movie_bag = MovieBag(title="Add movie test", year=MovieInteger("4242"))
 
-    handlers.database.db_add_movie(gui_movie)
+    handlers.database.db_add_movie(movie_bag)
 
     add_movie.assert_called_once_with(movie_bag=movie_bag)
 
@@ -67,12 +64,8 @@ def test_db_add_movie_handles_NoResultFound_for_missing_tag(
     config_current,
 ):
     """Attempts to add a movie with a tag that is not in the database"""
-    # todo MovieTD
-    movie_td = handlers.database.MovieTD(
-        title="title",
-        year="4242",
-    )
-    movie_bag = handlers.moviebagfacade.convert_from_movie_td(movie_td)
+    movie_bag = MovieBag(title="Add movie test", year=MovieInteger("4242"))
+
     db_add_movie = MagicMock(name="mock_add_movie")
     db_add_movie.side_effect = handlers.database.tables.NoResultFound()
     db_add_movie.side_effect.__notes__ = [
@@ -85,7 +78,7 @@ def test_db_add_movie_handles_NoResultFound_for_missing_tag(
     exc_messagebox = MagicMock(name="exc_messagebox")
     monkeypatch.setattr(handlers.database, "_exc_messagebox", exc_messagebox)
 
-    handlers.database.db_add_movie(movie_td)
+    handlers.database.db_add_movie(movie_bag)
 
     with check:
         exc_messagebox.assert_called_once_with(db_add_movie.side_effect)
@@ -96,12 +89,7 @@ def test_db_add_movie_handles_NoResultFound_for_missing_tag(
 # noinspection DuplicatedCode,PyPep8Naming
 def test_db_add_movie_handles_IntegrityError_for_existing_movie(monkeypatch):
     """Attempts to add a movie with a key that is already present in the database."""
-    # todo MovieTD
-    movie_td = handlers.database.MovieTD(
-        title="title",
-        year="4242",
-    )
-    movie_bag = handlers.moviebagfacade.convert_from_movie_td(movie_td)
+    movie_bag = MovieBag(title="Add movie test", year=MovieInteger("4242"))
     db_add_movie = MagicMock(name="mock_add_movie")
     db_add_movie.side_effect = handlers.database.tables.IntegrityError(
         "", "", Exception()
@@ -117,7 +105,7 @@ def test_db_add_movie_handles_IntegrityError_for_existing_movie(monkeypatch):
     gui_add_movie = MagicMock(name="gui_add_movie")
     monkeypatch.setattr(handlers.database, "gui_add_movie", gui_add_movie)
 
-    handlers.database.db_add_movie(movie_td)
+    handlers.database.db_add_movie(movie_bag)
 
     with check:
         exc_messagebox.assert_called_once_with(db_add_movie.side_effect)
@@ -128,12 +116,7 @@ def test_db_add_movie_handles_IntegrityError_for_existing_movie(monkeypatch):
 # noinspection DuplicatedCode,PyPep8Naming
 def test_db_add_movie_handles_IntegrityError_for_invalid_year(monkeypatch):
     """Attempts to add a movie with a key that is already present in the database."""
-    # todo MovieTD
-    movie_td = handlers.database.MovieTD(
-        title="title",
-        year="4242",
-    )
-    movie_bag = handlers.moviebagfacade.convert_from_movie_td(movie_td)
+    movie_bag = MovieBag(title="Add movie test", year=MovieInteger("4242"))
     db_add_movie = MagicMock(name="mock_add_movie")
     db_add_movie.side_effect = handlers.database.tables.IntegrityError(
         "", "", Exception()
@@ -148,7 +131,7 @@ def test_db_add_movie_handles_IntegrityError_for_invalid_year(monkeypatch):
     gui_add_movie = MagicMock(name="gui_add_movie")
     monkeypatch.setattr(handlers.database, "gui_add_movie", gui_add_movie)
 
-    handlers.database.db_add_movie(movie_td)
+    handlers.database.db_add_movie(movie_bag)
 
     with check:
         exc_messagebox.assert_called_once_with(db_add_movie.side_effect)

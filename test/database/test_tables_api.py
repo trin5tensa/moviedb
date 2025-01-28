@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/18/25, 6:41 AM by stephen.
+#  Last modified 1/28/25, 8:35 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -152,7 +152,7 @@ def test_add_movie(test_database):
         duration=MovieInteger(159),
         synopsis="Test synopsis",
         notes="Test notes",
-        movie_tags=TAG_TEXTS,
+        tags=TAG_TEXTS,
         directors=TEST_DIRECTORS | {extra_director},
         stars=TEST_STARS | {extra_star},
     )
@@ -176,7 +176,7 @@ def test_add_movie_with_invalid_tag(test_database, log_error):
     movie_bag = MovieBag(
         title="Test Add Movie",
         year=MovieInteger(5042),
-        movie_tags={tag_text},
+        tags={tag_text},
     )
     exc_notes = f"{tables.TAG_NOT_FOUND}\n{tag_text}"
 
@@ -275,7 +275,7 @@ def test_edit_movie(test_database):
         duration=MovieInteger(159),
         synopsis="Test synopsis",
         notes="Test notes",
-        movie_tags=TAG_TEXTS,
+        tags=TAG_TEXTS,
         directors={"Yolanda Ypsilanti"},
         stars={"O Star 10", "O Star 11"},
     )
@@ -286,7 +286,7 @@ def test_edit_movie(test_database):
         duration=MovieInteger(242),
         synopsis="Test synopsis sequel",
         notes="Test notes sequel",
-        movie_tags={SOUGHT_TAG},
+        tags={SOUGHT_TAG},
         directors={"Zach Zimmermann"},
         stars={"O Star 10", "N Star 20"},
     )
@@ -317,7 +317,7 @@ def test_edit_movie_with_invalid_tag(test_database, log_error):
     tables.add_movie(movie_bag=old_movie_bag)
     tag_text = "edit_movie_with_invalid_tag"
     new_movie_bag = MovieBag(
-        movie_tags={tag_text},
+        tags={tag_text},
     )
     exc_notes = f"{tables.TAG_NOT_FOUND}\n{tag_text}"
 
@@ -641,7 +641,7 @@ def check_movie_assignments(session: tables.Session, movie_bag: tables.MovieBag)
     check.equal(movie.notes, movie_bag["notes"])
 
     # Check relationship fields
-    check.equal({tag.text for tag in movie.tags}, movie_bag["movie_tags"])
+    check.equal({tag.text for tag in movie.tags}, movie_bag["tags"])
     check.equal({person.name for person in movie.directors}, movie_bag["directors"])
     check.equal({person.name for person in movie.stars}, movie_bag["stars"])
 

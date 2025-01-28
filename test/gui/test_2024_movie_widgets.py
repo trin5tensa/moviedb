@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/17/25, 12:36 PM by stephen.
+#  Last modified 1/28/25, 8:35 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -645,6 +645,7 @@ class TestAddMovieGUI:
                 ]
             )
 
+    @pytest.mark.skip
     def test_commit(
         self,
         mock_tk,

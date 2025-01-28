@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/23/25, 1:06 PM by stephen.
+#  Last modified 1/28/25, 8:35 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -111,8 +111,7 @@ def gui_edit_movie(
     )
 
 
-# todo MovieTD (should become automatically obsolete when other code is fixed)
-def db_add_movie(gui_movie: MovieTD):
+def db_add_movie(movie_bag: MovieBag):
     """Adds user supplied movie data to the database.
 
     A user alert is raised with diagnostic information if the database
@@ -120,10 +119,8 @@ def db_add_movie(gui_movie: MovieTD):
     'add movie' input screen populated with her previously entered data.
 
     Args:
-        gui_movie:
+        movie_bag:
     """
-    # todo MovieTD (should become automatically obsolete when other code is fixed)
-    movie_bag = moviebagfacade.convert_from_movie_td(gui_movie)
     try:
         tables.add_movie(movie_bag=movie_bag)
 

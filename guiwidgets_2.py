@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/27/25, 2:15 PM by stephen.
+#  Last modified 1/28/25, 8:35 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -385,8 +385,7 @@ class AddMovieGUI(MovieGUI):
     """Create and manage a GUI form for entering a new movie."""
 
     # prepopulate: MovieBag | None = field(default=None, kw_only=True)
-    # todo MovieTD (should become automatically obsolete when other code is fixed)
-    add_movie_callback: Callable[[MovieTD], None] = field(default=None, kw_only=True)
+    add_movie_callback: Callable[[MovieBag], None] = field(default=None, kw_only=True)
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         commit_button = create_button(
@@ -444,18 +443,13 @@ class AddMovieGUI(MovieGUI):
         return func
 
     def commit(self):
-        """Commit a new movie to the database."""
-        # todo MovieTD: A muddle
-        #  self.return_fields is type dict not MovieTD
-        #  keys are the names used for self.entry_fields from globalconstants
-        #  TITLE, YEAR, DIRECTOR, DURATION, NOTES, and MOVIE_TAGS
-        self.return_fields = {
-            name: entry_field.current_value
-            for name, entry_field in self.entry_fields.items()
-        }
-        self.add_movie_callback(self.return_fields)
+        """Commits a new movie to the database.
 
-        # todo Is it still necessary to clean up after DB1?
+        The form is cleared of entries so the user can enter and commit
+        another movie.
+        """
+        self.add_movie_callback(self.as_movie_bag())
+
         for v in self.entry_fields.values():
             v.clear_current_value()
         items = self.tmdb_treeview.get_children()
