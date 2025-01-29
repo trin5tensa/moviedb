@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/28/25, 2:39 PM by stephen.
+#  Last modified 1/29/25, 1:47 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -846,52 +846,6 @@ class TestEditMovieGUI:
                     call(delete_button, False),
                 ]
             )
-
-    def test_commit(
-        self,
-        mock_tk,
-        ttk,
-        moviegui_framing,
-        movie_fill_buttonbox,
-        movie_tmdb_results_frame,
-        input_zone,
-        patterns,
-        messagebox,
-        monkeypatch,
-    ):
-        dummy_current_values = iter("abcdef")
-        dummy_msg = "dummy message"
-        edit_movie_callback = MagicMock()
-        delete_movie_callback = MagicMock()
-
-        # noinspection PyTypeChecker
-        cut = guiwidgets_2.EditMovieGUI(
-            mock_tk,
-            tmdb_search_callback=lambda: None,
-            all_tags=None,
-            edit_movie_callback=edit_movie_callback,
-            delete_movie_callback=delete_movie_callback,
-        )
-        monkeypatch.setattr(cut, "destroy", mock_destroy := MagicMock())
-        for k in cut.entry_fields.keys():
-            cut.entry_fields[k] = MagicMock()
-            cut.entry_fields[k].current_value = next(dummy_current_values)
-
-        cut.commit()
-        with check:
-            # noinspection PyUnresolvedReferences
-            cut.edit_movie_callback.assert_called_once_with(
-                {
-                    TITLE: "a",
-                    YEAR: "b",
-                    DIRECTOR: "c",
-                    DURATION: "d",
-                    NOTES: "e",
-                    MOVIE_TAGS: "f",
-                }
-            )
-        with check:
-            mock_destroy.assert_called_once_with()
 
     def test_delete(
         self,

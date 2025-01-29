@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/28/25, 8:35 AM by stephen.
+#  Last modified 1/29/25, 1:47 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,8 +24,7 @@ import guiwidgets_2
 from config import MovieKeyTypedDict
 from database import tables
 
-# todo MovieTD
-from globalconstants import MovieTD, MovieBag, MovieInteger
+from globalconstants import MovieBag, MovieInteger
 from handlers import moviebagfacade
 from handlers.sundries import _tmdb_io_handler
 
@@ -214,8 +213,7 @@ def db_select_movies(movie: MovieKeyTypedDict):
         gui_edit_movie(old_movie, prepopulate=movie_bag)
 
 
-# todo MovieTD (should become automatically obsolete when other code is fixed)
-def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie: MovieTD):
+def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie_bag: MovieBag):
     """Changes a movie and its links in database with new user supplied data.
 
     A user alert is raised with diagnostic information if the database
@@ -224,11 +222,9 @@ def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie: MovieTD):
 
     Args:
         old_movie: The old movie key.
-        new_movie: Fields with either original values or values modified by the user.
+        new_movie_bag: Fields with either original values or values modified by the user.
     """
-    # todo MovieTD (should become automatically obsolete when other code is fixed)
     old_movie_bag = moviebagfacade.convert_from_movie_key_typed_dict(old_movie)
-    new_movie_bag = moviebagfacade.convert_from_movie_td(new_movie)
 
     try:
         tables.edit_movie(old_movie_bag=old_movie_bag, replacement_fields=new_movie_bag)

@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/28/25, 2:39 PM by stephen.
+#  Last modified 1/29/25, 1:47 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -119,11 +119,7 @@ class TestAddMovieGUI:
         as_movie_bag = MagicMock(name="as_movie_bag")
         monkeypatch.setattr(guiwidgets_2.MovieGUI, "as_movie_bag", as_movie_bag)
         widget = MagicMock(name="widget")
-        monkeypatch.setitem(
-            add_movie_gui.entry_fields,
-            "mock widget",
-            widget,
-        )
+        monkeypatch.setitem(add_movie_gui.entry_fields, "mock widget", widget)
         items = ["item 1", "item 2"]
         tmdb_treeview = MagicMock(name="tmdb_treeview")
         monkeypatch.setattr(guiwidgets_2.MovieGUI, "tmdb_treeview", tmdb_treeview)
@@ -137,6 +133,29 @@ class TestAddMovieGUI:
             widget.clear_current_value.assert_called_once_with()
         with check:
             tmdb_treeview.delete.assert_called_once_with(*items)
+
+
+class TestEditMovieGUI:
+    def test_commit(self, tk, monkeypatch):
+        monkeypatch.setattr(
+            guiwidgets_2.EditMovieGUI, "__post_init__", lambda *args: None
+        )
+        tmdb_search_callback = MagicMock(name="tmdb_search_callback")
+        edit_movie_callback = MagicMock(name="edit_movie_callback")
+        edit_movie_gui = guiwidgets_2.EditMovieGUI(
+            tk, tmdb_search_callback, [], edit_movie_callback=edit_movie_callback
+        )
+        as_movie_bag = MagicMock(name="as_movie_bag")
+        monkeypatch.setattr(guiwidgets_2.MovieGUI, "as_movie_bag", as_movie_bag)
+        destroy = MagicMock(name="destroy")
+        monkeypatch.setattr(guiwidgets_2.MovieGUI, "destroy", destroy)
+
+        edit_movie_gui.commit()
+
+        with check:
+            edit_movie_callback.assert_called_once_with(as_movie_bag())
+        with check:
+            destroy.assert_called_once_with()
 
 
 @dataclass

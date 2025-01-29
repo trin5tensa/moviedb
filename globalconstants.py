@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/27/25, 2:15 PM by stephen.
+#  Last modified 1/29/25, 1:47 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -31,21 +31,6 @@ TITLE = "title"
 YEAR = "year"
 
 NO_INTEGER_VALUE = "This object cannot provide an integer value"
-
-
-# todo MovieTD (should become automatically obsolete when other code is fixed)
-class MovieTD(TypedDict):
-    """Type definition for movie.
-
-    Deprecated. Use Movie Bag.
-    """
-
-    title: str
-    year: str
-    director: NotRequired[str]
-    minutes: NotRequired[str]
-    notes: NotRequired[str]
-    tags: NotRequired[Sequence[str]]
 
 
 class MovieBag(TypedDict, total=False):

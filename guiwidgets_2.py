@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/28/25, 2:39 PM by stephen.
+#  Last modified 1/29/25, 1:47 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -459,9 +459,7 @@ class AddMovieGUI(MovieGUI):
 class EditMovieGUI(MovieGUI):
     """Create and manage a GUI form for editing an existing movie."""
 
-    edit_movie_callback: Callable[[config.FindMovieTypedDict], None] = field(
-        default=None, kw_only=True
-    )
+    edit_movie_callback: Callable[[MovieBag], None] = field(default=None, kw_only=True)
     delete_movie_callback: Callable[[config.FindMovieTypedDict], None] = field(
         default=None, kw_only=True
     )
@@ -530,11 +528,7 @@ class EditMovieGUI(MovieGUI):
 
     def commit(self):
         """Commit an edited movie to the database."""
-        self.return_fields = {
-            name: entry_field.current_value  # pragma no cover
-            for name, entry_field in self.entry_fields.items()
-        }
-        self.edit_movie_callback(self.return_fields)
+        self.edit_movie_callback(self.as_movie_bag())
         self.destroy()
 
     def delete(self):

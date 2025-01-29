@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/28/25, 8:35 AM by stephen.
+#  Last modified 1/29/25, 1:47 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,8 +21,7 @@ from pytest_check import check
 import config
 from config import MovieKeyTypedDict
 
-# todo MovieTD
-from globalconstants import MovieTD, MovieInteger, MovieBag
+from globalconstants import MovieInteger, MovieBag
 import handlers
 
 
@@ -294,7 +293,6 @@ def test_db_match_movies_returning_2_movies(monkeypatch, config_current):
 def test_db_edit_movie(monkeypatch, old_movie, new_movie):
     # Arrange
     old_movie_bag = handlers.moviebagfacade.convert_from_movie_key_typed_dict(old_movie)
-    new_movie_bag = handlers.moviebagfacade.convert_from_movie_td(new_movie)
     db_edit_movie = MagicMock(name="db_edit_movie")
     monkeypatch.setattr(handlers.database.tables, "edit_movie", db_edit_movie)
 
@@ -303,7 +301,7 @@ def test_db_edit_movie(monkeypatch, old_movie, new_movie):
 
     # Assert
     db_edit_movie.assert_called_once_with(
-        old_movie_bag=old_movie_bag, replacement_fields=new_movie_bag
+        old_movie_bag=old_movie_bag, replacement_fields=new_movie
     )
 
 
@@ -352,9 +350,6 @@ def edit_movie_exception_handler(
     new_title = "New Movie Title"
     new_year = 4201
     new_movie_bag = MovieBag(title=new_title, year=MovieInteger(new_year))
-    # noinspection PyTypeChecker
-    # todo MovieTD
-    new_movie = MovieTD(title=new_title, year=new_year)
 
     # Patch call to database
     db_edit_movie = MagicMock(name="db_edit_movie")
@@ -370,7 +365,7 @@ def edit_movie_exception_handler(
     exc_messagebox = MagicMock(name="exc_messagebox")
     monkeypatch.setattr(handlers.database, "_exc_messagebox", exc_messagebox)
 
-    handlers.database.db_edit_movie(old_movie, new_movie)
+    handlers.database.db_edit_movie(old_movie, new_movie_bag)
 
     with check:
         exc_messagebox.assert_called_once_with(db_edit_movie.side_effect)
@@ -741,20 +736,19 @@ def new_movie():
     functions.
 
     Returns:
-        A MovieTD
+        A MovieBag
     """
     new_title = "New Title"
     new_year = "4343"
-    new_director = "Janis Jackson, Keith Kryzlowski"
+    new_directors = {"Janis Jackson", "Keith Kryzlowski"}
     new_duration = "142"
     new_notes = "New Notes"
-    new_movie_tags = ["new", "movie", "tags"]
-    # todo MovieTD
-    return handlers.database.MovieTD(
+    new_movie_tags = {"new", "movie", "tags"}
+    return handlers.database.MovieBag(
         title=new_title,
-        year=new_year,
-        director=new_director,
-        minutes=new_duration,
+        year=MovieInteger(new_year),
+        directors=new_directors,
+        duration=MovieInteger(new_duration),
         notes=new_notes,
         tags=new_movie_tags,
     )
