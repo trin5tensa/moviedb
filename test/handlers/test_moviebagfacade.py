@@ -6,7 +6,7 @@ the DBv1 database.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/29/25, 1:47 PM by stephen.
+#  Last modified 1/30/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -62,7 +62,7 @@ def test_convert_to_movie_update_def():
         duration=MovieInteger(duration),
         directors=[director_1, director_2],
         notes=notes,
-        movie_tags=tags,
+        tags=tags,
     )
 
     movie = moviebagfacade.convert_to_movie_update_def(movie_bag)
@@ -102,7 +102,7 @@ def test_convert_from_find_movie_typed_dict_with_singles():
         directors={directors},
         duration=MovieInteger(duration),
         notes=notes,
-        movie_tags=set(tags),
+        tags=set(tags),
     )
 
 
@@ -137,5 +137,5 @@ def test_convert_from_find_movie_typed_dict_with_doubles():
         directors={director_1, director_2},
         duration=MovieInteger(str(lo_duration) + "-" + str(hi_duration)),
         notes=notes,
-        movie_tags=set(tags),
+        tags=set(tags),
     )

@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/30/25, 1:12 PM by stephen.
+#  Last modified 1/30/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -39,7 +39,7 @@ class TestMovieGUI:
     director = {director_1, director_2}
     minutes = 142
     notes = "dummy old notes"
-    movie_tags = {"test tag 1", "test tag 2"}
+    tags = {"test tag 1", "test tag 2"}
 
     def test_post_init(
         self,
@@ -528,7 +528,7 @@ def test_add_movie_init_with_movie_bag(monkeypatch):
         duration=MovieInteger("42"),
         # Notes intentionally omitted
         synopsis="Boy meets girl.",
-        movie_tags={"tag 1", "tag 2"},
+        tags={"tag 1", "tag 2"},
     )
 
     # Act
@@ -554,7 +554,7 @@ def test_add_movie_init_with_movie_bag(monkeypatch):
     # This test will fail when GUI3 is implemented.
     check.equal(cut.entry_fields.get("synopsis"), None)
 
-    check.equal(cut.entry_fields["tags"].original_value, movie_bag["movie_tags"])
+    check.equal(cut.entry_fields["tags"].original_value, movie_bag["tags"])
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -693,7 +693,7 @@ def test_edit_movie_init_with_movie_bag(monkeypatch):
         duration=MovieInteger("42"),
         # Notes intentionally omitted
         synopsis="Boy meets girl.",
-        movie_tags={"tag 1", "tag 2"},
+        tags={"tag 1", "tag 2"},
     )
 
     # Act
@@ -719,7 +719,7 @@ def test_edit_movie_init_with_movie_bag(monkeypatch):
     # This test will fail when GUI3 is implemented.
     check.equal(cut.entry_fields.get("synopsis"), None)
 
-    check.equal(cut.entry_fields["tags"].original_value, movie_bag["movie_tags"])
+    check.equal(cut.entry_fields["tags"].original_value, movie_bag["tags"])
 
 
 # noinspection PyMissingOrEmptyDocstring

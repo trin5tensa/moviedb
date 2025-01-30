@@ -7,7 +7,7 @@ movies, tags, and people (directors and stars).
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/28/25, 8:35 AM by stephen.
+#  Last modified 1/30/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -55,7 +55,7 @@ def select_movie(*, movie_bag: MovieBag) -> MovieBag:
             stars: ignored
             synopsis: ignored
             notes: ignored
-            movie_tags: ignored
+            tags: ignored
 
     Returns:
         A movie bag populated with every field in the database.
@@ -123,7 +123,7 @@ def match_movies(match: MovieBag) -> list[MovieBag]:
                 stars. Substring set match.
                 synopsis. Substring match.
                 notes. Substring match.
-                movie_tags. Substring set match.
+                tags. Substring set match.
 
             Exact match. 4 will match `movie.id` = 4
             Substring match. The substring 'kwai' will match 'Bridge on the River Kwai'.
@@ -165,7 +165,7 @@ def add_movie(*, movie_bag: MovieBag):
             stars: optional
             synopsis: optional
             notes: optional
-            movie_tags: optional
+            tags: optional
 
     Raises and logs:
         A NoResultFound exception will be raised if a tag was not
@@ -226,7 +226,7 @@ def edit_movie(*, old_movie_bag: MovieBag, replacement_fields: MovieBag):
             stars: ignored
             synopsis: ignored
             notes: ignored
-            movie_tags: ignored
+            tags: ignored
         replacement_fields:
             id: ignored
             created: ignored
@@ -238,7 +238,7 @@ def edit_movie(*, old_movie_bag: MovieBag, replacement_fields: MovieBag):
             stars: optional
             synopsis: optional
             notes: optional
-            movie_tags: optional
+            tags: optional
 
 
     Raises and logs:
@@ -359,7 +359,7 @@ def delete_movie(*, movie_bag: MovieBag):
             stars: ignored
             synopsis: ignored
             notes: ignored
-            movie_tags: ignored
+            tags: ignored
 
     Raises:
 
@@ -527,7 +527,7 @@ def _select_movie(session: Session, *, movie_bag: MovieBag) -> schema.Movie:
             stars: ignored
             synopsis: ignored
             notes: ignored
-            movie_tags: ignored
+            tags: ignored
 
     Raises:
         NoResultFound
@@ -571,7 +571,7 @@ def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | N
                 stars. Substring set match.
                 synopsis. Substring match.
                 notes. Substring match.
-                movie_tags. Substring set match.
+                tags. Substring set match.
 
             Exact match. 4 will match `movie.id` = 4
             Substring match. The substring 'kwai' will match 'Bridge on the River Kwai'.
@@ -634,7 +634,7 @@ def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | N
                             .where(schema.Person.name.like(f"%{director}%"))
                         )
                     )
-            case "movie_tags":
+            case "tags":
                 for movie_tag in criteria:
                     statements.append(
                         (
@@ -672,7 +672,7 @@ def _add_movie(*, movie_bag: MovieBag) -> schema.Movie:
             stars: ignored
             synopsis: optional
             notes: optional
-            movie_tags: ignored
+            tags: ignored
 
     Returns:
         The new ORM movie.
@@ -709,7 +709,7 @@ def _edit_movie(*, movie: schema.Movie, edit_fields: MovieBag):
             stars: ignored
             synopsis: optional
             notes: optional
-            movie_tags: ignored
+            tags: ignored
     """
     for column, value in edit_fields.items():
         match column:
@@ -768,7 +768,7 @@ def _convert_to_movie_bag(movie: schema.Movie) -> MovieBag:
             person.name for person in movie.directors
         }  # pragma nocover
     if movie.tags:
-        movie_bag["movie_tags"] = {tag.text for tag in movie.tags}  # pragma no branch
+        movie_bag["tags"] = {tag.text for tag in movie.tags}  # pragma no branch
 
     return movie_bag
 

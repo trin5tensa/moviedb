@@ -1,7 +1,7 @@
 """MovieBag Facade."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/29/25, 1:47 PM by stephen.
+#  Last modified 1/30/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -76,7 +76,7 @@ def convert_from_find_movie_typed_dict(movie: config.FindMovieTypedDict) -> Movi
     if movie.get("minutes"):
         movie_bag["duration"] = _range_converter(movie["minutes"])
     if movie.get("tags"):
-        movie_bag["movie_tags"] = {movie for movie in movie["tags"]}  # pragma no branch
+        movie_bag["tags"] = {movie for movie in movie["tags"]}  # pragma no branch
     return movie_bag
 
 
@@ -100,8 +100,8 @@ def convert_to_movie_update_def(movie_bag: MovieBag) -> config.MovieUpdateDef:
         movie["minutes"] = int(movie_bag.get("duration"))
     if movie_bag.get("notes"):
         movie["notes"] = movie_bag.get("notes")
-    if movie_bag.get("movie_tags"):
-        movie["tags"] = list(movie_bag.get("movie_tags"))
+    if movie_bag.get("tags"):
+        movie["tags"] = list(movie_bag.get("tags"))
     return movie
 
 

@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/29/25, 1:47 PM by stephen.
+#  Last modified 1/30/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -47,7 +47,7 @@ def gui_add_movie(*, prepopulate: MovieBag = None):
             This argument can be used to prepopulate the movie widget. This
             is useful if the initial attempt to add a movie caused an
             exception. It gives the user the opportunity to fix input errors.
-            If present, the item "prepopulate['movie_tags']" contains the
+            If present, the item "prepopulate['tags']" contains the
             tag selection.
     """
     all_tags = tables.select_all_tags()
@@ -96,7 +96,7 @@ def gui_edit_movie(
             This argument can be used to prepopulate the movie widget. This
             is useful if the initial attempt to edit a movie caused an
             exception. It gives the user the opportunity to fix input errors.
-            If present, the item "prepopulate['movie_tags']" contains the
+            If present, the item "prepopulate['tags']" contains the
             tag selection.
     """
     all_tags = tables.select_all_tags()

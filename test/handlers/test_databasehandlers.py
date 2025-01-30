@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/29/25, 1:47 PM by stephen.
+#  Last modified 1/30/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -193,7 +193,7 @@ def test_db_match_movies(monkeypatch, config_current, messagebox):
         directors={director_1, director_2},
         duration=MovieInteger(minutes),
         notes=notes,
-        movie_tags=set(tags),
+        tags=set(tags),
     )
 
     monkeypatch.setattr(handlers.database, "gui_search_movie", lambda: None)
@@ -216,7 +216,7 @@ def test_db_match_movies_with_year_range(monkeypatch, config_current, messagebox
     match = handlers.database.MovieBag(
         title=title,
         year=(MovieInteger(f"{year_1}-{year_2}")),
-        movie_tags=set(tags),
+        tags=set(tags),
     )
     monkeypatch.setattr(handlers.database, "gui_search_movie", lambda: None)
 

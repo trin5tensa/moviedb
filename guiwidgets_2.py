@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/30/25, 1:12 PM by stephen.
+#  Last modified 1/30/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -200,7 +200,7 @@ class MovieGUI:
         )
         self.entry_fields["notes"].original_value = self.prepopulate.get("notes", "")
         self.entry_fields["tags"].original_value = list(
-            self.prepopulate.get("movie_tags", "")
+            self.prepopulate.get("tags", "")
         )
 
     def tmdb_results_frame(self, tmdb_frame: tk.Frame):

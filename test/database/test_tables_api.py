@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/28/25, 8:35 AM by stephen.
+#  Last modified 1/30/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -49,7 +49,7 @@ MOVIEBAG_2 = MovieBag(
     stars=TEST_STARS,
     synopsis="Synopsis for test",
     notes="I am MOVIEBAG_2",
-    movie_tags=TAG_TEXTS,
+    tags=TAG_TEXTS,
 )
 MOVIEBAG_3 = MovieBag(
     title="Third Movie",
@@ -83,7 +83,7 @@ def test_select_movie(test_database):
     check.equal(movie["synopsis"], MOVIEBAG_2["synopsis"])
     check.equal(movie["stars"], MOVIEBAG_2["stars"])
     check.equal(movie["directors"], MOVIEBAG_2["directors"])
-    check.equal(movie["movie_tags"], MOVIEBAG_2["movie_tags"])
+    check.equal(movie["tags"], MOVIEBAG_2["tags"])
 
 
 # noinspection PyPep8Naming
@@ -691,7 +691,7 @@ def test_database(session_engine):
                     session.add(person)
                 stars.add(person)
 
-            tag_texts = movie_bag.get("movie_tags", set())
+            tag_texts = movie_bag.get("tags", set())
             statement = tables.select(schema.Tag).where(schema.Tag.text.in_(tag_texts))
             tags = set(session.scalars(statement).all())
 
