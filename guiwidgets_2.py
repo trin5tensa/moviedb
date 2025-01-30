@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/29/25, 1:47 PM by stephen.
+#  Last modified 1/30/25, 1:12 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -34,6 +34,7 @@ from typing import (
     Literal,
     Optional,
     Union,
+    Sequence,
 )
 
 import config

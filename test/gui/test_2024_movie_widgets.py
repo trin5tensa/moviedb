@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/29/25, 1:47 PM by stephen.
+#  Last modified 1/30/25, 1:12 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -324,6 +324,7 @@ class TestMovieGUI:
 
         # Test 'try' and 'except' clauses: An empty queue will skip the `else` clause.
         with check:
+            # noinspection PyUnresolvedReferences
             cut.tmdb_treeview.delete.assert_not_called()
 
         # Test 'finally' clause
@@ -364,8 +365,10 @@ class TestMovieGUI:
         cut.tmdb_consumer()
 
         with check:
+            # noinspection PyUnresolvedReferences
             cut.tmdb_treeview.delete.assert_called_with(*treeview_items)
         with check:
+            # noinspection PyUnresolvedReferences
             cut.tmdb_treeview.insert.assert_called_once_with(
                 "",
                 "end",
@@ -385,6 +388,7 @@ class TestMovieGUI:
             )
         check.equal(cut.tmdb_movies[item_id], treeview_items[0])
 
+    # noinspection DuplicatedCode
     def test_tmdb_treeview_callback_with_selection(
         self,
         mock_tk,
@@ -418,6 +422,7 @@ class TestMovieGUI:
         for k in movie_keys:
             check.equal(cut.entry_fields[k].current_value, cut.tmdb_movies[item_id][k])
 
+    # noinspection DuplicatedCode
     def test_tmdb_treeview_callback_without_selection(
         self,
         mock_tk,
@@ -472,6 +477,7 @@ class TestMovieGUI:
     def moviegui(self, mock_tk):
         hold_dict = guiwidgets_2.config.current
         guiwidgets_2.config.current = guiwidgets_2.config.CurrentConfig()
+        # noinspection PyTypeChecker
         guiwidgets_2.config.current.escape_key_dict = {}
         # noinspection PyTypeChecker
         yield guiwidgets_2.MovieGUI(
@@ -480,6 +486,7 @@ class TestMovieGUI:
         guiwidgets_2.config.current = hold_dict
 
 
+# noinspection DuplicatedCode
 def test_add_movie_init_with_movie_bag(monkeypatch):
     # Arrange
     monkeypatch.setattr(guiwidgets_2.ttk, "Entry", MagicMock(name="Entry"))
@@ -646,6 +653,7 @@ class TestAddMovieGUI:
             )
 
 
+# noinspection DuplicatedCode
 def test_edit_movie_init_with_movie_bag(monkeypatch):
     # Arrange
     monkeypatch.setattr(guiwidgets_2.ttk, "Entry", MagicMock(name="Entry"))
@@ -942,7 +950,7 @@ def framing(monkeypatch):
     return mock
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @pytest.fixture
 def movie_user_input_frame(monkeypatch):
     monkeypatch.setattr(guiwidgets_2.MovieGUI, "user_input_frame", mock := MagicMock())
@@ -978,7 +986,7 @@ def patterns(patterns_entry, patterns_text, patterns_treeview):
     pass
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @pytest.fixture
 def patterns_entry(monkeypatch):
     monkeypatch.setattr(guiwidgets_2.tk_facade, "Entry", mock := MagicMock())
@@ -1006,7 +1014,7 @@ def focus_set(monkeypatch):
     return mock
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @pytest.fixture
 def movie_create_buttons(monkeypatch):
     monkeypatch.setattr(guiwidgets_2.MovieGUI, "_create_buttons", mock := MagicMock())
@@ -1048,7 +1056,7 @@ def movie_tmdb_search(monkeypatch):
     return mock
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @pytest.fixture
 def addmovie_enable_commit_button(monkeypatch):
     monkeypatch.setattr(

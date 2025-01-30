@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/29/25, 1:47 PM by stephen.
+#  Last modified 1/30/25, 1:12 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,12 +12,11 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from collections.abc import Sequence, Iterator
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TypedDict, NotRequired
+from typing import TypedDict
 
-# todo New Issue: Deprecated field names (Clean up at end of GUI3)
 # Deprecated field names
 DIRECTOR = "director"
 DIRECTORS = "directors"
@@ -138,7 +137,6 @@ class MovieInteger(set):
 
     def __int__(self) -> int:
         if len(self._values) == 1:
-            # todo Wierd code review
             return list(self._values)[0]
         else:
             raise TypeError(f"{NO_INTEGER_VALUE}: {self._values}")

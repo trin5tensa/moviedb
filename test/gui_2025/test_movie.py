@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/29/25, 1:47 PM by stephen.
+#  Last modified 1/30/25, 1:12 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +13,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from dataclasses import dataclass
 from unittest.mock import MagicMock
 
 import pytest
@@ -25,34 +24,29 @@ from globalconstants import MovieBag, MovieInteger
 
 class TestMovieGUI:
 
-    def test_as_movie_bag(self, tk, monkeypatch):
+    def test_as_movie_bag(self, movie_gui, monkeypatch):
+        # Arrange
         ef_title = "AMB Title"
         ef_year = "4242"
-        mb_year = MovieInteger("4242")
         ef_director = "Sidney Stoneheart, Tina Tatum"
-        mb_director = {"Sidney Stoneheart", "Tina Tatum"}
         ef_duration = "42"
-        mb_duration = MovieInteger("42")
         ef_notes = "AMB Notes"
         ef_tags = {"Alpha", "Beta"}
+        for k, v in [
+            ("title", ef_title),
+            ("year", ef_year),
+            ("director", ef_director),
+            ("minutes", ef_duration),
+            ("notes", ef_notes),
+            ("tags", ef_tags),
+        ]:
+            widget = MagicMock(name=k)
+            widget.current_value = v
+            monkeypatch.setitem(movie_gui.entry_fields, k, widget)
 
-        monkeypatch.setattr(guiwidgets_2.MovieGUI, "__post_init__", lambda *args: None)
-        tmdb_search_callback = MagicMock(name="tmdb_search_callback")
-        movie = guiwidgets_2.MovieGUI(
-            tk,
-            tmdb_search_callback,
-            [],
-        )
-        # todo Why aren't we using Magic Mocks to fool the type checker?
-        #  See test_commit
-        movie.entry_fields = {
-            guiwidgets_2.TITLE: DummyWidget(ef_title),
-            guiwidgets_2.YEAR: DummyWidget(ef_year),
-            guiwidgets_2.DIRECTOR: DummyWidget(ef_director),
-            guiwidgets_2.DURATION: DummyWidget(ef_duration),
-            guiwidgets_2.NOTES: DummyWidget(ef_notes),
-            guiwidgets_2.MOVIE_TAGS: DummyWidget(ef_tags),
-        }
+        mb_year = MovieInteger("4242")
+        mb_director = {"Sidney Stoneheart", "Tina Tatum"}
+        mb_duration = MovieInteger("42")
         expected_movie_bag = MovieBag(
             title=ef_title,
             year=mb_year,
@@ -62,60 +56,46 @@ class TestMovieGUI:
             tags=ef_tags,
         )
 
-        movie_bag = movie.as_movie_bag()
+        # Act
+        movie_bag = movie_gui.as_movie_bag()
 
         assert movie_bag == expected_movie_bag
 
-    def test_as_movie_bag_with_bad_key(self, tk, monkeypatch, log_error):
+    def test_as_movie_bag_with_bad_key(self, movie_gui, monkeypatch, log_error):
         bad_key = "garbage"
         monkeypatch.setattr(guiwidgets_2.MovieGUI, "__post_init__", lambda *args: None)
-        tmdb_search_callback = MagicMock(name="tmdb_search_callback")
-        movie = guiwidgets_2.MovieGUI(tk, tmdb_search_callback, [])
-        movie.entry_fields = {
-            bad_key: DummyWidget("Has a current_value"),
-        }
+        widget = MagicMock(name=bad_key)
+        widget.current_value = "Has a current_value"
+        monkeypatch.setitem(movie_gui.entry_fields, bad_key, widget)
         exc_notes = f"{guiwidgets_2.UNEXPECTED_KEY}: {bad_key}"
 
         with check:
             with pytest.raises(KeyError, match=exc_notes):
-                movie.as_movie_bag()
+                movie_gui.as_movie_bag()
         check.equal(log_error, [((exc_notes,), {})])
 
-    def test_as_movie_bag_with_blank_input_field(self, tk, monkeypatch, log_error):
+    def test_as_movie_bag_with_blank_input_field(
+        self, movie_gui, monkeypatch, log_error
+    ):
         ef_title = "AMB Title"
-        monkeypatch.setattr(guiwidgets_2.MovieGUI, "__post_init__", lambda *args: None)
-        tmdb_search_callback = MagicMock(name="tmdb_search_callback")
-        movie = guiwidgets_2.MovieGUI(
-            tk,
-            tmdb_search_callback,
-            [],
-        )
-        # todo Why aren't we using Magic Mocks to fool the type checker?
-        #  See test_commit
-        movie.entry_fields = {
-            guiwidgets_2.TITLE: DummyWidget(ef_title),
-            guiwidgets_2.NOTES: DummyWidget(""),
-        }
+        for k, v in [("title", ef_title), ("notes", "")]:
+            widget = MagicMock(name=k)
+            widget.current_value = v
+            monkeypatch.setitem(movie_gui.entry_fields, k, widget)
+
         expected_movie_bag = MovieBag(
             title=ef_title,
         )
 
-        movie_bag = movie.as_movie_bag()
+        movie_bag = movie_gui.as_movie_bag()
 
         assert movie_bag == expected_movie_bag
 
 
 class TestAddMovieGUI:
 
-    def test_commit(self, tk, monkeypatch):
-        monkeypatch.setattr(
-            guiwidgets_2.AddMovieGUI, "__post_init__", lambda *args: None
-        )
-        tmdb_search_callback = MagicMock(name="tmdb_search_callback")
-        add_movie_callback = MagicMock(name="add_movie_callback")
-        add_movie_gui = guiwidgets_2.AddMovieGUI(
-            tk, tmdb_search_callback, [], add_movie_callback=add_movie_callback
-        )
+    def test_commit(self, add_movie_gui, monkeypatch):
+        # Arrange
         as_movie_bag = MagicMock(name="as_movie_bag")
         monkeypatch.setattr(guiwidgets_2.MovieGUI, "as_movie_bag", as_movie_bag)
         widget = MagicMock(name="widget")
@@ -125,10 +105,12 @@ class TestAddMovieGUI:
         monkeypatch.setattr(guiwidgets_2.MovieGUI, "tmdb_treeview", tmdb_treeview)
         tmdb_treeview.get_children.return_value = items
 
+        # Act
         add_movie_gui.commit()
 
         with check:
-            add_movie_callback.assert_called_once_with(as_movie_bag())
+            # noinspection PyUnresolvedReferences
+            add_movie_gui.add_movie_callback.assert_called_once_with(as_movie_bag())
         with check:
             widget.clear_current_value.assert_called_once_with()
         with check:
@@ -136,33 +118,21 @@ class TestAddMovieGUI:
 
 
 class TestEditMovieGUI:
-    def test_commit(self, tk, monkeypatch):
-        monkeypatch.setattr(
-            guiwidgets_2.EditMovieGUI, "__post_init__", lambda *args: None
-        )
-        tmdb_search_callback = MagicMock(name="tmdb_search_callback")
-        edit_movie_callback = MagicMock(name="edit_movie_callback")
-        edit_movie_gui = guiwidgets_2.EditMovieGUI(
-            tk, tmdb_search_callback, [], edit_movie_callback=edit_movie_callback
-        )
+    def test_commit(self, edit_movie_gui, monkeypatch):
+        # Arrange
         as_movie_bag = MagicMock(name="as_movie_bag")
         monkeypatch.setattr(guiwidgets_2.MovieGUI, "as_movie_bag", as_movie_bag)
         destroy = MagicMock(name="destroy")
         monkeypatch.setattr(guiwidgets_2.MovieGUI, "destroy", destroy)
 
+        # Act
         edit_movie_gui.commit()
 
         with check:
-            edit_movie_callback.assert_called_once_with(as_movie_bag())
+            # noinspection PyUnresolvedReferences
+            edit_movie_gui.edit_movie_callback.assert_called_once_with(as_movie_bag())
         with check:
             destroy.assert_called_once_with()
-
-
-@dataclass
-class DummyWidget:
-    """Provides a generic test dummy widget."""
-
-    current_value: str
 
 
 @pytest.fixture
@@ -177,6 +147,46 @@ def tk(monkeypatch):
     mock = MagicMock(name="tk")
     monkeypatch.setattr(guiwidgets_2, "tk", mock)
     return mock
+
+
+@pytest.fixture
+def movie_gui(monkeypatch, tk):
+    # noinspection GrazieInspection
+    """Returns a mock of MovieGUI."""
+    monkeypatch.setattr(guiwidgets_2.MovieGUI, "__post_init__", lambda *args: None)
+    tmdb_search_callback = MagicMock(name="tmdb_search_callback")
+    obj = guiwidgets_2.MovieGUI(
+        tk,
+        tmdb_search_callback,
+        [],
+    )
+    return obj
+
+
+@pytest.fixture
+def add_movie_gui(monkeypatch, tk):
+    # noinspection GrazieInspection
+    """Returns a mock of AddMovieGUI."""
+    monkeypatch.setattr(guiwidgets_2.AddMovieGUI, "__post_init__", lambda *args: None)
+    tmdb_search_callback = MagicMock(name="tmdb_search_callback")
+    add_movie_callback = MagicMock(name="add_movie_callback")
+    obj = guiwidgets_2.AddMovieGUI(
+        tk, tmdb_search_callback, [], add_movie_callback=add_movie_callback
+    )
+    return obj
+
+
+@pytest.fixture
+def edit_movie_gui(monkeypatch, tk):
+    # noinspection GrazieInspection
+    """Returns a mock of EditMovieGUI."""
+    monkeypatch.setattr(guiwidgets_2.EditMovieGUI, "__post_init__", lambda *args: None)
+    tmdb_search_callback = MagicMock(name="tmdb_search_callback")
+    edit_movie_callback = MagicMock(name="edit_movie_callback")
+    obj = guiwidgets_2.EditMovieGUI(
+        tk, tmdb_search_callback, [], edit_movie_callback=edit_movie_callback
+    )
+    return obj
 
 
 @pytest.fixture
