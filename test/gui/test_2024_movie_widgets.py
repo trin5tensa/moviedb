@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/17/25, 12:36 PM by stephen.
+#  Last modified 1/30/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -39,7 +39,7 @@ class TestMovieGUI:
     director = {director_1, director_2}
     minutes = 142
     notes = "dummy old notes"
-    movie_tags = {"test tag 1", "test tag 2"}
+    tags = {"test tag 1", "test tag 2"}
 
     def test_post_init(
         self,
@@ -324,6 +324,7 @@ class TestMovieGUI:
 
         # Test 'try' and 'except' clauses: An empty queue will skip the `else` clause.
         with check:
+            # noinspection PyUnresolvedReferences
             cut.tmdb_treeview.delete.assert_not_called()
 
         # Test 'finally' clause
@@ -364,8 +365,10 @@ class TestMovieGUI:
         cut.tmdb_consumer()
 
         with check:
+            # noinspection PyUnresolvedReferences
             cut.tmdb_treeview.delete.assert_called_with(*treeview_items)
         with check:
+            # noinspection PyUnresolvedReferences
             cut.tmdb_treeview.insert.assert_called_once_with(
                 "",
                 "end",
@@ -385,6 +388,7 @@ class TestMovieGUI:
             )
         check.equal(cut.tmdb_movies[item_id], treeview_items[0])
 
+    # noinspection DuplicatedCode
     def test_tmdb_treeview_callback_with_selection(
         self,
         mock_tk,
@@ -418,6 +422,7 @@ class TestMovieGUI:
         for k in movie_keys:
             check.equal(cut.entry_fields[k].current_value, cut.tmdb_movies[item_id][k])
 
+    # noinspection DuplicatedCode
     def test_tmdb_treeview_callback_without_selection(
         self,
         mock_tk,
@@ -472,6 +477,7 @@ class TestMovieGUI:
     def moviegui(self, mock_tk):
         hold_dict = guiwidgets_2.config.current
         guiwidgets_2.config.current = guiwidgets_2.config.CurrentConfig()
+        # noinspection PyTypeChecker
         guiwidgets_2.config.current.escape_key_dict = {}
         # noinspection PyTypeChecker
         yield guiwidgets_2.MovieGUI(
@@ -480,6 +486,7 @@ class TestMovieGUI:
         guiwidgets_2.config.current = hold_dict
 
 
+# noinspection DuplicatedCode
 def test_add_movie_init_with_movie_bag(monkeypatch):
     # Arrange
     monkeypatch.setattr(guiwidgets_2.ttk, "Entry", MagicMock(name="Entry"))
@@ -521,7 +528,7 @@ def test_add_movie_init_with_movie_bag(monkeypatch):
         duration=MovieInteger("42"),
         # Notes intentionally omitted
         synopsis="Boy meets girl.",
-        movie_tags={"tag 1", "tag 2"},
+        tags={"tag 1", "tag 2"},
     )
 
     # Act
@@ -547,7 +554,7 @@ def test_add_movie_init_with_movie_bag(monkeypatch):
     # This test will fail when GUI3 is implemented.
     check.equal(cut.entry_fields.get("synopsis"), None)
 
-    check.equal(cut.entry_fields["tags"].original_value, movie_bag["movie_tags"])
+    check.equal(cut.entry_fields["tags"].original_value, movie_bag["tags"])
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -645,58 +652,8 @@ class TestAddMovieGUI:
                 ]
             )
 
-    def test_commit(
-        self,
-        mock_tk,
-        ttk,
-        moviegui_framing,
-        movie_fill_buttonbox,
-        movie_tmdb_results_frame,
-        input_zone,
-        patterns,
-        messagebox,
-    ):
-        dummy_current_values = iter("abcdef")
-        dummy_tmdb_treeview_children = ("x", "y", "z")
-        dummy_msg = "dummy message"
-        add_movie_callback = MagicMock()
 
-        # noinspection PyTypeChecker
-        cut = guiwidgets_2.AddMovieGUI(
-            mock_tk,
-            tmdb_search_callback=lambda: None,
-            all_tags=None,
-            add_movie_callback=add_movie_callback,
-        )
-        for k in cut.entry_fields.keys():
-            cut.entry_fields[k] = MagicMock()
-            cut.entry_fields[k].current_value = next(dummy_current_values)
-        cut.tmdb_treeview = MagicMock()
-        cut.tmdb_treeview.get_children.return_value = dummy_tmdb_treeview_children
-
-        cut.commit()
-        with check:
-            # noinspection PyUnresolvedReferences
-            cut.add_movie_callback.assert_called_once_with(
-                {
-                    TITLE: "a",
-                    YEAR: "b",
-                    DIRECTOR: "c",
-                    DURATION: "d",
-                    NOTES: "e",
-                    MOVIE_TAGS: "f",
-                }
-            )
-        for v in cut.entry_fields.values():
-            with check:
-                # noinspection PyUnresolvedReferences
-                v.clear_current_value.assert_called_once_with()
-        with check:
-            cut.tmdb_treeview.delete.assert_called_once_with(
-                *dummy_tmdb_treeview_children
-            )
-
-
+# noinspection DuplicatedCode
 def test_edit_movie_init_with_movie_bag(monkeypatch):
     # Arrange
     monkeypatch.setattr(guiwidgets_2.ttk, "Entry", MagicMock(name="Entry"))
@@ -736,7 +693,7 @@ def test_edit_movie_init_with_movie_bag(monkeypatch):
         duration=MovieInteger("42"),
         # Notes intentionally omitted
         synopsis="Boy meets girl.",
-        movie_tags={"tag 1", "tag 2"},
+        tags={"tag 1", "tag 2"},
     )
 
     # Act
@@ -762,7 +719,7 @@ def test_edit_movie_init_with_movie_bag(monkeypatch):
     # This test will fail when GUI3 is implemented.
     check.equal(cut.entry_fields.get("synopsis"), None)
 
-    check.equal(cut.entry_fields["tags"].original_value, movie_bag["movie_tags"])
+    check.equal(cut.entry_fields["tags"].original_value, movie_bag["tags"])
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -898,52 +855,6 @@ class TestEditMovieGUI:
                 ]
             )
 
-    def test_commit(
-        self,
-        mock_tk,
-        ttk,
-        moviegui_framing,
-        movie_fill_buttonbox,
-        movie_tmdb_results_frame,
-        input_zone,
-        patterns,
-        messagebox,
-        monkeypatch,
-    ):
-        dummy_current_values = iter("abcdef")
-        dummy_msg = "dummy message"
-        edit_movie_callback = MagicMock()
-        delete_movie_callback = MagicMock()
-
-        # noinspection PyTypeChecker
-        cut = guiwidgets_2.EditMovieGUI(
-            mock_tk,
-            tmdb_search_callback=lambda: None,
-            all_tags=None,
-            edit_movie_callback=edit_movie_callback,
-            delete_movie_callback=delete_movie_callback,
-        )
-        monkeypatch.setattr(cut, "destroy", mock_destroy := MagicMock())
-        for k in cut.entry_fields.keys():
-            cut.entry_fields[k] = MagicMock()
-            cut.entry_fields[k].current_value = next(dummy_current_values)
-
-        cut.commit()
-        with check:
-            # noinspection PyUnresolvedReferences
-            cut.edit_movie_callback.assert_called_once_with(
-                {
-                    TITLE: "a",
-                    YEAR: "b",
-                    DIRECTOR: "c",
-                    DURATION: "d",
-                    NOTES: "e",
-                    MOVIE_TAGS: "f",
-                }
-            )
-        with check:
-            mock_destroy.assert_called_once_with()
-
     def test_delete(
         self,
         mock_tk,
@@ -1039,7 +950,7 @@ def framing(monkeypatch):
     return mock
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @pytest.fixture
 def movie_user_input_frame(monkeypatch):
     monkeypatch.setattr(guiwidgets_2.MovieGUI, "user_input_frame", mock := MagicMock())
@@ -1075,7 +986,7 @@ def patterns(patterns_entry, patterns_text, patterns_treeview):
     pass
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @pytest.fixture
 def patterns_entry(monkeypatch):
     monkeypatch.setattr(guiwidgets_2.tk_facade, "Entry", mock := MagicMock())
@@ -1103,7 +1014,7 @@ def focus_set(monkeypatch):
     return mock
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @pytest.fixture
 def movie_create_buttons(monkeypatch):
     monkeypatch.setattr(guiwidgets_2.MovieGUI, "_create_buttons", mock := MagicMock())
@@ -1145,7 +1056,7 @@ def movie_tmdb_search(monkeypatch):
     return mock
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @pytest.fixture
 def addmovie_enable_commit_button(monkeypatch):
     monkeypatch.setattr(

@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 12/28/24, 12:45 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 1/30/25, 1:12 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,12 +12,12 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from collections.abc import Sequence, Iterator
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TypedDict, NotRequired
+from typing import TypedDict
 
-
+# Deprecated field names
 DIRECTOR = "director"
 DIRECTORS = "directors"
 DURATION = "minutes"
@@ -30,20 +30,6 @@ TITLE = "title"
 YEAR = "year"
 
 NO_INTEGER_VALUE = "This object cannot provide an integer value"
-
-
-class MovieTD(TypedDict):
-    """Type definition for movie.
-
-    Deprecated. Use Movie Bag.
-    """
-
-    title: str
-    year: str
-    director: NotRequired[str]
-    minutes: NotRequired[str]
-    notes: NotRequired[str]
-    tags: NotRequired[Sequence[str]]
 
 
 class MovieBag(TypedDict, total=False):
@@ -61,7 +47,7 @@ class MovieBag(TypedDict, total=False):
     stars: set[str]
     synopsis: str
     notes: str
-    movie_tags: set[str]
+    tags: set[str]
 
     # Database fields
     id: int

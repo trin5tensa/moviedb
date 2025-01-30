@@ -6,7 +6,7 @@ the DBv1 database.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/18/25, 6:41 AM by stephen.
+#  Last modified 1/30/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -35,45 +35,6 @@ def test_convert_from_movie_key_typed_dict():
     assert movie_bag == MovieBag(title=title, year=MovieInteger(year))
 
 
-def test_convert_from_movie_td():
-    title = "Test title"
-    year = "4242"
-    director = "Test director"
-    duration = "42"
-    notes = "A test note"
-    tags = ["Tag 1", "Tag 2"]
-    movie = MovieTD(
-        title=title,
-        year=year,
-        director=director,
-        minutes=duration,
-        notes=notes,
-        tags=tags,
-    )
-
-    # noinspection PyUnresolvedReferences
-    movie_bag = moviebagfacade.convert_from_movie_td(movie)
-
-    assert movie_bag == MovieBag(
-        title=title,
-        year=MovieInteger(year),
-        directors={director},
-        duration=MovieInteger(duration),
-        notes=notes,
-        synopsis=notes,
-        movie_tags=set(tags),
-    )
-
-
-def test_convert_from_movie_td_with_no_data():
-    # noinspection PyArgumentList
-    movie = MovieTD()
-
-    movie_bag = moviebagfacade.convert_from_movie_td(movie)
-
-    assert movie_bag == MovieBag()
-
-
 def test_convert_to_movie_key():
     title = "Test Title"
     year = "4242"
@@ -81,7 +42,9 @@ def test_convert_to_movie_key():
 
     movie_key = moviebagfacade.convert_to_movie_key_typed_dict(movie_bag)
 
-    assert movie_key == moviebagfacade.MovieKeyTypedDict(title=title, year=int(year))
+    assert movie_key == moviebagfacade.config.MovieKeyTypedDict(
+        title=title, year=int(year)
+    )
 
 
 def test_convert_to_movie_update_def():
@@ -99,7 +62,7 @@ def test_convert_to_movie_update_def():
         duration=MovieInteger(duration),
         directors=[director_1, director_2],
         notes=notes,
-        movie_tags=tags,
+        tags=tags,
     )
 
     movie = moviebagfacade.convert_to_movie_update_def(movie_bag)
@@ -139,7 +102,7 @@ def test_convert_from_find_movie_typed_dict_with_singles():
         directors={directors},
         duration=MovieInteger(duration),
         notes=notes,
-        movie_tags=set(tags),
+        tags=set(tags),
     )
 
 
@@ -174,5 +137,5 @@ def test_convert_from_find_movie_typed_dict_with_doubles():
         directors={director_1, director_2},
         duration=MovieInteger(str(lo_duration) + "-" + str(hi_duration)),
         notes=notes,
-        movie_tags=set(tags),
+        tags=set(tags),
     )

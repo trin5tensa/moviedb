@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/17/25, 11:34 AM by stephen.
+#  Last modified 1/30/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,7 +23,8 @@ import guiwidgets
 import guiwidgets_2
 from config import MovieKeyTypedDict
 from database import tables
-from globalconstants import MovieTD, MovieBag, MovieInteger
+
+from globalconstants import MovieBag, MovieInteger
 from handlers import moviebagfacade
 from handlers.sundries import _tmdb_io_handler
 
@@ -46,7 +47,7 @@ def gui_add_movie(*, prepopulate: MovieBag = None):
             This argument can be used to prepopulate the movie widget. This
             is useful if the initial attempt to add a movie caused an
             exception. It gives the user the opportunity to fix input errors.
-            If present, the item "prepopulate['movie_tags']" contains the
+            If present, the item "prepopulate['tags']" contains the
             tag selection.
     """
     all_tags = tables.select_all_tags()
@@ -95,7 +96,7 @@ def gui_edit_movie(
             This argument can be used to prepopulate the movie widget. This
             is useful if the initial attempt to edit a movie caused an
             exception. It gives the user the opportunity to fix input errors.
-            If present, the item "prepopulate['movie_tags']" contains the
+            If present, the item "prepopulate['tags']" contains the
             tag selection.
     """
     all_tags = tables.select_all_tags()
@@ -109,7 +110,7 @@ def gui_edit_movie(
     )
 
 
-def db_add_movie(gui_movie: MovieTD):
+def db_add_movie(movie_bag: MovieBag):
     """Adds user supplied movie data to the database.
 
     A user alert is raised with diagnostic information if the database
@@ -117,9 +118,8 @@ def db_add_movie(gui_movie: MovieTD):
     'add movie' input screen populated with her previously entered data.
 
     Args:
-        gui_movie:
+        movie_bag:
     """
-    movie_bag = moviebagfacade.convert_from_movie_td(gui_movie)
     try:
         tables.add_movie(movie_bag=movie_bag)
 
@@ -213,7 +213,7 @@ def db_select_movies(movie: MovieKeyTypedDict):
         gui_edit_movie(old_movie, prepopulate=movie_bag)
 
 
-def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie: MovieTD):
+def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie_bag: MovieBag):
     """Changes a movie and its links in database with new user supplied data.
 
     A user alert is raised with diagnostic information if the database
@@ -222,10 +222,9 @@ def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie: MovieTD):
 
     Args:
         old_movie: The old movie key.
-        new_movie: Fields with either original values or values modified by the user.
+        new_movie_bag: Fields with either original values or values modified by the user.
     """
     old_movie_bag = moviebagfacade.convert_from_movie_key_typed_dict(old_movie)
-    new_movie_bag = moviebagfacade.convert_from_movie_td(new_movie)
 
     try:
         tables.edit_movie(old_movie_bag=old_movie_bag, replacement_fields=new_movie_bag)

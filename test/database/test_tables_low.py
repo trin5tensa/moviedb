@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/18/25, 6:41 AM by stephen.
+#  Last modified 1/30/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -56,7 +56,7 @@ MOVIEBAG_2 = MovieBag(
     stars=TEST_STARS,
     synopsis="Synopsis for test",
     notes="I am MOVIEBAG_2",
-    movie_tags=TAG_TEXTS,
+    tags=TAG_TEXTS,
 )
 MOVIEBAG_3 = MovieBag(
     title="Third Movie",
@@ -179,7 +179,7 @@ def test__match_2_movie(load_movies, db_session: Session):
         synopsis="syn",
         stars={list(TEST_STARS)[0][:4]},  # e.g. "lred" of "Edgar Ethelred"
         directors={list(TEST_DIRECTORS)[0][5:10]},  # e.g. "d Dir" of "Donald Director"
-        movie_tags=TAG_TEXTS,  # Three texts exercise loop in test
+        tags=TAG_TEXTS,  # Three texts exercise loop in test
     )
     movies = tables._match_movies(db_session, match=movie_bag)
 
@@ -390,7 +390,7 @@ def load_movies(load_tags, db_session: Session):
                 db_session.add(person)
             stars.add(person)
 
-        tag_texts = movie_bag.get("movie_tags", set())
+        tag_texts = movie_bag.get("tags", set())
         statement = tables.select(schema.Tag).where(schema.Tag.text.in_(tag_texts))
         tags = set(db_session.scalars(statement).all())
 

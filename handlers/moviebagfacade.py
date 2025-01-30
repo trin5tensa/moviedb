@@ -1,7 +1,7 @@
 """MovieBag Facade."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 8:50 AM by stephen.
+#  Last modified 1/30/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,11 +15,12 @@
 
 from collections.abc import Sequence
 
-from config import MovieKeyTypedDict, FindMovieTypedDict, MovieUpdateDef
-from globalconstants import MovieBag, MovieInteger, MovieTD
+import config
+
+from globalconstants import MovieBag, MovieInteger
 
 
-def convert_from_movie_key_typed_dict(movie: MovieKeyTypedDict) -> MovieBag:
+def convert_from_movie_key_typed_dict(movie: config.MovieKeyTypedDict) -> MovieBag:
     """Converts a MovieKeyTypedDict into a MovieBag object.
 
     Args:
@@ -35,14 +36,14 @@ def convert_from_movie_key_typed_dict(movie: MovieKeyTypedDict) -> MovieBag:
     return MovieBag(title=movie["title"], year=MovieInteger(movie["year"]))
 
 
-def convert_to_movie_key_typed_dict(movie_bag: MovieBag) -> MovieKeyTypedDict:
+def convert_to_movie_key_typed_dict(movie_bag: MovieBag) -> config.MovieKeyTypedDict:
     """Returns a config.MovieKeyTypedDict object.
 
     Use Case:
         It is temporary until the GUI API is rewritten for movie bags at
         which time this function will become obsolete.
     """
-    movie_key = MovieKeyTypedDict(
+    movie_key = config.MovieKeyTypedDict(
         title=movie_bag["title"],
         year=int(movie_bag["year"]),
     )
@@ -50,38 +51,7 @@ def convert_to_movie_key_typed_dict(movie_bag: MovieBag) -> MovieKeyTypedDict:
 
 
 # noinspection DuplicatedCode
-def convert_from_movie_td(movie: MovieTD) -> MovieBag:
-    """Converts a MovieTD into a MovieBag object.
-
-    Args:
-        movie: A MovieTD()
-
-    Returns:
-        A movie bag object.
-
-    Use Case:
-        It is temporary until the GUI API is rewritten for movie bags at
-        which time this method will become obsolete.
-    """
-    movie_bag = MovieBag()
-    if movie.get("title"):
-        movie_bag["title"] = movie["title"]
-    if movie.get("director"):
-        movie_bag["directors"] = set(movie["director"].split(", "))
-    if movie.get("notes"):
-        movie_bag["notes"] = movie["notes"]
-        movie_bag["synopsis"] = movie["notes"]
-    if movie.get("year"):
-        movie_bag["year"] = MovieInteger(movie["year"])
-    if movie.get("minutes"):
-        movie_bag["duration"] = MovieInteger(movie["minutes"])
-    if movie.get("tags"):
-        movie_bag["movie_tags"] = {movie for movie in movie["tags"]}  # pragma no branch
-    return movie_bag
-
-
-# noinspection DuplicatedCode
-def convert_from_find_movie_typed_dict(movie: FindMovieTypedDict) -> MovieBag:
+def convert_from_find_movie_typed_dict(movie: config.FindMovieTypedDict) -> MovieBag:
     """Converts a FindMovieTypedDict into a MovieBag object.
 
     Args:
@@ -106,11 +76,11 @@ def convert_from_find_movie_typed_dict(movie: FindMovieTypedDict) -> MovieBag:
     if movie.get("minutes"):
         movie_bag["duration"] = _range_converter(movie["minutes"])
     if movie.get("tags"):
-        movie_bag["movie_tags"] = {movie for movie in movie["tags"]}  # pragma no branch
+        movie_bag["tags"] = {movie for movie in movie["tags"]}  # pragma no branch
     return movie_bag
 
 
-def convert_to_movie_update_def(movie_bag: MovieBag) -> MovieUpdateDef:
+def convert_to_movie_update_def(movie_bag: MovieBag) -> config.MovieUpdateDef:
     """Converts a new style MovieBag object into an old style MovieUpdateDef object.
 
     Args:
@@ -123,15 +93,15 @@ def convert_to_movie_update_def(movie_bag: MovieBag) -> MovieUpdateDef:
         It is temporary until the GUI API is rewritten for movie bags at
         which time this function will become obsolete.
     """
-    movie = MovieUpdateDef(**convert_to_movie_key_typed_dict(movie_bag))
+    movie = config.MovieUpdateDef(**convert_to_movie_key_typed_dict(movie_bag))
     if movie_bag.get("directors"):
         movie["director"] = ", ".join(movie_bag.get("directors"))
     if movie_bag.get("duration"):
         movie["minutes"] = int(movie_bag.get("duration"))
     if movie_bag.get("notes"):
         movie["notes"] = movie_bag.get("notes")
-    if movie_bag.get("movie_tags"):
-        movie["tags"] = list(movie_bag.get("movie_tags"))
+    if movie_bag.get("tags"):
+        movie["tags"] = list(movie_bag.get("tags"))
     return movie
 
 

@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/17/25, 12:36 PM by stephen.
+#  Last modified 1/30/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,6 +16,7 @@ This module includes windows for presenting data and returning entered data to i
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import itertools
+import logging
 import queue
 
 # This tkinter import method supports accurate test mocking of tk and ttk.
@@ -33,6 +34,7 @@ from typing import (
     Literal,
     Optional,
     Union,
+    Sequence,
 )
 
 import config
@@ -58,6 +60,7 @@ MOVIE_DELETE_MESSAGE = "Do you want to delete this movie?"
 TAG_DELETE_MESSAGE = "Do you want to delete this tag?"
 NO_MATCH_MESSAGE = "No matches"
 NO_MATCH_DETAIL = "There are no matching tags in the database."
+UNEXPECTED_KEY = "Unexpected key"
 
 DefaultLiteral = Literal["normal", "active", "disabled"]
 StateFlags = Optional[list[Literal["active", "normal", "disabled", "!disabled"]]]
@@ -197,7 +200,7 @@ class MovieGUI:
         )
         self.entry_fields["notes"].original_value = self.prepopulate.get("notes", "")
         self.entry_fields["tags"].original_value = list(
-            self.prepopulate.get("movie_tags", "")
+            self.prepopulate.get("tags", "")
         )
 
     def tmdb_results_frame(self, tmdb_frame: tk.Frame):
@@ -339,6 +342,33 @@ class MovieGUI:
         for k, v in self.tmdb_movies[item_id].items():
             self.entry_fields[k].current_value = v
 
+    def as_movie_bag(self) -> MovieBag:
+        """Returns the form data as a movie bag
+
+        Returns:
+            movie bag
+        """
+        movie_bag = MovieBag()
+        for name, widget in self.entry_fields.items():
+            if widget.current_value:
+                match name:
+                    case "title":
+                        movie_bag["title"] = widget.current_value
+                    case "year":
+                        movie_bag["year"] = MovieInteger(widget.current_value)
+                    case "minutes":
+                        movie_bag["duration"] = MovieInteger(widget.current_value)
+                    case "director":
+                        movie_bag["directors"] = set(widget.current_value.split(", "))
+                    case "notes":
+                        movie_bag["notes"] = widget.current_value
+                    case "tags":
+                        movie_bag["tags"] = {tag for tag in widget.current_value}
+                    case _:
+                        logging.error(f"Unexpected key: {name}")
+                        raise KeyError(f"Unexpected key: {name}")
+        return movie_bag
+
     # noinspection PyUnusedLocal
     def destroy(self, *args):
         """
@@ -355,8 +385,7 @@ class MovieGUI:
 class AddMovieGUI(MovieGUI):
     """Create and manage a GUI form for entering a new movie."""
 
-    # prepopulate: MovieBag | None = field(default=None, kw_only=True)
-    add_movie_callback: Callable[[MovieTD], None] = field(default=None, kw_only=True)
+    add_movie_callback: Callable[[MovieBag], None] = field(default=None, kw_only=True)
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         commit_button = create_button(
@@ -414,12 +443,13 @@ class AddMovieGUI(MovieGUI):
         return func
 
     def commit(self):
-        """Commit a new movie to the database."""
-        self.return_fields = {
-            name: entry_field.current_value
-            for name, entry_field in self.entry_fields.items()
-        }
-        self.add_movie_callback(self.return_fields)
+        """Commits a new movie to the database.
+
+        The form is cleared of entries so the user can enter and commit
+        another movie.
+        """
+        self.add_movie_callback(self.as_movie_bag())
+
         for v in self.entry_fields.values():
             v.clear_current_value()
         items = self.tmdb_treeview.get_children()
@@ -430,9 +460,7 @@ class AddMovieGUI(MovieGUI):
 class EditMovieGUI(MovieGUI):
     """Create and manage a GUI form for editing an existing movie."""
 
-    edit_movie_callback: Callable[[config.FindMovieTypedDict], None] = field(
-        default=None, kw_only=True
-    )
+    edit_movie_callback: Callable[[MovieBag], None] = field(default=None, kw_only=True)
     delete_movie_callback: Callable[[config.FindMovieTypedDict], None] = field(
         default=None, kw_only=True
     )
@@ -501,11 +529,7 @@ class EditMovieGUI(MovieGUI):
 
     def commit(self):
         """Commit an edited movie to the database."""
-        self.return_fields = {
-            name: entry_field.current_value  # pragma no cover
-            for name, entry_field in self.entry_fields.items()
-        }
-        self.edit_movie_callback(self.return_fields)
+        self.edit_movie_callback(self.as_movie_bag())
         self.destroy()
 
     def delete(self):
