@@ -1,5 +1,6 @@
+------------
 Concept GUI3
-============
+------------
 
 Implement support for DB1 enhancements including utilizing the new MovieBag for all data transfers. 
 Carry out enhancements, debt reduction and bug fixes.
@@ -25,4 +26,4 @@ GUI Bugs not otherwise covered in this list.
 
 Remove old code
 
-Clean up
+Final clean up

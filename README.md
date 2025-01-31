@@ -1,5 +1,6 @@
+-------
 moviedb
-=======
+-------
 
 moviedb helps you keep track of all your DVDs, Blu-rays, and downloaded
 digital movies. You can add movies you saw at the movie theatre and even
