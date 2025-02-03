@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/3/25, 10:48 AM by stephen.
+#  Last modified 2/3/25, 2:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -214,7 +214,6 @@ def db_edit_movie(old_movie: MovieBag, new_movie: MovieBag):
         old_movie: The old movie key.
         new_movie: Fields with either original values or values modified by the user.
     """
-    # todo Integration test
     try:
         tables.edit_movie(old_movie_bag=old_movie, replacement_fields=new_movie)
 

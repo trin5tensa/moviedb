@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/3/25, 10:48 AM by stephen.
+#  Last modified 2/3/25, 2:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -530,12 +530,11 @@ class EditMovieGUI(MovieGUI):
 
     def commit(self):
         """Commit an edited movie to the database."""
-        self.edit_movie_callback(self.as_movie_bag())
+        self.parent.after(0, self.edit_movie_callback, self.as_movie_bag())
         self.destroy()
 
     def delete(self):
         """The user clicked the 'Delete' button."""
-        # todo Integration test required (year processing could be a problem)
         if gui_askyesno(
             message=MOVIE_DELETE_MESSAGE, icon="question", parent=self.parent
         ):
@@ -543,6 +542,8 @@ class EditMovieGUI(MovieGUI):
                 title=self.entry_fields[TITLE].original_value,
                 year=MovieInteger(self.entry_fields[YEAR].original_value),
             )
+            # Todo Do we need a version of 'as_movie_bag' which can return
+            #   original values?
             self.delete_movie_callback(movie)
             self.destroy()
 

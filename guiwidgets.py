@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/3/25, 10:48 AM by stephen.
+#  Last modified 2/3/25, 2:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -353,7 +353,6 @@ class SearchMovieGUI(MovieGUIBase):
 
     def search(self):
         """The user clicked the search button."""
-        # moviedb-#347 Make MovieBag native to SearchMovieGUI
         return_fields = {
             internal_name: movie_field.textvariable.get()
             for internal_name, movie_field in self.entry_fields.items()
@@ -371,7 +370,6 @@ class SearchMovieGUI(MovieGUIBase):
         Returns:
             movie bag
         """
-        # moviedb-#347 Make MovieBag native to SearchMovieGUI
         movie_bag = MovieBag()
         for k, v in return_fields.items():
             if v:
@@ -419,7 +417,6 @@ class SearchMovieGUI(MovieGUIBase):
         Returns:
             A MovieInt object.
         """
-        # moviedb-#347 Make MovieBag native to SearchMovieGUI
         match len(value):
             case 1:
                 duration_range = f"{value[0]}"

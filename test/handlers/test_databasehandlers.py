@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/3/25, 10:48 AM by stephen.
+#  Last modified 2/3/25, 2:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -167,43 +167,21 @@ def test_gui_select_movie(monkeypatch, config_current):
     )
 
 
-@pytest.mark.skip
-def test_db_match_movies(monkeypatch, config_current, messagebox):
+def test_db_match_movies(monkeypatch, config_current, messagebox, new_movie):
     # Arrange
     match_movies = MagicMock(name="match_movies", return_value=[])
-    monkeypatch.setattr(handlers.database.tables, "match_movies", match_movies)
-
-    title = "title search"
-    year = "4242"
-    director_1 = "Michael Madison"
-    director_2 = "Nancy Nichols"
-    minutes = "142"
-    notes = "A test note"
-    criteria = config.FindMovieTypedDict(
-        title=title,
-        year=[year],
-        director=director_1 + ", " + director_2,
-        minutes=[minutes],
-        notes=notes,
+    monkeypatch.setattr(
+        handlers.database.tables,
+        "match_movies",
+        match_movies,
     )
-    tags = ["test tag 1", "test tag 2"]
-
-    match = handlers.database.MovieBag(
-        title=title,
-        year=MovieInteger(year),
-        directors={director_1, director_2},
-        duration=MovieInteger(minutes),
-        notes=notes,
-        tags=set(tags),
-    )
-
     monkeypatch.setattr(handlers.database, "gui_search_movie", lambda: None)
 
     # Act
-    handlers.database.db_match_movies(criteria, tags)
+    handlers.database.db_match_movies(new_movie)
 
     # Assert
-    match_movies.assert_called_once_with(match=match)
+    match_movies.assert_called_once_with(match=new_movie)
 
 
 @pytest.mark.skip
@@ -295,15 +273,13 @@ def test_db_match_movies_returning_2_movies(monkeypatch, config_current):
     gui_select_movie.assert_called_once_with(movies=movies_found)
 
 
-@pytest.mark.skip
-def test_db_edit_movie(monkeypatch, old_movie, new_movie):
+def test_db_edit_movie(monkeypatch, old_movie_bag, new_movie):
     # Arrange
-    old_movie_bag = handlers.moviebagfacade.convert_from_movie_key_typed_dict(old_movie)
     db_edit_movie = MagicMock(name="db_edit_movie")
     monkeypatch.setattr(handlers.database.tables, "edit_movie", db_edit_movie)
 
     # Act
-    handlers.database.db_edit_movie(old_movie, new_movie)
+    handlers.database.db_edit_movie(old_movie_bag, new_movie)
 
     # Assert
     db_edit_movie.assert_called_once_with(
@@ -417,25 +393,18 @@ def test_exc_messagebox_with_multiple_notes(messagebox, config_current):
     )
 
 
-@pytest.mark.skip
-def test_db_delete_movie_callback(monkeypatch):
-    title = "test_delete_movie_callback title"
-    year = 42
-    movie = handlers.database.config.FindMovieTypedDict(title=title, year=[str(year)])
-    movie_bag = MovieBag(title=title, year=MovieInteger(year))
+def test_db_delete_movie_callback(monkeypatch, new_movie):
     delete_movie = MagicMock(name="delete movie")
     monkeypatch.setattr(handlers.database.tables, "delete_movie", delete_movie)
 
-    handlers.database.db_delete_movie(movie)
+    handlers.database.db_delete_movie(new_movie)
 
-    delete_movie.assert_called_once_with(movie_bag=movie_bag)
+    delete_movie.assert_called_once_with(movie_bag=new_movie)
 
 
-@pytest.mark.skip
 def test_db_select_movies(monkeypatch):
     title = "test title for test_select_movie_callback"
     year = 42
-    movie = config.MovieKeyTypedDict(title=title, year=year)
     movie_bag = MovieBag(title=title, year=MovieInteger(year))
 
     select_movie = MagicMock(name="select_movie")
@@ -445,12 +414,12 @@ def test_db_select_movies(monkeypatch):
     gui_edit_movie = MagicMock(name="gui_edit_movie")
     monkeypatch.setattr(handlers.database, "gui_edit_movie", gui_edit_movie)
 
-    handlers.database.db_select_movies(movie)
+    handlers.database.db_select_movies(movie_bag)
 
     with check:
         select_movie.assert_called_once_with(movie_bag=movie_bag)
     with check:
-        gui_edit_movie.assert_called_once_with(movie, prepopulate=movie_bag)
+        gui_edit_movie.assert_called_once_with(movie_bag, prepopulate=movie_bag)
 
 
 def test_db_select_movies_handles_missing_movie_exception(
@@ -736,6 +705,19 @@ def old_movie():
     old_title = "Old Title"
     old_year = 4242
     return config.MovieKeyTypedDict(title=old_title, year=old_year)
+
+
+@pytest.fixture(scope="function")
+def old_movie_bag():
+    """This fixture provides an original movie for tests of movie
+    editing functions.
+
+    Returns:
+        A MovieBag with dummy original values for title and year.
+    """
+    old_title = "Old Title"
+    old_year = 4242
+    return MovieBag(title=old_title, year=MovieInteger(old_year))
 
 
 @pytest.fixture(scope="function")

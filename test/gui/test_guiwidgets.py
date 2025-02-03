@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/3/25, 10:48 AM by stephen.
+#  Last modified 2/3/25, 2:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -384,16 +384,6 @@ class TestSearchMovieGUI:
             outerframe = movie_gui.parent.children[0]
             buttonbox = outerframe.children[1]
             assert calls == [((movie_gui, buttonbox), dict(column=1))]
-
-    @pytest.mark.skip
-    def test_destroy_called(self, patch_tk, monkeypatch):
-        called = []
-        monkeypatch.setattr(
-            guiwidgets.MovieGUIBase, "destroy", lambda *args: called.append(True)
-        )
-        with self.movie_context() as movie_gui:
-            movie_gui.search()
-            assert called.pop()
 
     # noinspection PyMissingOrEmptyDocstring
     @contextmanager
