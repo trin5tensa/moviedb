@@ -6,7 +6,7 @@ the DBv1 database.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/30/25, 1:41 PM by stephen.
+#  Last modified 2/3/25, 10:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,6 +18,7 @@ the DBv1 database.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import pytest
 
 import config
 from globalconstants import *
@@ -77,6 +78,7 @@ def test_convert_to_movie_update_def():
     )
 
 
+@pytest.mark.skip("Obsolete test")
 def test_convert_from_find_movie_typed_dict_with_singles():
     title = "Test title"
     year = "4242"
@@ -106,6 +108,7 @@ def test_convert_from_find_movie_typed_dict_with_singles():
     )
 
 
+@pytest.mark.skip("Obsolete test")
 def test_convert_from_find_movie_typed_dict_with_doubles():
     title = "Test title"
     lo_year = 4242

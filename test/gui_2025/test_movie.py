@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/30/25, 1:12 PM by stephen.
+#  Last modified 2/3/25, 10:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,6 +18,7 @@ from unittest.mock import MagicMock
 import pytest
 from pytest_check import check
 
+import guiwidgets
 import guiwidgets_2
 from globalconstants import MovieBag, MovieInteger
 
@@ -135,6 +136,72 @@ class TestEditMovieGUI:
             destroy.assert_called_once_with()
 
 
+class TestSearchMovieGUI:
+    def test_as_movie_bag(self, search_movie_gui):
+        # Arrange
+        return_fields = {
+            "title": "Tam Title",
+            "year": "",
+            "director": "Tam Director, Two Director",
+            "minutes": "",
+            "notes": "Tam Notes",
+            "year_min": "4240",
+            "year_max": "4242",
+            "minutes_min": "40",
+            "minutes_max": "42",
+        }
+        search_movie_gui.selected_tags = ("Tam 1", "Tam 2", "Tam 3")
+        expected = MovieBag(
+            title=return_fields["title"],
+            year=MovieInteger("4240-4242"),
+            duration=MovieInteger("40-42"),
+            directors={"Tam Director", "Two Director"},
+            notes="Tam Notes",
+            tags={"Tam 1", "Tam 2", "Tam 3"},
+        )
+
+        # Act
+        movie_bag = search_movie_gui.as_movie_bag(return_fields)
+
+        # Assert
+        assert movie_bag == expected
+
+    def test_as_movie_bag_raises_key_error(self, search_movie_gui, log_error):
+        # Arrange
+        bad_key = "garbage"
+        return_fields = {bad_key: "garbage"}
+        exc_notes = f"{guiwidgets_2.UNEXPECTED_KEY}: {bad_key}"
+
+        # Act
+        with check:
+            with pytest.raises(KeyError, match=exc_notes):
+                search_movie_gui.as_movie_bag(return_fields)
+
+        # Assert
+        check.equal(log_error, [((exc_notes,), {})])
+
+    @pytest.mark.parametrize(
+        # Arrange
+        "value, expected",
+        [
+            (["4240"], {4240}),
+            (["4240", "4242"], {4240, 4241, 4242}),
+            (["4242", "4240"], {4240, 4241, 4242}),
+        ],
+    )
+    def test__range_converter(self, search_movie_gui, value, expected):
+        # Act
+        result = search_movie_gui._range_converter(value)
+
+        # Assert
+        assert result._values == expected
+
+    def test__range_converter_with_invalid_length(self, search_movie_gui):
+        value = ["1", "2", "3"]
+        with pytest.raises(ValueError):
+            search_movie_gui._range_converter(value)
+
+
 @pytest.fixture
 def tk(monkeypatch):
     # noinspection GrazieInspection
@@ -186,6 +253,20 @@ def edit_movie_gui(monkeypatch, tk):
     obj = guiwidgets_2.EditMovieGUI(
         tk, tmdb_search_callback, [], edit_movie_callback=edit_movie_callback
     )
+    return obj
+
+
+@pytest.fixture
+def search_movie_gui(monkeypatch, tk):
+    # noinspection GrazieInspection
+    """Returns a mock of EditMovieGUI."""
+    monkeypatch.setattr(
+        guiwidgets.SearchMovieGUI,
+        "__post_init__",
+        lambda *args: None,
+    )
+    db_match_movies = MagicMock(name="db_match_movies")
+    obj = guiwidgets.SearchMovieGUI(tk, callback=db_match_movies, all_tags=[])
     return obj
 
 

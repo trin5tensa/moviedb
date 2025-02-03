@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/30/25, 1:41 PM by stephen.
+#  Last modified 2/3/25, 10:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,7 +21,6 @@ import logging
 
 import guiwidgets
 import guiwidgets_2
-from config import MovieKeyTypedDict
 from database import tables
 
 from globalconstants import MovieBag, MovieInteger
@@ -84,9 +83,7 @@ def gui_select_movie(*, movies: list[config.MovieUpdateDef]):
     guiwidgets.SelectMovieGUI(config.current.tk_root, movies, db_select_movies)
 
 
-def gui_edit_movie(
-    old_movie: config.MovieKeyTypedDict, *, prepopulate: MovieBag = None
-):
+def gui_edit_movie(old_movie: MovieBag, *, prepopulate: MovieBag = None):
     """Presents a GUI form for editing movies from the database.
 
     Args:
@@ -135,7 +132,7 @@ def db_add_movie(movie_bag: MovieBag):
             raise
 
 
-def db_match_movies(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
+def db_match_movies(criteria: MovieBag):
     """Selects movies from the database which match user-entered
     criteria and tags.
 
@@ -153,7 +150,6 @@ def db_match_movies(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
         tags:
     """
     # Cleans up old style arguments
-    criteria["tags"] = tags
     # Removes empty items because SQL treats them as meaningful.
     criteria = {
         k: v
@@ -161,10 +157,7 @@ def db_match_movies(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
         if v != "" and v != [] and v != () and v != ["", ""]
     }  # pragma nocover
 
-    # Converts old style arguments to new movie_bag argument
-    movie_bag = moviebagfacade.convert_from_find_movie_typed_dict(criteria)
-
-    movies_found = tables.match_movies(match=movie_bag)
+    movies_found = tables.match_movies(match=criteria)
     match len(movies_found):
         case 0:
             # Informs user and represent the search window.
@@ -177,8 +170,7 @@ def db_match_movies(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
         case 1:
             # Presents an Edit/View/Delete window to user
             movie_bag = movies_found[0]
-            movie = moviebagfacade.convert_to_movie_update_def(movie_bag)
-            gui_edit_movie(movie, prepopulate=movie_bag)
+            gui_edit_movie(movie_bag, prepopulate=movie_bag)
 
         case _:
             # Presents a selection window showing the multiple compliant movies.
@@ -189,18 +181,17 @@ def db_match_movies(criteria: config.FindMovieTypedDict, tags: Sequence[str]):
             gui_select_movie(movies=movies)
 
 
-def db_select_movies(movie: MovieKeyTypedDict):
+def db_select_movies(movie_bag: MovieBag):
     """Selects a single movie and presents a GUI edit form.
 
     If the movie is not found this function assumes the movie was deleted
     by another process. A user alert is given and the process aborts.
 
     Args:
-        movie: The movie title and year are used to select a movie.
+        movie_bag: The movie title and year are used to select a movie.
     """
-    movie_key = MovieBag(title=movie["title"], year=MovieInteger(movie["year"]))
     try:
-        movie_bag = tables.select_movie(movie_bag=movie_key)
+        movie_bag = tables.select_movie(movie_bag=movie_bag)
 
     except tables.NoResultFound as exc:
         if exc.__notes__[0] == tables.MOVIE_NOT_FOUND:
@@ -209,11 +200,10 @@ def db_select_movies(movie: MovieKeyTypedDict):
             raise
 
     else:
-        old_movie = moviebagfacade.convert_to_movie_update_def(movie_bag)
-        gui_edit_movie(old_movie, prepopulate=movie_bag)
+        gui_edit_movie(movie_bag, prepopulate=movie_bag)
 
 
-def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie_bag: MovieBag):
+def db_edit_movie(old_movie: MovieBag, new_movie: MovieBag):
     """Changes a movie and its links in database with new user supplied data.
 
     A user alert is raised with diagnostic information if the database
@@ -222,12 +212,11 @@ def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie_bag: MovieBag):
 
     Args:
         old_movie: The old movie key.
-        new_movie_bag: Fields with either original values or values modified by the user.
+        new_movie: Fields with either original values or values modified by the user.
     """
-    old_movie_bag = moviebagfacade.convert_from_movie_key_typed_dict(old_movie)
-
+    # todo Integration test
     try:
-        tables.edit_movie(old_movie_bag=old_movie_bag, replacement_fields=new_movie_bag)
+        tables.edit_movie(old_movie_bag=old_movie, replacement_fields=new_movie)
 
     except (tables.NoResultFound, tables.IntegrityError) as exc:
         if exc.__notes__[0] in (
@@ -237,23 +226,19 @@ def db_edit_movie(old_movie: config.MovieKeyTypedDict, new_movie_bag: MovieBag):
             tables.INVALID_YEAR,
         ):
             _exc_messagebox(exc)
-            gui_edit_movie(old_movie, prepopulate=new_movie_bag)
+            gui_edit_movie(old_movie, prepopulate=new_movie)
         else:  # pragma nocover
             raise
 
 
-def db_delete_movie(movie: config.FindMovieTypedDict):
+def db_delete_movie(movie_bag: MovieBag):
     """Deletes a movie from the database.
 
     No action will be taken if the movie does not exist.
 
     Args:
-        movie: Specified by title and key.
+        movie_bag: Specified by title and key.
     """
-    movie_bag = MovieBag(
-        title=movie["title"],
-        year=MovieInteger(int(movie["year"][0])),
-    )
     tables.delete_movie(movie_bag=movie_bag)
 
 

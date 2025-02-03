@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/30/25, 1:41 PM by stephen.
+#  Last modified 2/3/25, 10:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -38,6 +38,7 @@ from typing import (
 )
 
 import config
+import globalconstants
 import tk_facade
 from tk_facade import TkParentType
 from globalconstants import *
@@ -461,7 +462,7 @@ class EditMovieGUI(MovieGUI):
     """Create and manage a GUI form for editing an existing movie."""
 
     edit_movie_callback: Callable[[MovieBag], None] = field(default=None, kw_only=True)
-    delete_movie_callback: Callable[[config.FindMovieTypedDict], None] = field(
+    delete_movie_callback: Callable[[globalconstants.MovieBag], None] = field(
         default=None, kw_only=True
     )
 
@@ -534,12 +535,13 @@ class EditMovieGUI(MovieGUI):
 
     def delete(self):
         """The user clicked the 'Delete' button."""
+        # todo Integration test required (year processing could be a problem)
         if gui_askyesno(
             message=MOVIE_DELETE_MESSAGE, icon="question", parent=self.parent
         ):
-            movie = config.FindMovieTypedDict(
+            movie = MovieBag(
                 title=self.entry_fields[TITLE].original_value,
-                year=[self.entry_fields[YEAR].original_value],
+                year=MovieInteger(self.entry_fields[YEAR].original_value),
             )
             self.delete_movie_callback(movie)
             self.destroy()

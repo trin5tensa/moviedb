@@ -1,7 +1,7 @@
 """MovieBag Facade."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/30/25, 1:41 PM by stephen.
+#  Last modified 2/3/25, 10:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -50,34 +50,35 @@ def convert_to_movie_key_typed_dict(movie_bag: MovieBag) -> config.MovieKeyTyped
     return movie_key
 
 
-# noinspection DuplicatedCode
-def convert_from_find_movie_typed_dict(movie: config.FindMovieTypedDict) -> MovieBag:
-    """Converts a FindMovieTypedDict into a MovieBag object.
-
-    Args:
-        movie: FindMovieTypedDict()
-
-    Returns:
-        A movie bag object.
-
-    Use Case:
-        It is temporary until the GUI API is rewritten for movie bags at
-        which time this method will become obsolete.
-    """
-    movie_bag = MovieBag()
-    if movie.get("title"):
-        movie_bag["title"] = movie["title"]
-    if movie.get("director"):
-        movie_bag["directors"] = set(movie["director"].split(", "))
-    if movie.get("notes"):
-        movie_bag["notes"] = movie["notes"]
-    if movie.get("year"):
-        movie_bag["year"] = _range_converter(movie["year"])
-    if movie.get("minutes"):
-        movie_bag["duration"] = _range_converter(movie["minutes"])
-    if movie.get("tags"):
-        movie_bag["tags"] = {movie for movie in movie["tags"]}  # pragma no branch
-    return movie_bag
+# todo Delete obsolete code
+# # noinspection DuplicatedCode
+# def convert_from_find_movie_typed_dict(movie: config.FindMovieTypedDict) -> MovieBag:
+#     """Converts a FindMovieTypedDict into a MovieBag object.
+#
+#     Args:
+#         movie: FindMovieTypedDict()
+#
+#     Returns:
+#         A movie bag object.
+#
+#     Use Case:
+#         It is temporary until the GUI API is rewritten for movie bags at
+#         which time this method will become obsolete.
+#     """
+#     movie_bag = MovieBag()
+#     if movie.get("title"):
+#         movie_bag["title"] = movie["title"]
+#     if movie.get("director"):
+#         movie_bag["directors"] = set(movie["director"].split(", "))
+#     if movie.get("notes"):
+#         movie_bag["notes"] = movie["notes"]
+#     if movie.get("year"):
+#         movie_bag["year"] = _range_converter(movie["year"])
+#     if movie.get("minutes"):
+#         movie_bag["duration"] = _range_converter(movie["minutes"])
+#     if movie.get("tags"):
+#         movie_bag["tags"] = {movie for movie in movie["tags"]}  # pragma no branch
+#     return movie_bag
 
 
 def convert_to_movie_update_def(movie_bag: MovieBag) -> config.MovieUpdateDef:
@@ -105,25 +106,26 @@ def convert_to_movie_update_def(movie_bag: MovieBag) -> config.MovieUpdateDef:
     return movie
 
 
-def _range_converter(value: Sequence[str]) -> MovieInteger:
-    """Converts a 'range' string into a MovieInteger object.
-
-    Args:
-        value: The year and minutes item in the old style FindMovieTypedDict
-        contained a sequence of stings. The intended use was for either
-        a sing numeric string or a pair of numeric strings.
-        For example: [1960] or [1960, 1965].
-
-    Returns:
-        A MovieInt object.
-    """
-    match len(value):
-        case 1:
-            duration_range = f"{value[0]}"
-        case 2:
-            duration_range = f"{value[0]}-{value[1]}"
-        case _:  # pragma: nocover
-            raise ValueError(
-                f"Length of value must be 1 or 2 not" f" {len(value)}. {value=}"
-            )
-    return MovieInteger(duration_range)
+# todo Delete obsolete code
+# def _range_converter(value: Sequence[str]) -> MovieInteger:
+#     """Converts a 'range' string into a MovieInteger object.
+#
+#     Args:
+#         value: The year and minutes item in the old style FindMovieTypedDict
+#         contained a sequence of stings. The intended use was for either
+#         a sing numeric string or a pair of numeric strings.
+#         For example: [1960] or [1960, 1965].
+#
+#     Returns:
+#         A MovieInt object.
+#     """
+#     match len(value):
+#         case 1:
+#             duration_range = f"{value[0]}"
+#         case 2:
+#             duration_range = f"{value[0]}-{value[1]}"
+#         case _:
+#             raise ValueError(
+#                 f"Length of value must be 1 or 2 not" f" {len(value)}. {value=}"
+#             )
+#     return MovieInteger(duration_range)
