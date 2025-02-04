@@ -1,7 +1,7 @@
 """ Test module. """
 
-#  Copyright (c) 2023-2024. Stephen Rigden.
-#  Last modified 3/21/24, 8:24 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 2/4/25, 1:28 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,6 +19,7 @@ import pytest
 from pytest_check import check
 
 import guiwidgets_2
+from guiwidgets_2 import tk_facade
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -186,7 +187,7 @@ class TestCreateInputFormFraming:
 # noinspection PyMissingOrEmptyDocstring
 class TestInitButtonEnablements:
     def test_init_button_enablements(self, monkeypatch):
-        monkeypatch.setattr(guiwidgets_2.tk_facade, "Entry", mock_entry := MagicMock())
+        monkeypatch.setattr(tk_facade, "Entry", mock_entry := MagicMock())
         entry_fields = {"field": mock_entry}
         guiwidgets_2.init_button_enablements(entry_fields)
         mock_entry.observer.notify.assert_called_once_with()
@@ -209,28 +210,28 @@ def ttk(monkeypatch):
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def facade_entry(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2.tk_facade, "Entry", mock := MagicMock())
+    monkeypatch.setattr(tk_facade, "Entry", mock := MagicMock())
     return mock
 
 
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def facade_text(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2.tk_facade, "Text", mock := MagicMock())
+    monkeypatch.setattr(tk_facade, "Text", mock := MagicMock())
     return mock
 
 
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def facade_checkbox(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2.tk_facade, "Checkbutton", mock := MagicMock())
+    monkeypatch.setattr(tk_facade, "Checkbutton", mock := MagicMock())
     return mock
 
 
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def facade_treeview(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2.tk_facade, "Treeview", mock := MagicMock())
+    monkeypatch.setattr(tk_facade, "Treeview", mock := MagicMock())
     return mock
 
 

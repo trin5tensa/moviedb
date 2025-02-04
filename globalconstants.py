@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/30/25, 1:12 PM by stephen.
+#  Last modified 2/3/25, 10:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -35,9 +35,11 @@ NO_INTEGER_VALUE = "This object cannot provide an integer value"
 class MovieBag(TypedDict, total=False):
     """A structured bag for movie data.
 
-    Whilst the individual fields are defined in detail there is no requirement or guarantee
-    that any particular field is present. That is the responsibility of the data producer and
-    data consumer.
+    Whilst the individual fields are defined in detail there is no
+    requirement or guarantee that any particular field is present. That is
+    the responsibility of the data producer and data consumer.
+    There is also no guarantee that any present item will have a truthful
+    value.
     """
 
     title: str
@@ -107,7 +109,7 @@ class MovieInteger(set):
         elements = str(self._value).split(self.element_delimiter)
 
         for element in elements:
-            element = element.strip(" ")
+            element = element.strip(" -")
 
             if self.max_min_delimiter in element:
                 min_max = element.split(self.max_min_delimiter)

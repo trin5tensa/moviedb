@@ -6,7 +6,7 @@ the DBv1 database.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/30/25, 1:41 PM by stephen.
+#  Last modified 2/4/25, 1:28 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -74,68 +74,4 @@ def test_convert_to_movie_update_def():
         minutes=int(duration),
         notes=notes,
         tags=list(tags),
-    )
-
-
-def test_convert_from_find_movie_typed_dict_with_singles():
-    title = "Test title"
-    year = "4242"
-    directors = "Test director"
-    duration = "42"
-    notes = "A test note"
-    tags = "Tag 1"
-    movie = config.FindMovieTypedDict(
-        title=title,
-        year=[year],
-        director=directors,
-        minutes=[duration],
-        notes=notes,
-        tags=list(tags),
-    )
-
-    # noinspection PyUnresolvedReferences
-    movie_bag = moviebagfacade.convert_from_find_movie_typed_dict(movie)
-
-    assert movie_bag == MovieBag(
-        title=title,
-        year=MovieInteger(year),
-        directors={directors},
-        duration=MovieInteger(duration),
-        notes=notes,
-        tags=set(tags),
-    )
-
-
-def test_convert_from_find_movie_typed_dict_with_doubles():
-    title = "Test title"
-    lo_year = 4242
-    hi_year = 4244
-    year = [str(lo_year), str(hi_year)]
-    director_1 = "Michael Metcalf"
-    director_2 = "Nancy Nagulto"
-    directors = director_1 + ", " + director_2
-    lo_duration = 42
-    hi_duration = 44
-    duration = [str(lo_duration), str(hi_duration)]
-    notes = "A test note"
-    tags = ["Tag 1", "Tag 2"]
-    movie = config.FindMovieTypedDict(
-        title=title,
-        year=year,
-        director=directors,
-        minutes=duration,
-        notes=notes,
-        tags=tags,
-    )
-
-    # noinspection PyUnresolvedReferences
-    movie_bag = moviebagfacade.convert_from_find_movie_typed_dict(movie)
-
-    assert movie_bag == MovieBag(
-        title=title,
-        year=MovieInteger(str(lo_year) + "-" + str(hi_year)),
-        directors={director_1, director_2},
-        duration=MovieInteger(str(lo_duration) + "-" + str(hi_duration)),
-        notes=notes,
-        tags=set(tags),
     )

@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/17/25, 12:36 PM by stephen.
+#  Last modified 2/3/25, 2:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,12 +18,14 @@ callers.
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import itertools
+import logging
 import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Sequence
 
 import config
+from globalconstants import MovieBag, MovieInteger
 import neurons
 from guiwidgets_2 import (
     CANCEL_TEXT,
@@ -221,7 +223,7 @@ class SearchMovieGUI(MovieGUIBase):
     """
 
     # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable[[config.FindMovieTypedDict, Sequence[str]], None]
+    callback: Callable[[MovieBag], None]
     # Tags list
     all_tags: Sequence[str]
 
@@ -355,21 +357,76 @@ class SearchMovieGUI(MovieGUIBase):
             internal_name: movie_field.textvariable.get()
             for internal_name, movie_field in self.entry_fields.items()
         }
-        # noinspection PyTypeChecker
-        return_fields["year"] = [return_fields["year_min"], return_fields["year_max"]]
-        del return_fields["year_min"]
-        del return_fields["year_max"]
-        # noinspection PyTypeChecker
-        return_fields["minutes"] = [
-            return_fields["minutes_min"],
-            return_fields["minutes_max"],
-        ]
-        del return_fields["minutes_min"]
-        del return_fields["minutes_max"]
-
-        # Commit and exit
-        self.callback(return_fields, self.selected_tags)
+        movie_bag = self.as_movie_bag(return_fields)
+        self.callback(movie_bag)
         self.destroy()
+
+    def as_movie_bag(self, return_fields: dict[str, ...]) -> MovieBag:
+        """Returns the entered data as a movie bag.
+
+        Args:
+            return_fields:
+
+        Returns:
+            movie bag
+        """
+        movie_bag = MovieBag()
+        for k, v in return_fields.items():
+            if v:
+                match k:
+                    case "title":
+                        movie_bag["title"] = v
+                    case "year_min" | "year_max":
+                        movie_bag["year"] = self._range_converter(
+                            [
+                                return_fields["year_min"],
+                                return_fields["year_max"],
+                            ]
+                        )
+                    case "director":
+                        movie_bag["directors"] = set(v.split(", "))
+                    case "notes":
+                        movie_bag["notes"] = v
+                    case "minutes_min" | "minutes_max":
+                        movie_bag["duration"] = self._range_converter(
+                            [
+                                return_fields["minutes_min"],
+                                return_fields["minutes_max"],
+                            ]
+                        )
+                    case "year" | "minutes":
+                        # Both keys are present but with no values.
+                        # Probably cruft.
+                        pass
+                    case _:
+                        logging.error(f"Unexpected key: {k}")
+                        raise KeyError(f"Unexpected key: {k}")
+        movie_bag["tags"] = set(self.selected_tags)
+        return movie_bag
+
+    @staticmethod
+    def _range_converter(value: Sequence[str]) -> MovieInteger:
+        """Converts a 'range' string into a MovieInteger object.
+
+        Args:
+            value: The year and minutes item in the old style FindMovieTypedDict
+            contained a sequence of strings. The intended use was for either
+            a single numeric string or a pair of numeric strings.
+            For example: [1960] or [1960, 1965].
+
+        Returns:
+            A MovieInt object.
+        """
+        match len(value):
+            case 1:
+                duration_range = f"{value[0]}"
+            case 2:
+                duration_range = f"{value[0]}-{value[1]}"
+            case _:
+                raise ValueError(
+                    f"Length of value must be 1 or 2 not" f" {len(value)}. {value=}"
+                )
+        return MovieInteger(duration_range)
 
 
 @dataclass

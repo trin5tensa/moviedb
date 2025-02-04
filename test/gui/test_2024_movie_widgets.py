@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/30/25, 1:41 PM by stephen.
+#  Last modified 2/4/25, 1:28 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,6 +19,7 @@ import pytest
 from pytest_check import check
 
 import guiwidgets_2
+from guiwidgets_2 import tk_facade
 from globalconstants import *
 from guiwidgets_2 import (
     TITLE_TEXT,
@@ -26,7 +27,6 @@ from guiwidgets_2 import (
     DIRECTOR_TEXT,
     COMMIT_TEXT,
     DELETE_TEXT,
-    MOVIE_DELETE_MESSAGE,
 )
 
 
@@ -855,60 +855,6 @@ class TestEditMovieGUI:
                 ]
             )
 
-    def test_delete(
-        self,
-        mock_tk,
-        ttk,
-        moviegui_framing,
-        movie_fill_buttonbox,
-        movie_tmdb_results_frame,
-        input_zone,
-        patterns,
-        monkeypatch,
-    ):
-        dummy_original_values = iter(("Mock Title", "4242"))
-        monkeypatch.setattr(
-            guiwidgets_2, "gui_askyesno", mock_gui_askyesno := MagicMock()
-        )
-        delete_movie_callback = MagicMock()
-        # noinspection PyTypeChecker
-        cut = guiwidgets_2.EditMovieGUI(
-            mock_tk,
-            tmdb_search_callback=lambda: None,
-            all_tags=None,
-            delete_movie_callback=delete_movie_callback,
-        )
-        monkeypatch.setattr(cut, "destroy", MagicMock())
-        movie = guiwidgets_2.config.FindMovieTypedDict()
-        for k in [TITLE, YEAR]:
-            cut.entry_fields[k] = MagicMock()
-            cut.entry_fields[k].original_value = next(dummy_original_values)
-            # noinspection PyTypedDict
-            movie[k] = cut.entry_fields[k].original_value
-        # noinspection PyTypedDict
-        movie[YEAR] = [movie[YEAR]]
-
-        # gui_askyesno returns False: destroy NOT called.
-        mock_gui_askyesno.return_value = False
-        cut.delete()
-        with check:
-            mock_gui_askyesno.assert_called_once_with(
-                message=MOVIE_DELETE_MESSAGE, icon="question", parent=cut.parent
-            )
-        with check:
-            # noinspection PyUnresolvedReferences
-            cut.destroy.assert_not_called()
-
-        # gui_askyesno returns True: destroy is called.
-        mock_gui_askyesno.return_value = True
-        cut.delete()
-        with check:
-            # noinspection PyUnresolvedReferences
-            cut.delete_movie_callback.assert_called_once_with(movie)
-        with check:
-            # noinspection PyUnresolvedReferences
-            cut.destroy.assert_called_once_with()
-
     def old_movie(self):
         return guiwidgets_2.config.MovieUpdateDef(
             title=self.title,
@@ -989,21 +935,21 @@ def patterns(patterns_entry, patterns_text, patterns_treeview):
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @pytest.fixture
 def patterns_entry(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2.tk_facade, "Entry", mock := MagicMock())
+    monkeypatch.setattr(tk_facade, "Entry", mock := MagicMock())
     return mock
 
 
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def patterns_text(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2.tk_facade, "Text", mock := MagicMock())
+    monkeypatch.setattr(tk_facade, "Text", mock := MagicMock())
     return mock
 
 
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def patterns_treeview(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2.tk_facade, "Treeview", mock := MagicMock())
+    monkeypatch.setattr(tk_facade, "Treeview", mock := MagicMock())
     return mock
 
 

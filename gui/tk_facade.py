@@ -1,7 +1,7 @@
 """Facade pattern for tkinter widgets."""
 
-#  Copyright (c) 2024-2024. Stephen Rigden.
-#  Last modified 3/9/24, 9:39 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 2/4/25, 1:28 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -64,18 +64,18 @@ class Observer:
 
 @dataclass
 class TkinterFacade:
-    """This is the base class for a visitor pattern which helps to polymorphise the byzantine
-    Tkinter interface.
+    """This is the base class for a visitor pattern which helps to
+    polymorphise the Byzantine Tkinter interface.
 
     Don't use it directly: Instantiate the subclasses.
 
     The facade classes are responsible for:
-        Maintaining original and current values. The value is specific to the subclass. For
-        subclasses typically used with Ttk.Entry widgets the value may be a string class whereas
-        for subclasses typically used with Ttk.Treeview the value may be a the current
-        selection list.
-        Implementing the Tk/Tcl callback including updating the current value and notifying the
-        observer.
+        Maintaining original and current values. The value is specific to
+        the subclass. For subclasses typically used with Ttk.Entry widgets,
+        the value may be a string class, whereas for subclasses typically
+        used with Ttk.Treeview, the value may be the current selection list.
+        Implementing the Tk/Tcl callback, including updating the current
+        value and notifying the observer.
     """
 
     label_text: str
@@ -225,7 +225,7 @@ class Treeview(TkinterFacade):
 
     def __post_init__(self):
         self.widget = ttk.Treeview(self.parent)
-        self.widget.bind(
+        self.widget.bind(  # pragma no branch
             "<<TreeviewSelect>>", lambda *args, **kwargs: self.observer.notify()
         )
         self.original_value = []
