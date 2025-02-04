@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/4/25, 7:21 AM by stephen.
+#  Last modified 2/4/25, 1:28 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,7 +19,6 @@ import pytest
 from pytest_check import check
 
 import config
-from config import MovieKeyTypedDict
 
 from globalconstants import MovieInteger, MovieBag
 import handlers
@@ -317,7 +316,7 @@ def edit_movie_exception_handler(
         exc_context: The contextual exception added by tables.py.
         monkeypatch:
     """
-    old_movie = config.MovieKeyTypedDict(title="Old Movie Title", year=4200)
+    old_movie = MovieBag(title="Old Movie Title", year=MovieInteger(4200))
     new_title = "New Movie Title"
     new_year = 4201
     new_movie_bag = MovieBag(title=new_title, year=MovieInteger(new_year))
@@ -416,7 +415,7 @@ def test_db_select_movies_handles_missing_movie_exception(
 ):
     title = "test title for test_select_movie_callback"
     year = 42
-    movie = config.MovieKeyTypedDict(title=title, year=year)
+    movie = MovieBag(title=title, year=MovieInteger(year))
     notes_0 = handlers.database.tables.MOVIE_NOT_FOUND
     notes_1 = "note 1"
     notes_2 = "note 2"
@@ -637,7 +636,7 @@ def test_gui_edit_movie(monkeypatch, config_current, test_tags):
     )
     db_edit_movie = MagicMock(name="db_edit_movie")
     monkeypatch.setattr(handlers.database, "db_edit_movie", db_edit_movie)
-    old_movie = MovieKeyTypedDict(title="test gui movie title", year=42)
+    old_movie = MovieBag(title="test gui movie title", year=MovieInteger(42))
     partial = MagicMock(name="partial")
     monkeypatch.setattr(handlers.database, "partial", partial)
 

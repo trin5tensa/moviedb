@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/3/25, 10:48 AM by stephen.
+#  Last modified 2/4/25, 1:28 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -48,27 +48,6 @@ class MovieUpdateDef(MovieTypedDict, total=False):
     WARNING: Only use this definition for updating existing records."""
 
     tags: Sequence[str]
-
-
-# todo Delete obsolete code
-# class FindMovieTypedDict(TypedDict, total=False):
-#     """A dictionary containing none or more of the following keys:
-#     title: A matching column will be a superstring of this value.
-#     director: A matching column will be a superstring of this value.
-#     minutes: A matching column will be between the minimum and maximum values in this
-#     iterable. A single value is permissible.
-#     year: A matching column will be between the minimum and maximum values in this
-#     iterable. A single value is permissible.
-#     notes: A matching column will be a superstring of this value.
-#     tag: Movies matching any tag in this list will be selected.
-#     """
-#
-#     title: str
-#     year: Sequence[str]
-#     director: str
-#     minutes: Sequence[str]
-#     notes: str
-#     tags: Sequence[str]
 
 
 @dataclass

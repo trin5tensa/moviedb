@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/3/25, 2:59 PM by stephen.
+#  Last modified 2/4/25, 1:28 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +13,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from collections.abc import Sequence
 from functools import partial
 
 import config
@@ -23,7 +22,7 @@ import guiwidgets
 import guiwidgets_2
 from database import tables
 
-from globalconstants import MovieBag, MovieInteger
+from globalconstants import MovieBag
 from handlers import moviebagfacade
 from handlers.sundries import _tmdb_io_handler
 
@@ -147,7 +146,6 @@ def db_match_movies(criteria: MovieBag):
 
     Args:
         criteria:
-        tags:
     """
     # Cleans up old style arguments
     # Removes empty items because SQL treats them as meaningful.

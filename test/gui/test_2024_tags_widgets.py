@@ -1,7 +1,7 @@
 """ Test module. """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/17/25, 12:36 PM by stephen.
+#  Last modified 2/4/25, 1:28 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,6 +19,7 @@ import pytest
 from pytest_check import check
 
 import guiwidgets_2
+from guiwidgets_2 import tk_facade
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -619,9 +620,7 @@ class TestPreferencesGUI:
             input_zone.assert_called_once_with(body_frame)
         with check:
             # noinspection PyUnresolvedReferences
-            guiwidgets_2.tk_facade.Entry.assert_called_once_with(
-                cut.api_key_text, body_frame
-            )
+            tk_facade.Entry.assert_called_once_with(cut.api_key_text, body_frame)
         check.equal(cut.entry_fields[cut.api_key_name].original_value, test_api_key)
         with check:
             input_zone().add_entry_row.assert_called_once_with(
@@ -629,9 +628,7 @@ class TestPreferencesGUI:
             )
         with check:
             # noinspection PyUnresolvedReferences
-            guiwidgets_2.tk_facade.Checkbutton.assert_called_once_with(
-                cut.use_tmdb_text, body_frame
-            )
+            tk_facade.Checkbutton.assert_called_once_with(cut.use_tmdb_text, body_frame)
         check.equal(cut.entry_fields[cut.use_tmdb_name].original_value, test_do_not_ask)
         with check:
             input_zone().add_checkbox_row.assert_called_once_with(
@@ -836,14 +833,14 @@ def input_zone(monkeypatch):
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def facade_entry(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2.tk_facade, "Entry", mock := MagicMock())
+    monkeypatch.setattr(tk_facade, "Entry", mock := MagicMock())
     return mock
 
 
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def facade_checkbutton(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2.tk_facade, "Checkbutton", mock := MagicMock())
+    monkeypatch.setattr(tk_facade, "Checkbutton", mock := MagicMock())
     return mock
 
 

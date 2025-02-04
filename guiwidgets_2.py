@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/3/25, 2:59 PM by stephen.
+#  Last modified 2/4/25, 1:28 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,6 +15,7 @@ This module includes windows for presenting data and returning entered data to i
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import itertools
 import logging
 import queue
@@ -39,8 +40,8 @@ from typing import (
 
 import config
 import globalconstants
-import tk_facade
-from tk_facade import TkParentType
+from gui import tk_facade
+from gui.tk_facade import TkParentType
 from globalconstants import *
 
 
@@ -280,7 +281,7 @@ class MovieGUI:
         """
         substring = self.entry_fields[TITLE].current_value
         if substring:  # pragma no branch
-            if self.last_text_event_id:
+            if self.last_text_event_id:  # pragma no branch
                 self.parent.after_cancel(self.last_text_event_id)
 
             # Place a new call to tmdb_search_callback.
@@ -364,7 +365,9 @@ class MovieGUI:
                     case "notes":
                         movie_bag["notes"] = widget.current_value
                     case "tags":
-                        movie_bag["tags"] = {tag for tag in widget.current_value}
+                        movie_bag["tags"] = {  # pragma no branch
+                            tag for tag in widget.current_value
+                        }
                     case _:
                         logging.error(f"Unexpected key: {name}")
                         raise KeyError(f"Unexpected key: {name}")
@@ -517,10 +520,10 @@ class EditMovieGUI(MovieGUI):
                     *args: Sent by tkinter callback but not used.
                     **kwargs: Sent by tkinter callback but not used.
             """
-            changes = any(
+            changes = any(  # pragma no branch
                 [entry_field.changed() for entry_field in self.entry_fields.values()]
             )
-            db_keys_present = all(
+            db_keys_present = all(  # pragma no branch
                 [self.entry_fields[k].has_data() for k in (TITLE, YEAR)]
             )
             enable_button(commit_button, changes and db_keys_present)
@@ -542,8 +545,7 @@ class EditMovieGUI(MovieGUI):
                 title=self.entry_fields[TITLE].original_value,
                 year=MovieInteger(self.entry_fields[YEAR].original_value),
             )
-            # Todo Do we need a version of 'as_movie_bag' which can return
-            #   original values?
+            # moviedb-#520 Add an 'as_old_movie_bag' method.
             self.delete_movie_callback(movie)
             self.destroy()
 
@@ -1017,7 +1019,7 @@ class PreferencesGUI:
                 *args: Sent by tkinter callback but not used.
                 **kwargs: Sent by tkinter callback but not used.
             """
-            state = any(
+            state = any(  # pragma no branch
                 [entry_field.changed() for entry_field in self.entry_fields.values()]
             )
             enable_button(save_button, state)
@@ -1192,7 +1194,7 @@ class InputZone:
         )
         entry_field.widget.column("tags", width=127)
         for item in all_tags:
-            if item:
+            if item:  # pragma no branch
                 entry_field.widget.insert("", "end", item, text=item, tags="tags")
         entry_field.widget.grid(column=1, row=row_ix, sticky="e")
 

@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/3/25, 2:59 PM by stephen.
+#  Last modified 2/4/25, 1:28 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +20,6 @@ from typing import Callable, Sequence, Generator
 
 import pytest
 
-import exception
 import guiwidgets
 from test.dummytk import DummyTk, TkStringVar, TtkButton, TtkEntry, TtkFrame, TtkLabel
 

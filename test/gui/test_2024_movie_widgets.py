@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/3/25, 2:59 PM by stephen.
+#  Last modified 2/4/25, 1:28 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,6 +19,7 @@ import pytest
 from pytest_check import check
 
 import guiwidgets_2
+from guiwidgets_2 import tk_facade
 from globalconstants import *
 from guiwidgets_2 import (
     TITLE_TEXT,
@@ -26,7 +27,6 @@ from guiwidgets_2 import (
     DIRECTOR_TEXT,
     COMMIT_TEXT,
     DELETE_TEXT,
-    MOVIE_DELETE_MESSAGE,
 )
 
 
@@ -935,21 +935,21 @@ def patterns(patterns_entry, patterns_text, patterns_treeview):
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @pytest.fixture
 def patterns_entry(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2.tk_facade, "Entry", mock := MagicMock())
+    monkeypatch.setattr(tk_facade, "Entry", mock := MagicMock())
     return mock
 
 
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def patterns_text(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2.tk_facade, "Text", mock := MagicMock())
+    monkeypatch.setattr(tk_facade, "Text", mock := MagicMock())
     return mock
 
 
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def patterns_treeview(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2.tk_facade, "Treeview", mock := MagicMock())
+    monkeypatch.setattr(tk_facade, "Treeview", mock := MagicMock())
     return mock
 
 
