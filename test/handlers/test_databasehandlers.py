@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/3/25, 2:59 PM by stephen.
+#  Last modified 2/4/25, 7:21 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -184,39 +184,35 @@ def test_db_match_movies(monkeypatch, config_current, messagebox, new_movie):
     match_movies.assert_called_once_with(match=new_movie)
 
 
-@pytest.mark.skip
-def test_db_match_movies_with_year_range(monkeypatch, config_current, messagebox):
+def test_db_match_movies_with_year_range(
+    monkeypatch, config_current, messagebox, new_movie
+):
     match_movies = MagicMock(name="match_movies", return_value=[])
     monkeypatch.setattr(handlers.database.tables, "match_movies", match_movies)
-    title = "title search"
     year_1 = "4242"
     year_2 = "4247"
-    criteria = config.FindMovieTypedDict(title=title, year=[year_1, year_2])
-    tags = ["test tag 1", "test tag 2"]
-    match = handlers.database.MovieBag(
-        title=title,
-        year=(MovieInteger(f"{year_1}-{year_2}")),
-        tags=set(tags),
-    )
+    new_movie["year"] = MovieInteger(f"{year_1}-{year_2}")
     monkeypatch.setattr(handlers.database, "gui_search_movie", lambda: None)
 
-    handlers.database.db_match_movies(criteria, tags)
+    handlers.database.db_match_movies(new_movie)
 
-    match_movies.assert_called_once_with(match=match)
+    match_movies.assert_called_once_with(match=new_movie)
 
 
-@pytest.mark.skip
-def test_db_match_movies_returning_0_movies(monkeypatch, config_current, messagebox):
+def test_db_match_movies_returning_0_movies(
+    monkeypatch,
+    config_current,
+    messagebox,
+):
     title = "title search"
     year = "4242"
-    criteria = config.FindMovieTypedDict(title=title, year=[year])
-    tags = ["test tag 1"]
+    criteria = MovieBag(title=title, year=MovieInteger(year))
     match_movies = MagicMock(name="match_movies", return_value=[])
     monkeypatch.setattr(handlers.database.tables, "match_movies", match_movies)
     gui_search_movie = MagicMock(name="gui_search_movie")
     monkeypatch.setattr(handlers.database, "gui_search_movie", gui_search_movie)
 
-    handlers.database.db_match_movies(criteria, tags)
+    handlers.database.db_match_movies(criteria)
 
     with check:
         messagebox.assert_called_once_with(
@@ -227,7 +223,6 @@ def test_db_match_movies_returning_0_movies(monkeypatch, config_current, message
         gui_search_movie.assert_called_once_with()
 
 
-@pytest.mark.skip
 def test_db_match_movies_returning_1_movie(monkeypatch, config_current, test_tags):
     year = "4242"
     title = "title search"
@@ -237,38 +232,32 @@ def test_db_match_movies_returning_1_movie(monkeypatch, config_current, test_tag
     monkeypatch.setattr(handlers.database.tables, "match_movies", match_movies)
     gui_edit_movie = MagicMock(name="gui_edit_movie")
     monkeypatch.setattr(handlers.database, "gui_edit_movie", gui_edit_movie)
-    criteria = config.FindMovieTypedDict(title=title, year=[year])
-    old_movie = handlers.moviebagfacade.convert_to_movie_update_def(movie_1)
+    criteria = MovieBag(title=title, year=MovieInteger(year))
 
-    handlers.database.db_match_movies(criteria, list(test_tags))
+    handlers.database.db_match_movies(criteria)
 
-    gui_edit_movie.assert_called_once_with(old_movie, prepopulate=movie_1)
+    gui_edit_movie.assert_called_once_with(movie_1, prepopulate=movie_1)
 
 
-@pytest.mark.skip
 def test_db_match_movies_returning_2_movies(monkeypatch, config_current):
-    movie_1 = handlers.database.MovieBag(
-        title="Old Movie",
-        year=MovieInteger(4242),
-    )
-    movie_2 = handlers.database.MovieBag(
-        title="Son of Old Movie", year=MovieInteger(4243)
-    )
-    movies_found = [
-        handlers.moviebagfacade.convert_to_movie_update_def(movie_1),
-        handlers.moviebagfacade.convert_to_movie_update_def(movie_2),
-    ]
+    # gui_select_movie expects a config.MovieUpdateDef (until moviedb-#515)
+    movie_1 = dict(title="Old Movie", year=4242)
+    movie_2 = dict(title="Son of Old Movie", year=4243)
+    movies_found = [movie_1, movie_2]
+
+    match_movies = MagicMock(name="match_movies")
+    match_movies.return_value = movies_found
     monkeypatch.setattr(
         handlers.database.tables,
         "match_movies",
-        MagicMock(name="match_movies", return_value=movies_found),
+        match_movies,
     )
-    criteria = config.FindMovieTypedDict()
-    tags = []
+
     gui_select_movie = MagicMock(name="gui_select_movie")
     monkeypatch.setattr(handlers.database, "gui_select_movie", gui_select_movie)
+    criteria = MovieBag()
 
-    handlers.database.db_match_movies(criteria, tags)
+    handlers.database.db_match_movies(criteria)
 
     gui_select_movie.assert_called_once_with(movies=movies_found)
 
