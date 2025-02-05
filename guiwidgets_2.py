@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/4/25, 1:28 PM by stephen.
+#  Last modified 2/5/25, 9:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -313,6 +313,7 @@ class MovieGUI:
             self.tmdb_treeview.delete(*items)
             self.tmdb_movies = {}
             for movie in work_package:
+                # moviedb-#515 Replace with MovieBag (from TMDB)
                 movie["director"] = ", ".join(movie["director"])
                 item_id = self.tmdb_treeview.insert(
                     "", "end", values=(movie["title"], movie["year"], movie["director"])

@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/3/25, 2:59 PM by stephen.
+#  Last modified 2/5/25, 9:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -441,11 +441,13 @@ class SelectMovieGUI(MovieGUIBase):
     """
 
     # Movie records retrieved from the database.
+    # moviedb-#515 Replace with MovieBag (Multiple matched movies)
     movies: List[config.MovieUpdateDef]
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable
     # Attributes for managing the treeview
     treeview: ttk.Treeview = field(default=None, init=False, repr=False)
+    # moviedb-#515 Replace with MovieBag (Multiple matched movies)
     treeview_items: dict[str : config.MovieKeyTypedDict] = field(
         default_factory=dict, init=False, repr=False
     )
@@ -492,6 +494,7 @@ class SelectMovieGUI(MovieGUIBase):
                 ),
                 tags="title",
             )
+            # moviedb-#515 Replace with MovieBag (Multiple matched movies)
             self.treeview_items[item_id] = config.MovieKeyTypedDict(
                 title=movie["title"], year=int(movie["year"])
             )

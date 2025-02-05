@@ -1,7 +1,7 @@
 """MovieBag Facade."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/4/25, 1:28 PM by stephen.
+#  Last modified 2/5/25, 9:24 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,6 +17,9 @@
 import config
 
 from globalconstants import MovieBag, MovieInteger
+
+
+# moviedb-#515 Replace whole moviebagfacade module with MovieBag
 
 
 def convert_from_movie_key_typed_dict(movie: config.MovieKeyTypedDict) -> MovieBag:
