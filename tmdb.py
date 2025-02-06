@@ -11,8 +11,9 @@ https://www.themoviedb.org/documentation/api/discover
 tmdbsimple.py
 https://github.com/celiao/tmdbsimple
 """
-#  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 12/14/22, 7:59 AM by stephen.
+
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 2/6/25, 9:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,8 +31,8 @@ import sys
 import requests
 import tmdbsimple
 
-import config
 import exception
+from globalconstants import MovieBag, MovieInteger
 
 tmdbsimple.REQUESTS_TIMEOUT = (2, 5)  # seconds for connect and read.
 
@@ -39,9 +40,11 @@ tmdbsimple.REQUESTS_TIMEOUT = (2, 5)  # seconds for connect and read.
 def search_tmdb(tmdb_api_key: str, title_query: str, work_queue: queue.Queue) -> None:
     """Searches TMDB for movies and puts them into a queue.
 
-    Note: The TMDB interface and the private functions of this module can search for much more than title matches.
-    but for simplicity only title searches are supported.
-    
+    Note: The TMDB interface and the private functions of this module can
+    search for much more than title matches, but for simplicity only
+    title searches are supported.
+    (But see moviedb-#312)
+
     Args:
         tmdb_api_key:
         title_query: A text search pattern for movie titles.
@@ -55,7 +58,7 @@ def search_tmdb(tmdb_api_key: str, title_query: str, work_queue: queue.Queue) ->
     """
     tmdbsimple.API_KEY = tmdb_api_key
     try:
-        my_movies: list[config.MovieTypedDict] = _retrieve_compliants(title_query)
+        movie_bags: list[MovieBag] = _retrieve_compliants(title_query)
 
     except requests.exceptions.ConnectionError as exc:
         msg = f"Unable to connect to TMDB. {exc.args[0].args[0]}"
@@ -63,7 +66,7 @@ def search_tmdb(tmdb_api_key: str, title_query: str, work_queue: queue.Queue) ->
         raise exception.TMDBConnectionTimeout(msg) from exc
 
     except requests.exceptions.HTTPError as exc:
-        if exc.args and (exc.args[0][:38]) == '401 Client Error: Unauthorized for url':
+        if exc.args and (exc.args[0][:38]) == "401 Client Error: Unauthorized for url":
             msg = f"API Key error: {exc.args[0]}"
             logging.error(msg)
             raise exception.TMDBAPIKeyException(msg) from exc
@@ -74,10 +77,10 @@ def search_tmdb(tmdb_api_key: str, title_query: str, work_queue: queue.Queue) ->
             raise
 
     else:
-        work_queue.put(my_movies)
+        work_queue.put(movie_bags)
 
 
-def _retrieve_compliants(title_query: str) -> list[dict]:
+def _retrieve_compliants(title_query: str) -> list[MovieBag]:
     """Searches TMDB for movies.
 
     Search TMDB to retrieve movie id keys. Use the key to retrieve detailed movie records.
@@ -86,45 +89,54 @@ def _retrieve_compliants(title_query: str) -> list[dict]:
         title_query: A text search pattern for movie titles.
 
     Returns:
-        A list of up to 20 movies.
+        A list of up to 20 movie bags.
     """
     compliants = _search_movies(title_query)
 
-    movies = []
+    movie_bags = []
     for compliant in compliants:
-        tmdb_id = compliant['id']
-        movie = _data_conversion(_get_tmdb_movie_info(tmdb_id))
-        movies.append(movie)
-    return movies
+        tmdb_id = compliant["id"]
+        movie_bag = _data_conversion(_get_tmdb_movie_info(tmdb_id))
+        movie_bags.append(movie_bag)
+    return movie_bags
 
 
-def _data_conversion(tmdb_movie: dict) -> config.MovieTypedDict:
-    """Converts a TMDB movie mapping into the internal format.
+def _data_conversion(tmdb_movie: dict) -> MovieBag:
+    """Converts a TMDB movie mapping into a movie bag.
 
     Args:
         tmdb_movie: A TMDB movie mapping.
 
     Returns:
-        A moviedb mapping.
+        A movie bag.
     """
-    # The release_date is YYYY-MM-DD if present.
-    if date := tmdb_movie.get('release_date', ''):
-        year = date[:4]
-    else:
-        year = ''
 
-    movie = config.MovieTypedDict(
-        title=tmdb_movie.get('title', ''),
-        year=year,
-        director=tmdb_movie.get('directors', ''),
-        minutes=tmdb_movie.get('runtime', ''),
-        notes=tmdb_movie.get('overview', ''),
-        )
-    return movie
+    movie_bag = MovieBag()
+    for k, v in tmdb_movie.items():
+        if v:
+            match k:
+                case "title":
+                    movie_bag["title"] = v
+                case "release_date":
+                    # release_date format YYYY-MM-DD
+                    movie_bag["year"] = MovieInteger(v[:4])
+                case "runtime":
+                    movie_bag["duration"] = MovieInteger(v)
+                case "directors":
+                    movie_bag["directors"] = set(v)
+                case "overview":  # pragma no branch
+                    movie_bag["notes"] = v
+    return movie_bag
 
 
-def _search_movies(title_query: str, primary_release_year: int = None, year: int = None, language: str = None,
-                   include_adult: bool = False, region: str = None) -> list[dict]:
+def _search_movies(
+    title_query: str,
+    primary_release_year: int = None,
+    year: int = None,
+    language: str = None,
+    include_adult: bool = False,
+    region: str = None,
+) -> list[dict]:
     """Searches TMDB for movie id keys.
 
     Args:
@@ -146,8 +158,15 @@ def _search_movies(title_query: str, primary_release_year: int = None, year: int
 
     """
     search = tmdbsimple.Search()
-    search.movie(query=title_query, primary_release_year=primary_release_year, year=year,
-                 language=language, include_adult=include_adult, region=region)
+    search.movie(
+        query=title_query,
+        primary_release_year=primary_release_year,
+        year=year,
+        language=language,
+        include_adult=include_adult,
+        region=region,
+    )
+    # noinspection PyUnresolvedReferences
     return search.results
 
 
@@ -190,15 +209,17 @@ def _get_tmdb_movie_info(tmdb_movie_id: str) -> dict:
     except requests.exceptions.HTTPError as exc:
         # Movie not found. Since this movie id originated from TMDB this is unexpected.
         # The TMDB URL ends with movie/XXX where XXX is the requested tmdb_id code.
-        if exc.args and (exc.args[0][:36]) == '404 Client Error: Not Found for url:':
+        if exc.args and (exc.args[0][:36]) == "404 Client Error: Not Found for url:":
             msg = f"The TMDB id '{tmdb_movie_id}' was not found on the TMDB site. \n{exc.args[0]}"
             logging.error(msg)
             raise exception.TMDBMovieIDMissing(msg) from exc
         else:
             raise
 
-    crew = movie.credits().get('crew')
+    crew = movie.credits().get("crew")
     if crew:
-        directors = [person.get('name') for person in crew if person.get('job') == 'Director']
+        directors = [
+            person.get("name") for person in crew if person.get("job") == "Director"
+        ]
         info.update(dict(directors=directors))
     return info

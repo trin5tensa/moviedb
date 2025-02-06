@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/3/25, 2:59 PM by stephen.
+#  Last modified 2/6/25, 11:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,6 @@ import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Sequence
 
-import config
 from globalconstants import MovieBag, MovieInteger
 import neurons
 from guiwidgets_2 import (
@@ -441,13 +440,13 @@ class SelectMovieGUI(MovieGUIBase):
     """
 
     # Movie records retrieved from the database.
-    movies: List[config.MovieUpdateDef]
+    movies: List[MovieBag]
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable
     # Attributes for managing the treeview
     treeview: ttk.Treeview = field(default=None, init=False, repr=False)
-    treeview_items: dict[str : config.MovieKeyTypedDict] = field(
-        default_factory=dict, init=False, repr=False
+    treeview_items: dict[str:MovieBag] = field(
+        default_factory=MovieBag, init=False, repr=False
     )
 
     def create_body(self, outerframe: ttk.Frame):
@@ -486,15 +485,13 @@ class SelectMovieGUI(MovieGUIBase):
                 text=movie["title"],
                 values=(
                     movie["year"],
-                    movie.get("director", ""),
-                    movie.get("minutes", ""),
+                    movie.get("directors", ""),
+                    movie.get("duration", ""),
                     movie.get("notes", ""),
                 ),
                 tags="title",
             )
-            self.treeview_items[item_id] = config.MovieKeyTypedDict(
-                title=movie["title"], year=int(movie["year"])
-            )
+            self.treeview_items[item_id] = movie
         self.treeview.bind(
             "<<TreeviewSelect>>", func=self.treeview_callback(self.treeview)
         )

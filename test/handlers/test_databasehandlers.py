@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/4/25, 1:28 PM by stephen.
+#  Last modified 2/6/25, 11:33 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -157,12 +157,12 @@ def test_gui_select_movie(monkeypatch, config_current):
     monkeypatch.setattr(
         handlers.database.guiwidgets, "SelectMovieGUI", select_movie_gui
     )
-    movies = [config.MovieUpdateDef(title="", year=0)]
+    movies = [MovieBag(title="", year=MovieInteger(0))]
 
     handlers.database.gui_select_movie(movies=movies)
 
     select_movie_gui.assert_called_once_with(
-        config.current.tk_root, movies, handlers.database.db_select_movies
+        config.current.tk_root, movies, handlers.database.db_select_movie
     )
 
 
@@ -239,7 +239,6 @@ def test_db_match_movies_returning_1_movie(monkeypatch, config_current, test_tag
 
 
 def test_db_match_movies_returning_2_movies(monkeypatch, config_current):
-    # gui_select_movie expects a config.MovieUpdateDef (until moviedb-#515)
     movie_1 = dict(title="Old Movie", year=4242)
     movie_2 = dict(title="Son of Old Movie", year=4243)
     movies_found = [movie_1, movie_2]
@@ -402,7 +401,7 @@ def test_db_select_movies(monkeypatch):
     gui_edit_movie = MagicMock(name="gui_edit_movie")
     monkeypatch.setattr(handlers.database, "gui_edit_movie", gui_edit_movie)
 
-    handlers.database.db_select_movies(movie_bag)
+    handlers.database.db_select_movie(movie_bag)
 
     with check:
         select_movie.assert_called_once_with(movie_bag=movie_bag)
@@ -424,7 +423,7 @@ def test_db_select_movies_handles_missing_movie_exception(
     select_movie.side_effect.__notes__ = [notes_0, notes_1, notes_2]
     monkeypatch.setattr(handlers.database.tables, "select_movie", select_movie)
 
-    handlers.database.db_select_movies(movie)
+    handlers.database.db_select_movie(movie)
 
     messagebox.assert_called_once_with(
         handlers.database.config.current.tk_root,
@@ -680,19 +679,6 @@ def test_tags(monkeypatch):
     mock_select_tags = MagicMock(name="mock_select_tags", return_value=test_tags)
     monkeypatch.setattr(handlers.database.tables, "select_all_tags", mock_select_tags)
     return test_tags
-
-
-@pytest.fixture(scope="function")
-def old_movie():
-    """This fixture provides an original movie for tests of movie
-    editing functions.
-
-    Returns:
-        A MovieKeyTypedDict with dummy original values for title and year.
-    """
-    old_title = "Old Title"
-    old_year = 4242
-    return config.MovieKeyTypedDict(title=old_title, year=old_year)
 
 
 @pytest.fixture(scope="function")
