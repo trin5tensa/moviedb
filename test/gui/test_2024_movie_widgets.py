@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/5/25, 9:24 AM by stephen.
+#  Last modified 2/6/25, 9:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -348,7 +348,7 @@ class TestMovieGUI:
         year = "4242"
         directors = ["Director 1", "Director 2"]
         director_cc = "Director 1, Director 2"
-        treeview_items = [{TITLE: title, YEAR: year, DIRECTOR: directors}]
+        treeview_items = [{TITLE: title, YEAR: year, DIRECTORS: directors}]
         item_id = "42"
 
         # noinspection PyTypeChecker

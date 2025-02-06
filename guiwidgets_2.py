@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/5/25, 9:24 AM by stephen.
+#  Last modified 2/6/25, 9:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -312,13 +312,17 @@ class MovieGUI:
             items = self.tmdb_treeview.get_children()
             self.tmdb_treeview.delete(*items)
             self.tmdb_movies = {}
-            for movie in work_package:
-                # moviedb-#515 Replace with MovieBag (from TMDB)
-                movie["director"] = ", ".join(movie["director"])
+            for movie_bag in work_package:
                 item_id = self.tmdb_treeview.insert(
-                    "", "end", values=(movie["title"], movie["year"], movie["director"])
+                    "",
+                    "end",
+                    values=(
+                        movie_bag.get("title", ""),
+                        movie_bag.get("year", ""),
+                        ", ".join(movie_bag.get("directors", "")),
+                    ),
                 )
-                self.tmdb_movies[item_id] = movie
+                self.tmdb_movies[item_id] = movie_bag
 
         finally:
             # Have tkinter call this function again after the poll interval.
