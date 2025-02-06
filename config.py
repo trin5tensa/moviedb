@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/5/25, 9:24 AM by stephen.
+#  Last modified 2/6/25, 11:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,10 +14,10 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from collections import UserDict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Optional, TypedDict
+from typing import Optional
 
 CONFIG_JSON_SUFFIX = "_config.json"
 
@@ -25,32 +25,6 @@ CONFIG_JSON_SUFFIX = "_config.json"
 tk: "tk"
 current: Optional["CurrentConfig"] = None
 persistent: Optional["PersistentConfig"] = None
-
-
-class MovieKeyTypedDict(TypedDict):
-    """Mandatory field for a movie."""
-
-    # moviedb-#515 Remove obsolete class
-    title: str
-    year: int
-
-
-class MovieTypedDict(MovieKeyTypedDict, total=False):
-    """Optional fields for a movie."""
-
-    # moviedb-#515 Remove obsolete class
-    director: str | list[str]
-    minutes: int
-    notes: str
-
-
-class MovieUpdateDef(MovieTypedDict, total=False):
-    """A dictionary of fields for updating.
-
-    WARNING: Only use this definition for updating existing records."""
-
-    # moviedb-#515 Remove obsolete class
-    tags: Sequence[str]
 
 
 @dataclass

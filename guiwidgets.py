@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/6/25, 11:33 AM by stephen.
+#  Last modified 2/6/25, 11:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,6 @@ import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Sequence
 
-import config
 from globalconstants import MovieBag, MovieInteger
 import neurons
 from guiwidgets_2 import (
@@ -446,7 +445,7 @@ class SelectMovieGUI(MovieGUIBase):
     callback: Callable
     # Attributes for managing the treeview
     treeview: ttk.Treeview = field(default=None, init=False, repr=False)
-    treeview_items: dict[str : config.MovieKeyTypedDict] = field(
+    treeview_items: dict[str:MovieBag] = field(
         default_factory=MovieBag, init=False, repr=False
     )
 
