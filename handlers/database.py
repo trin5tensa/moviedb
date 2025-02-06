@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/5/25, 9:24 AM by stephen.
+#  Last modified 2/6/25, 11:33 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -74,8 +74,7 @@ def gui_search_movie(*, prepopulate: MovieBag = None):
     guiwidgets.SearchMovieGUI(config.current.tk_root, db_match_movies, list(all_tags))
 
 
-# moviedb-#515 Replace with MovieBag (Multiple matched movies)
-def gui_select_movie(*, movies: list[config.MovieUpdateDef]):
+def gui_select_movie(*, movies: list[MovieBag]):
     """Presents a user dialog for selecting a movie from a list.
 
     Args:
@@ -174,12 +173,7 @@ def db_match_movies(criteria: MovieBag):
 
         case _:
             # Presents a selection window showing the multiple compliant movies.
-            movies = [
-                # moviedb-#515 Replace with MovieBag (Multiple matched movies)
-                moviebagfacade.convert_to_movie_update_def(movie_bag)
-                for movie_bag in movies_found
-            ]  # pragma nocover
-            gui_select_movie(movies=movies)
+            gui_select_movie(movies=movies_found)
 
 
 def db_select_movie(movie_bag: MovieBag):

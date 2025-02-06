@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/6/25, 9:20 AM by stephen.
+#  Last modified 2/6/25, 11:33 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -855,15 +855,14 @@ class TestEditMovieGUI:
                 ]
             )
 
-    # moviedb-#515 Change to MovieBag
     def old_movie(self):
-        return guiwidgets_2.config.MovieUpdateDef(
+        return MovieBag(
             title=self.title,
-            year=self.year,
-            director=self.director,
-            minutes=self.minutes,
+            year=MovieInteger(self.year),
+            directors={self.director},
+            duration=MovieInteger(self.minutes),
             notes=self.notes,
-            tags=self.tags,
+            tags=set(self.tags),
         )
 
 

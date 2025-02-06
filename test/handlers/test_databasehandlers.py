@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/5/25, 9:24 AM by stephen.
+#  Last modified 2/6/25, 11:33 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -157,8 +157,7 @@ def test_gui_select_movie(monkeypatch, config_current):
     monkeypatch.setattr(
         handlers.database.guiwidgets, "SelectMovieGUI", select_movie_gui
     )
-    # moviedb-#515 Change to MovieBag
-    movies = [config.MovieUpdateDef(title="", year=0)]
+    movies = [MovieBag(title="", year=MovieInteger(0))]
 
     handlers.database.gui_select_movie(movies=movies)
 
@@ -240,7 +239,6 @@ def test_db_match_movies_returning_1_movie(monkeypatch, config_current, test_tag
 
 
 def test_db_match_movies_returning_2_movies(monkeypatch, config_current):
-    # gui_select_movie expects a config.MovieUpdateDef (until moviedb-#515)
     movie_1 = dict(title="Old Movie", year=4242)
     movie_2 = dict(title="Son of Old Movie", year=4243)
     movies_found = [movie_1, movie_2]
