@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/6/25, 9:20 AM by stephen.
+#  Last modified 2/7/25, 7:27 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -551,7 +551,7 @@ class EditMovieGUI(MovieGUI):
                 year=MovieInteger(self.entry_fields[YEAR].original_value),
             )
             # moviedb-#520 Add an 'as_old_movie_bag' method.
-            self.delete_movie_callback(movie)
+            self.parent.after(0, self.delete_movie_callback, movie)
             self.destroy()
 
 
