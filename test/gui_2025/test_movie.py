@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/3/25, 2:59 PM by stephen.
+#  Last modified 2/7/25, 7:27 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -140,7 +140,6 @@ class TestEditMovieGUI:
             destroy.assert_called_once_with()
 
     def test_delete(self, edit_movie_gui, monkeypatch):
-        print()
         # Arrange
         gui_askyesno = MagicMock(name="gui_askyesno")
         monkeypatch.setattr(guiwidgets_2, "gui_askyesno", gui_askyesno)
@@ -171,7 +170,9 @@ class TestEditMovieGUI:
             )
         with check:
             # noinspection PyUnresolvedReferences
-            edit_movie_gui.delete_movie_callback.assert_called_once_with(movie_bag)
+            edit_movie_gui.parent.after.assert_called_once_with(
+                0, edit_movie_gui.delete_movie_callback, movie_bag
+            )
         with check:
             # noinspection PyUnresolvedReferences
             edit_movie_gui.destroy.assert_called_once_with()
