@@ -13,7 +13,7 @@ https://github.com/celiao/tmdbsimple
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/6/25, 9:20 AM by stephen.
+#  Last modified 2/7/25, 2:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -43,7 +43,6 @@ def search_tmdb(tmdb_api_key: str, title_query: str, work_queue: queue.Queue) ->
     Note: The TMDB interface and the private functions of this module can
     search for much more than title matches, but for simplicity only
     title searches are supported.
-    (But see moviedb-#312)
 
     Args:
         tmdb_api_key:
