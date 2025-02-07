@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/6/25, 11:33 AM by stephen.
+#  Last modified 2/7/25, 2:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -635,14 +635,21 @@ def test_gui_edit_movie(monkeypatch, config_current, test_tags):
     )
     db_edit_movie = MagicMock(name="db_edit_movie")
     monkeypatch.setattr(handlers.database, "db_edit_movie", db_edit_movie)
-    old_movie = MovieBag(title="test gui movie title", year=MovieInteger(42))
+    db_delete_movie = MagicMock(name="db_delete_movie")
+    monkeypatch.setattr(handlers.database, "db_delete_movie", db_delete_movie)
     partial = MagicMock(name="partial")
     monkeypatch.setattr(handlers.database, "partial", partial)
+    old_movie = MovieBag(title="test gui movie title", year=MovieInteger(42))
 
     handlers.database.gui_edit_movie(old_movie)
 
-    with check:
-        partial.assert_called_once_with(db_edit_movie, old_movie)
+    check.equal(
+        partial.call_args_list,
+        [
+            call(db_edit_movie, old_movie),
+            call(db_delete_movie, old_movie),
+        ],
+    )
     with check:
         widget_edit_movie.assert_called_once_with(
             config.current.tk_root,
@@ -650,7 +657,7 @@ def test_gui_edit_movie(monkeypatch, config_current, test_tags):
             list(handlers.database.tables.select_all_tags()),
             prepopulate=None,
             edit_movie_callback=partial(),
-            delete_movie_callback=handlers.database.db_delete_movie,
+            delete_movie_callback=partial(),
         )
 
 

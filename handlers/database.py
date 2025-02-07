@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/6/25, 11:41 AM by stephen.
+#  Last modified 2/7/25, 2:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -102,7 +102,7 @@ def gui_edit_movie(old_movie: MovieBag, *, prepopulate: MovieBag = None):
         list(all_tags),
         prepopulate=prepopulate,
         edit_movie_callback=partial(db_edit_movie, old_movie),
-        delete_movie_callback=db_delete_movie,
+        delete_movie_callback=partial(db_delete_movie, old_movie),
     )
 
 
@@ -224,15 +224,16 @@ def db_edit_movie(old_movie: MovieBag, new_movie: MovieBag):
             raise
 
 
-def db_delete_movie(movie_bag: MovieBag):
+def db_delete_movie(old_movie: MovieBag):
     """Deletes a movie from the database.
 
     No action will be taken if the movie does not exist.
 
     Args:
-        movie_bag: Specified by title and key.
+        old_movie: The old movie. Directors and stars must be included to
+        ensure correct deletion of related and 'orphaned' records.
     """
-    tables.delete_movie(movie_bag=movie_bag)
+    tables.delete_movie(movie_bag=old_movie)
 
 
 def gui_add_tag():

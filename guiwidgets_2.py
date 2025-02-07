@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/7/25, 7:27 AM by stephen.
+#  Last modified 2/7/25, 2:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -39,7 +39,6 @@ from typing import (
 )
 
 import config
-import globalconstants
 from gui import tk_facade
 from gui.tk_facade import TkParentType
 from globalconstants import *
@@ -470,11 +469,7 @@ class EditMovieGUI(MovieGUI):
     """Create and manage a GUI form for editing an existing movie."""
 
     edit_movie_callback: Callable[[MovieBag], None] = field(default=None, kw_only=True)
-    delete_movie_callback: Callable[[globalconstants.MovieBag], None] = field(
-        default=None, kw_only=True
-    )
-
-    # noinspection DuplicatedCode
+    delete_movie_callback: Callable = field(default=None, kw_only=True)
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         commit_button = create_button(
@@ -546,12 +541,8 @@ class EditMovieGUI(MovieGUI):
         if gui_askyesno(
             message=MOVIE_DELETE_MESSAGE, icon="question", parent=self.parent
         ):
-            movie = MovieBag(
-                title=self.entry_fields[TITLE].original_value,
-                year=MovieInteger(self.entry_fields[YEAR].original_value),
-            )
-            # moviedb-#520 Add an 'as_old_movie_bag' method.
-            self.parent.after(0, self.delete_movie_callback, movie)
+            # noinspection PyTypeChecker
+            self.parent.after(0, self.delete_movie_callback)
             self.destroy()
 
 
