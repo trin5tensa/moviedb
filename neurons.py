@@ -1,7 +1,7 @@
 """Observer pattern and neurons."""
 
-#  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 2/16/24, 9:16 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 2/8/25, 9:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,6 +15,8 @@
 
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List
+
+# todo Delete this module when guiwidgets.py is deleted.
 
 
 @dataclass

@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/7/25, 2:01 PM by stephen.
+#  Last modified 2/8/25, 9:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -1071,6 +1071,7 @@ def gui_askyesno(
     )
 
 
+# todo remove this unused function
 def gui_askopenfilename(
     parent: TkParentType,
     filetypes: Iterable[tuple[str, str | list[str] | tuple[str, ...]]] | None,

@@ -8,15 +8,17 @@ Carry out enhancements, debt reduction and bug fixes.
 Deliverables
 ------------
 
-Replace all the ad-hoc data structures used to move movie data between
+✅Replace all the ad-hoc data structures used to move movie data between
 the gui modules and the handlers.
 
-Create new gui modules inside a new gui directory to replace guiwidgets.py
-and guiwidgets_2.py.
+#502 Create new gui modules inside the gui folder:
+Move mainwindow.py altogether. 
+Move common support functions from guiwidgets_2 to commonsupport.py.
+Move odds and ends functions from guiwidgets_2 to oddends.py (about, settings, messageboxes).
+Move tag functions from guiwidgets_2 to tags.py.
+Move guiwidgets_2, which, by now, only contains movie code, to movies.py.
 
-Move and rewrite SelectTagGUI and SelectMovieGUI to gui.tables.py.
-
-Move and rewrite all remaining code from guiwidgets and guiwidgets_2 to gui.forms.py.
+#503 Move and rewrite SelectTagGUI and SelectMovieGUI to gui.tables.py.
 
 GUI Enhancement issues not otherwise covered in this list.
 

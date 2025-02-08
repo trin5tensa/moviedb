@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/6/25, 11:41 AM by stephen.
+#  Last modified 2/8/25, 9:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,6 +16,8 @@ callers.
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# todo Delete this module when code has been moved to new movies.py
 
 import itertools
 import logging
