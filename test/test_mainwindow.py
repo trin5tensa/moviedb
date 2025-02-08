@@ -1,7 +1,7 @@
 """Test Module."""
 
-#  Copyright (c) 2020-2024. Stephen Rigden.
-#  Last modified 3/22/24, 7:44 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 2/8/25, 2:02 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +20,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-import mainwindow
+from gui import mainwindow
 
 TEST_TITLE = "test moviedb"
 TEST_VERSION = "Test version"

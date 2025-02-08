@@ -4,7 +4,7 @@ This module contains new tests written after Brian Okken's course and book on py
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 8:50 AM by stephen.
+#  Last modified 2/8/25, 2:02 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,7 +21,7 @@ from unittest.mock import MagicMock, call
 
 from pytest_check import check
 
-import mainwindow
+from gui import mainwindow
 
 TEST_TITLE = "test moviedb"
 TEST_VERSION = "Test version"
@@ -184,10 +184,10 @@ def main_window(monkeypatch):
     current_config.tk_root = MagicMock()
     persistent_config = mainwindow.config.PersistentConfig(TEST_TITLE, TEST_VERSION)
 
-    monkeypatch.setattr("mainwindow.config", mock_config := MagicMock())
+    monkeypatch.setattr(mainwindow, "config", mock_config := MagicMock())
     mock_config.current = current_config
     mock_config.persistent = persistent_config
-    monkeypatch.setattr("mainwindow.tk", MagicMock())
+    monkeypatch.setattr(mainwindow, "tk", MagicMock())
 
     # Give each of the many calls to tk.Menu a unique Mock() for testing.
     mainwindow.tk.Menu.side_effect = lambda *args, **kwargs: MagicMock()

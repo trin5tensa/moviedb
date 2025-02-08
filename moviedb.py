@@ -1,7 +1,7 @@
 """Main movie database program"""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 1:01 PM by stephen.
+#  Last modified 2/8/25, 2:02 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,7 @@ from typing import Any
 
 import config
 import database
-import mainwindow
+from gui import mainwindow
 from threadsafe_printer import SafePrinter
 
 
