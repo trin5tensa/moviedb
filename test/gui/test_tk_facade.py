@@ -1,7 +1,7 @@
 """ Test module"""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/4/25, 1:28 PM by stephen.
+#  Last modified 2/8/25, 2:27 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,7 @@ from unittest.mock import MagicMock, call
 import pytest
 from pytest_check import check
 
-from gui import tk_facade
+from gui import tk_facade, common
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -334,5 +334,5 @@ def ttk(monkeypatch):
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def tk_parent_type(monkeypatch):
-    monkeypatch.setattr(tk_facade, "TkParentType", tk_parent_type := MagicMock)
+    monkeypatch.setattr(common, "TkParentType", tk_parent_type := MagicMock)
     return tk_parent_type
