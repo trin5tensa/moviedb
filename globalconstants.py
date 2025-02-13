@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/8/25, 9:01 AM by stephen.
+#  Last modified 2/13/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -22,20 +22,35 @@ from typing import TypedDict
 #  Rename module to moviebag.py
 
 # Deprecated field names
-DIRECTOR = "director"
-DIRECTORS = "directors"
-DURATION = "minutes"
-MOVIE_TAG = "tag"
-MOVIE_TAGS = "tags"
-NOTES = "notes"
-STARS = "stars"
-SYNOPSIS = "synopsis"
+# DIRECTOR = "director"
+# DIRECTORS = "directors"
+# DURATION = "minutes"
+# MOVIE_TAG = "tag"
+# MOVIE_TAGS = "tags"
+# NOTES = "notes"
+# STARS = "stars"
+# SYNOPSIS = "synopsis"
+# TITLE = "title"
+# YEAR = "year"
+
+
+# 2025 field names
 TITLE = "title"
 YEAR = "year"
+DURATION = "duration"
+DIRECTORS = "directors"
+NOTES = "notes"
+MOVIE_TAGS = "tags"
+STARS = "stars"
+SYNOPSIS = "synopsis"
+ID = "id"
+CREATED = "created"
+UPDATED = "updated"
 
 NO_INTEGER_VALUE = "This object cannot provide an integer value"
 
 
+# todo SSOT problem with key names
 class MovieBag(TypedDict, total=False):
     """A structured bag for movie data.
 

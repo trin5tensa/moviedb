@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/8/25, 9:01 AM by stephen.
+#  Last modified 2/13/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -35,12 +35,12 @@ class TestMovieGUI:
         ef_notes = "AMB Notes"
         ef_tags = {"Alpha", "Beta"}
         for k, v in [
-            ("title", ef_title),
-            ("year", ef_year),
-            ("director", ef_director),
-            ("minutes", ef_duration),
-            ("notes", ef_notes),
-            ("tags", ef_tags),
+            (guiwidgets_2.TITLE, ef_title),
+            (guiwidgets_2.YEAR, ef_year),
+            (guiwidgets_2.DIRECTORS, ef_director),
+            (guiwidgets_2.DURATION, ef_duration),
+            (guiwidgets_2.NOTES, ef_notes),
+            (guiwidgets_2.MOVIE_TAGS, ef_tags),
         ]:
             widget = MagicMock(name=k)
             widget.current_value = v
@@ -154,7 +154,6 @@ class TestEditMovieGUI:
             "title": title,
             "year": year,
         }
-        movie_bag = MovieBag(title=title_value, year=MovieInteger(year_value))
         destroy = MagicMock(name="destroy")
         monkeypatch.setattr(guiwidgets_2.EditMovieGUI, "destroy", destroy)
 

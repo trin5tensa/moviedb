@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/8/25, 9:01 AM by stephen.
+#  Last modified 2/13/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -34,8 +34,8 @@ from guiwidgets_2 import (
     TITLE_TEXT,
     YEAR,
     YEAR_TEXT,
-    DIRECTOR,
-    DIRECTOR_TEXT,
+    DIRECTORS,
+    DIRECTORS_TEXT,
     DURATION,
     DURATION_TEXT,
     NOTES,
@@ -91,8 +91,8 @@ class MovieGUIBase:
 
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = _create_entry_fields(
-            (TITLE, YEAR, DIRECTOR, DURATION, NOTES),
-            (TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, DURATION_TEXT, NOTES_TEXT),
+            (TITLE, YEAR, DIRECTORS, DURATION, NOTES),
+            (TITLE_TEXT, YEAR_TEXT, DIRECTORS_TEXT, DURATION_TEXT, NOTES_TEXT),
         )
 
         body_frame = ttk.Frame(outerframe, padding=(10, 25, 10, 0))
@@ -458,7 +458,7 @@ class SelectMovieGUI(MovieGUIBase):
         # Create and grid treeview
         self.treeview = ttk.Treeview(
             body_frame,
-            columns=[YEAR, DIRECTOR, DURATION, NOTES],
+            columns=[YEAR, DIRECTORS, DURATION, NOTES],
             height=25,
             selectmode="browse",
         )
@@ -467,14 +467,14 @@ class SelectMovieGUI(MovieGUIBase):
         # Set up column widths and titles
         column_widths = (350, 50, 100, 50, 350)
         for column_ix, internal_name in enumerate(
-            (TITLE, YEAR, DIRECTOR, DURATION, NOTES)
+            (TITLE, YEAR, DIRECTORS, DURATION, NOTES)
         ):
             if column_ix == 0:
                 internal_name = "#0"
             self.treeview.column(internal_name, width=column_widths[column_ix])
             self.treeview.heading(
                 internal_name,
-                text=(TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, DURATION_TEXT, NOTES_TEXT)[
+                text=(TITLE_TEXT, YEAR_TEXT, DIRECTORS_TEXT, DURATION_TEXT, NOTES_TEXT)[
                     column_ix
                 ],
             )

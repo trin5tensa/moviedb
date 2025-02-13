@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/8/25, 2:27 PM by stephen.
+#  Last modified 2/13/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -43,13 +43,11 @@ from gui import tk_facade
 from gui.common import TkParentType
 from globalconstants import *
 
-
 TITLE_TEXT = "Title"
 YEAR_TEXT = "Year"
-DIRECTOR_TEXT = "Director"
-DURATION_TEXT = "Length (minutes)"
+DIRECTORS_TEXT = "Directors"
+DURATION_TEXT = "Runtime"
 NOTES_TEXT = "Notes"
-MOVIE_TAG_TEXT = "Tag"
 MOVIE_TAGS_TEXT = "Tags"
 SEARCH_TEXT = "Search"
 COMMIT_TEXT = "Commit"
@@ -172,8 +170,8 @@ class MovieGUI:
 
         # Create entry rows for title, year, director, and duration.
         for name, text in zip(
-            (TITLE, YEAR, DIRECTOR, DURATION),
-            (TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, DURATION_TEXT),
+            (TITLE, YEAR, DIRECTORS, DURATION),
+            (TITLE_TEXT, YEAR_TEXT, DIRECTORS_TEXT, DURATION_TEXT),
         ):
             self.entry_fields[name] = tk_facade.Entry(text, body_frame)
             input_zone.add_entry_row(self.entry_fields[name])
@@ -189,19 +187,17 @@ class MovieGUI:
 
     def populate(self):
         """Initialises field values."""
-        self.entry_fields["title"].original_value = self.prepopulate["title"]
-        self.entry_fields["year"].original_value = int(self.prepopulate["year"])
-        self.entry_fields["director"].original_value = ", ".join(
-            director for director in self.prepopulate.get("directors", "")
+        self.entry_fields[TITLE].original_value = self.prepopulate[TITLE]
+        self.entry_fields[YEAR].original_value = int(self.prepopulate[YEAR])
+        self.entry_fields[DIRECTORS].original_value = ", ".join(
+            director for director in self.prepopulate.get(DIRECTORS, "")
         )
-        self.entry_fields["minutes"].original_value = (
-            int(self.prepopulate["duration"])
-            if (self.prepopulate.get("duration"))
-            else ""
+        self.entry_fields[DURATION].original_value = (
+            int(self.prepopulate[DURATION]) if (self.prepopulate.get(DURATION)) else ""
         )
-        self.entry_fields["notes"].original_value = self.prepopulate.get("notes", "")
-        self.entry_fields["tags"].original_value = list(
-            self.prepopulate.get("tags", "")
+        self.entry_fields[NOTES].original_value = self.prepopulate.get(NOTES, "")
+        self.entry_fields[MOVIE_TAGS].original_value = list(
+            self.prepopulate.get(MOVIE_TAGS, "")
         )
 
     def tmdb_results_frame(self, tmdb_frame: tk.Frame):
@@ -215,17 +211,18 @@ class MovieGUI:
         """
         self.tmdb_treeview = ttk.Treeview(
             tmdb_frame,
-            columns=("title", "year", "director"),
+            # columns=("title", "year", "director"),
+            columns=(TITLE, YEAR, DIRECTORS),
             show=["headings"],
             height=20,
             selectmode="browse",
         )
-        self.tmdb_treeview.column("title", width=300, stretch=True)
-        self.tmdb_treeview.heading("title", text="Title", anchor="w")
-        self.tmdb_treeview.column("year", width=40, stretch=True)
-        self.tmdb_treeview.heading("year", text="Year", anchor="w")
-        self.tmdb_treeview.column("director", width=200, stretch=True)
-        self.tmdb_treeview.heading("director", text="Director", anchor="w")
+        self.tmdb_treeview.column(TITLE, width=300, stretch=True)
+        self.tmdb_treeview.heading(TITLE, text=TITLE_TEXT, anchor="w")
+        self.tmdb_treeview.column(YEAR, width=40, stretch=True)
+        self.tmdb_treeview.heading(YEAR, text=YEAR_TEXT, anchor="w")
+        self.tmdb_treeview.column(DIRECTORS, width=200, stretch=True)
+        self.tmdb_treeview.heading(DIRECTORS, text=DIRECTORS_TEXT, anchor="w")
         self.tmdb_treeview.grid(column=0, row=0, sticky="nsew")
         self.tmdb_treeview.bind("<<TreeviewSelect>>", func=self.tmdb_treeview_callback)
 
@@ -345,8 +342,18 @@ class MovieGUI:
         else:  # pragma nocover
             return
 
-        for k, v in self.tmdb_movies[item_id].items():
-            self.entry_fields[k].current_value = v
+        for name, widget in self.tmdb_movies[item_id].items():
+            match name:
+                # todo 'single source of truth' problem with cases
+                case "title" | "year" | "duration" | "notes":
+                    self.entry_fields[name].current_value = widget
+                case "directors":  # pragma nocover
+                    self.entry_fields[name].current_value = ", ".join(
+                        [director for director in widget]
+                    )
+                case _:  # pragma nocover
+                    logging.error(f"Unexpected key: {name}")  # pragma no branch
+                    raise KeyError(f"Unexpected key: {name}")  # pragma no branch
 
     def as_movie_bag(self) -> MovieBag:
         """Returns the form data as a movie bag
@@ -358,13 +365,14 @@ class MovieGUI:
         for name, widget in self.entry_fields.items():
             if widget.current_value:
                 match name:
+                    # todo 'single source of truth' problem with cases
                     case "title":
                         movie_bag["title"] = widget.current_value
                     case "year":
                         movie_bag["year"] = MovieInteger(widget.current_value)
-                    case "minutes":
+                    case "duration":
                         movie_bag["duration"] = MovieInteger(widget.current_value)
-                    case "director":
+                    case "directors":
                         movie_bag["directors"] = set(widget.current_value.split(", "))
                     case "notes":
                         movie_bag["notes"] = widget.current_value
@@ -583,10 +591,10 @@ class TagGUI:
         input_zone = InputZone(body_frame)
 
         # Tag field
-        self.entry_fields[MOVIE_TAG] = tk_facade.Entry(MOVIE_TAG_TEXT, body_frame)
-        self.entry_fields[MOVIE_TAG].original_value = self.tag
-        input_zone.add_entry_row(self.entry_fields[MOVIE_TAG])
-        focus_set(self.entry_fields[MOVIE_TAG].widget)
+        self.entry_fields[MOVIE_TAGS] = tk_facade.Entry(MOVIE_TAGS_TEXT, body_frame)
+        self.entry_fields[MOVIE_TAGS].original_value = self.tag
+        input_zone.add_entry_row(self.entry_fields[MOVIE_TAGS])
+        focus_set(self.entry_fields[MOVIE_TAGS].widget)
 
     def create_buttons(self, body_frame: tk.Frame):
         """Creates the buttons for this widget."""
@@ -630,7 +638,7 @@ class AddTagGUI(TagGUI):
         )
 
         # Commit button registration with tag field observer
-        tag_entry_field = self.entry_fields[MOVIE_TAG]
+        tag_entry_field = self.entry_fields[MOVIE_TAGS]
         tag_entry_field.observer.register(
             self.enable_commit_button(commit_button, tag_entry_field)
         )
@@ -667,7 +675,7 @@ class AddTagGUI(TagGUI):
     def commit(self):
         """The user has clicked the 'Commit' button. The tag is returned to
         the caller. The window is deleted."""
-        tag = self.entry_fields[MOVIE_TAG].current_value
+        tag = self.entry_fields[MOVIE_TAGS].current_value
         self.add_tag_callback(tag)
         self.destroy()
 
@@ -706,7 +714,7 @@ class SearchTagGUI(TagGUI):
         )
 
         # Commit button registration with tag field observer
-        tag_entry_field = self.entry_fields[MOVIE_TAG]
+        tag_entry_field = self.entry_fields[MOVIE_TAGS]
         tag_entry_field.observer.register(
             self.enable_search_button(search_button, tag_entry_field)
         )
@@ -742,7 +750,7 @@ class SearchTagGUI(TagGUI):
 
     def search(self):
         """Respond to the user's click of the 'Search' button."""
-        search_pattern = self.entry_fields[MOVIE_TAG].current_value
+        search_pattern = self.entry_fields[MOVIE_TAGS].current_value
         self.search_tag_callback(search_pattern)
         self.destroy()
 
@@ -786,7 +794,7 @@ class EditTagGUI(TagGUI):
         )
 
         # Commit button registration
-        tag_entry_field = self.entry_fields[MOVIE_TAG]
+        tag_entry_field = self.entry_fields[MOVIE_TAGS]
         tag_entry_field.observer.register(
             self.enable_buttons(commit_button, delete_button, tag_entry_field)
         )
@@ -827,7 +835,7 @@ class EditTagGUI(TagGUI):
 
     def commit(self):
         """The user clicked the 'Commit' button."""
-        tag = self.entry_fields[MOVIE_TAG].current_value
+        tag = self.entry_fields[MOVIE_TAGS].current_value
         self.edit_tag_callback(tag)
         self.destroy()
 
@@ -845,8 +853,8 @@ class EditTagGUI(TagGUI):
             self.delete_tag_callback()
             self.destroy()
         else:
-            self.entry_fields[MOVIE_TAG].original_value = self.tag
-            focus_set(self.entry_fields[MOVIE_TAG].widget)
+            self.entry_fields[MOVIE_TAGS].original_value = self.tag
+            focus_set(self.entry_fields[MOVIE_TAGS].widget)
 
 
 @dataclass
