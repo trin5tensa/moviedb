@@ -1,7 +1,7 @@
 """Facade pattern for tkinter widgets."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/8/25, 2:27 PM by stephen.
+#  Last modified 2/14/25, 7:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,6 +12,7 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -20,7 +21,7 @@ from typing import Any
 import tkinter as tk
 import tkinter.ttk as ttk
 
-from gui import common
+import globalconstants
 
 
 @dataclass
@@ -78,7 +79,7 @@ class TkinterFacade:
     """
 
     label_text: str
-    parent: common.TkParentType
+    parent: globalconstants.TkParentType
     _original_value: Any = field(default=None, init=False, repr=False)
     observer: Observer = field(default_factory=Observer, init=False, repr=False)
 
@@ -235,7 +236,7 @@ class Treeview(TkinterFacade):
 
     # noinspection PyMissingOrEmptyDocstring
     @original_value.setter
-    def original_value(self, values: common.TkSequence):
+    def original_value(self, values: globalconstants.TkSequence):
         self._original_value = set(values)
         self.current_value = values
 
@@ -244,7 +245,7 @@ class Treeview(TkinterFacade):
         return set(self.widget.selection())
 
     @current_value.setter
-    def current_value(self, values: common.TkSequence):
+    def current_value(self, values: globalconstants.TkSequence):
         self.widget.selection_set(values)
 
     def clear_current_value(self):

@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/13/25, 1:41 PM by stephen.
+#  Last modified 2/14/25, 7:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -40,7 +40,6 @@ from typing import (
 
 import config
 from gui import tk_facade
-from gui.common import TkParentType
 from globalconstants import *
 
 TITLE_TEXT = "Title"
