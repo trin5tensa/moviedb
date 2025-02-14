@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/14/25, 7:01 AM by stephen.
+#  Last modified 2/14/25, 12:38 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -39,7 +39,7 @@ from typing import (
 )
 
 import config
-from gui import tk_facade
+from gui import tk_facade, common
 from globalconstants import *
 
 TITLE_TEXT = "Title"
@@ -112,7 +112,7 @@ class MovieGUI:
             self.populate()
         self.fill_buttonbox(buttonbox)
         self.tmdb_results_frame(tmdb_frame)
-        init_button_enablements(self.entry_fields)
+        common.init_button_enablements(self.entry_fields)
 
     def framing(
         self, parent: TkParentType
@@ -577,7 +577,7 @@ class TagGUI:
         )
         self.user_input_frame(body_frame)
         self.create_buttons(buttonbox)
-        init_button_enablements(self.entry_fields)
+        common.init_button_enablements(self.entry_fields)
 
     def user_input_frame(self, body_frame: tk.Frame):
         """
@@ -1338,7 +1338,7 @@ def focus_set(entry: ttk.Entry):
     entry.icursor(tk.END)
 
 
-def init_button_enablements(entry_fields: dict[str, tk_facade.TkinterFacade]):
-    """Set the initial enabled state of buttons."""
-    for v in entry_fields.values():
-        v.observer.notify()
+# def init_button_enablements(entry_fields: dict[str, tk_facade.TkinterFacade]):
+#     """Set the initial enabled state of buttons."""
+#     for v in entry_fields.values():
+#         v.observer.notify()

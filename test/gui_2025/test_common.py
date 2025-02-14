@@ -1,4 +1,4 @@
-""" This module contains common code to support the other gui modules."""
+"""Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
 #  Last modified 2/14/25, 12:38 PM by stephen.
@@ -13,20 +13,23 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from unittest.mock import MagicMock
 
-from gui import tk_facade
+from gui import common
 
 
-def init_button_enablements(entry_fields: tk_facade.EntryFieldItem):
-    """Set the initial enabled state of buttons.
+def test_test_init_button_enablements(monkeypatch):
+    # Arrange
+    observer = MagicMock(name="observer")
+    entry_field = MagicMock(nme="entry_field")
+    monkeypatch.setattr(common.tk_facade, "Entry", entry_field)
+    entry_field.observer = observer
+    entry_fields: common.tk_facade.EntryFieldItem = {"k": entry_field}
 
-    Calls the notify method of each field. The field's observer will notify
-    any registered buttons.
+    # Act
+    common.init_button_enablements(entry_fields)
 
-    Args:
-        entry_fields:
-            k: Field name.
-            v: Any TkinterFacade subclass.
-    """
-    for entry_field in entry_fields.values():
-        entry_field.observer.notify()
+    # Assert
+    for v in entry_fields.values():
+        # noinspection PyUnresolvedReferences
+        v.observer.notify.assert_called_once_with()

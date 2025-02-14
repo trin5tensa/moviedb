@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/13/25, 1:41 PM by stephen.
+#  Last modified 2/14/25, 12:38 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -525,7 +525,7 @@ def test_add_movie_init_with_movie_bag(monkeypatch):
         MagicMock(name="tmdb_results_frame"),
     )
     monkeypatch.setattr(
-        guiwidgets_2,
+        guiwidgets_2.common,
         "init_button_enablements",
         MagicMock(name="init_button_enablements"),
     )
@@ -691,7 +691,7 @@ def test_edit_movie_init_with_movie_bag(monkeypatch):
         MagicMock(name="tmdb_results_frame"),
     )
     monkeypatch.setattr(
-        guiwidgets_2,
+        guiwidgets_2.common,
         "init_button_enablements",
         MagicMock(name="init_button_enablements"),
     )
@@ -988,7 +988,9 @@ def create_button(monkeypatch):
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def tag_init_button_enablements(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2, "init_button_enablements", mock := MagicMock())
+    monkeypatch.setattr(
+        guiwidgets_2.common, "init_button_enablements", mock := MagicMock()
+    )
     return mock
 
 
