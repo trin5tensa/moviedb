@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/14/25, 7:01 AM by stephen.
+#  Last modified 2/17/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -26,6 +26,7 @@ import tkinter.ttk as ttk
 
 
 # Field names
+# noinspection DuplicatedCode
 TITLE = "title"
 YEAR = "year"
 DURATION = "duration"
@@ -44,7 +45,6 @@ type TkParentType = tk.Tk | tk.Toplevel | ttk.Frame
 type TkSequence = list[str] | tuple[str, ...]
 
 
-# todo SSOT problem with key names
 class MovieBag(TypedDict, total=False):
     """A structured bag for movie data.
 

@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/17/25, 12:36 PM by stephen.
+#  Last modified 2/17/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -33,32 +33,6 @@ from test.dummytk import (
     TtkScrollbar,
     TtkTreeview,
 )
-
-
-# noinspection PyMissingOrEmptyDocstring
-@pytest.mark.usefixtures("patch_tk")
-class TestFocusSet:
-    def test_focus_set_calls_focus_set_on_entry(self, patch_tk):
-        with self.focus_set_context() as entry:
-            # noinspection PyUnresolvedReferences
-            assert entry.focus_set_calls == [True]
-
-    def test_focus_set_calls_select_range_on_entry(self, patch_tk):
-        with self.focus_set_context() as entry:
-            # noinspection PyUnresolvedReferences
-            assert entry.select_range_calls == [(0, "end")]
-
-    def test_focus_set_calls_icursor_on_entry(self, patch_tk):
-        with self.focus_set_context() as entry:
-            # noinspection PyUnresolvedReferences
-            assert entry.icursor_calls == [("end",)]
-
-    @contextmanager
-    def focus_set_context(self):
-        # noinspection PyTypeChecker
-        entry = guiwidgets_2.ttk.Entry(DummyTk())
-        guiwidgets_2.focus_set(entry)
-        yield entry
 
 
 # noinspection PyMissingOrEmptyDocstring

@@ -1,7 +1,7 @@
 """ Test module. """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/14/25, 12:38 PM by stephen.
+#  Last modified 2/17/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -58,7 +58,6 @@ class TestTagGui:
         tag_init_button_enablements,
         input_zone,
         facade_entry,
-        focus_set,
     ):
         cut = guiwidgets_2.TagGUI(mock_tk)
         _, body_frame, buttonbox = framing()
@@ -72,8 +71,6 @@ class TestTagGui:
         check.equal(facade_entry().original_value, cut.tag)
         with check:
             input_zone().add_entry_row.assert_called_once_with(facade_entry())
-        with check:
-            focus_set.assert_called_once_with(facade_entry().widget)
 
     def test_destroy(
         self,
@@ -85,7 +82,6 @@ class TestTagGui:
         tag_init_button_enablements,
         input_zone,
         facade_entry,
-        focus_set,
     ):
         cut = guiwidgets_2.TagGUI(mock_tk)
         cut.destroy()
@@ -431,7 +427,7 @@ class TestEditTagGUI:
             delete_tag_callback=(mock_delete_tag_callback := MagicMock()),
         )
         monkeypatch.setattr(cut, "destroy", mock_destroy := MagicMock())
-        monkeypatch.setattr(guiwidgets_2, "focus_set", mock_focus_set := MagicMock())
+        # monkeypatch.setattr(guiwidgets_2, "focus_set", mock_focus_set := MagicMock())
 
         # gui_askyesno returns False: destroy NOT called.
         mock_gui_askyesno.return_value = False
@@ -445,10 +441,6 @@ class TestEditTagGUI:
                 parent=cut.parent,
             )
         check.equal(cut.entry_fields[guiwidgets_2.MOVIE_TAGS].original_value, test_tag)
-        with check:
-            mock_focus_set.assert_called_once_with(
-                cut.entry_fields[guiwidgets_2.MOVIE_TAGS].widget
-            )
 
         # gui_askyesno returns True: destroy IS called.
         mock_gui_askyesno.return_value = True

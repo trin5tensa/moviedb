@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/14/25, 12:38 PM by stephen.
+#  Last modified 2/17/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,16 +15,18 @@
 
 from unittest.mock import MagicMock
 
+from pytest_check import check
+
 from gui import common
 
 
 def test_test_init_button_enablements(monkeypatch):
     # Arrange
-    observer = MagicMock(name="observer")
-    entry_field = MagicMock(nme="entry_field")
-    monkeypatch.setattr(common.tk_facade, "Entry", entry_field)
-    entry_field.observer = observer
-    entry_fields: common.tk_facade.EntryFieldItem = {"k": entry_field}
+    notify = MagicMock(name="observer")
+    entry = MagicMock(name="entry")
+    monkeypatch.setattr(common.tk_facade, "Entry", entry)
+    entry.observer.notify = notify
+    entry_fields: common.tk_facade.EntryFieldItem = {"mock key": entry}
 
     # Act
     common.init_button_enablements(entry_fields)
@@ -32,4 +34,4 @@ def test_test_init_button_enablements(monkeypatch):
     # Assert
     for v in entry_fields.values():
         # noinspection PyUnresolvedReferences
-        v.observer.notify.assert_called_once_with()
+        notify.assert_called_once_with()

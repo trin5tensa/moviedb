@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/13/25, 1:41 PM by stephen.
+#  Last modified 2/17/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -42,7 +42,6 @@ from guiwidgets_2 import (
     NOTES_TEXT,
     SEARCH_TEXT,
     MOVIE_TAGS_TEXT,
-    focus_set,
 )
 
 TAG_TREEVIEW_INTERNAL_NAME = "tag treeview"
@@ -223,6 +222,8 @@ class SearchMovieGUI(MovieGUIBase):
         composed classes of guiwidgets_2 as a model for future development.
     """
 
+    # todo The test suite for this class needs to be rewritten to current standards
+
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[MovieBag], None]
     # Tags list
@@ -259,7 +260,7 @@ class SearchMovieGUI(MovieGUIBase):
         )()
         self.tag_treeview_observer.register(self.search_button_neuron)
 
-        focus_set(self.entry_fields["title"].widget)
+        self.entry_fields["title"].widget.focus_set()
 
     def create_body_item(
         self, body_frame: ttk.Frame, internal_name: str, text: str, row: int
@@ -440,6 +441,8 @@ class SelectMovieGUI(MovieGUIBase):
         Any proposed refactoring should consider abandoning these classes and using the newer
         composed classes of guiwidgets_2 as a model for future development.
     """
+
+    # todo The test suite for this class needs to be rewritten to current standards
 
     # Movie records retrieved from the database.
     movies: List[MovieBag]

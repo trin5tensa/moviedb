@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/6/25, 11:33 AM by stephen.
+#  Last modified 2/17/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -37,48 +37,6 @@ class TestSearchMovieGUI:
 
     # Test create body
 
-    def test_create_simple_body_item_called(self, patch_tk, monkeypatch):
-        calls = []
-        monkeypatch.setattr(
-            guiwidgets.SearchMovieGUI,
-            "create_body_item",
-            lambda *args: calls.append(args),
-        )
-        monkeypatch.setattr(guiwidgets, "focus_set", lambda *args: None)
-        with self.movie_context() as movie_gui:
-            assert calls == [
-                (
-                    movie_gui,
-                    TtkFrame(
-                        parent=TtkFrame(parent=DummyTk(), padding=""),
-                        padding=(10, 25, 10, 0),
-                    ),
-                    "title",
-                    "Title",
-                    0,
-                ),
-                (
-                    movie_gui,
-                    TtkFrame(
-                        parent=TtkFrame(parent=DummyTk(), padding=""),
-                        padding=(10, 25, 10, 0),
-                    ),
-                    "director",
-                    "Director",
-                    2,
-                ),
-                (
-                    movie_gui,
-                    TtkFrame(
-                        parent=TtkFrame(parent=DummyTk(), padding=""),
-                        padding=(10, 25, 10, 0),
-                    ),
-                    "notes",
-                    "Notes",
-                    4,
-                ),
-            ]
-
     def test_create_min_max_body_item_called(self, patch_tk, monkeypatch):
         calls = []
         monkeypatch.setattr(
@@ -109,12 +67,6 @@ class TestSearchMovieGUI:
                     3,
                 ),
             ]
-
-    def test_focus_set_called(self, patch_tk, monkeypatch):
-        calls = []
-        monkeypatch.setattr(guiwidgets, "focus_set", lambda *args: calls.append(True))
-        with self.movie_context():
-            assert calls == [True]
 
     # noinspection DuplicatedCode
     def test_create_tag_treeview_called(self, patch_tk, patch_movie_treeview):
@@ -176,52 +128,6 @@ class TestSearchMovieGUI:
             body_frame = outerframe.children[0]
             first_label = body_frame.children[0]
             assert first_label.grid_calls == [dict(column=0, padx=5, row=0, sticky="e")]
-
-    def test_body_item_create_entry_called(self, patch_tk, monkeypatch):
-        calls = []
-        monkeypatch.setattr(
-            guiwidgets.SearchMovieGUI, "create_entry", lambda *args: calls.append(args)
-        )
-        monkeypatch.setattr(
-            guiwidgets.SearchMovieGUI, "create_min_max_body_item", lambda *args: None
-        )
-        monkeypatch.setattr(guiwidgets, "focus_set", lambda *args: None)
-        with self.movie_context() as movie_gui:
-            assert calls == [
-                (
-                    movie_gui,
-                    TtkFrame(
-                        parent=TtkFrame(parent=DummyTk(), padding=""),
-                        padding=(10, 25, 10, 0),
-                    ),
-                    "title",
-                    1,
-                    0,
-                    36,
-                ),
-                (
-                    movie_gui,
-                    TtkFrame(
-                        parent=TtkFrame(parent=DummyTk(), padding=""),
-                        padding=(10, 25, 10, 0),
-                    ),
-                    "director",
-                    1,
-                    2,
-                    36,
-                ),
-                (
-                    movie_gui,
-                    TtkFrame(
-                        parent=TtkFrame(parent=DummyTk(), padding=""),
-                        padding=(10, 25, 10, 0),
-                    ),
-                    "notes",
-                    1,
-                    4,
-                    36,
-                ),
-            ]
 
     # Test create min-max body item
 

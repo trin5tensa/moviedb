@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/14/25, 12:38 PM by stephen.
+#  Last modified 2/17/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,9 +20,6 @@ import itertools
 import logging
 import queue
 
-# This tkinter import method supports accurate test mocking of tk and ttk.
-import tkinter as tk
-import tkinter.ttk as ttk
 from tkinter import filedialog, messagebox
 
 # noinspection PyUnresolvedReferences
@@ -42,6 +39,7 @@ import config
 from gui import tk_facade, common
 from globalconstants import *
 
+# noinspection DuplicatedCode
 TITLE_TEXT = "Title"
 YEAR_TEXT = "Year"
 DIRECTORS_TEXT = "Directors"
@@ -164,6 +162,7 @@ class MovieGUI:
         Args:
             body_frame:The frame into which the widgets will be placed.
         """
+        # todo The test suite for this method needs to be rewritten to current standards
 
         input_zone = InputZone(body_frame)
 
@@ -174,7 +173,7 @@ class MovieGUI:
         ):
             self.entry_fields[name] = tk_facade.Entry(text, body_frame)
             input_zone.add_entry_row(self.entry_fields[name])
-        focus_set(self.entry_fields[TITLE].widget)
+        self.entry_fields[TITLE].widget.focus_set()
 
         # Create label and text widget.
         self.entry_fields[NOTES] = tk_facade.Text(NOTES_TEXT, body_frame)
@@ -343,7 +342,6 @@ class MovieGUI:
 
         for name, widget in self.tmdb_movies[item_id].items():
             match name:
-                # todo 'single source of truth' problem with cases
                 case "title" | "year" | "duration" | "notes":
                     self.entry_fields[name].current_value = widget
                 case "directors":  # pragma nocover
@@ -364,7 +362,6 @@ class MovieGUI:
         for name, widget in self.entry_fields.items():
             if widget.current_value:
                 match name:
-                    # todo 'single source of truth' problem with cases
                     case "title":
                         movie_bag["title"] = widget.current_value
                     case "year":
@@ -587,13 +584,15 @@ class TagGUI:
         Args:
             body_frame:The frame into which the widgets will be placed.
         """
+        # todo The test suite for this method needs to be rewritten to current standards
+
         input_zone = InputZone(body_frame)
 
         # Tag field
         self.entry_fields[MOVIE_TAGS] = tk_facade.Entry(MOVIE_TAGS_TEXT, body_frame)
         self.entry_fields[MOVIE_TAGS].original_value = self.tag
         input_zone.add_entry_row(self.entry_fields[MOVIE_TAGS])
-        focus_set(self.entry_fields[MOVIE_TAGS].widget)
+        self.entry_fields[MOVIE_TAGS].widget.focus_set()
 
     def create_buttons(self, body_frame: tk.Frame):
         """Creates the buttons for this widget."""
@@ -843,6 +842,8 @@ class EditTagGUI(TagGUI):
 
         Get the user's confirmation of deletion with a dialog window. Either exit the
         method or call the registered deletion callback."""
+        # todo The test suite for this method needs to be rewritten to current standards
+
         if gui_askyesno(
             message=f"{TAG_DELETE_MESSAGE}",
             icon="question",
@@ -853,7 +854,8 @@ class EditTagGUI(TagGUI):
             self.destroy()
         else:
             self.entry_fields[MOVIE_TAGS].original_value = self.tag
-            focus_set(self.entry_fields[MOVIE_TAGS].widget)
+            self.entry_fields[MOVIE_TAGS].widget.focus_set()
+            # focus_set(self.entry_fields[MOVIE_TAGS].widget)
 
 
 @dataclass
@@ -1329,16 +1331,3 @@ def enable_button(button: ttk.Button, state: bool):
         button.state(["disabled"])
         # Remove the button highlight
         button.configure(default="disabled")
-
-
-def focus_set(entry: ttk.Entry):
-    """Set initial focus for this class."""
-    entry.focus_set()
-    entry.select_range(0, tk.END)
-    entry.icursor(tk.END)
-
-
-# def init_button_enablements(entry_fields: dict[str, tk_facade.TkinterFacade]):
-#     """Set the initial enabled state of buttons."""
-#     for v in entry_fields.values():
-#         v.observer.notify()

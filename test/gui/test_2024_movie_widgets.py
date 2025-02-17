@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/14/25, 12:38 PM by stephen.
+#  Last modified 2/17/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -124,7 +124,6 @@ class TestMovieGUI:
         patterns_entry,
         patterns_text,
         patterns_treeview,
-        focus_set,
     ):
         # noinspection PyTypeChecker
         cut = guiwidgets_2.MovieGUI(
@@ -153,10 +152,6 @@ class TestMovieGUI:
                     call(patterns_entry()),
                 ]
             )
-        with check:
-            focus_set.assert_called_once_with(
-                cut.entry_fields[guiwidgets_2.TITLE].widget
-            )
 
         # Test text row
         with check:
@@ -184,7 +179,6 @@ class TestMovieGUI:
         movie_fill_buttonbox,
         input_zone,
         patterns,
-        focus_set,
         movie_tmdb_consumer,
         movie_tmdb_search,
     ):
