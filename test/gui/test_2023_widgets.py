@@ -1,7 +1,7 @@
 """ Test module. """
 
-#  Copyright (c) 2023-2024. Stephen Rigden.
-#  Last modified 3/19/24, 8:23 AM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 2/18/25, 6:56 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,6 +19,7 @@ from unittest.mock import MagicMock, call
 from pytest_check import check
 
 import guiwidgets_2
+from gui import common
 
 TEST_TK_ROOT = "test tk_root"
 TEST_TITLE = "test moviedb"
@@ -97,8 +98,8 @@ class TestEnableButton:
         monkeypatch.setattr("guiwidgets_2.tk", MagicMock())
         monkeypatch.setattr("guiwidgets_2.ttk", mock_ttk := MagicMock())
 
-        guiwidgets_2.enable_button(mock_ttk.Button, True)
-        guiwidgets_2.enable_button(mock_ttk.Button, False)
+        common.enable_button(mock_ttk.Button, state=True)
+        common.enable_button(mock_ttk.Button, state=False)
         with check:
             mock_ttk.Button.assert_has_calls(
                 [
@@ -114,7 +115,7 @@ class TestEnableButton:
 def patch_config(monkeypatch):
     dummy_current_config = guiwidgets_2.config.CurrentConfig()
     dummy_current_config.tk_root = MagicMock(name=TEST_TK_ROOT)
-    dummy_current_config.escape_key_dict = {}
+    dummy_current_config.escape_key_dict = guiwidgets_2.config.UserDict()
     dummy_persistent_config = guiwidgets_2.config.PersistentConfig(
         TEST_TITLE, TEST_VERSION
     )

@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/17/25, 1:36 PM by stephen.
+#  Last modified 2/18/25, 6:56 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -450,7 +450,9 @@ class AddMovieGUI(MovieGUI):
                 *args: Sent by tkinter but not used.
                 **kwargs: Sent by tkinter but not used.
             """
-            enable_button(commit_button, title.has_data() and year.has_data())
+            common.enable_button(
+                commit_button, state=title.has_data() and year.has_data()
+            )
 
         return func
 
@@ -530,8 +532,8 @@ class EditMovieGUI(MovieGUI):
             db_keys_present = all(  # pragma no branch
                 [self.entry_fields[k].has_data() for k in (TITLE, YEAR)]
             )
-            enable_button(commit_button, changes and db_keys_present)
-            enable_button(delete_button, not changes)
+            common.enable_button(commit_button, state=changes and db_keys_present)
+            common.enable_button(delete_button, state=not changes)
 
         return func
 
@@ -666,7 +668,7 @@ class AddTagGUI(TagGUI):
                 *args: Sent by tkinter but not used.
                 **kwargs: Sent by tkinter but not used.
             """
-            enable_button(commit_button, tag_field.has_data())
+            common.enable_button(commit_button, state=tag_field.has_data())
 
         return func
 
@@ -742,7 +744,7 @@ class SearchTagGUI(TagGUI):
                 *args: Sent by tkinter but not used.
                 **kwargs: Sent by tkinter but not used.
             """
-            enable_button(search_button, tag_field.has_data())
+            common.enable_button(search_button, state=tag_field.has_data())
 
         return func
 
@@ -824,9 +826,13 @@ class EditTagGUI(TagGUI):
                 *args: Sent by tkinter but not used.
                 **kwargs: Sent by tkinter but not used.
             """
-            enable_button(commit_button, tag_field.has_data() and tag_field.changed())
-            enable_button(
-                delete_button, tag_field.has_data() and not tag_field.changed()
+            common.enable_button(
+                commit_button,
+                state=tag_field.has_data() and tag_field.changed(),
+            )
+            common.enable_button(
+                delete_button,
+                state=tag_field.has_data() and not tag_field.changed(),
             )
 
         return func
@@ -1027,7 +1033,7 @@ class PreferencesGUI:
             state = any(  # pragma no branch
                 [entry_field.changed() for entry_field in self.entry_fields.values()]
             )
-            enable_button(save_button, state)
+            common.enable_button(save_button, state=state)
 
         return func
 
@@ -1313,21 +1319,21 @@ def create_button(
     return button
 
 
-def enable_button(button: ttk.Button, state: bool):
-    """
-    Enable or disable a button.
-
-    Args:
-        button:
-        state:
-    """
-    if state:
-        # Enable the button
-        button.state(["!disabled"])
-        # Highlight the button to show it is enabled
-        button.configure(default="active")
-    else:
-        # Disable the button
-        button.state(["disabled"])
-        # Remove the button highlight
-        button.configure(default="disabled")
+# def enable_button(button: ttk.Button, state: bool):
+#     """
+#     Enable or disable a button.
+#
+#     Args:
+#         button:
+#         state:
+#     """
+#     if state:
+#         # Enable the button
+#         button.state(["!disabled"])
+#         # Highlight the button to show it is enabled
+#         button.configure(default="active")
+#     else:
+#         # Disable the button
+#         button.state(["disabled"])
+#         # Remove the button highlight
+#         button.configure(default="disabled")

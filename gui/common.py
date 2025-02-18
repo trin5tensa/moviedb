@@ -1,7 +1,7 @@
 """ This module contains common code to support the other gui modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/17/25, 1:36 PM by stephen.
+#  Last modified 2/18/25, 6:56 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,8 +13,30 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# This tkinter import method supports accurate test mocking of tk and ttk.
+import tkinter as tk
+import tkinter.ttk as ttk
 
 from gui import tk_facade
+
+
+def enable_button(button: ttk.Button, *, state: bool):
+    """
+    Enable or disable a button.
+
+    Args:
+        button:
+        state:
+    """
+    if state:
+        button.state(["!disabled"])
+        # Highlight the button to show it is enabled
+        button.configure(default="active")
+
+    else:
+        button.state(["disabled"])
+        # Remove the button highlight
+        button.configure(default="disabled")
 
 
 def init_button_enablements(entry_fields: tk_facade.EntryFieldItem):

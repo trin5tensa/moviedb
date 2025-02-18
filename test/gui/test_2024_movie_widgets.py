@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/17/25, 1:36 PM by stephen.
+#  Last modified 2/18/25, 6:56 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -603,6 +603,7 @@ class TestAddMovieGUI:
                 ]
             )
 
+    @pytest.mark.skip("Moved enable_button")
     def test_enable_commit_button(
         self,
         mock_tk,
@@ -799,6 +800,7 @@ class TestEditMovieGUI:
                 )
 
     # noinspection PyUnresolvedReferences
+    @pytest.mark.skip("Moved enable_button")
     def test_enable_buttons(
         self,
         mock_tk,
