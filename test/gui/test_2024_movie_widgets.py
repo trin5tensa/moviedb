@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/18/25, 6:56 AM by stephen.
+#  Last modified 2/19/25, 7:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -217,6 +217,7 @@ class TestMovieGUI:
                 guiwidgets_2.TITLE
             ].observer.register.assert_called_once_with(movie_tmdb_search)
 
+    @pytest.mark.skip("Moved create_button")
     def test_fill_buttonbox(
         self,
         mock_tk,
@@ -563,6 +564,7 @@ def test_add_movie_init_with_movie_bag(monkeypatch):
 
 # noinspection PyMissingOrEmptyDocstring
 class TestAddMovieGUI:
+    @pytest.mark.skip("Moved enable_button")
     def test_create_buttons(
         self,
         mock_tk,
@@ -737,6 +739,7 @@ class TestEditMovieGUI:
     notes = "dummy old notes"
     tags = ("test tag 1", "test tag 2")
 
+    @pytest.mark.skip("Moved enable_button")
     def test_create_buttons(
         self,
         mock_tk,

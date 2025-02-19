@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/18/25, 6:56 AM by stephen.
+#  Last modified 2/19/25, 7:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,8 +15,43 @@
 
 from unittest.mock import MagicMock
 
+from pytest_check import check
 
 from gui import common
+
+
+def test_create_button(monkeypatch):
+    # Arrange
+    grid = MagicMock(name="grid")
+    bind = MagicMock(name="bind")
+    button = MagicMock(name="button")
+    monkeypatch.setattr(common.ttk, "Button", button)
+    button = button()
+    button.grid = grid
+    button.bind = bind
+    buttonbox = common.ttk.Frame()
+    text = "Dummy"
+    column = 42
+    partial = MagicMock(name="partial")
+    monkeypatch.setattr(common, "partial", partial)
+
+    # Act
+    result = common.create_button(
+        buttonbox,
+        text,
+        column,
+        lambda: None,
+        "active",
+    )
+
+    # Assert
+    with check:
+        grid.assert_called_once_with(column=column, row=0)
+    with check:
+        bind.assert_called_once_with(
+            "<Return>", common.partial(common.invoke_button, button)
+        )
+    check.equal(result, button)
 
 
 def test_enable_button_with_true_state(monkeypatch):
@@ -33,8 +68,10 @@ def test_enable_button_with_true_state(monkeypatch):
     common.enable_button(button, state=enable)
 
     # Assert
-    state.assert_called_once_with(["!disabled"])
-    configure.assert_called_once_with(default="active")
+    with check:
+        state.assert_called_once_with(["!disabled"])
+    with check:
+        configure.assert_called_once_with(default="active")
 
 
 def test_enable_button_with_false_state(monkeypatch):
@@ -51,8 +88,25 @@ def test_enable_button_with_false_state(monkeypatch):
     common.enable_button(button, state=enable)
 
     # Assert
-    state.assert_called_once_with(["disabled"])
-    configure.assert_called_once_with(default="disabled")
+    with check:
+        state.assert_called_once_with(["disabled"])
+    with check:
+        configure.assert_called_once_with(default="disabled")
+
+
+def test_invoke_button(monkeypatch):
+    # Arrange
+    invoke = MagicMock(name="invoke")
+    button = MagicMock(name="button")
+    monkeypatch.setattr(common.ttk, "Button", button)
+    button.invoke = invoke
+
+    # Act
+    common.invoke_button(button)
+
+    # Assert
+    with check:
+        invoke.assert_called_once_with()
 
 
 def test_test_init_button_enablements(monkeypatch):

@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/18/25, 6:56 AM by stephen.
+#  Last modified 2/19/25, 7:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -241,7 +241,7 @@ class MovieGUI:
         """
         column_num = itertools.count()
         self._create_buttons(buttonbox, column_num)
-        create_button(
+        common.create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_num),
@@ -400,7 +400,7 @@ class AddMovieGUI(MovieGUI):
     add_movie_callback: Callable[[MovieBag], None] = field(default=None, kw_only=True)
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
-        commit_button = create_button(
+        commit_button = common.create_button(
             buttonbox,
             COMMIT_TEXT,
             column=next(column_num),
@@ -478,14 +478,14 @@ class EditMovieGUI(MovieGUI):
     delete_movie_callback: Callable = field(default=None, kw_only=True)
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
-        commit_button = create_button(
+        commit_button = common.create_button(
             buttonbox,
             COMMIT_TEXT,
             column=next(column_num),
             command=self.commit,
             default="disabled",
         )
-        delete_button = create_button(
+        delete_button = common.create_button(
             buttonbox,
             DELETE_TEXT,
             column=next(column_num),
@@ -622,14 +622,14 @@ class AddTagGUI(TagGUI):
         # noinspection DuplicatedCode
         column_num = itertools.count()
 
-        commit_button = create_button(
+        commit_button = common.create_button(
             buttonbox,
             COMMIT_TEXT,
             column=next(column_num),
             command=self.commit,
             default="disabled",
         )
-        create_button(
+        common.create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_num),
@@ -698,14 +698,14 @@ class SearchTagGUI(TagGUI):
         """
         # noinspection DuplicatedCode
         column_num = itertools.count()
-        search_button = create_button(
+        search_button = common.create_button(
             buttonbox,
             SEARCH_TEXT,
             column=next(column_num),
             command=self.search,
             default="disabled",
         )
-        create_button(
+        common.create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_num),
@@ -771,21 +771,21 @@ class EditTagGUI(TagGUI):
             buttonbox:
         """
         column_num = itertools.count()
-        commit_button = create_button(
+        commit_button = common.create_button(
             buttonbox,
             COMMIT_TEXT,
             column=next(column_num),
             command=self.commit,
             default="disabled",
         )
-        delete_button = create_button(
+        delete_button = common.create_button(
             buttonbox,
             DELETE_TEXT,
             column=next(column_num),
             command=self.delete,
             default="active",
         )
-        create_button(
+        common.create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_num),
@@ -901,7 +901,7 @@ class SelectTagGUI:
 
         # Create the button
         column_num = 0
-        create_button(
+        common.create_button(
             buttonbox, CANCEL_TEXT, column_num, self.destroy, default="active"
         )
 
@@ -989,14 +989,14 @@ class PreferencesGUI:
 
         # Create buttons
         column_num = itertools.count()
-        save_button = create_button(
+        save_button = common.create_button(
             buttonbox,
             SAVE_TEXT,
             column=next(column_num),
             command=self.save,
             default="disabled",
         )
-        create_button(
+        common.create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_num),
@@ -1291,49 +1291,3 @@ def create_input_form_framing(
     outer_frame.rowconfigure(0, weight=1)
     outer_frame.rowconfigure(1, minsize=35)
     return outer_frame, body_frame, buttonbox
-
-
-def create_button(
-    buttonbox: ttk.Frame,
-    text: str,
-    column: int,
-    command: Callable,
-    default: DefaultLiteral,
-) -> ttk.Button:
-    """Create a button
-
-    Args:
-        buttonbox: The enclosing buttonbox.
-        text: The enclosing buttonbox.
-        column: The index of the button in the buttonbox. '0' is leftmost position.
-        command: The command to be executed when the button is clicked.
-        default: 'normal', 'active', or 'disabled. See 'The Command Callback' in the
-            'Button' section of TkDocs. https://tkdocs.com/tutorial/widgets.html#button
-
-    Returns:
-        The button
-    """
-    button = ttk.Button(buttonbox, text=text, default=default, command=command)
-    button.grid(column=column, row=0)
-    button.bind("<Return>", lambda event, b=button: b.invoke())  # pragma nocover
-    return button
-
-
-# def enable_button(button: ttk.Button, state: bool):
-#     """
-#     Enable or disable a button.
-#
-#     Args:
-#         button:
-#         state:
-#     """
-#     if state:
-#         # Enable the button
-#         button.state(["!disabled"])
-#         # Highlight the button to show it is enabled
-#         button.configure(default="active")
-#     else:
-#         # Disable the button
-#         button.state(["disabled"])
-#         # Remove the button highlight
-#         button.configure(default="disabled")

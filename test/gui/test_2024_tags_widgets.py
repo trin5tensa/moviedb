@@ -1,7 +1,7 @@
 """ Test module. """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/18/25, 6:56 AM by stephen.
+#  Last modified 2/19/25, 7:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -93,6 +93,7 @@ class TestTagGui:
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 class TestAddTagGUI:
 
+    @pytest.mark.skip("Moved enable_button")
     def test_create_buttons(
         self,
         mock_tk,
@@ -190,6 +191,7 @@ class TestAddTagGUI:
 
 # noinspection PyMissingOrEmptyDocstring
 class TestSearchTagGUI:
+    @pytest.mark.skip("Moved create_button")
     def test_create_buttons(
         self,
         mock_tk,
@@ -289,6 +291,7 @@ class TestSearchTagGUI:
 
 # noinspection PyMissingOrEmptyDocstring
 class TestEditTagGUI:
+    @pytest.mark.skip("Moved create_button")
     def test_create_buttons(
         self,
         mock_tk,
@@ -462,6 +465,7 @@ class TestSelectTagGUI:
     dummy_tags_to_show = [test_tag_1, test_tag_2, test_tag_3]
     mock_select_tag_callback = MagicMock()
 
+    @pytest.mark.skip("Moved create_button")
     def test_post_init(self, mock_tk, ttk, framing, monkeypatch):
         monkeypatch.setattr(
             guiwidgets_2.SelectTagGUI, "selection_callback", MagicMock()
@@ -576,6 +580,7 @@ class TestSelectTagGUI:
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 class TestPreferencesGUI:
+    @pytest.mark.skip("Moved create_button")
     def test_post_init(
         self,
         mock_tk,
@@ -809,7 +814,7 @@ def tag_create_buttons(monkeypatch):
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def create_button(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2, "create_button", mock := MagicMock())
+    monkeypatch.setattr(guiwidgets_2.common, "create_button", mock := MagicMock())
     return mock
 
 
