@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/21/25, 6:49 AM by stephen.
+#  Last modified 2/21/25, 10:26 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -28,7 +28,6 @@ from typing import (
     Callable,
     Dict,
     Iterable,
-    Tuple,
     Literal,
     Optional,
     Union,
@@ -571,7 +570,7 @@ class TagGUI:
     def __post_init__(self):
         """Create the Tk widget."""
         # Create outer frames to hold fields and buttons.
-        self.outer_frame, body_frame, buttonbox = create_input_form_framing(
+        self.outer_frame, body_frame, buttonbox = common.create_columnar_form(
             self.parent, type(self).__name__.lower(), self.destroy
         )
         self.user_input_frame(body_frame)
@@ -877,7 +876,7 @@ class SelectTagGUI:
 
     def __post_init__(self):
         # Create outer frames to hold fields and buttons.
-        frames = create_input_form_framing(
+        frames = common.create_columnar_form(
             self.parent, type(self).__name__.lower(), self.destroy
         )
         self.outer_frame, body_frame, buttonbox = frames
@@ -967,7 +966,7 @@ class PreferencesGUI:
         self.toplevel = tk.Toplevel(self.parent)
 
         # Create outer frames to hold fields and buttons.
-        frames = create_input_form_framing(
+        frames = common.create_columnar_form(
             self.toplevel, type(self).__name__.lower(), self.destroy
         )
         self.outer_frame, body_frame, buttonbox = frames
@@ -1226,32 +1225,3 @@ class InputZone:
 
         label = ttk.Label(self.parent, text=text)
         label.grid(column=0, row=row_ix, sticky="ne", padx=5)
-
-
-def create_input_form_framing(
-    parent: TkParentType, name: str, destroy: Callable
-) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
-    """Create the outer frames for an input form.
-
-    An input body frame has two columns, one for the field labels and one for the
-    entry fields.
-
-    Note: For a plain form without columns call the lower level function
-    create_body_and_button_frames.
-
-    Args:
-        parent: The Tk parent frame.
-        name: Name which identifies which moviedb class has the destroy method.
-        destroy:
-
-    Returns:
-        Outer frame which contains the body and buttonbox frames.
-        Body frame
-        Buttonbox frame
-    """
-    outer_frame, body_frame, buttonbox = common.create_two_frame_form(
-        parent, name, destroy
-    )
-    outer_frame.rowconfigure(0, weight=1)
-    outer_frame.rowconfigure(1, minsize=35)
-    return outer_frame, body_frame, buttonbox

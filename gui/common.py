@@ -1,7 +1,7 @@
 """ This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/21/25, 6:49 AM by stephen.
+#  Last modified 2/21/25, 10:26 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -62,6 +62,33 @@ def create_two_frame_form(
     buttonbox = ttk.Frame(outer_frame, padding=(5, 5, 10, 10))
     buttonbox.grid(column=0, row=1, sticky="e")
 
+    return outer_frame, body_frame, buttonbox
+
+
+def create_columnar_form(
+    parent: TkParentType, name: str, destroy: Callable
+) -> tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
+    """Creates the outer frames for an input form.
+
+    An input body frame has two columns, one for the field labels and one for the
+    entry fields.
+
+    Note: For a plain form without columns call the lower level function
+    create_body_and_button_frames.
+
+    Args:
+        parent: The Tk parent frame.
+        name: Name which identifies which moviedb class has the destroy method.
+        destroy:
+
+    Returns:
+        Outer frame which contains the body and buttonbox frames.
+        Body frame
+        Buttonbox frame
+    """
+    outer_frame, body_frame, buttonbox = create_two_frame_form(parent, name, destroy)
+    outer_frame.rowconfigure(0, weight=1)
+    outer_frame.rowconfigure(1, minsize=35)
     return outer_frame, body_frame, buttonbox
 
 

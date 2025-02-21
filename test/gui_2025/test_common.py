@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/21/25, 6:49 AM by stephen.
+#  Last modified 2/21/25, 10:26 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -69,8 +69,40 @@ def test_create_two_frame_form(monkeypatch):
     check.equal((outer_frame, body_frame, buttonbox), (frame(), frame(), frame()))
 
 
+def test_create_columnar_form(monkeypatch):
+    # Arrange
+    tk = MagicMock(name="tk")
+    monkeypatch.setattr(common, "tk", tk)
+    frame = MagicMock(name="frame")
+    monkeypatch.setattr(common.ttk, "Frame", frame)
+    create_two_frame_form = MagicMock(name="create_two_frame_form")
+    monkeypatch.setattr(
+        common,
+        "create_two_frame_form",
+        create_two_frame_form,
+    )
+    create_two_frame_form.return_value = [frame(), frame(), frame()]
+    destroy = MagicMock(name="destroy")
+    name = "test frame name"
+
+    # Act
+    outer_frame, body_frame, buttonbox = common.create_columnar_form(tk, name, destroy)
+
+    # Assert
+    with check:
+        frame.assert_has_calls(
+            [
+                call().rowconfigure(0, weight=1),
+                call().rowconfigure(1, minsize=35),
+            ]
+        )
+    check.equal((outer_frame, body_frame, buttonbox), (frame(), frame(), frame()))
+
+
 def test_create_button(monkeypatch):
     # Arrange
+    ttk = MagicMock(name="ttk")
+    monkeypatch.setattr(common, "ttk", ttk)
     grid = MagicMock(name="grid")
     bind = MagicMock(name="bind")
     button = MagicMock(name="button")
