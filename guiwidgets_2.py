@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/19/25, 7:15 AM by stephen.
+#  Last modified 2/21/25, 6:49 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -1228,42 +1228,6 @@ class InputZone:
         label.grid(column=0, row=row_ix, sticky="ne", padx=5)
 
 
-def create_body_and_button_frames(
-    parent: TkParentType, name: str, destroy: Callable
-) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
-    """
-    Create the outer frames for an input form.
-
-    This consists of an upper body and a lower buttonbox frame.
-
-    Note: Do not call this function if the input form has label and entry widgets. Use the higher
-    level function create_input_form_framing.
-
-    Args:
-        parent: The Tk parent frame.
-        name: Name which identifies which moviedb class has the destroy method.
-        destroy:
-
-    Returns:
-        Outer frame which contains the body and buttonbox frames.
-        Body frame
-        Buttonbox frame
-    """
-
-    outer_frame = ttk.Frame(parent, name=name)
-    outer_frame.grid(column=0, row=0, sticky="nsew")
-    outer_frame.columnconfigure(0, weight=1)
-    config.current.escape_key_dict[name] = destroy
-
-    body_frame = ttk.Frame(outer_frame, padding=(10, 25, 10, 0))
-    body_frame.grid(column=0, row=0, sticky="n")
-
-    buttonbox = ttk.Frame(outer_frame, padding=(5, 5, 10, 10))
-    buttonbox.grid(column=0, row=1, sticky="e")
-
-    return outer_frame, body_frame, buttonbox
-
-
 def create_input_form_framing(
     parent: TkParentType, name: str, destroy: Callable
 ) -> Tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
@@ -1285,7 +1249,7 @@ def create_input_form_framing(
         Body frame
         Buttonbox frame
     """
-    outer_frame, body_frame, buttonbox = create_body_and_button_frames(
+    outer_frame, body_frame, buttonbox = common.create_two_frame_form(
         parent, name, destroy
     )
     outer_frame.rowconfigure(0, weight=1)

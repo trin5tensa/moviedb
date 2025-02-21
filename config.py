@@ -1,7 +1,7 @@
 """Application configuration data """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/6/25, 11:41 AM by stephen.
+#  Last modified 2/21/25, 6:49 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -35,6 +35,7 @@ class CurrentConfig:
     terminates.
     """
 
+    # todo Move GUI attributes to gui.common
     tk_root: "tk.Tk" = None
     safeprint: Callable = None
     threadpool_executor: ThreadPoolExecutor = None

@@ -1,7 +1,7 @@
 """Sundry Menu handlers."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/17/25, 1:36 PM by stephen.
+#  Last modified 2/21/25, 6:49 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -57,7 +57,7 @@ class EscapeKeyDict(UserDict):
     2) Registering in this class the mapping of the outer frame name and its destroy method.
     """
 
-    # todo Move this class to gui.mainwindow module.
+    # todo Move this class to gui.sundries module.
     #  Move globalconstants.TkParentType and TkSequence to tk_facade.
 
     internal_error_txt = "Internal Error"
