@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/21/25, 10:26 AM by stephen.
+#  Last modified 2/22/25, 8:52 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -50,7 +50,9 @@ def test_create_two_frame_form(monkeypatch):
     common.config.current.escape_key_dict[name] = None
 
     # Act
-    outer_frame, body_frame, buttonbox = common.create_two_frame_form(tk, name, destroy)
+    outer_frame, body_frame, buttonbox = common.create_body_and_buttonbox(
+        tk, name, destroy
+    )
 
     # Assert
     with check:
@@ -59,6 +61,8 @@ def test_create_two_frame_form(monkeypatch):
                 call(common.tk, name=name),
                 call().grid(column=0, row=0, sticky="nsew"),
                 call().columnconfigure(0, weight=1),
+                call().rowconfigure(0, weight=1),
+                call().rowconfigure(1, minsize=35),
                 call(outer_frame, padding=(10, 25, 10, 0)),
                 call().grid(column=0, row=0, sticky="n"),
                 call(outer_frame, padding=(5, 5, 10, 10)),
@@ -66,36 +70,6 @@ def test_create_two_frame_form(monkeypatch):
             ]
         )
     check.equal(common.config.current.escape_key_dict[name], destroy)
-    check.equal((outer_frame, body_frame, buttonbox), (frame(), frame(), frame()))
-
-
-def test_create_columnar_form(monkeypatch):
-    # Arrange
-    tk = MagicMock(name="tk")
-    monkeypatch.setattr(common, "tk", tk)
-    frame = MagicMock(name="frame")
-    monkeypatch.setattr(common.ttk, "Frame", frame)
-    create_two_frame_form = MagicMock(name="create_two_frame_form")
-    monkeypatch.setattr(
-        common,
-        "create_two_frame_form",
-        create_two_frame_form,
-    )
-    create_two_frame_form.return_value = [frame(), frame(), frame()]
-    destroy = MagicMock(name="destroy")
-    name = "test frame name"
-
-    # Act
-    outer_frame, body_frame, buttonbox = common.create_columnar_form(tk, name, destroy)
-
-    # Assert
-    with check:
-        frame.assert_has_calls(
-            [
-                call().rowconfigure(0, weight=1),
-                call().rowconfigure(1, minsize=35),
-            ]
-        )
     check.equal((outer_frame, body_frame, buttonbox), (frame(), frame(), frame()))
 
 

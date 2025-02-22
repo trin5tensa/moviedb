@@ -1,7 +1,7 @@
 """ Test module. """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/21/25, 6:49 AM by stephen.
+#  Last modified 2/22/25, 8:52 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -154,7 +154,7 @@ class TestInputZone:
 # noinspection PyMissingOrEmptyDocstring
 class TestCreateInputFormFraming:
     @pytest.mark.skip(
-        "Moved create_body_and_button_frames to common.create_two_frame_form"
+        "Moved create_body_and_button_frames to common.create_body_and_buttonbox"
     )
     def test_create_input_form_framing(self, mock_tk, ttk, monkeypatch):
         test_name = "test widget"

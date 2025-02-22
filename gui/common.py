@@ -1,7 +1,7 @@
 """ This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/21/25, 10:26 AM by stephen.
+#  Last modified 2/22/25, 8:52 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -28,21 +28,23 @@ DefaultLiteral = Literal["normal", "active", "disabled"]
 type TkParentType = tk.Tk | tk.Toplevel | ttk.Frame
 
 
-def create_two_frame_form(
+def create_body_and_buttonbox(
     parent: TkParentType, name: str, destroy: Callable
 ) -> tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
-    """Creates the outer frames for an input form.
+    """Creates the frames for an input form.
 
-    outer frame
-        - body frame
-        - buttonbox
+    outer frame.
+    In row 1: body frame.
+    In row 2: buttonbox.
 
-    Note: Do not call this function if the input form has label and entry
-    widgets. Use the higher level function create_input_form_framing which
-    creates two columns within the body frame.
+    The outer frame will occupy the full width and height of the parent. The
+    buttonbox will be a minimum height of 35 pixels and will occupy the full
+    width of the outer frame. The body frame will occupy the full height of
+    the remaining space inside the outer frame and its full width.
 
     Args:
         parent: The Tk parent frame.
+        # moviedb-#470 Accelerator keys not working
         name: Name which identifies which moviedb class has the destroy method.
         destroy:
 
@@ -54,6 +56,8 @@ def create_two_frame_form(
     outer_frame = ttk.Frame(parent, name=name)
     outer_frame.grid(column=0, row=0, sticky="nsew")
     outer_frame.columnconfigure(0, weight=1)
+    outer_frame.rowconfigure(0, weight=1)
+    outer_frame.rowconfigure(1, minsize=35)
     config.current.escape_key_dict[name] = destroy
 
     body_frame = ttk.Frame(outer_frame, padding=(10, 25, 10, 0))
@@ -62,33 +66,6 @@ def create_two_frame_form(
     buttonbox = ttk.Frame(outer_frame, padding=(5, 5, 10, 10))
     buttonbox.grid(column=0, row=1, sticky="e")
 
-    return outer_frame, body_frame, buttonbox
-
-
-def create_columnar_form(
-    parent: TkParentType, name: str, destroy: Callable
-) -> tuple[ttk.Frame, ttk.Frame, ttk.Frame]:
-    """Creates the outer frames for an input form.
-
-    An input body frame has two columns, one for the field labels and one for the
-    entry fields.
-
-    Note: For a plain form without columns call the lower level function
-    create_body_and_button_frames.
-
-    Args:
-        parent: The Tk parent frame.
-        name: Name which identifies which moviedb class has the destroy method.
-        destroy:
-
-    Returns:
-        Outer frame which contains the body and buttonbox frames.
-        Body frame
-        Buttonbox frame
-    """
-    outer_frame, body_frame, buttonbox = create_two_frame_form(parent, name, destroy)
-    outer_frame.rowconfigure(0, weight=1)
-    outer_frame.rowconfigure(1, minsize=35)
     return outer_frame, body_frame, buttonbox
 
 

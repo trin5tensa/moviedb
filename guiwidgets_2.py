@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/21/25, 10:26 AM by stephen.
+#  Last modified 2/22/25, 8:52 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -570,7 +570,7 @@ class TagGUI:
     def __post_init__(self):
         """Create the Tk widget."""
         # Create outer frames to hold fields and buttons.
-        self.outer_frame, body_frame, buttonbox = common.create_columnar_form(
+        self.outer_frame, body_frame, buttonbox = common.create_body_and_buttonbox(
             self.parent, type(self).__name__.lower(), self.destroy
         )
         self.user_input_frame(body_frame)
@@ -876,7 +876,7 @@ class SelectTagGUI:
 
     def __post_init__(self):
         # Create outer frames to hold fields and buttons.
-        frames = common.create_columnar_form(
+        frames = common.create_body_and_buttonbox(
             self.parent, type(self).__name__.lower(), self.destroy
         )
         self.outer_frame, body_frame, buttonbox = frames
@@ -966,7 +966,7 @@ class PreferencesGUI:
         self.toplevel = tk.Toplevel(self.parent)
 
         # Create outer frames to hold fields and buttons.
-        frames = common.create_columnar_form(
+        frames = common.create_body_and_buttonbox(
             self.toplevel, type(self).__name__.lower(), self.destroy
         )
         self.outer_frame, body_frame, buttonbox = frames
