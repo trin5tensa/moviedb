@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/22/25, 8:52 AM by stephen.
+#  Last modified 2/22/25, 9:05 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,15 +30,14 @@ from collections import UserDict
 
 from unittest.mock import MagicMock, call
 
+import pytest
 from pytest_check import check
 
 from gui import common
 
 
-def test_create_two_frame_form(monkeypatch):
+def test_create_two_frame_form(monkeypatch, tk):
     # Arrange
-    tk = MagicMock(name="tk")
-    monkeypatch.setattr(common, "tk", tk)
     frame = MagicMock(name="frame")
     monkeypatch.setattr(common.ttk, "Frame", frame)
     destroy = MagicMock(name="destroy")
@@ -73,10 +72,8 @@ def test_create_two_frame_form(monkeypatch):
     check.equal((outer_frame, body_frame, buttonbox), (frame(), frame(), frame()))
 
 
-def test_create_button(monkeypatch):
+def test_create_button(monkeypatch, ttk):
     # Arrange
-    ttk = MagicMock(name="ttk")
-    monkeypatch.setattr(common, "ttk", ttk)
     grid = MagicMock(name="grid")
     bind = MagicMock(name="bind")
     button = MagicMock(name="button")
@@ -177,3 +174,19 @@ def test_test_init_button_enablements(monkeypatch):
 
     # Assert
     notify.assert_called_once_with()
+
+
+@pytest.fixture(scope="function")
+def tk(monkeypatch):
+    """Block tk from starting."""
+    tk = MagicMock(name="tk")
+    monkeypatch.setattr(common, "tk", tk)
+    return tk
+
+
+@pytest.fixture(scope="function")
+def ttk(monkeypatch):
+    """Block ttk from starting."""
+    ttk = MagicMock(name="ttk")
+    monkeypatch.setattr(common, "ttk", ttk)
+    return ttk
