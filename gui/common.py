@@ -1,7 +1,22 @@
 """ This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/22/25, 8:52 AM by stephen.
+#  Last modified 2/24/25, 12:38 PM by stephen.
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import itertools
+
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 2/22/25, 12:30 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,8 +32,9 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 from collections.abc import Callable
+from dataclasses import field, dataclass
 from functools import partial
-from typing import Literal
+from typing import Literal, Iterator
 
 import config
 from gui import tk_facade
@@ -26,6 +42,52 @@ from gui import tk_facade
 DefaultLiteral = Literal["normal", "active", "disabled"]
 
 type TkParentType = tk.Tk | tk.Toplevel | ttk.Frame
+
+
+@dataclass
+class InputZone:
+    """Configures a parent frame with two columns for labels and data
+    entry widgets.
+    """
+
+    parent: TkParentType
+    row: Iterator = field(default=None, init=False, repr=False)
+
+    col_0_width: int = 30
+    col_1_width: int = 36
+
+    def __post_init__(self):
+        """Create two columns within the parent frame."""
+        self.row = itertools.count()
+
+        # Create a column for the labels.
+        self.parent.columnconfigure(0, weight=1, minsize=self.col_0_width)
+        # Create a column for the fields.
+        self.parent.columnconfigure(1, weight=1)
+        # Create a column for scrollbars.
+        self.parent.columnconfigure(2, weight=1)
+
+    def add_entry_row(self, entry_field: tk_facade.Entry):
+        """Adds a label and an entry field as the bottom row in the form.
+
+        Args:
+            entry_field:
+        """
+        row_ix = next(self.row)
+        self.create_label(entry_field.label_text, row_ix)
+        entry_field.widget.configure(width=self.col_1_width)
+        entry_field.widget.grid(column=1, row=row_ix)
+
+    def create_label(self, text: str, row_ix: int):
+        """Creates a label for the current row.
+
+        Args:
+            text:
+            row_ix: The row into which the label will be placed.
+        """
+
+        label = ttk.Label(self.parent, text=text)
+        label.grid(column=0, row=row_ix, sticky="ne", padx=5)
 
 
 def create_body_and_buttonbox(

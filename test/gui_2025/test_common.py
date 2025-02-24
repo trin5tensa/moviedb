@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/22/25, 9:05 AM by stephen.
+#  Last modified 2/24/25, 12:38 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -36,7 +36,79 @@ from pytest_check import check
 from gui import common
 
 
-def test_create_two_frame_form(monkeypatch, tk):
+# noinspection PyMissingOrEmptyDocstring
+class TestInputZone:
+
+    def test_input_zone_init(self, tk, ttk):
+        # Arrange
+        parent = ttk.Frame()
+        col_0_width: int = 30
+        col_1_width: int = 36
+
+        # Act
+        input_zone = common.InputZone(parent)
+
+        # Assert
+        check.equal(input_zone.parent, parent)
+        check.is_instance(input_zone.row, common.Iterator)
+        check.equal(input_zone.col_0_width, col_0_width)
+        check.equal(input_zone.col_1_width, col_1_width)
+        with check:
+            # noinspection PyUnresolvedReferences
+            input_zone.parent.assert_has_calls(
+                [
+                    call.columnconfigure(0, weight=1, minsize=col_0_width),
+                    call.columnconfigure(1, weight=1),
+                    call.columnconfigure(2, weight=1),
+                ]
+            )
+
+    def test_create_label(self, tk, ttk, monkeypatch):
+        # Arrange
+        parent = ttk.Frame()
+        label = MagicMock(name="label")
+        monkeypatch.setattr(common.ttk, "Label", label)
+        text = "test_create_label"
+        row_ix = 42
+
+        # Act
+        input_zone = common.InputZone(parent)
+        input_zone.create_label(text, row_ix)
+
+        # Assert
+        with check:
+            label.assert_called_once_with(parent, text=text)
+        with check:
+            label().grid.assert_called_once_with(
+                column=0, row=row_ix, sticky="ne", padx=5
+            )
+
+    def test_add_entry_row(self, tk, ttk, monkeypatch):
+        # Arrange
+        parent = ttk.Frame()
+        input_zone = common.InputZone(parent)
+        input_zone.col_1_width = 37
+        create_label = MagicMock(name="create_label")
+        monkeypatch.setattr(common.InputZone, "create_label", create_label)
+        entry_field = MagicMock(name="entry_field")
+        entry_field.label_text = "test of add_entry_row"
+        row_ix = 0
+
+        # Act
+        input_zone.add_entry_row(entry_field)
+
+        # Assert
+        with check:
+            create_label.assert_called_once_with(entry_field.label_text, row_ix)
+        with check:
+            entry_field.widget.configure.assert_called_once_with(
+                width=input_zone.col_1_width
+            )
+        with check:
+            entry_field.widget.grid.assert_called_once_with(column=1, row=row_ix)
+
+
+def test_create_body_and_buttonbox(monkeypatch, tk):
     # Arrange
     frame = MagicMock(name="frame")
     monkeypatch.setattr(common.ttk, "Frame", frame)
