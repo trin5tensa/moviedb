@@ -1,7 +1,7 @@
 """ This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/24/25, 12:38 PM by stephen.
+#  Last modified 2/24/25, 2:56 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -76,6 +76,49 @@ class InputZone:
         row_ix = next(self.row)
         self.create_label(entry_field.label_text, row_ix)
         entry_field.widget.configure(width=self.col_1_width)
+        entry_field.widget.grid(column=1, row=row_ix)
+
+    def add_text_row(self, entry_field: tk_facade.Text):
+        """Adds a label and a text field as the bottom row in the form.
+
+        Args:
+            entry_field:
+        """
+        row_ix = next(self.row)
+        self.create_label(entry_field.label_text, row_ix)
+
+        entry_field.widget.configure(
+            width=self.col_1_width - 2,
+            height=8,
+            wrap="word",
+            font="TkTextFont",
+            padx=15,
+            pady=10,
+        )
+        entry_field.widget.grid(column=1, row=row_ix, sticky="e")
+
+        scrollbar = ttk.Scrollbar(
+            self.parent,
+            orient="vertical",
+            command=entry_field.widget.yview,
+        )
+        entry_field.widget.configure(yscrollcommand=scrollbar.set)
+        scrollbar.grid(column=2, row=row_ix, sticky="ns")
+
+    def add_checkbox_row(self, entry_field: tk_facade.Checkbutton):
+        """Adds a label and a checkbox as the bottom row in the form.
+
+        Checkbutton has a 'command' parameter used for callbacks.
+        For consistency with other widgets this method will use the text
+        variable via link_field_to_neuron. This link is set up by the caller.
+
+        Args:
+            entry_field:
+        """
+        row_ix = next(self.row)
+        entry_field.widget.configure(
+            text=entry_field.label_text, width=self.col_1_width
+        )
         entry_field.widget.grid(column=1, row=row_ix)
 
     def create_label(self, text: str, row_ix: int):

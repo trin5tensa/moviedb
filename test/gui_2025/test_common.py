@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/24/25, 12:38 PM by stephen.
+#  Last modified 2/24/25, 2:56 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -85,6 +85,7 @@ class TestInputZone:
 
     def test_add_entry_row(self, tk, ttk, monkeypatch):
         # Arrange
+        # noinspection DuplicatedCode
         parent = ttk.Frame()
         input_zone = common.InputZone(parent)
         input_zone.col_1_width = 37
@@ -106,6 +107,78 @@ class TestInputZone:
             )
         with check:
             entry_field.widget.grid.assert_called_once_with(column=1, row=row_ix)
+
+    def test_add_text_row(self, tk, ttk, monkeypatch):
+        # Arrange
+        # noinspection DuplicatedCode
+        parent = ttk.Frame()
+        input_zone = common.InputZone(parent)
+        input_zone.col_1_width = 38
+        create_label = MagicMock(name="create_label")
+        monkeypatch.setattr(common.InputZone, "create_label", create_label)
+        entry_field = MagicMock(name="entry_field")
+        entry_field.label_text = "test of add_text_row"
+        entry_field.widget.yview = MagicMock(name="yview")
+        row_ix = 0
+        scrollbar = MagicMock(name="scrollbar")
+        monkeypatch.setattr(common.ttk, "Scrollbar", scrollbar)
+
+        # Act
+        input_zone.add_text_row(entry_field)
+
+        # Assert
+        with check:
+            create_label.assert_called_once_with(entry_field.label_text, row_ix)
+        with check:
+            entry_field.widget.grid.assert_called_once_with(
+                column=1, row=row_ix, sticky="e"
+            )
+        with check:
+            scrollbar.assert_called_once_with(
+                parent,
+                orient="vertical",
+                command=entry_field.widget.yview,
+            )
+        with check:
+            entry_field.widget.configure.assert_has_calls(
+                [
+                    call(
+                        width=input_zone.col_1_width - 2,
+                        height=8,
+                        wrap="word",
+                        font="TkTextFont",
+                        padx=15,
+                        pady=10,
+                    ),
+                    call(yscrollcommand=scrollbar().set),
+                ]
+            )
+        with check:
+            scrollbar().grid.assert_called_once_with(
+                column=2,
+                row=row_ix,
+                sticky="ns",
+            )
+
+    def test_add_checkbox_row(self, tk, ttk, monkeypatch):
+        # Arrange
+        parent = ttk.Frame()
+        input_zone = common.InputZone(parent)
+        input_zone.col_1_width = 37
+        entry_field = MagicMock(name="entry_field")
+        entry_field.label_text = "test of add_entry_row"
+        row_ix = 0
+
+        # Act
+        input_zone.add_checkbox_row(entry_field)
+
+        # Assert
+        with check:
+            entry_field.widget.configure.assert_called_once_with(
+                text=entry_field.label_text, width=input_zone.col_1_width
+            )
+        with check:
+            entry_field.widget.grid.assert_called_with(column=1, row=row_ix)
 
 
 def test_create_body_and_buttonbox(monkeypatch, tk):
