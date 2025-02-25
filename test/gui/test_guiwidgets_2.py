@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/19/25, 7:15 AM by stephen.
+#  Last modified 2/25/25, 2:25 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -58,13 +58,6 @@ def test_gui_askopenfilename(monkeypatch):
     # noinspection PyTypeChecker
     guiwidgets_2.gui_askopenfilename(parent, filetypes)
     assert calls == [(dict(parent=parent, filetypes=filetypes))]
-
-
-# # noinspection PyMissingOrEmptyDocstring
-# @pytest.fixture
-# def dummy_entry_fields():
-#     # noinspection PyProtectedMember
-#     return dict(tag=guiwidgets_2._EntryField("Tag", ""))
 
 
 # noinspection PyMissingOrEmptyDocstring

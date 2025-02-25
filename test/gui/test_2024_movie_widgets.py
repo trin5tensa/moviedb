@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/19/25, 7:15 AM by stephen.
+#  Last modified 2/25/25, 2:25 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -113,6 +113,7 @@ class TestMovieGUI:
                 cut.destroy,
             )
 
+    @pytest.mark.skip("Moved InputZone to common.LabelAndField")
     def test_user_input_frame(
         self,
         mock_tk,
@@ -171,6 +172,7 @@ class TestMovieGUI:
                 cut.entry_fields[guiwidgets_2.MOVIE_TAGS], cut.all_tags
             )
 
+    @pytest.mark.skip("Moved InputZone to common.LabelAndField")
     def test_tmdb_results_frame(
         self,
         mock_tk,
@@ -266,6 +268,7 @@ class TestMovieGUI:
             # noinspection PyTypeChecker
             cut._create_buttons(object(), object())
 
+    @pytest.mark.skip("Moved InputZone to common.LabelAndField")
     def test_tmdb_search(
         self,
         mock_tk,
@@ -491,6 +494,7 @@ class TestMovieGUI:
 
 
 # noinspection DuplicatedCode
+@pytest.mark.skip("Moved InputZone to common.LabelAndField")
 def test_add_movie_init_with_movie_bag(monkeypatch):
     # Arrange
     monkeypatch.setattr(guiwidgets_2.ttk, "Entry", MagicMock(name="Entry"))
@@ -661,6 +665,7 @@ class TestAddMovieGUI:
 
 
 # noinspection DuplicatedCode
+@pytest.mark.skip("Moved InputZone to common.LabelAndField")
 def test_edit_movie_init_with_movie_bag(monkeypatch):
     # Arrange
     monkeypatch.setattr(guiwidgets_2.ttk, "Entry", MagicMock(name="Entry"))

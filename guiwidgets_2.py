@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/22/25, 8:52 AM by stephen.
+#  Last modified 2/25/25, 2:25 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -163,7 +163,7 @@ class MovieGUI:
         """
         # todo The test suite for this method needs to be rewritten to current standards
 
-        input_zone = InputZone(body_frame)
+        input_zone = common.LabelAndField(body_frame)
 
         # Create entry rows for title, year, director, and duration.
         for name, text in zip(
@@ -587,7 +587,7 @@ class TagGUI:
         """
         # todo The test suite for this method needs to be rewritten to current standards
 
-        input_zone = InputZone(body_frame)
+        input_zone = common.LabelAndField(body_frame)
 
         # Tag field
         self.entry_fields[MOVIE_TAGS] = tk_facade.Entry(MOVIE_TAGS_TEXT, body_frame)
@@ -970,7 +970,7 @@ class PreferencesGUI:
             self.toplevel, type(self).__name__.lower(), self.destroy
         )
         self.outer_frame, body_frame, buttonbox = frames
-        input_zone = InputZone(body_frame)
+        input_zone = common.LabelAndField(body_frame)
 
         # TMDB API key field
         self.entry_fields[self.api_key_name] = tk_facade.Entry(
@@ -1092,136 +1092,3 @@ def gui_askopenfilename(
 ):
     """Present a Tk askopenfilename."""
     return filedialog.askopenfilename(parent=parent, filetypes=filetypes)
-
-
-@dataclass
-class InputZone:
-    """Configure the parent frame with two columns to contain labels and widgets for
-    user input.
-
-    Widgets are added by calling the various methods `add_<widget>_row`, for example,
-    add_entry_row. Each call will grid the row as the last row in the zone and will
-    align the labels and the widget.
-    """
-
-    parent: TkParentType
-    row: Iterator = field(default=None, init=False, repr=False)
-
-    col_0_width: int = 30
-    col_1_width: int = 36
-
-    def __post_init__(self):
-        """Create two columns within the parent frame."""
-        self.row = itertools.count()
-
-        # Create a column for the labels.
-        self.parent.columnconfigure(0, weight=1, minsize=self.col_0_width)
-        # Create a column for the fields.
-        self.parent.columnconfigure(1, weight=1)
-        # Create a column for scrollbars.
-        self.parent.columnconfigure(2, weight=1)
-
-    def add_entry_row(self, entry_field: tk_facade.Entry):
-        """
-        Add label and entry widgets as the bottom row.
-
-        Args:
-            entry_field:
-        """
-        row_ix = next(self.row)
-        self.create_label(entry_field.label_text, row_ix)
-        entry_field.widget.configure(width=self.col_1_width)
-        entry_field.widget.grid(column=1, row=row_ix)
-
-    # noinspection DuplicatedCode
-    def add_text_row(self, entry_field: tk_facade.Text):
-        """
-        Add label and text widgets as the bottom row.
-
-        Args:
-            entry_field:
-
-        Returns:
-            text widget
-        """
-
-        row_ix = next(self.row)
-        self.create_label(entry_field.label_text, row_ix)
-
-        entry_field.widget.configure(
-            width=self.col_1_width - 2,
-            height=8,
-            wrap="word",
-            font="TkTextFont",
-            padx=15,
-            pady=10,
-        )
-        entry_field.widget.grid(column=1, row=row_ix, sticky="e")
-
-        scrollbar = ttk.Scrollbar(
-            self.parent, orient="vertical", command=entry_field.widget.yview
-        )
-        entry_field.widget.configure(yscrollcommand=scrollbar.set)
-        scrollbar.grid(column=2, row=row_ix, sticky="ns")
-
-    def add_checkbox_row(self, entry_field: tk_facade.Checkbutton):
-        """
-        Add a label and a checkbox as the bottom row.
-
-        Checkbutton has a 'command' parameter used for callbacks.
-        For consistency with other widgets this method will use the text variable via
-        link_field_to_neuron. This link is set up by the caller.
-
-        Args:
-            entry_field:
-        """
-        row_ix = next(self.row)
-        entry_field.widget.configure(
-            text=entry_field.label_text, width=self.col_1_width
-        )
-        entry_field.widget.grid(column=1, row=row_ix)
-
-    # noinspection DuplicatedCode
-    def add_treeview_row(
-        self, entry_field: tk_facade.Treeview, all_tags: Sequence[str]
-    ):
-        """
-        Add a label and a treeview as the bottom row.
-
-        Args:
-            entry_field:
-            all_tags
-        """
-
-        row_ix = next(self.row)
-        self.create_label(entry_field.label_text, row_ix)
-
-        entry_field.widget.configure(
-            columns=("tags",),
-            height=7,
-            selectmode="extended",
-            show="tree",
-            padding=5,
-        )
-        entry_field.widget.column("tags", width=127)
-        for item in all_tags:
-            if item:  # pragma no branch
-                entry_field.widget.insert("", "end", item, text=item, tags="tags")
-        entry_field.widget.grid(column=1, row=row_ix, sticky="e")
-
-        scrollbar = ttk.Scrollbar(
-            self.parent, orient="vertical", command=entry_field.widget.yview
-        )
-        entry_field.widget.configure(yscrollcommand=scrollbar.set)
-        scrollbar.grid(column=2, row=row_ix, sticky="ns")
-
-    def create_label(self, text: str, row_ix: int):
-        """Create a label for the current row.
-
-        Args:
-            text:
-            row_ix: The row into which the label will be placed.
-        """
-
-        label = ttk.Label(self.parent, text=text)
-        label.grid(column=0, row=row_ix, sticky="ne", padx=5)
