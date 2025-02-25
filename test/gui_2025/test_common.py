@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/24/25, 2:56 PM by stephen.
+#  Last modified 2/25/25, 1:42 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -37,7 +37,7 @@ from gui import common
 
 
 # noinspection PyMissingOrEmptyDocstring
-class TestInputZone:
+class TestLabelAndField:
 
     def test_input_zone_init(self, tk, ttk):
         # Arrange
@@ -46,7 +46,7 @@ class TestInputZone:
         col_1_width: int = 36
 
         # Act
-        input_zone = common.InputZone(parent)
+        input_zone = common.LabelAndField(parent)
 
         # Assert
         check.equal(input_zone.parent, parent)
@@ -66,13 +66,13 @@ class TestInputZone:
     def test_create_label(self, tk, ttk, monkeypatch):
         # Arrange
         parent = ttk.Frame()
-        label = MagicMock(name="label")
+        label = MagicMock(name="label", autospec=True)
         monkeypatch.setattr(common.ttk, "Label", label)
         text = "test_create_label"
         row_ix = 42
 
         # Act
-        input_zone = common.InputZone(parent)
+        input_zone = common.LabelAndField(parent)
         input_zone.create_label(text, row_ix)
 
         # Assert
@@ -87,11 +87,15 @@ class TestInputZone:
         # Arrange
         # noinspection DuplicatedCode
         parent = ttk.Frame()
-        input_zone = common.InputZone(parent)
+        input_zone = common.LabelAndField(parent)
         input_zone.col_1_width = 37
-        create_label = MagicMock(name="create_label")
-        monkeypatch.setattr(common.InputZone, "create_label", create_label)
-        entry_field = MagicMock(name="entry_field")
+        create_label = MagicMock(name="create_label", autospec=True)
+        monkeypatch.setattr(
+            common.LabelAndField,
+            "create_label",
+            create_label,
+        )
+        entry_field = MagicMock(name="entry_field", autospec=True)
         entry_field.label_text = "test of add_entry_row"
         row_ix = 0
 
@@ -112,15 +116,19 @@ class TestInputZone:
         # Arrange
         # noinspection DuplicatedCode
         parent = ttk.Frame()
-        input_zone = common.InputZone(parent)
+        input_zone = common.LabelAndField(parent)
         input_zone.col_1_width = 38
-        create_label = MagicMock(name="create_label")
-        monkeypatch.setattr(common.InputZone, "create_label", create_label)
-        entry_field = MagicMock(name="entry_field")
+        create_label = MagicMock(name="create_label", autospec=True)
+        monkeypatch.setattr(
+            common.LabelAndField,
+            "create_label",
+            create_label,
+        )
+        entry_field = MagicMock(name="entry_field", autospec=True)
         entry_field.label_text = "test of add_text_row"
-        entry_field.widget.yview = MagicMock(name="yview")
+        entry_field.widget.yview = MagicMock(name="yview", autospec=True)
         row_ix = 0
-        scrollbar = MagicMock(name="scrollbar")
+        scrollbar = MagicMock(name="scrollbar", autospec=True)
         monkeypatch.setattr(common.ttk, "Scrollbar", scrollbar)
 
         # Act
@@ -163,9 +171,9 @@ class TestInputZone:
     def test_add_checkbox_row(self, tk, ttk, monkeypatch):
         # Arrange
         parent = ttk.Frame()
-        input_zone = common.InputZone(parent)
+        input_zone = common.LabelAndField(parent)
         input_zone.col_1_width = 37
-        entry_field = MagicMock(name="entry_field")
+        entry_field = MagicMock(name="entry_field", autospec=True)
         entry_field.label_text = "test of add_entry_row"
         row_ix = 0
 
@@ -180,13 +188,87 @@ class TestInputZone:
         with check:
             entry_field.widget.grid.assert_called_with(column=1, row=row_ix)
 
+    def test_add_treeview_row(self, tk, ttk, monkeypatch):
+        # Arrange
+        parent = ttk.Frame()
+        input_zone = common.LabelAndField(parent)
+        input_zone.col_1_width = 38
+        create_label = MagicMock(name="create_label", autospec=True)
+        monkeypatch.setattr(
+            common.LabelAndField,
+            "create_label",
+            create_label,
+        )
+        entry_field = MagicMock(name="entry_field", autospec=True)
+        entry_field.label_text = "test of test_add_treeview_row"
+        entry_field.widget.yview = MagicMock(name="yview", autospec=True)
+        row_ix = 0
+        scrollbar = MagicMock(name="scrollbar", autospec=True)
+        monkeypatch.setattr(common.ttk, "Scrollbar", scrollbar)
+        tag_item = "test of test_add_treeview_row"
+        all_tags = ["tag_item", ""]
+
+        # Act
+        input_zone.add_treeview_row(entry_field, all_tags)
+
+        # Assert
+        with check:
+            create_label.assert_called_once_with(
+                entry_field.label_text,
+                row_ix,
+            )
+        with check:
+            entry_field.widget.column.assert_called_once_with(
+                "tags",
+                width=127,
+            )
+        with check:
+            entry_field.widget.insert(
+                "",
+                "end",
+                tag_item,
+                text=tag_item,
+                tags="tags",
+            )
+        with check:
+            entry_field.widget.grid.assert_called_once_with(
+                column=1,
+                row=row_ix,
+                sticky="e",
+            )
+        with check:
+            scrollbar.assert_called_once_with(
+                parent,
+                orient="vertical",
+                command=entry_field.widget.yview,
+            )
+        with check:
+            entry_field.widget.configure.assert_has_calls(
+                [
+                    call(
+                        columns=("tags",),
+                        height=7,
+                        selectmode="extended",
+                        show="tree",
+                        padding=5,
+                    ),
+                    call(yscrollcommand=scrollbar().set),
+                ]
+            )
+        with check:
+            scrollbar().grid.assert_called_once_with(
+                column=2,
+                row=row_ix,
+                sticky="ns",
+            )
+
 
 def test_create_body_and_buttonbox(monkeypatch, tk):
     # Arrange
-    frame = MagicMock(name="frame")
+    frame = MagicMock(name="frame", autospec=True)
     monkeypatch.setattr(common.ttk, "Frame", frame)
-    destroy = MagicMock(name="destroy")
-    config = MagicMock(name="config")
+    destroy = MagicMock(name="destroy", autospec=True)
+    config = MagicMock(name="config", autospec=True)
     monkeypatch.setattr(common, "config", config)
     name = "test frame name"
     monkeypatch.setitem(common.config.current.escape_key_dict, name, destroy)
@@ -219,9 +301,9 @@ def test_create_body_and_buttonbox(monkeypatch, tk):
 
 def test_create_button(monkeypatch, ttk):
     # Arrange
-    grid = MagicMock(name="grid")
-    bind = MagicMock(name="bind")
-    button = MagicMock(name="button")
+    grid = MagicMock(name="grid", autospec=True)
+    bind = MagicMock(name="bind", autospec=True)
+    button = MagicMock(name="button", autospec=True)
     monkeypatch.setattr(common.ttk, "Button", button)
     button = button()
     button.grid = grid
@@ -229,7 +311,7 @@ def test_create_button(monkeypatch, ttk):
     buttonbox = common.ttk.Frame()
     text = "Dummy"
     column = 42
-    partial = MagicMock(name="partial")
+    partial = MagicMock(name="partial", autospec=True)
     monkeypatch.setattr(common, "partial", partial)
 
     # Act
@@ -253,9 +335,9 @@ def test_create_button(monkeypatch, ttk):
 
 def test_enable_button_with_true_state(monkeypatch):
     # Arrange
-    state = MagicMock(name="state")
-    configure = MagicMock(name="configure")
-    button = MagicMock(name="button")
+    state = MagicMock(name="state", autospec=True)
+    configure = MagicMock(name="configure", autospec=True)
+    button = MagicMock(name="button", autospec=True)
     monkeypatch.setattr(common.ttk, "Button", button)
     button.state = state
     button.configure = configure
@@ -273,9 +355,9 @@ def test_enable_button_with_true_state(monkeypatch):
 
 def test_enable_button_with_false_state(monkeypatch):
     # Arrange
-    state = MagicMock(name="state")
-    configure = MagicMock(name="configure")
-    button = MagicMock(name="button")
+    state = MagicMock(name="state", autospec=True)
+    configure = MagicMock(name="configure", autospec=True)
+    button = MagicMock(name="button", autospec=True)
     monkeypatch.setattr(common.ttk, "Button", button)
     button.state = state
     button.configure = configure
@@ -308,8 +390,8 @@ def test_invoke_button(monkeypatch):
 
 def test_test_init_button_enablements(monkeypatch):
     # Arrange
-    notify = MagicMock(name="observer")
-    entry = MagicMock(name="entry")
+    notify = MagicMock(name="observer", autospec=True)
+    entry = MagicMock(name="entry", autospec=True)
     monkeypatch.setattr(common.tk_facade, "Entry", entry)
     entry.observer.notify = notify
     entry_fields: common.tk_facade.EntryFieldItem = {"dummy key": entry}
@@ -322,16 +404,16 @@ def test_test_init_button_enablements(monkeypatch):
 
 
 @pytest.fixture(scope="function")
-def tk(monkeypatch):
-    """Block tk from starting."""
-    tk = MagicMock(name="tk")
+def tk(monkeypatch) -> MagicMock:
+    """Stops Tk from starting."""
+    tk = MagicMock(name="tk", autospec=True)
     monkeypatch.setattr(common, "tk", tk)
     return tk
 
 
 @pytest.fixture(scope="function")
-def ttk(monkeypatch):
-    """Block ttk from starting."""
-    ttk = MagicMock(name="ttk")
+def ttk(monkeypatch) -> MagicMock:
+    """Stops Tk.Ttk from starting."""
+    ttk = MagicMock(name="ttk", autospec=True)
     monkeypatch.setattr(common, "ttk", ttk)
     return ttk

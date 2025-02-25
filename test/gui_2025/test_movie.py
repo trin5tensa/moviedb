@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/17/25, 1:36 PM by stephen.
+#  Last modified 2/25/25, 1:42 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,6 +21,8 @@ from pytest_check import check
 import guiwidgets
 import guiwidgets_2
 from globalconstants import MovieBag, MovieInteger
+
+# todo Autospec MagicMocks
 
 
 class TestMovieGUI:

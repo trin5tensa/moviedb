@@ -1,7 +1,7 @@
 """ This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/24/25, 2:56 PM by stephen.
+#  Last modified 2/25/25, 1:42 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -34,7 +34,7 @@ import tkinter.ttk as ttk
 from collections.abc import Callable
 from dataclasses import field, dataclass
 from functools import partial
-from typing import Literal, Iterator
+from typing import Literal, Iterator, Sequence
 
 import config
 from gui import tk_facade
@@ -45,7 +45,7 @@ type TkParentType = tk.Tk | tk.Toplevel | ttk.Frame
 
 
 @dataclass
-class InputZone:
+class LabelAndField:
     """Configures a parent frame with two columns for labels and data
     entry widgets.
     """
@@ -120,6 +120,45 @@ class InputZone:
             text=entry_field.label_text, width=self.col_1_width
         )
         entry_field.widget.grid(column=1, row=row_ix)
+
+    def add_treeview_row(
+        self,
+        entry_field: tk_facade,
+        all_tags: Sequence[str],
+    ):
+        """Adds a label and a treeview as the bottom row in the form.
+
+        Args:
+            entry_field:
+            all_tags:
+        """
+        row_ix = next(self.row)
+        self.create_label(entry_field.label_text, row_ix)
+
+        entry_field.widget.configure(
+            columns=("tags",),
+            height=7,
+            selectmode="extended",
+            show="tree",
+            padding=5,
+        )
+        entry_field.widget.column("tags", width=127)
+        for item in all_tags:
+            if item:  # pragma no branch
+                entry_field.widget.insert(
+                    "",
+                    "end",
+                    item,
+                    text=item,
+                    tags="tags",
+                )
+        entry_field.widget.grid(column=1, row=row_ix, sticky="e")
+
+        scrollbar = ttk.Scrollbar(
+            self.parent, orient="vertical", command=entry_field.widget.yview
+        )
+        entry_field.widget.configure(yscrollcommand=scrollbar.set)
+        scrollbar.grid(column=2, row=row_ix, sticky="ns")
 
     def create_label(self, text: str, row_ix: int):
         """Creates a label for the current row.
