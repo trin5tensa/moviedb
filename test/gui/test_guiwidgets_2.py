@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/17/25, 12:36 PM by stephen.
+#  Last modified 2/25/25, 2:25 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,13 +13,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from contextlib import contextmanager
-from typing import Callable, Optional, Type
-from unittest.mock import Mock
 
 import pytest
 
-import guiwidgets
 import guiwidgets_2
 from test.dummytk import (
     DummyTk,
@@ -33,59 +29,6 @@ from test.dummytk import (
     TtkScrollbar,
     TtkTreeview,
 )
-
-
-# noinspection PyMissingOrEmptyDocstring
-@pytest.mark.usefixtures("patch_tk")
-class TestFocusSet:
-    def test_focus_set_calls_focus_set_on_entry(self, patch_tk):
-        with self.focus_set_context() as entry:
-            # noinspection PyUnresolvedReferences
-            assert entry.focus_set_calls == [True]
-
-    def test_focus_set_calls_select_range_on_entry(self, patch_tk):
-        with self.focus_set_context() as entry:
-            # noinspection PyUnresolvedReferences
-            assert entry.select_range_calls == [(0, "end")]
-
-    def test_focus_set_calls_icursor_on_entry(self, patch_tk):
-        with self.focus_set_context() as entry:
-            # noinspection PyUnresolvedReferences
-            assert entry.icursor_calls == [("end",)]
-
-    @contextmanager
-    def focus_set_context(self):
-        # noinspection PyTypeChecker
-        entry = guiwidgets_2.ttk.Entry(DummyTk())
-        guiwidgets_2.focus_set(entry)
-        yield entry
-
-
-# noinspection PyMissingOrEmptyDocstring
-@pytest.mark.usefixtures("patch_tk")
-class TestCreateButton:
-    def test_create_button_grid(self):
-        with self.button_context() as button:
-            assert button.grid_calls == [dict(column=0, row=0)]
-
-    def test_create_button_bind(self):
-        with self.button_context() as button:
-            assert button.bind_calls[0][0] == "<Return>"
-            assert isinstance(button.bind_calls[0][1], Callable)
-
-    def test_disable_at_initialization(self):
-        with self.button_context(default="disabled") as button:
-            assert button.default == "disabled"
-
-    @contextmanager
-    def button_context(self, default: guiwidgets_2.DefaultLiteral = None):
-        buttonbox = TtkFrame(DummyTk())
-        text = "Dummy Button"
-        column = 0
-        # noinspection PyTypeChecker
-        yield guiwidgets_2.create_button(
-            buttonbox, text, column, lambda: None, default=default
-        )
 
 
 def test_gui_messagebox(monkeypatch):
@@ -115,13 +58,6 @@ def test_gui_askopenfilename(monkeypatch):
     # noinspection PyTypeChecker
     guiwidgets_2.gui_askopenfilename(parent, filetypes)
     assert calls == [(dict(parent=parent, filetypes=filetypes))]
-
-
-# noinspection PyMissingOrEmptyDocstring
-@pytest.fixture
-def dummy_entry_fields():
-    # noinspection PyProtectedMember
-    return dict(tag=guiwidgets_2._EntryField("Tag", ""))
 
 
 # noinspection PyMissingOrEmptyDocstring

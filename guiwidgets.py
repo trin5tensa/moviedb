@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/8/25, 9:01 AM by stephen.
+#  Last modified 2/17/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -34,15 +34,14 @@ from guiwidgets_2 import (
     TITLE_TEXT,
     YEAR,
     YEAR_TEXT,
-    DIRECTOR,
-    DIRECTOR_TEXT,
+    DIRECTORS,
+    DIRECTORS_TEXT,
     DURATION,
     DURATION_TEXT,
     NOTES,
     NOTES_TEXT,
     SEARCH_TEXT,
     MOVIE_TAGS_TEXT,
-    focus_set,
 )
 
 TAG_TREEVIEW_INTERNAL_NAME = "tag treeview"
@@ -91,8 +90,8 @@ class MovieGUIBase:
 
         # Initialize an internal dictionary to simplify field data management.
         self.entry_fields = _create_entry_fields(
-            (TITLE, YEAR, DIRECTOR, DURATION, NOTES),
-            (TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, DURATION_TEXT, NOTES_TEXT),
+            (TITLE, YEAR, DIRECTORS, DURATION, NOTES),
+            (TITLE_TEXT, YEAR_TEXT, DIRECTORS_TEXT, DURATION_TEXT, NOTES_TEXT),
         )
 
         body_frame = ttk.Frame(outerframe, padding=(10, 25, 10, 0))
@@ -223,6 +222,8 @@ class SearchMovieGUI(MovieGUIBase):
         composed classes of guiwidgets_2 as a model for future development.
     """
 
+    # todo The test suite for this class needs to be rewritten to current standards
+
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[MovieBag], None]
     # Tags list
@@ -259,7 +260,7 @@ class SearchMovieGUI(MovieGUIBase):
         )()
         self.tag_treeview_observer.register(self.search_button_neuron)
 
-        focus_set(self.entry_fields["title"].widget)
+        self.entry_fields["title"].widget.focus_set()
 
     def create_body_item(
         self, body_frame: ttk.Frame, internal_name: str, text: str, row: int
@@ -441,6 +442,8 @@ class SelectMovieGUI(MovieGUIBase):
         composed classes of guiwidgets_2 as a model for future development.
     """
 
+    # todo The test suite for this class needs to be rewritten to current standards
+
     # Movie records retrieved from the database.
     movies: List[MovieBag]
     # On exit this callback will be called with a dictionary of fields and user entered values.
@@ -458,7 +461,7 @@ class SelectMovieGUI(MovieGUIBase):
         # Create and grid treeview
         self.treeview = ttk.Treeview(
             body_frame,
-            columns=[YEAR, DIRECTOR, DURATION, NOTES],
+            columns=[YEAR, DIRECTORS, DURATION, NOTES],
             height=25,
             selectmode="browse",
         )
@@ -467,14 +470,14 @@ class SelectMovieGUI(MovieGUIBase):
         # Set up column widths and titles
         column_widths = (350, 50, 100, 50, 350)
         for column_ix, internal_name in enumerate(
-            (TITLE, YEAR, DIRECTOR, DURATION, NOTES)
+            (TITLE, YEAR, DIRECTORS, DURATION, NOTES)
         ):
             if column_ix == 0:
                 internal_name = "#0"
             self.treeview.column(internal_name, width=column_widths[column_ix])
             self.treeview.heading(
                 internal_name,
-                text=(TITLE_TEXT, YEAR_TEXT, DIRECTOR_TEXT, DURATION_TEXT, NOTES_TEXT)[
+                text=(TITLE_TEXT, YEAR_TEXT, DIRECTORS_TEXT, DURATION_TEXT, NOTES_TEXT)[
                     column_ix
                 ],
             )

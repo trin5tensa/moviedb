@@ -1,7 +1,7 @@
 """ Test module. """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/4/25, 1:28 PM by stephen.
+#  Last modified 2/25/25, 2:25 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -26,6 +26,7 @@ from guiwidgets_2 import tk_facade
 class TestInputZone:
     test_label_text = "test label text"
 
+    @pytest.mark.skip("Moved InputZone to common.LabelAndField")
     def test_post_init(self, mock_tk, ttk):
         cut = guiwidgets_2.InputZone(mock_tk)
 
@@ -38,6 +39,7 @@ class TestInputZone:
                 ]
             )
 
+    @pytest.mark.skip("Moved InputZone to common.LabelAndField")
     def test_add_entry_row(self, mock_tk, ttk, facade_entry, monkeypatch):
         cut = guiwidgets_2.InputZone(mock_tk)
         monkeypatch.setattr(cut, "create_label", mock_create_label := MagicMock())
@@ -50,6 +52,7 @@ class TestInputZone:
         with check:
             facade_entry.widget.grid.assert_called_once_with(column=1, row=0)
 
+    @pytest.mark.skip("Moved InputZone to common.LabelAndField")
     def test_add_text_row(self, mock_tk, ttk, facade_text, scrollbar, monkeypatch):
         cut = guiwidgets_2.InputZone(mock_tk)
         monkeypatch.setattr(cut, "create_label", mock_create_label := MagicMock())
@@ -80,6 +83,7 @@ class TestInputZone:
         with check:
             scrollbar().grid.assert_called_once_with(column=2, row=0, sticky="ns")
 
+    @pytest.mark.skip("Moved InputZone to common.LabelAndField")
     def test_add_checkbox_row(self, mock_tk, ttk, facade_checkbox, monkeypatch):
         cut = guiwidgets_2.InputZone(mock_tk)
 
@@ -91,6 +95,7 @@ class TestInputZone:
         with check:
             facade_checkbox.widget.grid.assert_called_once_with(column=1, row=0)
 
+    @pytest.mark.skip("Moved InputZone to common.LabelAndField")
     def test_add_treeview_row(
         self, mock_tk, ttk, facade_treeview, scrollbar, monkeypatch
     ):
@@ -139,6 +144,7 @@ class TestInputZone:
         with check:
             scrollbar().grid.assert_called_once_with(column=2, row=0, sticky="ns")
 
+    @pytest.mark.skip("Moved InputZone to common.LabelAndField")
     def test_create_label(self, mock_tk, ttk, label):
         test_text = "test text"
 
@@ -153,6 +159,9 @@ class TestInputZone:
 
 # noinspection PyMissingOrEmptyDocstring
 class TestCreateInputFormFraming:
+    @pytest.mark.skip(
+        "Moved create_body_and_button_frames to common.create_body_and_buttonbox"
+    )
     def test_create_input_form_framing(self, mock_tk, ttk, monkeypatch):
         test_name = "test widget"
         test_destroy = MagicMock()
@@ -182,15 +191,6 @@ class TestCreateInputFormFraming:
             outer_frame.rowconfigure.assert_has_calls(
                 [call(0, weight=1), call(1, minsize=35)]
             )
-
-
-# noinspection PyMissingOrEmptyDocstring
-class TestInitButtonEnablements:
-    def test_init_button_enablements(self, monkeypatch):
-        monkeypatch.setattr(tk_facade, "Entry", mock_entry := MagicMock())
-        entry_fields = {"field": mock_entry}
-        guiwidgets_2.init_button_enablements(entry_fields)
-        mock_entry.observer.notify.assert_called_once_with()
 
 
 # noinspection PyMissingOrEmptyDocstring
