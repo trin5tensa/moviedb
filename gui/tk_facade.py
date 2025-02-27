@@ -1,7 +1,7 @@
 """Facade pattern for tkinter widgets."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/27/25, 6:57 AM by stephen.
+#  Last modified 2/27/25, 10:25 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,7 +23,7 @@ import tkinter.ttk as ttk
 
 import globalconstants
 
-type EntryFields = dict[str, TkinterFacade]
+type EntryFields = dict[str, Entry | Text | Treeview | Checkbutton]
 
 
 @dataclass

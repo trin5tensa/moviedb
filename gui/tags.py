@@ -1,7 +1,7 @@
 """ This module contains code for movie tag maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/27/25, 6:57 AM by stephen.
+#  Last modified 2/27/25, 10:25 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,8 +18,11 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, field
 
+from globalconstants import MOVIE_TAGS
 from gui import common
-from gui.tk_facade import EntryFields
+from gui.tk_facade import EntryFields, Entry
+
+MOVIE_TAGS_TEXT = "Tags"
 
 
 @dataclass
@@ -33,7 +36,11 @@ class TagGUI:
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
 
     # An internal dictionary to simplify field data management.
-    entry_fields: EntryFields = field(default_factory=dict, init=False, repr=False)
+    entry_fields: EntryFields = field(
+        default_factory=dict,
+        init=False,
+        repr=False,
+    )
 
     def __post_init__(self):
         """Creates the tag form."""
@@ -45,8 +52,18 @@ class TagGUI:
         common.init_button_enablements(self.entry_fields)
 
     def user_input_frame(self, body_frame: tk.Frame):
-        """Stub method"""
-        pass  # pragma nocover
+        """Creates the widgets which will be used to enter data and
+        display data retrieved from the user's database.
+
+        Args:
+            body_frame: The frame which contains the entry fields.
+        """
+        input_zone = common.LabelAndField(body_frame)
+
+        self.entry_fields[MOVIE_TAGS] = Entry(MOVIE_TAGS_TEXT, body_frame)
+        self.entry_fields[MOVIE_TAGS].original_value = self.tag
+        input_zone.add_entry_row(self.entry_fields[MOVIE_TAGS])
+        self.entry_fields[MOVIE_TAGS].widget.focus_set()
 
     def create_buttons(self, buttonbox: tk.Frame):
         """Stub method"""

@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/27/25, 6:57 AM by stephen.
+#  Last modified 2/27/25, 10:25 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,7 @@ from gui import common, tags
 
 # noinspection PyMissingOrEmptyDocstring
 class TestTagGUI:
-    def test_tag_gui_init(self, tk, ttk, monkeypatch):
+    def test_post_init(self, tk, ttk, monkeypatch):
         # Arrange
         tag = "tag for test_tag_gui_init"
         name = tags.TagGUI.__name__.lower()
@@ -70,6 +70,40 @@ class TestTagGUI:
             create_buttons.assert_called_once_with(buttonbox)
         with check:
             init_button_enablements.assert_called_once_with(tag_gui.entry_fields)
+
+    def test_user_input_frame(self, tk, ttk, monkeypatch):
+        # Arrange
+        tag = "tag for test_user_input_frame"
+        body_frame = MagicMock(name="body_frame", autospec=True)
+        label_and_field = MagicMock(name="label_and_field", autospec=True)
+        monkeypatch.setattr(common, "LabelAndField", label_and_field)
+        entry = MagicMock(name="entry", autospec=True)
+        monkeypatch.setattr(tags, "Entry", entry)
+        monkeypatch.setattr(tags.TagGUI, "__post_init__", lambda *args, **kwargs: None)
+
+        # Act
+        tag_gui = tags.TagGUI(tk, tag)
+        tag_gui.user_input_frame(body_frame)
+
+        # Assert
+        with check:
+            label_and_field.assert_called_once_with(body_frame)
+        with check:
+            entry.assert_called_once_with(tags.MOVIE_TAGS_TEXT, body_frame)
+        check.equal(tag_gui.entry_fields[tags.MOVIE_TAGS], entry())
+        check.equal(
+            tag_gui.entry_fields[tags.MOVIE_TAGS].original_value,
+            tag,
+        )
+        with check:
+            label_and_field().add_entry_row.assert_called_once_with(
+                tag_gui.entry_fields[tags.MOVIE_TAGS]
+            )
+        with check:
+            # noinspection PyUnresolvedReferences
+            tag_gui.entry_fields[
+                tags.MOVIE_TAGS
+            ].widget.focus_set.assert_called_once_with()
 
 
 @pytest.fixture(scope="function")
