@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/27/25, 10:25 AM by stephen.
+#  Last modified 2/27/25, 10:35 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -79,7 +79,11 @@ class TestTagGUI:
         monkeypatch.setattr(common, "LabelAndField", label_and_field)
         entry = MagicMock(name="entry", autospec=True)
         monkeypatch.setattr(tags, "Entry", entry)
-        monkeypatch.setattr(tags.TagGUI, "__post_init__", lambda *args, **kwargs: None)
+        monkeypatch.setattr(
+            tags.TagGUI,
+            "__post_init__",
+            lambda *args, **kwargs: None,
+        )
 
         # Act
         tag_gui = tags.TagGUI(tk, tag)
@@ -104,6 +108,21 @@ class TestTagGUI:
             tag_gui.entry_fields[
                 tags.MOVIE_TAGS
             ].widget.focus_set.assert_called_once_with()
+
+    def test_create_buttons(self, tk, ttk, monkeypatch):
+        # Arrange
+        tag = "tag for test_user_input_frame"
+        body_frame = MagicMock(name="body_frame", autospec=True)
+        monkeypatch.setattr(
+            tags.TagGUI,
+            "__post_init__",
+            lambda *args, **kwargs: None,
+        )
+
+        # Act
+        with check.raises(NotImplementedError):
+            tag_gui = tags.TagGUI(tk, tag)
+            tag_gui.create_buttons(body_frame)
 
 
 @pytest.fixture(scope="function")

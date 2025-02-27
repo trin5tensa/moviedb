@@ -1,7 +1,7 @@
 """ This module contains code for movie tag maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/27/25, 10:25 AM by stephen.
+#  Last modified 2/27/25, 10:35 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -66,8 +66,10 @@ class TagGUI:
         self.entry_fields[MOVIE_TAGS].widget.focus_set()
 
     def create_buttons(self, buttonbox: tk.Frame):
-        """Stub method"""
-        pass  # pragma nocover
+        """Subclasses should override to create buttons needed for
+        the subclass.
+        """
+        raise NotImplementedError  # pragma nocover
 
     def destroy(self):
         """Stub method"""
