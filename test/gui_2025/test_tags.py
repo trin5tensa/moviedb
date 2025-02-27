@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/27/25, 10:35 AM by stephen.
+#  Last modified 2/27/25, 11:56 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -73,20 +73,21 @@ class TestTagGUI:
 
     def test_user_input_frame(self, tk, ttk, monkeypatch):
         # Arrange
-        tag = "tag for test_user_input_frame"
-        body_frame = MagicMock(name="body_frame", autospec=True)
-        label_and_field = MagicMock(name="label_and_field", autospec=True)
-        monkeypatch.setattr(common, "LabelAndField", label_and_field)
-        entry = MagicMock(name="entry", autospec=True)
-        monkeypatch.setattr(tags, "Entry", entry)
         monkeypatch.setattr(
             tags.TagGUI,
             "__post_init__",
             lambda *args, **kwargs: None,
         )
+        tag = "tag for test_user_input_frame"
+        tag_gui = tags.TagGUI(tk, tag)
+
+        body_frame = MagicMock(name="body_frame", autospec=True)
+        label_and_field = MagicMock(name="label_and_field", autospec=True)
+        monkeypatch.setattr(common, "LabelAndField", label_and_field)
+        entry = MagicMock(name="entry", autospec=True)
+        monkeypatch.setattr(tags, "Entry", entry)
 
         # Act
-        tag_gui = tags.TagGUI(tk, tag)
         tag_gui.user_input_frame(body_frame)
 
         # Assert
@@ -111,18 +112,38 @@ class TestTagGUI:
 
     def test_create_buttons(self, tk, ttk, monkeypatch):
         # Arrange
-        tag = "tag for test_user_input_frame"
-        body_frame = MagicMock(name="body_frame", autospec=True)
         monkeypatch.setattr(
             tags.TagGUI,
             "__post_init__",
             lambda *args, **kwargs: None,
         )
+        tag = "tag for test_user_input_frame"
+        tag_gui = tags.TagGUI(tk, tag)
+        body_frame = MagicMock(name="body_frame", autospec=True)
 
         # Act
         with check.raises(NotImplementedError):
-            tag_gui = tags.TagGUI(tk, tag)
             tag_gui.create_buttons(body_frame)
+
+    def test_destroy(self, tk, ttk, monkeypatch):
+        # Arrange
+        monkeypatch.setattr(
+            tags.TagGUI,
+            "__post_init__",
+            lambda *args, **kwargs: None,
+        )
+        tag = "tag for test_destroy"
+        tag_gui = tags.TagGUI(tk, tag)
+        outer_frame = MagicMock(name="outer_frame", autospec=True)
+        monkeypatch.setattr(tag_gui, "outer_frame", outer_frame)
+
+        # Act
+        tag_gui.destroy()
+
+        # Assert
+        with check:
+            # noinspection PyUnresolvedReferences
+            tag_gui.outer_frame.destroy.assert_called_once_with()
 
 
 @pytest.fixture(scope="function")
