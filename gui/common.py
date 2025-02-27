@@ -1,7 +1,7 @@
 """ This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/25/25, 2:25 PM by stephen.
+#  Last modified 2/27/25, 6:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -272,7 +272,7 @@ def invoke_button(button: ttk.Button, *args):
     button.invoke()
 
 
-def init_button_enablements(entry_fields: tk_facade.EntryFieldItem):
+def init_button_enablements(entry_fields: tk_facade.EntryFields):
     """Set the initial enabled state of buttons.
 
     Calls the notify method of each field. The field's observer will notify
