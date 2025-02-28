@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/25/25, 2:25 PM by stephen.
+#  Last modified 2/28/25, 1:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,6 +19,7 @@ This module includes windows for presenting data and returning entered data to i
 import itertools
 import logging
 import queue
+from functools import partial
 
 from tkinter import filedialog, messagebox
 
@@ -636,11 +637,17 @@ class AddTagGUI(TagGUI):
             default="active",
         )
 
-        # Commit button registration with tag field observer
         tag_entry_field = self.entry_fields[MOVIE_TAGS]
-        tag_entry_field.observer.register(
-            self.enable_commit_button(commit_button, tag_entry_field)
+        callback = partial(
+            self.enable_button_callback,
+            commit_button,
+            tag_entry_field,
         )
+        tag_entry_field.observer.register(callback)
+
+    @staticmethod
+    def enable_button_callback(commit_button, tag_entry_field, *args, **kwargs):
+        common.enable_button(commit_button, state=tag_entry_field.has_data())
 
     @staticmethod
     def enable_commit_button(

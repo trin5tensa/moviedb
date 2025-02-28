@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/7/25, 2:01 PM by stephen.
+#  Last modified 2/28/25, 1:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,6 +20,7 @@ import logging
 
 import guiwidgets
 import guiwidgets_2
+import gui.tags
 from database import tables
 
 from globalconstants import MovieBag
@@ -238,7 +239,7 @@ def db_delete_movie(old_movie: MovieBag):
 
 def gui_add_tag():
     """Presents a GUI form for adding a new movie."""
-    guiwidgets_2.AddTagGUI(
+    gui.tags.AddTagGUI(
         config.current.tk_root,
         add_tag_callback=db_add_tag,
     )

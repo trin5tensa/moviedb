@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/7/25, 2:01 PM by stephen.
+#  Last modified 2/28/25, 1:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -434,7 +434,11 @@ def test_db_select_movies_handles_missing_movie_exception(
 
 def test_gui_add_tag(monkeypatch, config_current):
     add_tag_gui = MagicMock(name="add_tag_gui")
-    monkeypatch.setattr(handlers.database.guiwidgets_2, "AddTagGUI", add_tag_gui)
+    monkeypatch.setattr(
+        handlers.database.gui.tags,
+        "AddTagGUI",
+        add_tag_gui,
+    )
 
     handlers.database.gui_add_tag()
 
