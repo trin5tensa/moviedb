@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/25/25, 2:25 PM by stephen.
+#  Last modified 2/28/25, 2:46 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,6 +19,7 @@ This module includes windows for presenting data and returning entered data to i
 import itertools
 import logging
 import queue
+from functools import partial
 
 from tkinter import filedialog, messagebox
 
@@ -602,81 +603,6 @@ class TagGUI:
     def destroy(self):
         """Destroy this instance's widgets."""
         self.outer_frame.destroy()
-
-
-@dataclass
-class AddTagGUI(TagGUI):
-    """Present a form for adding a tag to the user."""
-
-    add_tag_callback: Callable[[str], None] = None
-
-    # noinspection DuplicatedCode
-    def create_buttons(self, buttonbox: ttk.Frame):
-        """
-        Creates the commit and cancel buttons.
-
-        Args:
-            buttonbox:
-        """
-        # noinspection DuplicatedCode
-        column_num = itertools.count()
-
-        commit_button = common.create_button(
-            buttonbox,
-            COMMIT_TEXT,
-            column=next(column_num),
-            command=self.commit,
-            default="disabled",
-        )
-        common.create_button(
-            buttonbox,
-            CANCEL_TEXT,
-            column=next(column_num),
-            command=self.destroy,
-            default="active",
-        )
-
-        # Commit button registration with tag field observer
-        tag_entry_field = self.entry_fields[MOVIE_TAGS]
-        tag_entry_field.observer.register(
-            self.enable_commit_button(commit_button, tag_entry_field)
-        )
-
-    @staticmethod
-    def enable_commit_button(
-        commit_button: ttk.Button, tag_field: tk_facade.Entry
-    ) -> Callable:
-        """
-        The returned function may be registered with any observer of widgets that need to
-        affect the enabled or disabled state of the commit button.
-
-        Args:
-            commit_button:
-            tag_field:
-
-        Returns:
-            A callable which will be invoked by tkinter whenever the observed field
-            is changed by the user.
-        """
-
-        # noinspection PyUnusedLocal
-        def func(*args, **kwargs):
-            """The commit button will be enabled if the tag field has data.
-
-            Args:
-                *args: Sent by tkinter but not used.
-                **kwargs: Sent by tkinter but not used.
-            """
-            common.enable_button(commit_button, state=tag_field.has_data())
-
-        return func
-
-    def commit(self):
-        """The user has clicked the 'Commit' button. The tag is returned to
-        the caller. The window is deleted."""
-        tag = self.entry_fields[MOVIE_TAGS].current_value
-        self.add_tag_callback(tag)
-        self.destroy()
 
 
 @dataclass

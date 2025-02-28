@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/27/25, 11:56 AM by stephen.
+#  Last modified 2/28/25, 1:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,7 +14,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 import pytest
 from pytest_check import check
@@ -26,7 +26,6 @@ from gui import common, tags
 class TestTagGUI:
     def test_post_init(self, tk, ttk, monkeypatch):
         # Arrange
-        tag = "tag for test_tag_gui_init"
         name = tags.TagGUI.__name__.lower()
         destroy = MagicMock(name="destroy", autospec=True)
         monkeypatch.setattr(tags.TagGUI, "destroy", destroy)
@@ -58,7 +57,7 @@ class TestTagGUI:
         monkeypatch.setattr(common, "init_button_enablements", init_button_enablements)
 
         # Act
-        tag_gui = tags.TagGUI(tk, tag)
+        tag_gui = tags.TagGUI(tk)
 
         # Assert
         with check:
@@ -144,6 +143,115 @@ class TestTagGUI:
         with check:
             # noinspection PyUnresolvedReferences
             tag_gui.outer_frame.destroy.assert_called_once_with()
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestAddTagGUI:
+    def test_create_buttons(self, tk, ttk, monkeypatch):
+        # Arrange
+        monkeypatch.setattr(
+            tags.AddTagGUI,
+            "__post_init__",
+            lambda *args, **kwargs: None,
+        )
+        tag = "tag for test_create_buttons"
+        add_tag = tags.AddTagGUI(tk, tag)
+        create_button = MagicMock(name="create_button", autospec=True)
+        commit_button = "commit button"
+        create_button.return_value = commit_button
+        monkeypatch.setattr(tags.common, "create_button", create_button)
+        buttonbox = MagicMock(name="buttonbox", autospec=True)
+        monkeypatch.setattr(tags.tk, "Frame", buttonbox)
+        column_num = tags.itertools.count()
+        partial = MagicMock(name="partial", autospec=True)
+        monkeypatch.setattr(tags, "partial", partial)
+        tag_entry_field = MagicMock(name="tag_entry_field", autospec=True)
+        add_tag.entry_fields[tags.MOVIE_TAGS] = tag_entry_field
+
+        # Act
+        add_tag.create_buttons(buttonbox)
+
+        # Assert
+        with check:
+            create_button.assert_has_calls(
+                [
+                    call(
+                        buttonbox,
+                        common.COMMIT_TEXT,
+                        column=next(column_num),
+                        command=add_tag.commit,
+                        default="disabled",
+                    ),
+                    call(
+                        buttonbox,
+                        common.CANCEL_TEXT,
+                        column=next(column_num),
+                        command=add_tag.destroy,
+                        default="active",
+                    ),
+                ]
+            )
+        with check:
+            partial.assert_called_once_with(
+                add_tag.enable_button_callback,
+                commit_button,
+                tag_entry_field,
+            )
+        with check:
+            tag_entry_field.observer.register.assert_called_once_with(
+                partial(),
+            )
+
+    def test_enable_button_callback(self, tk, ttk, monkeypatch):
+        # Arrange
+        monkeypatch.setattr(
+            tags.AddTagGUI,
+            "__post_init__",
+            lambda *args, **kwargs: None,
+        )
+        tag = "tag for test_enable_button_callback"
+        add_tag = tags.AddTagGUI(tk, tag)
+        enable_button = MagicMock(name="enable_button", autospec=True)
+        monkeypatch.setattr(tags.common, "enable_button", enable_button)
+        commit_button = MagicMock(name="commit_button", autospec=True)
+        tag_entry_field = MagicMock(name="tag_entry_field", autospec=True)
+        add_tag.entry_fields[tags.MOVIE_TAGS] = tag_entry_field
+
+        # Act
+        add_tag.enable_button_callback(commit_button, tag_entry_field)
+
+        # Assert
+        with check:
+            enable_button.assert_called_once_with(
+                commit_button, state=tag_entry_field.has_data()
+            )
+
+    def test_commit(self, tk, ttk, monkeypatch):
+        # Arrange
+        monkeypatch.setattr(
+            tags.AddTagGUI,
+            "__post_init__",
+            lambda *args, **kwargs: None,
+        )
+        tag = "tag for test_commit"
+        add_tag = tags.AddTagGUI(tk, tag)
+        add_tag_callback = MagicMock(name="add_tag_callback", autospec=True)
+        add_tag.add_tag_callback = add_tag_callback
+        tag_entry_field = MagicMock(name="tag_entry_field", autospec=True)
+        tag_entry_field.current_value = tag
+        add_tag.entry_fields[tags.MOVIE_TAGS] = tag_entry_field
+        destroy = MagicMock(name="destroy", autospec=True)
+        monkeypatch.setattr(add_tag, "destroy", destroy)
+
+        # Act
+        add_tag.commit()
+
+        # Assert
+        with check:
+            tk.after.assert_called_once_with(0, add_tag_callback, tag)
+        with check:
+            # noinspection PyUnresolvedReferences
+            add_tag.destroy.assert_called_once_with()
 
 
 @pytest.fixture(scope="function")

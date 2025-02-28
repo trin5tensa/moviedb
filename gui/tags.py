@@ -1,7 +1,7 @@
 """ This module contains code for movie tag maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/27/25, 11:56 AM by stephen.
+#  Last modified 2/28/25, 1:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,6 +16,9 @@
 # This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
+from collections.abc import Callable
+from functools import partial
+import itertools
 from dataclasses import dataclass, field
 
 from globalconstants import MOVIE_TAGS
@@ -74,3 +77,70 @@ class TagGUI:
     def destroy(self):
         """Destroys the outer frame and all the widgets it contains."""
         self.outer_frame.destroy()
+
+
+@dataclass
+class AddTagGUI(TagGUI):
+    """Presents a form for adding a tag."""
+
+    add_tag_callback: Callable[[str], None] = None
+
+    def create_buttons(self, buttonbox: ttk.Frame):
+        """Creates commit and cancel buttons.
+
+        The enabled/disabled state of the commit button will be controlled
+        by the enable_button_callback method. This callback will be
+        registered with the observer for changes in the tag field.
+
+        Args:
+            buttonbox:
+        """
+        column_num = itertools.count()
+
+        commit_button = common.create_button(
+            buttonbox,
+            common.COMMIT_TEXT,
+            column=next(column_num),
+            command=self.commit,
+            default="disabled",
+        )
+        common.create_button(
+            buttonbox,
+            common.CANCEL_TEXT,
+            column=next(column_num),
+            command=self.destroy,
+            default="active",
+        )
+
+        tag_entry_field = self.entry_fields[MOVIE_TAGS]
+        callback = partial(
+            self.enable_button_callback,
+            commit_button,
+            tag_entry_field,
+        )
+        tag_entry_field.observer.register(callback)
+
+    # noinspection PyUnusedLocal
+    @staticmethod
+    def enable_button_callback(
+        commit_button: ttk.Button,
+        tag_entry_field: Entry,
+        *args,
+        **kwargs,
+    ):
+        """Called by the observer of the tags field whenever the contents
+        are changed by the user.
+
+        Args:
+            commit_button:
+            tag_entry_field:
+            *args: Not used but needed to match tkinter arguments
+            **kwargs: Not used but needed to match tkinter arguments
+        """
+        common.enable_button(commit_button, state=tag_entry_field.has_data())
+
+    def commit(self):
+        """Commits the tag to the database and closes the input form."""
+        tag = self.entry_fields[MOVIE_TAGS].current_value
+        self.parent.after(0, self.add_tag_callback, tag)
+        self.destroy()
