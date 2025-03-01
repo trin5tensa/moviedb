@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/28/25, 1:44 PM by stephen.
+#  Last modified 3/1/25, 1:25 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -465,7 +465,7 @@ def test_gui_search_tag(monkeypatch, config_current):
 
 def test_gui_edit_tag(monkeypatch, config_current):
     widget_edit_tag = MagicMock(name="widget_edit_tag")
-    monkeypatch.setattr(handlers.database.guiwidgets_2, "EditTagGUI", widget_edit_tag)
+    monkeypatch.setattr(handlers.database.gui.tags, "EditTagGUI", widget_edit_tag)
     tag = "old_tag"
     partial = MagicMock(name="partial")
     monkeypatch.setattr(handlers.database, "partial", partial)

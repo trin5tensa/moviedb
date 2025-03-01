@@ -1,7 +1,7 @@
 """ This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/28/25, 1:44 PM by stephen.
+#  Last modified 3/1/25, 1:25 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -41,6 +41,8 @@ from gui import tk_facade
 
 COMMIT_TEXT = "Commit"
 CANCEL_TEXT = "Cancel"
+DELETE_TEXT = "Delete"
+
 DefaultLiteral = Literal["normal", "active", "disabled"]
 
 type TkParentType = tk.Tk | tk.Toplevel | ttk.Frame
