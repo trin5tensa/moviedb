@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/28/25, 2:46 PM by stephen.
+#  Last modified 3/1/25, 1:28 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -678,115 +678,6 @@ class SearchTagGUI(TagGUI):
         search_pattern = self.entry_fields[MOVIE_TAGS].current_value
         self.search_tag_callback(search_pattern)
         self.destroy()
-
-
-@dataclass
-class EditTagGUI(TagGUI):
-    """Present a form for editing or deleting a tag to the user."""
-
-    delete_tag_callback: Callable[[], None] = None
-    edit_tag_callback: Callable[[str], None] = None
-
-    # noinspection DuplicatedCode
-    def create_buttons(self, buttonbox: ttk.Frame):
-        """
-        Creates the commit and cancel buttons.
-
-        Args:
-            buttonbox:
-        """
-        column_num = itertools.count()
-        commit_button = common.create_button(
-            buttonbox,
-            COMMIT_TEXT,
-            column=next(column_num),
-            command=self.commit,
-            default="disabled",
-        )
-        delete_button = common.create_button(
-            buttonbox,
-            DELETE_TEXT,
-            column=next(column_num),
-            command=self.delete,
-            default="active",
-        )
-        common.create_button(
-            buttonbox,
-            CANCEL_TEXT,
-            column=next(column_num),
-            command=self.destroy,
-            default="active",
-        )
-
-        # Commit button registration
-        tag_entry_field = self.entry_fields[MOVIE_TAGS]
-        tag_entry_field.observer.register(
-            self.enable_buttons(commit_button, delete_button, tag_entry_field)
-        )
-
-    @staticmethod
-    def enable_buttons(
-        commit_button: ttk.Button, delete_button: ttk.Button, tag_field: tk_facade.Entry
-    ) -> Callable:
-        """
-        The returned function may be registered with any observer of widgets that need to
-        affect the enabled or disabled state of the commit button.
-
-        Args:
-            commit_button:
-            delete_button:
-            tag_field:
-
-        Returns:
-            A callable which will be invoked by tkinter whenever the observed field
-            is changed by the user.
-        """
-
-        # noinspection PyUnusedLocal
-        def func(*args, **kwargs):
-            """The commit button will be enabled if the tag field has data and has been
-            changed from its original value.
-
-            Args:
-                *args: Sent by tkinter but not used.
-                **kwargs: Sent by tkinter but not used.
-            """
-            common.enable_button(
-                commit_button,
-                state=tag_field.has_data() and tag_field.changed(),
-            )
-            common.enable_button(
-                delete_button,
-                state=tag_field.has_data() and not tag_field.changed(),
-            )
-
-        return func
-
-    def commit(self):
-        """The user clicked the 'Commit' button."""
-        tag = self.entry_fields[MOVIE_TAGS].current_value
-        self.edit_tag_callback(tag)
-        self.destroy()
-
-    def delete(self):
-        """The user clicked the 'Delete' button.
-
-        Get the user's confirmation of deletion with a dialog window. Either exit the
-        method or call the registered deletion callback."""
-        # todo The test suite for this method needs to be rewritten to current standards
-
-        if gui_askyesno(
-            message=f"{TAG_DELETE_MESSAGE}",
-            icon="question",
-            default="no",
-            parent=self.parent,
-        ):
-            self.delete_tag_callback()
-            self.destroy()
-        else:
-            self.entry_fields[MOVIE_TAGS].original_value = self.tag
-            self.entry_fields[MOVIE_TAGS].widget.focus_set()
-            # focus_set(self.entry_fields[MOVIE_TAGS].widget)
 
 
 @dataclass
