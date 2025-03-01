@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/28/25, 1:44 PM by stephen.
+#  Last modified 3/1/25, 1:25 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -287,7 +287,7 @@ def gui_edit_tag(tag: str, *, prepopulate: str = None):
             an exception. It gives the user the opportunity to fix
             input errors.
     """
-    guiwidgets_2.EditTagGUI(
+    gui.tags.EditTagGUI(
         config.current.tk_root,
         edit_tag_callback=partial(db_edit_tag, tag),
         delete_tag_callback=partial(db_delete_tag, tag),
