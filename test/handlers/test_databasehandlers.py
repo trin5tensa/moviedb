@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/1/25, 1:25 PM by stephen.
+#  Last modified 3/3/25, 1:43 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -450,15 +450,17 @@ def test_gui_add_tag(monkeypatch, config_current):
 def test_gui_search_tag(monkeypatch, config_current):
     search_tag_gui = MagicMock(name="search_tag_gui")
     monkeypatch.setattr(
-        handlers.database.guiwidgets_2,
+        handlers.database.gui.tags,
         "SearchTagGUI",
         search_tag_gui,
     )
+    prepopulate = "prep"
 
-    handlers.database.gui_search_tag()
+    handlers.database.gui_search_tag(prepopulate=prepopulate)
 
     search_tag_gui.assert_called_once_with(
         config.current.tk_root,
+        tag=prepopulate,
         search_tag_callback=handlers.database.db_match_tags,
     )
 

@@ -1,7 +1,7 @@
 """ Test module. """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/1/25, 1:28 PM by stephen.
+#  Last modified 3/3/25, 1:43 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -91,107 +91,6 @@ class TestTagGui:
         with check:
             # noinspection PyUnresolvedReferences
             cut.outer_frame.destroy.assert_called_once_with()
-
-
-# noinspection PyMissingOrEmptyDocstring
-class TestSearchTagGUI:
-    @pytest.mark.skip("Moved create_button")
-    def test_create_buttons(
-        self,
-        mock_tk,
-        ttk,
-        framing,
-        tag_init_button_enablements,
-        create_button,
-        facade_entry,
-        monkeypatch,
-    ):
-        monkeypatch.setattr(
-            guiwidgets_2.SearchTagGUI,
-            "enable_search_button",
-            mock_enable_search_button := MagicMock(),
-        )
-
-        cut = guiwidgets_2.SearchTagGUI(mock_tk)
-        tag_entry_field = cut.entry_fields[guiwidgets_2.MOVIE_TAGS]
-        _, _, buttonbox = framing()
-
-        with check:
-            create_button.assert_has_calls(
-                [
-                    call(
-                        buttonbox,
-                        guiwidgets_2.SEARCH_TEXT,
-                        column=0,
-                        command=cut.search,
-                        default="disabled",
-                    ),
-                    call(
-                        buttonbox,
-                        guiwidgets_2.CANCEL_TEXT,
-                        column=1,
-                        command=cut.destroy,
-                        default="active",
-                    ),
-                ]
-            )
-        with check:
-            mock_enable_search_button.assert_called_once_with(
-                create_button(), tag_entry_field
-            )
-        with check:
-            # noinspection PyUnresolvedReferences
-            tag_entry_field.observer.register.assert_called_once_with(
-                mock_enable_search_button()
-            )
-
-    @pytest.mark.skip("Moved enable_button")
-    def test_enable_search_button(
-        self,
-        mock_tk,
-        ttk,
-        framing,
-        tag_init_button_enablements,
-        create_button,
-        facade_entry,
-        enable_button,
-        monkeypatch,
-    ):
-        cut = guiwidgets_2.SearchTagGUI(mock_tk)
-        tag_entry_field = cut.entry_fields[guiwidgets_2.MOVIE_TAGS]
-        _, _, buttonbox = framing()
-
-        cut.enable_search_button(create_button(), tag_entry_field)()
-        enable_button.assert_called_once_with(
-            create_button(), tag_entry_field.has_data()
-        )
-
-    @pytest.mark.skip("Moved create_input_form_framing")
-    def test_search(
-        self,
-        mock_tk,
-        ttk,
-        framing,
-        tag_init_button_enablements,
-        create_button,
-        facade_entry,
-        monkeypatch,
-    ):
-        test_pattern = "test pattern"
-        monkeypatch.setattr(guiwidgets_2, "gui_messagebox", _ := MagicMock())
-
-        cut = guiwidgets_2.SearchTagGUI(
-            mock_tk, search_tag_callback=(mock_search_tag_callback := MagicMock())
-        )
-        monkeypatch.setattr(cut, "destroy", mock_destroy := MagicMock())
-        cut.entry_fields[guiwidgets_2.MOVIE_TAGS].current_value = test_pattern
-
-        # search_tag_callback() DOES NOT raise DatabaseSearchFoundNothing
-        cut.search()
-        with check:
-            mock_search_tag_callback.assert_called_once_with(test_pattern)
-        with check:
-            mock_destroy.assert_called_once_with()
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode

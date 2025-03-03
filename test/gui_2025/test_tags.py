@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/1/25, 1:25 PM by stephen.
+#  Last modified 3/3/25, 12:52 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -69,13 +69,8 @@ class TestTagGUI:
         with check:
             init_button_enablements.assert_called_once_with(tag_gui.entry_fields)
 
-    def test_user_input_frame(self, tk, ttk, monkeypatch):
+    def test_user_input_frame(self, tk, ttk, taggui_post_init, monkeypatch):
         # Arrange
-        monkeypatch.setattr(
-            tags.TagGUI,
-            "__post_init__",
-            lambda *args, **kwargs: None,
-        )
         tag = "tag for test_user_input_frame"
         tag_gui = tags.TagGUI(tk, tag)
 
@@ -108,13 +103,8 @@ class TestTagGUI:
                 tags.MOVIE_TAGS
             ].widget.focus_set.assert_called_once_with()
 
-    def test_create_buttons(self, tk, ttk, monkeypatch):
+    def test_create_buttons(self, tk, ttk, taggui_post_init, monkeypatch):
         # Arrange
-        monkeypatch.setattr(
-            tags.TagGUI,
-            "__post_init__",
-            lambda *args, **kwargs: None,
-        )
         tag = "tag for test_user_input_frame"
         tag_gui = tags.TagGUI(tk, tag)
         body_frame = MagicMock(name="body_frame", autospec=True)
@@ -123,13 +113,8 @@ class TestTagGUI:
         with check.raises(NotImplementedError):
             tag_gui.create_buttons(body_frame)
 
-    def test_destroy(self, tk, ttk, monkeypatch):
+    def test_destroy(self, tk, ttk, taggui_post_init, monkeypatch):
         # Arrange
-        monkeypatch.setattr(
-            tags.TagGUI,
-            "__post_init__",
-            lambda *args, **kwargs: None,
-        )
         tag = "tag for test_destroy"
         tag_gui = tags.TagGUI(tk, tag)
         outer_frame = MagicMock(name="outer_frame", autospec=True)
@@ -146,13 +131,8 @@ class TestTagGUI:
 
 # noinspection PyMissingOrEmptyDocstring
 class TestAddTagGUI:
-    def test_create_buttons(self, tk, ttk, monkeypatch):
+    def test_create_buttons(self, tk, ttk, taggui_post_init, monkeypatch):
         # Arrange
-        monkeypatch.setattr(
-            tags.AddTagGUI,
-            "__post_init__",
-            lambda *args, **kwargs: None,
-        )
         tag = "tag for test_create_buttons"
         add_tag_callback = MagicMock(name="add_tag_callback", autospec=True)
         add_tag = tags.AddTagGUI(tk, tag, add_tag_callback=add_tag_callback)
@@ -204,13 +184,8 @@ class TestAddTagGUI:
                 partial(),
             )
 
-    def test_enable_button_callback(self, tk, ttk, monkeypatch):
+    def test_enable_button_callback(self, tk, ttk, taggui_post_init, monkeypatch):
         # Arrange
-        monkeypatch.setattr(
-            tags.AddTagGUI,
-            "__post_init__",
-            lambda *args, **kwargs: None,
-        )
         tag = "tag for test_enable_button_callback"
         add_tag_callback = MagicMock(name="add_tag_callback", autospec=True)
         add_tag = tags.AddTagGUI(tk, tag, add_tag_callback=add_tag_callback)
@@ -229,13 +204,8 @@ class TestAddTagGUI:
                 commit_button, state=tag_entry_field.has_data()
             )
 
-    def test_commit(self, tk, ttk, monkeypatch):
+    def test_commit(self, tk, ttk, taggui_post_init, monkeypatch):
         # Arrange
-        monkeypatch.setattr(
-            tags.AddTagGUI,
-            "__post_init__",
-            lambda *args, **kwargs: None,
-        )
         tag = "tag for test_commit"
         add_tag_callback = MagicMock(name="add_tag_callback", autospec=True)
         add_tag = tags.AddTagGUI(tk, tag, add_tag_callback=add_tag_callback)
@@ -258,13 +228,8 @@ class TestAddTagGUI:
 
 # noinspection PyMissingOrEmptyDocstring
 class TestEditTagGUI:
-    def test_create_buttons(self, tk, ttk, monkeypatch):
+    def test_create_buttons(self, tk, ttk, taggui_post_init, monkeypatch):
         # Arrange
-        monkeypatch.setattr(
-            tags.EditTagGUI,
-            "__post_init__",
-            lambda *args, **kwargs: None,
-        )
         tag = "edit tag for test_create_buttons"
         edit_tag_callback = MagicMock(
             name="edit_tag_callback",
@@ -337,13 +302,8 @@ class TestEditTagGUI:
                 partial(),
             )
 
-    def test_enable_button_callback(self, tk, ttk, monkeypatch):
+    def test_enable_button_callback(self, tk, ttk, taggui_post_init, monkeypatch):
         # Arrange
-        monkeypatch.setattr(
-            tags.EditTagGUI,
-            "__post_init__",
-            lambda *args, **kwargs: None,
-        )
         tag = "edit tag for test_enable_button_callback"
         edit_tag_callback = MagicMock(
             name="edit_tag_callback",
@@ -382,13 +342,8 @@ class TestEditTagGUI:
                 ]
             )
 
-    def test_commit(self, tk, ttk, monkeypatch):
+    def test_commit(self, tk, ttk, taggui_post_init, monkeypatch):
         # Arrange
-        monkeypatch.setattr(
-            tags.EditTagGUI,
-            "__post_init__",
-            lambda *args, **kwargs: None,
-        )
         tag = "edit tag for test_commit"
         edit_tag_callback = MagicMock(name="edit_tag_callback", autospec=True)
         delete_tag_callback = MagicMock(name="delete_tag_callback", autospec=True)
@@ -414,13 +369,8 @@ class TestEditTagGUI:
             # noinspection PyUnresolvedReferences
             edit_tag.destroy.assert_called_once_with()
 
-    def test_user_confirms_delete(self, tk, ttk, monkeypatch):
+    def test_user_confirms_delete(self, tk, ttk, taggui_post_init, monkeypatch):
         # Arrange
-        monkeypatch.setattr(
-            tags.EditTagGUI,
-            "__post_init__",
-            lambda *args, **kwargs: None,
-        )
         tag = "edit tag for test_commit"
         edit_tag_callback = MagicMock(name="edit_tag_callback", autospec=True)
         delete_tag_callback = MagicMock(name="delete_tag_callback", autospec=True)
@@ -452,13 +402,8 @@ class TestEditTagGUI:
             # noinspection PyUnresolvedReferences
             edit_tag.destroy.assert_called_once_with()
 
-    def test_user_declines_delete(self, tk, ttk, monkeypatch):
+    def test_user_declines_delete(self, tk, ttk, taggui_post_init, monkeypatch):
         # Arrange
-        monkeypatch.setattr(
-            tags.EditTagGUI,
-            "__post_init__",
-            lambda *args, **kwargs: None,
-        )
         tag = "edit tag for test_commit"
         edit_tag_callback = MagicMock(name="edit_tag_callback", autospec=True)
         delete_tag_callback = MagicMock(name="delete_tag_callback", autospec=True)
@@ -485,6 +430,113 @@ class TestEditTagGUI:
         )
         with check:
             tag_entry_field.widget.focus_set.assert_called_once_with()
+
+
+# noinspection PyMissingOrEmptyDocstring
+class TestSearchTagGUI:
+    def test_create_buttons(self, tk, ttk, taggui_post_init, monkeypatch):
+        # Arrange
+        tag = "search tag for test_create_buttons"
+        search_tag_callback = MagicMock(name="search_tag_callback", autospec=True)
+        search_tag = tags.SearchTagGUI(tk, tag, search_tag_callback=search_tag_callback)
+
+        create_button = MagicMock(name="create_button", autospec=True)
+        search_button = "search button"
+        create_button.return_value = search_button
+        monkeypatch.setattr(tags.common, "create_button", create_button)
+
+        buttonbox = MagicMock(name="buttonbox", autospec=True)
+        monkeypatch.setattr(tags.ttk, "Frame", buttonbox)
+        column_num = tags.itertools.count()
+        partial = MagicMock(name="partial", autospec=True)
+        monkeypatch.setattr(tags, "partial", partial)
+        tag_entry_field = MagicMock(name="tag_entry_field", autospec=True)
+        search_tag.entry_fields[tags.MOVIE_TAGS] = tag_entry_field
+
+        # Act
+        search_tag.create_buttons(buttonbox)
+
+        # Assert
+        with check:
+            create_button.assert_has_calls(
+                [
+                    call(
+                        buttonbox,
+                        common.SEARCH_TEXT,
+                        column=next(column_num),
+                        command=search_tag.search,
+                        default="disabled",
+                    ),
+                    call(
+                        buttonbox,
+                        common.CANCEL_TEXT,
+                        column=next(column_num),
+                        command=search_tag.destroy,
+                        default="active",
+                    ),
+                ]
+            )
+        with check:
+            partial.assert_called_once_with(
+                search_tag.enable_button_callback,
+                search_button,
+                tag_entry_field,
+            )
+        with check:
+            tag_entry_field.observer.register.assert_called_once_with(
+                partial(),
+            )
+
+    def test_enable_button_callback(self, tk, ttk, taggui_post_init, monkeypatch):
+        # Arrange
+        tag = "tag for test_enable_button_callback"
+        search_tag_callback = MagicMock(name="search_tag_callback", autospec=True)
+        search_tag = tags.SearchTagGUI(tk, tag, search_tag_callback=search_tag_callback)
+        enable_button = MagicMock(name="enable_button", autospec=True)
+        monkeypatch.setattr(tags.common, "enable_button", enable_button)
+        search_button = MagicMock(name="search_button", autospec=True)
+        tag_entry_field = MagicMock(name="tag_entry_field", autospec=True)
+        search_tag.entry_fields[tags.MOVIE_TAGS] = tag_entry_field
+
+        # Act
+        search_tag.enable_button_callback(search_button, tag_entry_field)
+
+        # Assert
+        with check:
+            enable_button.assert_called_once_with(
+                search_button, state=tag_entry_field.has_data()
+            )
+
+    def test_commit(self, tk, ttk, taggui_post_init, monkeypatch):
+        # Arrange
+        tag = "search tag for test_commit"
+        search_tag_callback = MagicMock(name="search_tag_callback", autospec=True)
+        search_tag = tags.SearchTagGUI(tk, tag, search_tag_callback=search_tag_callback)
+        tag_entry_field = MagicMock(name="tag_entry_field", autospec=True)
+        tag_entry_field.current_value = tag
+        search_tag.entry_fields[tags.MOVIE_TAGS] = tag_entry_field
+        destroy = MagicMock(name="destroy", autospec=True)
+        monkeypatch.setattr(search_tag, "destroy", destroy)
+
+        # Act
+        search_tag.search()
+
+        # Assert
+        with check:
+            tk.after.assert_called_once_with(0, search_tag_callback, tag)
+        with check:
+            # noinspection PyUnresolvedReferences
+            search_tag.destroy.assert_called_once_with()
+
+
+@pytest.fixture(scope="function")
+def taggui_post_init(monkeypatch):
+    """Stops the TagGUI.__post_init__ from running."""
+    monkeypatch.setattr(
+        tags.TagGUI,
+        "__post_init__",
+        lambda *args, **kwargs: None,
+    )
 
 
 @pytest.fixture(scope="function")
