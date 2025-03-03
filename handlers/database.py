@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/1/25, 1:25 PM by stephen.
+#  Last modified 3/3/25, 1:43 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -246,7 +246,7 @@ def gui_add_tag():
 
 
 # noinspection PyUnusedLocal
-def gui_search_tag(*, prepopulate: str = None):
+def gui_search_tag(*, prepopulate: str = ""):
     """Presents a GUI form for tag searches.
 
     Args:
@@ -256,8 +256,9 @@ def gui_search_tag(*, prepopulate: str = None):
             an exception. It gives the user the opportunity to fix
             input errors.
     """
-    guiwidgets_2.SearchTagGUI(
+    gui.tags.SearchTagGUI(
         config.current.tk_root,
+        tag=prepopulate,
         search_tag_callback=db_match_tags,
     )
 
