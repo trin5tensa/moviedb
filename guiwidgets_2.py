@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/3/25, 1:43 PM by stephen.
+#  Last modified 3/4/25, 7:12 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -550,134 +550,6 @@ class EditMovieGUI(MovieGUI):
             # noinspection PyTypeChecker
             self.parent.after(0, self.delete_movie_callback)
             self.destroy()
-
-
-@dataclass
-class TagGUI:
-    """A base class for tag widgets"""
-
-    parent: tk.Tk
-    tag: str = ""
-
-    # The main outer frame of this class.
-    outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
-
-    # An internal dictionary to simplify field data management.
-    entry_fields: Dict[str, tk_facade.Entry] = field(
-        default_factory=dict, init=False, repr=False
-    )
-
-    # noinspection DuplicatedCode
-    def __post_init__(self):
-        """Create the Tk widget."""
-        # Create outer frames to hold fields and buttons.
-        self.outer_frame, body_frame, buttonbox = common.create_body_and_buttonbox(
-            self.parent, type(self).__name__.lower(), self.destroy
-        )
-        self.user_input_frame(body_frame)
-        self.create_buttons(buttonbox)
-        common.init_button_enablements(self.entry_fields)
-
-    def user_input_frame(self, body_frame: tk.Frame):
-        """
-        This creates the widgets which will be used to enter data and display data
-        retrieved from the user's database.
-
-        Args:
-            body_frame:The frame into which the widgets will be placed.
-        """
-        # todo The test suite for this method needs to be rewritten to current standards
-
-        input_zone = common.LabelAndField(body_frame)
-
-        # Tag field
-        self.entry_fields[MOVIE_TAGS] = tk_facade.Entry(MOVIE_TAGS_TEXT, body_frame)
-        self.entry_fields[MOVIE_TAGS].original_value = self.tag
-        input_zone.add_entry_row(self.entry_fields[MOVIE_TAGS])
-        self.entry_fields[MOVIE_TAGS].widget.focus_set()
-
-    def create_buttons(self, body_frame: tk.Frame):
-        """Creates the buttons for this widget."""
-        raise NotImplementedError  # pragma nocover
-
-    def destroy(self):
-        """Destroy this instance's widgets."""
-        self.outer_frame.destroy()
-
-
-@dataclass
-class SearchTagGUI(TagGUI):
-    """Present a form for creating a search pattern which may be used to search the
-    database for matching tags.
-    """
-
-    search_tag_callback: Callable[[str], None] = None
-
-    # noinspection DuplicatedCode
-    def create_buttons(self, buttonbox: ttk.Frame):
-        """
-        Creates the commit and cancel buttons.
-
-        Args:
-            buttonbox:
-        """
-        # noinspection DuplicatedCode
-        column_num = itertools.count()
-        search_button = common.create_button(
-            buttonbox,
-            SEARCH_TEXT,
-            column=next(column_num),
-            command=self.search,
-            default="disabled",
-        )
-        common.create_button(
-            buttonbox,
-            CANCEL_TEXT,
-            column=next(column_num),
-            command=self.destroy,
-            default="active",
-        )
-
-        # Commit button registration with tag field observer
-        tag_entry_field = self.entry_fields[MOVIE_TAGS]
-        tag_entry_field.observer.register(
-            self.enable_search_button(search_button, tag_entry_field)
-        )
-
-    @staticmethod
-    def enable_search_button(
-        search_button: ttk.Button, tag_field: tk_facade.Entry
-    ) -> Callable:
-        """
-        The returned function may be registered with any observer of widgets that need to
-        affect the enabled or disabled state of the search button.
-
-        Args:
-            search_button:
-            tag_field:
-
-        Returns:
-            A callable which will be invoked by tkinter whenever the observed field
-            is changed by the user.
-        """
-
-        # noinspection PyUnusedLocal
-        def func(*args, **kwargs):
-            """The search button will be enabled if the tag field has data.
-
-            Args:
-                *args: Sent by tkinter but not used.
-                **kwargs: Sent by tkinter but not used.
-            """
-            common.enable_button(search_button, state=tag_field.has_data())
-
-        return func
-
-    def search(self):
-        """Respond to the user's click of the 'Search' button."""
-        search_pattern = self.entry_fields[MOVIE_TAGS].current_value
-        self.search_tag_callback(search_pattern)
-        self.destroy()
 
 
 @dataclass

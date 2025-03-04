@@ -1,7 +1,7 @@
 """ Test module. """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/3/25, 1:43 PM by stephen.
+#  Last modified 3/4/25, 7:12 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,77 +20,6 @@ from pytest_check import check
 
 import guiwidgets_2
 from guiwidgets_2 import tk_facade
-
-
-# noinspection PyMissingOrEmptyDocstring
-class TestTagGui:
-
-    @pytest.mark.skip("Moved create_input_form_framing")
-    def test_post_init(
-        self,
-        mock_tk,
-        ttk,
-        framing,
-        tag_user_input_frame,
-        tag_create_buttons,
-        tag_init_button_enablements,
-    ):
-        cut = guiwidgets_2.TagGUI(mock_tk)
-
-        with check:
-            framing.assert_called_once_with(
-                mock_tk, type(cut).__name__.lower(), cut.destroy
-            )
-
-        _, body_frame, buttonbox = framing()
-        with check:
-            tag_user_input_frame.assert_called_once_with(body_frame)
-        with check:
-            tag_create_buttons.assert_called_once_with(buttonbox)
-        with check:
-            tag_init_button_enablements.assert_called_once_with({})
-
-    @pytest.mark.skip("Moved create_input_form_framing")
-    def test_user_input_frame(
-        self,
-        mock_tk,
-        ttk,
-        framing,
-        tag_create_buttons,
-        tag_init_button_enablements,
-        input_zone,
-        facade_entry,
-    ):
-        cut = guiwidgets_2.TagGUI(mock_tk)
-        _, body_frame, buttonbox = framing()
-
-        with check:
-            input_zone.assert_called_once_with(body_frame)
-        with check:
-            facade_entry.assert_called_once_with(
-                guiwidgets_2.MOVIE_TAGS_TEXT, body_frame
-            )
-        check.equal(facade_entry().original_value, cut.tag)
-        with check:
-            input_zone().add_entry_row.assert_called_once_with(facade_entry())
-
-    @pytest.mark.skip("Moved create_input_form_framing")
-    def test_destroy(
-        self,
-        mock_tk,
-        ttk,
-        framing,
-        tag_user_input_frame,
-        tag_create_buttons,
-        tag_init_button_enablements,
-        input_zone,
-        facade_entry,
-    ):
-        cut = guiwidgets_2.TagGUI(mock_tk)
-        cut.destroy()
-        with check:
-            # noinspection PyUnresolvedReferences
-            cut.outer_frame.destroy.assert_called_once_with()
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
@@ -434,20 +363,6 @@ def ttk(monkeypatch):
 def framing(monkeypatch):
     monkeypatch.setattr("guiwidgets_2.create_input_form_framing", mock := MagicMock())
     mock.return_value = [MagicMock(), MagicMock(), MagicMock()]
-    return mock
-
-
-# noinspection PyMissingOrEmptyDocstring
-@pytest.fixture
-def tag_user_input_frame(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2.TagGUI, "user_input_frame", mock := MagicMock())
-    return mock
-
-
-# noinspection PyMissingOrEmptyDocstring
-@pytest.fixture
-def tag_create_buttons(monkeypatch):
-    monkeypatch.setattr(guiwidgets_2.TagGUI, "create_buttons", mock := MagicMock())
     return mock
 
 
