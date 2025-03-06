@@ -1,7 +1,7 @@
-""" This module contains common code to support gui API modules."""
+"""This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/3/25, 12:52 PM by stephen.
+#  Last modified 3/6/25, 8:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or

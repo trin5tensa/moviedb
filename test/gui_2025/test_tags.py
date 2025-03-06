@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/3/25, 12:52 PM by stephen.
+#  Last modified 3/6/25, 8:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -537,19 +537,3 @@ def taggui_post_init(monkeypatch):
         "__post_init__",
         lambda *args, **kwargs: None,
     )
-
-
-@pytest.fixture(scope="function")
-def tk(monkeypatch) -> MagicMock:
-    """Stops Tk from starting."""
-    tk = MagicMock(name="tk", autospec=True)
-    monkeypatch.setattr(tags, "tk", tk)
-    return tk
-
-
-@pytest.fixture(scope="function")
-def ttk(monkeypatch) -> MagicMock:
-    """Stops Tk.Ttk from starting."""
-    ttk = MagicMock(name="ttk", autospec=True)
-    monkeypatch.setattr(tags, "ttk", ttk)
-    return ttk

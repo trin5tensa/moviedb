@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/27/25, 6:57 AM by stephen.
+#  Last modified 3/6/25, 8:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -249,7 +249,7 @@ class TestLabelAndField:
             )
 
 
-def test_create_body_and_buttonbox(monkeypatch, tk):
+def test_create_body_and_buttonbox(monkeypatch, tk, ttk):
     # Arrange
     frame = MagicMock(name="frame", autospec=True)
     monkeypatch.setattr(common.ttk, "Frame", frame)
@@ -270,7 +270,7 @@ def test_create_body_and_buttonbox(monkeypatch, tk):
     with check:
         frame.assert_has_calls(
             [
-                call(common.tk, name=name),
+                call(tk, name=name),
                 call().grid(column=0, row=0, sticky="nsew"),
                 call().columnconfigure(0, weight=1),
                 call().rowconfigure(0, weight=1),
@@ -285,7 +285,7 @@ def test_create_body_and_buttonbox(monkeypatch, tk):
     check.equal((outer_frame, body_frame, buttonbox), (frame(), frame(), frame()))
 
 
-def test_create_button(monkeypatch, ttk):
+def test_create_button(tk, ttk, monkeypatch):
     # Arrange
     grid = MagicMock(name="grid", autospec=True)
     bind = MagicMock(name="bind", autospec=True)
@@ -294,7 +294,7 @@ def test_create_button(monkeypatch, ttk):
     button = button()
     button.grid = grid
     button.bind = bind
-    buttonbox = common.ttk.Frame()
+    buttonbox = ttk.Frame()
     text = "Dummy"
     column = 42
     partial = MagicMock(name="partial", autospec=True)
@@ -389,17 +389,17 @@ def test_test_init_button_enablements(monkeypatch):
     notify.assert_called_once_with()
 
 
-@pytest.fixture(scope="function")
-def tk(monkeypatch) -> MagicMock:
-    """Stops Tk from starting."""
-    tk = MagicMock(name="tk", autospec=True)
-    monkeypatch.setattr(common, "tk", tk)
-    return tk
-
-
-@pytest.fixture(scope="function")
-def ttk(monkeypatch) -> MagicMock:
-    """Stops Tk.Ttk from starting."""
-    ttk = MagicMock(name="ttk", autospec=True)
-    monkeypatch.setattr(common, "ttk", ttk)
-    return ttk
+# @pytest.fixture(scope="function")
+# def tk(monkeypatch) -> MagicMock:
+#     """Stops Tk from starting."""
+#     tk = MagicMock(name="tk", autospec=True)
+#     monkeypatch.setattr(common, "tk", tk)
+#     return tk
+#
+#
+# @pytest.fixture(scope="function")
+# def ttk(monkeypatch) -> MagicMock:
+#     """Stops Tk.Ttk from starting."""
+#     ttk = MagicMock(name="ttk", autospec=True)
+#     monkeypatch.setattr(common, "ttk", ttk)
+#     return ttk
