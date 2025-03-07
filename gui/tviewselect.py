@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/7/25, 11:58 AM by stephen.
+#  Last modified 3/7/25, 12:21 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -47,6 +47,8 @@ class SelectGUI:
     # todo subclasses should override with either list[str] or list[dict[str, MovieBag]]
     rows: list[str | dict[str, MovieBag]]
 
+    outer_frame: ttk.Frame = None
+
     def __post_init__(self):
         """Contains common methods for specialized selection subclasses."""
         # Ensure subclasses have titles and widths with matching
@@ -56,7 +58,7 @@ class SelectGUI:
                 BAD_TITLES_AND_WIDTHS, f"{len(self.widths)=}. {len(self.titles)=}"
             )
 
-        _, body_frame, buttonbox = common.create_body_and_buttonbox(
+        self.outer_frame, body_frame, buttonbox = common.create_body_and_buttonbox(
             self.parent,
             type(self).__name__.lower(),
             self.destroy,
@@ -108,8 +110,8 @@ class SelectGUI:
         raise NotImplementedError
 
     def destroy(self):
-        """Stub method"""
-        pass
+        """Destroys this widget."""
+        self.outer_frame.destroy()
 
 
 """

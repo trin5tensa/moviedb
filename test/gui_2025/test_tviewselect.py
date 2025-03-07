@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/7/25, 11:58 AM by stephen.
+#  Last modified 3/7/25, 12:21 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -165,6 +165,18 @@ class TestSelectGUI:
         # Act and assert
         with check.raises(NotImplementedError):
             select_gui.populate()
+
+    def test_destroy(self, select_gui, ttk, monkeypatch):
+        # Arrange
+        outer_frame = MagicMock(name="outer_frame", autospec=True)
+        select_gui.outer_frame = outer_frame
+
+        # Act
+        select_gui.destroy()
+
+        # Assert
+        # noinspection PyUnresolvedReferences
+        select_gui.outer_frame.destroy.assert_called_once_with()
 
 
 @pytest.fixture(scope="function")
