@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/6/25, 8:18 AM by stephen.
+#  Last modified 3/7/25, 9:25 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,7 @@ from unittest.mock import MagicMock
 
 from pytest_check import check
 
-from gui import select
+from gui import tviewselect as mut
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -33,27 +33,25 @@ class TestSelectGUI:
         body_frame = MagicMock(name="body_frame", autospec=True)
         buttonbox = MagicMock(name="buttonbox", autospec=True)
         body_and_buttonbox.return_value = (outer_frame, body_frame, buttonbox)
-        monkeypatch.setattr(
-            select.common, "create_body_and_buttonbox", body_and_buttonbox
-        )
-        name = select.SelectGUI.__name__.lower()
+        monkeypatch.setattr(mut.common, "create_body_and_buttonbox", body_and_buttonbox)
+        name = mut.SelectGUI.__name__.lower()
         destroy = MagicMock(name="destroy", autospec=True)
-        monkeypatch.setattr(select.SelectGUI, "destroy", destroy)
+        monkeypatch.setattr(mut.SelectGUI, "destroy", destroy)
         treeview = MagicMock(name="treeview", autospec=True)
-        monkeypatch.setattr(select.SelectGUI, "treeview", treeview)
+        monkeypatch.setattr(mut.SelectGUI, "treeview", treeview)
         columns = MagicMock(name="columns", autospec=True)
-        monkeypatch.setattr(select.SelectGUI, "columns", columns)
+        monkeypatch.setattr(mut.SelectGUI, "columns", columns)
         populate = MagicMock(name="populate", autospec=True)
-        monkeypatch.setattr(select.SelectGUI, "populate", populate)
+        monkeypatch.setattr(mut.SelectGUI, "populate", populate)
         create_button = MagicMock(name="create_button", autospec=True)
-        monkeypatch.setattr(select.common, "create_button", create_button)
-        text = select.common.CANCEL_TEXT
+        monkeypatch.setattr(mut.common, "create_button", create_button)
+        text = mut.common.CANCEL_TEXT
         column = 0
         default = "active"
         selection_callback = MagicMock(name="selection_callback", autospec=True)
 
         # Act
-        select.SelectGUI(
+        mut.SelectGUI(
             tk.Tk,
             selection_callback=selection_callback,
             titles=["title"],
@@ -81,10 +79,10 @@ class TestSelectGUI:
 
     def test__post_init_with_bad_widths(self, tk, ttk):
         # Act Assert
-        with pytest.raises(ValueError, match=select.BAD_TITLES_AND_WIDTHS):
-            select.SelectGUI(
+        with pytest.raises(ValueError, match=mut.BAD_TITLES_AND_WIDTHS):
+            mut.SelectGUI(
                 tk.Tk,
-                selection_callback=lambda: None,
+                selection_callback=lambda x="": None,
                 titles=["title"],
                 widths=[],
                 rows=["test tag 1"],
@@ -92,10 +90,10 @@ class TestSelectGUI:
 
     def test__post_init_with_bad_titles(self, tk, ttk):
         # Act Assert
-        with pytest.raises(ValueError, match=select.BAD_TITLES_AND_WIDTHS):
-            select.SelectGUI(
+        with pytest.raises(ValueError, match=mut.BAD_TITLES_AND_WIDTHS):
+            mut.SelectGUI(
                 tk.Tk,
-                selection_callback=lambda: None,
+                selection_callback=lambda x="": None,
                 titles=[],
                 widths=[42],
                 rows=["test tag 1"],
@@ -103,11 +101,55 @@ class TestSelectGUI:
 
     def test__post_init_with_bad_widths_and_titles(self, tk, ttk):
         # Act Assert
-        with pytest.raises(ValueError, match=select.BAD_TITLES_AND_WIDTHS):
-            select.SelectGUI(
+        with pytest.raises(ValueError, match=mut.BAD_TITLES_AND_WIDTHS):
+            mut.SelectGUI(
                 tk.Tk,
-                selection_callback=lambda: None,
+                selection_callback=lambda x="": None,
                 titles=["title"],
                 widths=[42, 43],
                 rows=["test tag 1"],
             )
+
+    def test_treeview(self, select_gui, ttk, monkeypatch):
+        # Arrange
+        body_frame = MagicMock(name="body_frame", autospec=True)
+        tree = MagicMock(name="tree", autospec=True)
+        monkeypatch.setattr(mut.ttk, "Treeview", tree)
+        tv_callback = MagicMock(name="tv_callback", autospec=True)
+        monkeypatch.setattr(mut.SelectGUI, "treeview_callback", tv_callback)
+        partial = MagicMock(name="partial", autospec=True)
+        monkeypatch.setattr(mut, "partial", partial)
+
+        # Act
+        select_gui.treeview(body_frame)
+
+        # Assert
+        with check:
+            tree.assert_called_once_with(body_frame, selectmode="browse")
+        with check:
+            tree().grid.assert_called_once_with(column=0, row=0, sticky="w")
+        with check:
+            tree().bind.assert_called_once_with(
+                "<<TreeviewSelect>>",
+                func=mut.partial(select_gui.treeview_callback, tree()),
+            )
+
+
+@pytest.fixture(scope="function")
+def select_gui(tk, monkeypatch):
+    """Stops the SelectGUI.__post_init__ from running."""
+    monkeypatch.setattr(
+        mut.SelectGUI,
+        "__post_init__",
+        lambda *args, **kwargs: None,
+    )
+
+    # Create a skeleton SelectGUI object
+    selection_callback = MagicMock(name="selection_callback", autospec=True)
+    return mut.SelectGUI(
+        tk.Tk,
+        selection_callback=selection_callback,
+        titles=["title"],
+        widths=[42],
+        rows=["test tag 1"],
+    )

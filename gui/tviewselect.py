@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/6/25, 8:18 AM by stephen.
+#  Last modified 3/7/25, 9:25 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,9 +16,11 @@
 # This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
+from functools import partial
 from collections.abc import Callable
 from dataclasses import dataclass, KW_ONLY
 
+from globalconstants import MovieBag
 from gui import common
 
 BAD_TITLES_AND_WIDTHS = (
@@ -37,10 +39,13 @@ class SelectGUI:
 
     parent: tk.Tk
     _: KW_ONLY
-    selection_callback: Callable
+    # todo subclasses should override with either str or Movie Bag
+    selection_callback: Callable[[str | MovieBag], None]
     titles: list[str]
     widths: list[int]
-    rows: list[str | dict[str, str]]
+    # The index of self.rows list is also the treeview index.
+    # todo subclasses should override with either str or dict[str, MovieBag]
+    rows: list[str | dict[str, MovieBag]]
 
     def __post_init__(self):
         """Contains common methods for specialized selection subclasses."""
@@ -68,15 +73,41 @@ class SelectGUI:
         )
 
     def treeview(self, body_frame: ttk.Frame):
-        """Stub method"""
+        """Creates, grids, and binds a treeview.
+
+        Args:
+            body_frame:
+        """
+        tree = ttk.Treeview(body_frame, selectmode="browse")
+        tree.grid(column=0, row=0, sticky="w")
+        tree.bind("<<TreeviewSelect>>", func=partial(self.treeview_callback, tree))
+
+    def treeview_callback(self, tree: ttk.Treeview):
+        """Stub method. Obligatory override by subclasses.
+
+        On <<TreeviewSelect>> Tk/Tcl will call this function with an argument
+        consisting of a list of treeview ids (= index of self.rows). It should have
+        only one entry.
+
+        Tags:
+            Call selection_callback(str) which calls
+            handlers.database.gui_edit_tag(tag: str) with tag text.
+
+        Movies:
+            Call selection_callback(MovieBag) which calls ???
+            Muddled but will ultimately call
+            handlers.database.gui_edit_movie(movie: MovieBag).
+        """
         pass
 
     def columns(self):
-        """Stub method"""
+        """Stub method". Obligatory override by subclasses."""
         pass
 
     def populate(self):
-        """Stub method"""
+        """Stub method". Obligatory override by subclasses.
+        IMPORTANT NB: treeview id is index of self.rows.
+        """
         pass
 
     def destroy(self):
