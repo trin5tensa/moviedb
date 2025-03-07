@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/7/25, 11:38 AM by stephen.
+#  Last modified 3/7/25, 11:58 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -44,7 +44,7 @@ class SelectGUI:
     titles: list[str]
     widths: list[int]
     # The index of self.rows list is also the treeview index.
-    # todo subclasses should override with either str or dict[str, MovieBag]
+    # todo subclasses should override with either list[str] or list[dict[str, MovieBag]]
     rows: list[str | dict[str, MovieBag]]
 
     def __post_init__(self):
@@ -97,14 +97,15 @@ class SelectGUI:
         self.destroy()
 
     def columns(self):
-        """Stub method". Obligatory override by subclasses."""
-        pass
+        """Sets up the internal structure of the table.
+
+        This includes column titles, column widths, and the number of rows to display.
+        """
+        raise NotImplementedError
 
     def populate(self):
-        """Stub method". Obligatory override by subclasses.
-        IMPORTANT NB: treeview id is index of self.rows.
-        """
-        pass
+        """Adds data from self.rows to the displayed table."""
+        raise NotImplementedError
 
     def destroy(self):
         """Stub method"""
