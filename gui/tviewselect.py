@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/7/25, 12:21 PM by stephen.
+#  Last modified 3/7/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from functools import partial
 from collections.abc import Callable
-from dataclasses import dataclass, KW_ONLY
+from dataclasses import dataclass, KW_ONLY, field
 
 from globalconstants import MovieBag
 from gui import common
@@ -63,8 +63,8 @@ class SelectGUI:
             type(self).__name__.lower(),
             self.destroy,
         )
-        self.treeview(body_frame)
-        self.columns()
+        tree = self.treeview(body_frame)
+        self.columns(tree)
         self.populate()
         common.create_button(
             buttonbox,
@@ -83,6 +83,7 @@ class SelectGUI:
         tree = ttk.Treeview(body_frame, selectmode="browse")
         tree.grid(column=0, row=0, sticky="w")
         tree.bind("<<TreeviewSelect>>", func=partial(self.treeview_callback, tree))
+        return tree
 
     def treeview_callback(self, tree: ttk.Treeview):
         """Handles the <<TreeviewSelect>> event of the treeview.
@@ -98,7 +99,7 @@ class SelectGUI:
         self.parent.after(0, self.selection_callback, tag_text)
         self.destroy()
 
-    def columns(self):
+    def columns(self, tree: ttk.Treeview):
         """Sets up the internal structure of the table.
 
         This includes column titles, column widths, and the number of rows to display.
@@ -114,39 +115,36 @@ class SelectGUI:
         self.outer_frame.destroy()
 
 
+@dataclass
+class SelectTagGUI(SelectGUI):
+    """Creates and manages a widget for selecting one of a list of tags."""
+
+    parent: tk.Tk
+    _: KW_ONLY
+    selection_callback: Callable[[str], None]
+    titles: list[str] = field(default_factory=list)
+    widths: list[int] = field(default_factory=list)
+    # The index of self.rows list is also the treeview index.
+    rows: list[str]
+
+    def __post_init__(self):
+        self.titles += [common.MOVIE_TAGS_TEXT]
+        self.widths += [350]
+        super().__post_init__()
+
+    def columns(self, tree: ttk.Treeview):
+        """Sets up the internal structure of the table.
+
+        This includes column titles, column widths, and the number of rows to display.
+        """
+        tree.column("#0", width=350)
+        tree.heading("#0", text=common.MOVIE_TAGS_TEXT)
+        tree.configure(height=10)
+
+
 """
-BaseClass SelectGUI
--------------------
-Attributes: 
-rows: list[dict[str, str]] - require. contains list of rows each with 
-    (k) column names and (v) data for display.
-selection_callback: Callable
-
-__post_init__
-    Log and raise ValueError if len(rows) != len(widths)
-    Call common.create_body_and_buttonbox
-    Call treeview
-    Call columns (override required.)
-    Call populate (override required.)
-    Call create_button
-treeview create, grid, and bind (move height to 'columns')
-columns (override required.)
-populate (override required.)
-selection_callback
-destroy
-
-SelectTagGUI
-------------
-Attributes: All constants
-titles: = ["test col 1",]
-widths: = [42,]
-rows: list[str] = [{"tag 1", "tag 2"},]
-
-columns
-populate
-
-SelectMovieGUI
---------------
+Notes for SelectMovieGUI
+------------------------
 Attributes: All constants
 titles = ["test col 1", "test col 2"]
 widths = [42, 43]

@@ -1,7 +1,7 @@
 """This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/6/25, 8:18 AM by stephen.
+#  Last modified 3/7/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -43,6 +43,7 @@ COMMIT_TEXT = "Commit"
 CANCEL_TEXT = "Cancel"
 DELETE_TEXT = "Delete"
 SEARCH_TEXT = "Search"
+MOVIE_TAGS_TEXT = "Tags"
 
 DefaultLiteral = Literal["normal", "active", "disabled"]
 

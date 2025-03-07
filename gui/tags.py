@@ -1,7 +1,7 @@
-""" This module contains code for movie tag maintenance."""
+"""This module contains code for movie tag maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/3/25, 12:52 PM by stephen.
+#  Last modified 3/7/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -27,7 +27,7 @@ from globalconstants import MOVIE_TAGS
 from gui import common
 from gui.tk_facade import EntryFields, Entry
 
-MOVIE_TAGS_TEXT = "Tags"
+
 TAG_DELETE_MESSAGE = "Do you want to delete this tag?"
 
 
@@ -66,7 +66,7 @@ class TagGUI:
         """
         input_zone = common.LabelAndField(body_frame)
 
-        self.entry_fields[MOVIE_TAGS] = Entry(MOVIE_TAGS_TEXT, body_frame)
+        self.entry_fields[MOVIE_TAGS] = Entry(common.MOVIE_TAGS_TEXT, body_frame)
         self.entry_fields[MOVIE_TAGS].original_value = self.tag
         input_zone.add_entry_row(self.entry_fields[MOVIE_TAGS])
         self.entry_fields[MOVIE_TAGS].widget.focus_set()

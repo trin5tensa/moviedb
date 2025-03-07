@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/7/25, 12:21 PM by stephen.
+#  Last modified 3/7/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -65,7 +65,7 @@ class TestSelectGUI:
         with check:
             treeview.assert_called_once_with(body_frame)
         with check:
-            columns.assert_called_once_with()
+            columns.assert_called_once_with(treeview())
         with check:
             populate.assert_called_once_with()
         with check:
@@ -121,17 +121,17 @@ class TestSelectGUI:
         monkeypatch.setattr(mut, "partial", partial)
 
         # Act
-        select_gui.treeview(body_frame)
+        tree_obj = select_gui.treeview(body_frame)
 
         # Assert
         with check:
             tree.assert_called_once_with(body_frame, selectmode="browse")
         with check:
-            tree().grid.assert_called_once_with(column=0, row=0, sticky="w")
+            tree_obj.grid.assert_called_once_with(column=0, row=0, sticky="w")
         with check:
-            tree().bind.assert_called_once_with(
+            tree_obj.bind.assert_called_once_with(
                 "<<TreeviewSelect>>",
-                func=mut.partial(select_gui.treeview_callback, tree()),
+                func=mut.partial(select_gui.treeview_callback, tree_obj),
             )
 
     def test_treeview_callback(self, select_gui, ttk, monkeypatch):
@@ -159,7 +159,7 @@ class TestSelectGUI:
     def test_columns(self, select_gui, ttk, monkeypatch):
         # Act and assert
         with check.raises(NotImplementedError):
-            select_gui.columns()
+            select_gui.columns(MagicMock(name="treeview", autospec=True))
 
     def test_populate(self, select_gui, ttk, monkeypatch):
         # Act and assert
@@ -179,6 +179,26 @@ class TestSelectGUI:
         select_gui.outer_frame.destroy.assert_called_once_with()
 
 
+# noinspection PyMissingOrEmptyDocstring
+class TestSelectTagGUI:
+    def test_columns(self, select_tag_gui, ttk, monkeypatch):
+        # Arrange
+        width = 350
+        tree = MagicMock(name="tree", autospec=True)
+        monkeypatch.setattr(mut.ttk, "Treeview", tree)
+
+        # Act
+        select_tag_gui.columns(tree)
+
+        # Assert
+        with check:
+            tree.column.assert_called_once_with("#0", width=width)
+        with check:
+            tree.heading.assert_called_once_with("#0", text=mut.common.MOVIE_TAGS_TEXT)
+        with check:
+            tree.configure.assert_called_once_with(height=10)
+
+
 @pytest.fixture(scope="function")
 def select_gui(tk, monkeypatch):
     """Stops the SelectGUI.__post_init__ from running."""
@@ -195,5 +215,23 @@ def select_gui(tk, monkeypatch):
         selection_callback=selection_callback,
         titles=["title"],
         widths=[42],
+        rows=["test tag 1", "test tag 2", "test tag 3"],
+    )
+
+
+@pytest.fixture(scope="function")
+def select_tag_gui(tk, monkeypatch):
+    """Stops the SelectGUI.__post_init__ from running."""
+    monkeypatch.setattr(
+        mut.SelectGUI,
+        "__post_init__",
+        lambda *args, **kwargs: None,
+    )
+
+    # Create a skeleton SelectGUI object
+    selection_callback = MagicMock(name="selection_callback", autospec=True)
+    return mut.SelectTagGUI(
+        tk.Tk,
+        selection_callback=selection_callback,
         rows=["test tag 1", "test tag 2", "test tag 3"],
     )
