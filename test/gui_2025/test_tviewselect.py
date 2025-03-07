@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/7/25, 9:25 AM by stephen.
+#  Last modified 3/7/25, 11:38 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -134,6 +134,28 @@ class TestSelectGUI:
                 func=mut.partial(select_gui.treeview_callback, tree()),
             )
 
+    def test_treeview_callback(self, select_gui, ttk, monkeypatch):
+        # Arrange
+        tree = MagicMock(name="tree", autospec=True)
+        selected_row = 1
+        tree.selection.return_value = [selected_row]
+        monkeypatch.setattr(mut.ttk, "Treeview", tree)
+        destroy = MagicMock(name="destroy", autospec=True)
+        monkeypatch.setattr(mut.SelectGUI, "destroy", destroy)
+
+        # Act
+        select_gui.treeview_callback(tree)
+
+        # Assert
+        with check:
+            # noinspection PyUnresolvedReferences
+            select_gui.parent.after.assert_called_once_with(
+                0, select_gui.selection_callback, select_gui.rows[selected_row]
+            )
+        with check:
+            # noinspection PyUnresolvedReferences
+            select_gui.destroy.assert_called_once_with()
+
 
 @pytest.fixture(scope="function")
 def select_gui(tk, monkeypatch):
@@ -151,5 +173,5 @@ def select_gui(tk, monkeypatch):
         selection_callback=selection_callback,
         titles=["title"],
         widths=[42],
-        rows=["test tag 1"],
+        rows=["test tag 1", "test tag 2", "test tag 3"],
     )

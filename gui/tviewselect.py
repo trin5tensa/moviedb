@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/7/25, 9:25 AM by stephen.
+#  Last modified 3/7/25, 11:38 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -83,22 +83,18 @@ class SelectGUI:
         tree.bind("<<TreeviewSelect>>", func=partial(self.treeview_callback, tree))
 
     def treeview_callback(self, tree: ttk.Treeview):
-        """Stub method. Obligatory override by subclasses.
+        """Handles the <<TreeviewSelect>> event of the treeview.
 
-        On <<TreeviewSelect>> Tk/Tcl will call this function with an argument
-        consisting of a list of treeview ids (= index of self.rows). It should have
-        only one entry.
+        It retrieves the selection id from the treeview. That is used as an index of
+        self.rows to select and return the selected row to self.selection_callback.
 
-        Tags:
-            Call selection_callback(str) which calls
-            handlers.database.gui_edit_tag(tag: str) with tag text.
-
-        Movies:
-            Call selection_callback(MovieBag) which calls ???
-            Muddled but will ultimately call
-            handlers.database.gui_edit_movie(movie: MovieBag).
+        Args:
+            tree:
         """
-        pass
+        ix = int(tree.selection()[0])
+        tag_text = self.rows[ix]
+        self.parent.after(0, self.selection_callback, tag_text)
+        self.destroy()
 
     def columns(self):
         """Stub method". Obligatory override by subclasses."""
