@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/25/25, 2:25 PM by stephen.
+#  Last modified 3/6/25, 8:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -256,20 +256,6 @@ class TestSearchMovieGUI:
         value = ["1", "2", "3"]
         with pytest.raises(ValueError):
             search_movie_gui._range_converter(value)
-
-
-@pytest.fixture
-def tk(monkeypatch):
-    # noinspection GrazieInspection
-    """Returns a mock of tkinter.
-
-    Use case:
-    This is the top level tkinter parent and can be used wherever a parent widget is needed.
-    It prevents Tk/Tcl from being started.
-    """
-    mock = MagicMock(name="tk")
-    monkeypatch.setattr(guiwidgets_2, "tk", mock)
-    return mock
 
 
 @pytest.fixture

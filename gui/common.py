@@ -1,7 +1,7 @@
-""" This module contains common code to support gui API modules."""
+"""This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/3/25, 12:52 PM by stephen.
+#  Last modified 3/8/25, 8:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -43,6 +43,7 @@ COMMIT_TEXT = "Commit"
 CANCEL_TEXT = "Cancel"
 DELETE_TEXT = "Delete"
 SEARCH_TEXT = "Search"
+MOVIE_TAGS_TEXT = "Tags"
 
 DefaultLiteral = Literal["normal", "active", "disabled"]
 
@@ -225,6 +226,9 @@ def create_button(
     default: DefaultLiteral,
 ) -> ttk.Button:
     """Creates a button.
+
+    The <Return> button is bound and will effect a mouse click on the button when the
+    button is active.
 
     Args: The following arguments are the Tkinter arguments for a ttk.Button.
         buttonbox:

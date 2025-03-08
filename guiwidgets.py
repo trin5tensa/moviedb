@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/17/25, 1:36 PM by stephen.
+#  Last modified 3/6/25, 8:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -468,7 +468,7 @@ class SelectMovieGUI(MovieGUIBase):
         self.treeview.grid(column=0, row=0, sticky="w")
 
         # Set up column widths and titles
-        column_widths = (350, 50, 100, 50, 350)
+        column_widths = (200, 40, 200, 35, 1000)
         for column_ix, internal_name in enumerate(
             (TITLE, YEAR, DIRECTORS, DURATION, NOTES)
         ):

@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/3/25, 12:52 PM by stephen.
+#  Last modified 3/7/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -87,7 +87,7 @@ class TestTagGUI:
         with check:
             label_and_field.assert_called_once_with(body_frame)
         with check:
-            entry.assert_called_once_with(tags.MOVIE_TAGS_TEXT, body_frame)
+            entry.assert_called_once_with(common.MOVIE_TAGS_TEXT, body_frame)
         check.equal(tag_gui.entry_fields[tags.MOVIE_TAGS], entry())
         check.equal(
             tag_gui.entry_fields[tags.MOVIE_TAGS].original_value,
@@ -537,19 +537,3 @@ def taggui_post_init(monkeypatch):
         "__post_init__",
         lambda *args, **kwargs: None,
     )
-
-
-@pytest.fixture(scope="function")
-def tk(monkeypatch) -> MagicMock:
-    """Stops Tk from starting."""
-    tk = MagicMock(name="tk", autospec=True)
-    monkeypatch.setattr(tags, "tk", tk)
-    return tk
-
-
-@pytest.fixture(scope="function")
-def ttk(monkeypatch) -> MagicMock:
-    """Stops Tk.Ttk from starting."""
-    ttk = MagicMock(name="ttk", autospec=True)
-    monkeypatch.setattr(tags, "ttk", ttk)
-    return ttk

@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/3/25, 1:43 PM by stephen.
+#  Last modified 3/8/25, 9:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,6 +21,7 @@ import logging
 import guiwidgets
 import guiwidgets_2
 import gui.tags
+import gui.tviewselect
 from database import tables
 
 from globalconstants import MovieBag
@@ -269,10 +270,10 @@ def gui_select_tag(*, tags: set[str]):
     Args:
         tags:
     """
-    guiwidgets_2.SelectTagGUI(
+    gui.tviewselect.SelectTagGUI(
         config.current.tk_root,
-        select_tag_callback=gui_edit_tag,
-        tags_to_show=list(tags),
+        selection_callback=gui_edit_tag,
+        rows=list(tags),
     )
 
 
