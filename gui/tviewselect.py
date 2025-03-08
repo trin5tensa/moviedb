@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/7/25, 1:36 PM by stephen.
+#  Last modified 3/8/25, 8:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -52,7 +52,7 @@ class SelectGUI:
     def __post_init__(self):
         """Contains common methods for specialized selection subclasses."""
         # Ensure subclasses have titles and widths with matching
-        # non-zero lengths.
+        # non-zero lengths
         if not self.titles or not self.widths or len(self.titles) != len(self.widths):
             raise ValueError(
                 BAD_TITLES_AND_WIDTHS, f"{len(self.widths)=}. {len(self.titles)=}"
@@ -65,7 +65,7 @@ class SelectGUI:
         )
         tree = self.treeview(body_frame)
         self.columns(tree)
-        self.populate()
+        self.populate(tree)
         common.create_button(
             buttonbox,
             text=common.CANCEL_TEXT,
@@ -106,7 +106,7 @@ class SelectGUI:
         """
         raise NotImplementedError
 
-    def populate(self):
+    def populate(self, tree: ttk.Treeview):
         """Adds data from self.rows to the displayed table."""
         raise NotImplementedError
 
@@ -119,7 +119,6 @@ class SelectGUI:
 class SelectTagGUI(SelectGUI):
     """Creates and manages a widget for selecting one of a list of tags."""
 
-    parent: tk.Tk
     _: KW_ONLY
     selection_callback: Callable[[str], None]
     titles: list[str] = field(default_factory=list)
@@ -129,17 +128,29 @@ class SelectTagGUI(SelectGUI):
 
     def __post_init__(self):
         self.titles += [common.MOVIE_TAGS_TEXT]
-        self.widths += [350]
+        self.widths += [350, 42]
         super().__post_init__()
 
     def columns(self, tree: ttk.Treeview):
-        """Sets up the internal structure of the table.
+        """Sets up the internal structure of the treeview.
 
         This includes column titles, column widths, and the number of rows to display.
+
+        Args:
+            tree:
         """
-        tree.column("#0", width=350)
-        tree.heading("#0", text=common.MOVIE_TAGS_TEXT)
+        tree.column("#0", width=self.widths[0])
+        tree.heading("#0", text=self.titles[0])
         tree.configure(height=10)
+
+    def populate(self, tree: ttk.Treeview):
+        """Populates the treeview with data.
+
+        Args:
+            tree:
+        """
+        for ix, tag_text in enumerate(self.rows):
+            tree.insert("", "end", iid=str(ix), text=tag_text, values=[])
 
 
 """

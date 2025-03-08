@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/7/25, 1:36 PM by stephen.
+#  Last modified 3/8/25, 8:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,7 +14,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 from pytest_check import check
 
@@ -67,7 +67,7 @@ class TestSelectGUI:
         with check:
             columns.assert_called_once_with(treeview())
         with check:
-            populate.assert_called_once_with()
+            populate.assert_called_once_with(treeview())
         with check:
             create_button.assert_called_once_with(
                 buttonbox,
@@ -164,7 +164,7 @@ class TestSelectGUI:
     def test_populate(self, select_gui, ttk, monkeypatch):
         # Act and assert
         with check.raises(NotImplementedError):
-            select_gui.populate()
+            select_gui.populate(MagicMock(name="treeview", autospec=True))
 
     def test_destroy(self, select_gui, ttk, monkeypatch):
         # Arrange
@@ -182,6 +182,7 @@ class TestSelectGUI:
 # noinspection PyMissingOrEmptyDocstring
 class TestSelectTagGUI:
     def test_columns(self, select_tag_gui, ttk, monkeypatch):
+        print()
         # Arrange
         width = 350
         tree = MagicMock(name="tree", autospec=True)
@@ -197,6 +198,24 @@ class TestSelectTagGUI:
             tree.heading.assert_called_once_with("#0", text=mut.common.MOVIE_TAGS_TEXT)
         with check:
             tree.configure.assert_called_once_with(height=10)
+
+    def test_populate(self, select_tag_gui, ttk, monkeypatch):
+        # Arrange
+        tree = MagicMock(name="tree", autospec=True)
+        monkeypatch.setattr(mut.ttk, "Treeview", tree)
+
+        # Act
+        select_tag_gui.populate(tree)
+
+        # Assert
+        with check:
+            tree.insert.assert_has_calls(
+                [
+                    call("", "end", iid="0", text=select_tag_gui.rows[0], values=[]),
+                    call("", "end", iid="1", text=select_tag_gui.rows[1], values=[]),
+                    call("", "end", iid="2", text=select_tag_gui.rows[2], values=[]),
+                ]
+            )
 
 
 @pytest.fixture(scope="function")
