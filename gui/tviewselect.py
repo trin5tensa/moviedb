@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/8/25, 9:15 AM by stephen.
+#  Last modified 3/8/25, 1:12 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +20,7 @@ from functools import partial
 from collections.abc import Callable
 from dataclasses import dataclass, KW_ONLY, field
 
-from globalconstants import MovieBag
+from globalconstants import MovieBag, TITLE, YEAR, DIRECTORS, DURATION, NOTES
 from gui import common
 
 BAD_TITLES_AND_WIDTHS = (
@@ -87,6 +87,7 @@ class SelectGUI:
         tree.bind("<<TreeviewSelect>>", func=partial(self.treeview_callback, tree))
         return tree
 
+    # noinspection PyUnusedLocal
     def treeview_callback(self, tree: ttk.Treeview, *args):
         """Handles the <<TreeviewSelect>> event of the treeview.
 
@@ -155,6 +156,36 @@ class SelectTagGUI(SelectGUI):
         self.rows.sort()
         for ix, tag_text in enumerate(self.rows):
             tree.insert("", "end", iid=str(ix), text=tag_text, values=[])
+
+
+@dataclass
+class SelectMovieGUI(SelectGUI):
+    """Creates and manages a widget for selecting one of a list of movies."""
+
+    _: KW_ONLY
+    selection_callback: Callable[[MovieBag], None]
+    titles: list[str] = field(default_factory=list)
+    widths: list[int] = field(default_factory=list)
+    # The index of self.rows list is also the treeview index.
+    rows: list[MovieBag]
+
+    def __post_init__(self):
+        self.titles = [TITLE, YEAR, DIRECTORS, DURATION, NOTES]
+        self.widths = [200, 40, 200, 35, 1000]
+        super().__post_init__()
+
+    def columns(self, tree: ttk.Treeview):
+        """Sets up the internal structure of the treeview.
+
+        This includes column titles, column widths, and the number of rows to display.
+
+        Args:
+            tree:
+        """
+        for ix, title in enumerate(self.titles):
+            tree.column(f"#{ix}", width=self.widths[ix])
+            tree.heading(f"#{ix}", text=self.titles[ix])
+        tree.configure(height=25)
 
 
 """

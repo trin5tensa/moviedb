@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/8/25, 9:15 AM by stephen.
+#  Last modified 3/8/25, 1:12 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,6 +18,7 @@ from unittest.mock import MagicMock, call
 
 from pytest_check import check
 
+from globalconstants import MovieBag, MovieInteger
 from gui import tviewselect as mut
 
 
@@ -186,7 +187,6 @@ class TestSelectGUI:
 # noinspection PyMissingOrEmptyDocstring
 class TestSelectTagGUI:
     def test_columns(self, select_tag_gui, ttk, monkeypatch):
-        print()
         # Arrange
         width = 500
         tree = MagicMock(name="tree", autospec=True)
@@ -222,6 +222,40 @@ class TestSelectTagGUI:
             )
 
 
+class TestSelectMovieGUI:
+    def test_columns(self, select_movie_gui, ttk, monkeypatch):
+        # Arrange
+        tree = MagicMock(name="tree", autospec=True)
+        monkeypatch.setattr(mut.ttk, "Treeview", tree)
+
+        # Act
+        select_movie_gui.columns(tree)
+
+        # Assert
+        with check:
+            tree.heading.assert_has_calls(
+                [
+                    call("#0", text=mut.TITLE),
+                    call("#1", text=mut.YEAR),
+                    call("#2", text=mut.DIRECTORS),
+                    call("#3", text=mut.DURATION),
+                    call("#4", text=mut.NOTES),
+                ]
+            )
+        with check:
+            tree.column.assert_has_calls(
+                [
+                    call("#0", width=200),
+                    call("#1", width=40),
+                    call("#2", width=200),
+                    call("#3", width=35),
+                    call("#4", width=1000),
+                ]
+            )
+        with check:
+            tree.configure.assert_called_once_with(height=25)
+
+
 @pytest.fixture(scope="function")
 def select_gui(tk, monkeypatch):
     """Stops the SelectGUI.__post_init__ from running."""
@@ -251,10 +285,32 @@ def select_tag_gui(tk, monkeypatch):
         lambda *args, **kwargs: None,
     )
 
-    # Create a skeleton SelectGUI object
+    # Create a skeleton SelectTagGUI object
     selection_callback = MagicMock(name="selection_callback", autospec=True)
     return mut.SelectTagGUI(
         tk.Tk,
         selection_callback=selection_callback,
         rows=["test tag 1", "test tag 2", "test tag 3"],
+    )
+
+
+@pytest.fixture(scope="function")
+def select_movie_gui(tk, monkeypatch):
+    """Stops the SelectGUI.__post_init__ from running."""
+    monkeypatch.setattr(
+        mut.SelectGUI,
+        "__post_init__",
+        lambda *args, **kwargs: None,
+    )
+
+    # Create a skeleton SelectMovieGUI object
+    selection_callback = MagicMock(name="selection_callback", autospec=True)
+    return mut.SelectMovieGUI(
+        tk.Tk,
+        selection_callback=selection_callback,
+        rows=[
+            MovieBag(title="Test Movie 1", year=MovieInteger(4041)),
+            MovieBag(title="Test Movie 2", year=MovieInteger(4042)),
+            MovieBag(title="Test Movie 3", year=MovieInteger(4043)),
+        ],
     )
