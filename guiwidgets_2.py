@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/4/25, 7:12 AM by stephen.
+#  Last modified 3/8/25, 9:19 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -550,76 +550,6 @@ class EditMovieGUI(MovieGUI):
             # noinspection PyTypeChecker
             self.parent.after(0, self.delete_movie_callback)
             self.destroy()
-
-
-@dataclass
-class SelectTagGUI:
-    """Allow the user to select one tag record from a Tk treeview of tag records."""
-
-    parent: tk.Tk
-    select_tag_callback: Callable[[str], None]
-    tags_to_show: Sequence[str]
-
-    # The main outer frame of this class.
-    outer_frame: ttk.Frame = field(default=None, init=False, repr=False)
-
-    def __post_init__(self):
-        # Create outer frames to hold fields and buttons.
-        frames = common.create_body_and_buttonbox(
-            self.parent, type(self).__name__.lower(), self.destroy
-        )
-        self.outer_frame, body_frame, buttonbox = frames
-
-        # Create and grid treeview
-        tree = ttk.Treeview(body_frame, columns=[], height=10, selectmode="browse")
-        tree.grid(column=0, row=0, sticky="w")
-
-        # Specify column width and title
-        tree.column("#0", width=350)
-        tree.heading("#0", text=MOVIE_TAGS_TEXT)
-
-        # Populate the treeview rows
-        for tag in self.tags_to_show:
-            tree.insert(
-                "", "end", iid=tag, text=tag, values=[], tags=MOVIE_TAGS, open=True
-            )
-
-        # Bind the treeview callback
-        tree.bind("<<TreeviewSelect>>", func=self.selection_callback(tree))
-
-        # Create the button
-        column_num = 0
-        common.create_button(
-            buttonbox, CANCEL_TEXT, column_num, self.destroy, default="active"
-        )
-
-    def selection_callback(self, tree: ttk.Treeview) -> Callable:
-        """Call the callback provided by the caller and destroy all Tk widgets
-        associated with this class.
-
-        Args:
-            tree:
-
-        Returns:
-            The callback.
-        """
-
-        # noinspection PyUnusedLocal
-        def func(*args):
-            """Save the newly changed user selection.
-
-            Args:
-                *args: Not used. Needed for compatibility with Tk:Tcl caller.
-            """
-            tag = tree.selection()[0]
-            self.destroy()
-            self.select_tag_callback(tag)
-
-        return func
-
-    def destroy(self):
-        """Destroy all Tk widgets associated with this class."""
-        self.outer_frame.destroy()
 
 
 @dataclass

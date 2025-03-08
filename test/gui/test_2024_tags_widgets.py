@@ -1,7 +1,7 @@
-""" Test module. """
+"""Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/4/25, 7:12 AM by stephen.
+#  Last modified 3/8/25, 9:19 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,129 +20,6 @@ from pytest_check import check
 
 import guiwidgets_2
 from guiwidgets_2 import tk_facade
-
-
-# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
-class TestSelectTagGUI:
-    test_tag_1 = "test tag 1"
-    test_tag_2 = "test tag 2"
-    test_tag_3 = "test tag 3"
-    dummy_tags_to_show = [test_tag_1, test_tag_2, test_tag_3]
-    mock_select_tag_callback = MagicMock()
-
-    @pytest.mark.skip("Moved create_button")
-    def test_post_init(self, mock_tk, ttk, framing, monkeypatch):
-        monkeypatch.setattr(
-            guiwidgets_2.SelectTagGUI, "selection_callback", MagicMock()
-        )
-        monkeypatch.setattr(
-            guiwidgets_2,
-            "create_button",
-            mock_create_button := MagicMock(),
-        )
-
-        cut = guiwidgets_2.SelectTagGUI(
-            mock_tk,
-            select_tag_callback=self.mock_select_tag_callback,
-            tags_to_show=self.dummy_tags_to_show,
-        )
-
-        with check:
-            framing.assert_called_once_with(
-                cut.parent, type(cut).__name__.lower(), cut.destroy
-            )
-        _, body_frame, buttonbox = framing()
-        with check:
-            ttk.Treeview.assert_called_once_with(
-                body_frame, columns=[], height=10, selectmode="browse"
-            )
-        tree = ttk.Treeview()
-        with check:
-            tree.grid.assert_called_once_with(column=0, row=0, sticky="w")
-        with check:
-            tree.column.assert_called_once_with("#0", width=350)
-        with check:
-            tree.heading.assert_called_once_with(
-                "#0", text=guiwidgets_2.MOVIE_TAGS_TEXT
-            )
-        with check:
-            tree.insert.assert_has_calls(
-                [
-                    call(
-                        "",
-                        "end",
-                        iid=self.test_tag_1,
-                        text=self.test_tag_1,
-                        values=[],
-                        tags=guiwidgets_2.MOVIE_TAGS,
-                        open=True,
-                    ),
-                    call(
-                        "",
-                        "end",
-                        iid=self.test_tag_2,
-                        text=self.test_tag_2,
-                        values=[],
-                        tags=guiwidgets_2.MOVIE_TAGS,
-                        open=True,
-                    ),
-                    call(
-                        "",
-                        "end",
-                        iid=self.test_tag_3,
-                        text=self.test_tag_3,
-                        values=[],
-                        tags=guiwidgets_2.MOVIE_TAGS,
-                        open=True,
-                    ),
-                ]
-            )
-        with check:
-            # noinspection PyUnresolvedReferences
-            cut.selection_callback.assert_called_once_with(tree)
-        with check:
-            tree.bind.assert_called_once_with(
-                "<<TreeviewSelect>>", func=cut.selection_callback(tree)
-            )
-        with check:
-            mock_create_button.assert_called_once_with(
-                buttonbox, guiwidgets_2.CANCEL_TEXT, 0, cut.destroy, default="active"
-            )
-
-    @pytest.mark.skip("Moved create_input_form_framing")
-    def test_selection_callback(self, mock_tk, ttk, framing, monkeypatch):
-        cut = guiwidgets_2.SelectTagGUI(
-            mock_tk,
-            select_tag_callback=self.mock_select_tag_callback,
-            tags_to_show=self.dummy_tags_to_show,
-        )
-        monkeypatch.setattr(cut, "destroy", mock_destroy := MagicMock())
-        tree = ttk.Treeview()
-
-        callback = cut.selection_callback(tree)
-        callback()
-
-        with check:
-            tree.selection.assert_called_once_with()
-        with check:
-            mock_destroy.assert_called_once_with()
-        tag = tree.selection()[0]
-        with check:
-            self.mock_select_tag_callback.assert_called_once_with(tag)
-
-    @pytest.mark.skip("Moved create_input_form_framing")
-    def test_destroy(self, mock_tk, ttk, framing, monkeypatch):
-        cut = guiwidgets_2.SelectTagGUI(
-            mock_tk,
-            select_tag_callback=self.mock_select_tag_callback,
-            tags_to_show=self.dummy_tags_to_show,
-        )
-
-        cut.destroy()
-
-        with check:
-            # noinspection PyUnresolvedReferences
-            cut.outer_frame.destroy.assert_called_once_with()
 
 
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
