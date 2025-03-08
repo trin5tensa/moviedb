@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/3/25, 1:43 PM by stephen.
+#  Last modified 3/8/25, 9:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -492,15 +492,17 @@ def test_gui_edit_tag(monkeypatch, config_current):
 
 def test_gui_select_tag(monkeypatch, config_current):
     select_tag_gui = MagicMock(name="select_tag_gui")
-    monkeypatch.setattr(handlers.database.guiwidgets_2, "SelectTagGUI", select_tag_gui)
+    monkeypatch.setattr(
+        handlers.database.gui.tviewselect, "SelectTagGUI", select_tag_gui
+    )
     tags = {"tag 1", "tag 2"}
 
     handlers.database.gui_select_tag(tags=tags)
 
     select_tag_gui.assert_called_once_with(
         config.current.tk_root,
-        select_tag_callback=handlers.database.gui_edit_tag,
-        tags_to_show=list(tags),
+        selection_callback=handlers.database.gui_edit_tag,
+        rows=list(tags),
     )
 
 

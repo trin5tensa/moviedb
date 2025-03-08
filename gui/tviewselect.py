@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/8/25, 8:16 AM by stephen.
+#  Last modified 3/8/25, 9:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -73,6 +73,8 @@ class SelectGUI:
             command=self.destroy,
             default="active",
         )
+        # Nothing will display until the mouse is moved so…
+        self.parent.update_idletasks()
 
     def treeview(self, body_frame: ttk.Frame):
         """Creates, grids, and binds a treeview.
@@ -85,7 +87,7 @@ class SelectGUI:
         tree.bind("<<TreeviewSelect>>", func=partial(self.treeview_callback, tree))
         return tree
 
-    def treeview_callback(self, tree: ttk.Treeview):
+    def treeview_callback(self, tree: ttk.Treeview, *args):
         """Handles the <<TreeviewSelect>> event of the treeview.
 
         It retrieves the selection id from the treeview. That is used as an index of
@@ -93,6 +95,7 @@ class SelectGUI:
 
         Args:
             tree:
+            args: Needed to match call from TkTcl but not used.
         """
         ix = int(tree.selection()[0])
         tag_text = self.rows[ix]
@@ -127,8 +130,8 @@ class SelectTagGUI(SelectGUI):
     rows: list[str]
 
     def __post_init__(self):
-        self.titles += [common.MOVIE_TAGS_TEXT]
-        self.widths += [350, 42]
+        self.titles = [common.MOVIE_TAGS_TEXT]
+        self.widths = [500]
         super().__post_init__()
 
     def columns(self, tree: ttk.Treeview):
@@ -141,7 +144,7 @@ class SelectTagGUI(SelectGUI):
         """
         tree.column("#0", width=self.widths[0])
         tree.heading("#0", text=self.titles[0])
-        tree.configure(height=10)
+        tree.configure(height=15)
 
     def populate(self, tree: ttk.Treeview):
         """Populates the treeview with data.
@@ -149,6 +152,7 @@ class SelectTagGUI(SelectGUI):
         Args:
             tree:
         """
+        self.rows.sort()
         for ix, tag_text in enumerate(self.rows):
             tree.insert("", "end", iid=str(ix), text=tag_text, values=[])
 

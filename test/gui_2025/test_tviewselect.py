@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/8/25, 8:16 AM by stephen.
+#  Last modified 3/8/25, 9:15 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -49,6 +49,8 @@ class TestSelectGUI:
         column = 0
         default = "active"
         selection_callback = MagicMock(name="selection_callback", autospec=True)
+        # update_idletasks = MagicMock(name="update_idletasks", autospec=True)
+        # monkeypatch.setattr("tk", update_idletasks)
 
         # Act
         mut.SelectGUI(
@@ -76,6 +78,8 @@ class TestSelectGUI:
                 command=destroy,
                 default=default,
             )
+        with check:
+            tk.Tk.update_idletasks.assert_called_once_with()
 
     def test__post_init_with_bad_widths(self, tk, ttk):
         # Act Assert
@@ -184,7 +188,7 @@ class TestSelectTagGUI:
     def test_columns(self, select_tag_gui, ttk, monkeypatch):
         print()
         # Arrange
-        width = 350
+        width = 500
         tree = MagicMock(name="tree", autospec=True)
         monkeypatch.setattr(mut.ttk, "Treeview", tree)
 
@@ -197,7 +201,7 @@ class TestSelectTagGUI:
         with check:
             tree.heading.assert_called_once_with("#0", text=mut.common.MOVIE_TAGS_TEXT)
         with check:
-            tree.configure.assert_called_once_with(height=10)
+            tree.configure.assert_called_once_with(height=15)
 
     def test_populate(self, select_tag_gui, ttk, monkeypatch):
         # Arrange
