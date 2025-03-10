@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/8/25, 1:12 PM by stephen.
+#  Last modified 3/10/25, 12:52 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -207,18 +207,21 @@ class TestSelectTagGUI:
         # Arrange
         tree = MagicMock(name="tree", autospec=True)
         monkeypatch.setattr(mut.ttk, "Treeview", tree)
+        # sort = MagicMock(name="sort", autospec=True)
+        # monkeypatch.setattr(select_tag_gui.rows, "sort", sort)
 
         # Act
         select_tag_gui.populate(tree)
 
         # Assert
+        check.equal(select_tag_gui.rows, ["test tag 1", "test tag 2", "test tag 3"])
         with check:
             tree.insert.assert_has_calls(
                 [
                     call("", "end", iid="0", text=select_tag_gui.rows[0], values=[]),
                     call("", "end", iid="1", text=select_tag_gui.rows[1], values=[]),
                     call("", "end", iid="2", text=select_tag_gui.rows[2], values=[]),
-                ]
+                ],
             )
 
 
@@ -255,6 +258,48 @@ class TestSelectMovieGUI:
         with check:
             tree.configure.assert_called_once_with(height=25)
 
+    def test_populate(self, select_movie_gui, ttk, monkeypatch):
+        # Arrange
+        tree = MagicMock(name="tree", autospec=True)
+        monkeypatch.setattr(mut.ttk, "Treeview", tree)
+
+        # Act
+        select_movie_gui.populate(tree)
+
+        # Assert
+        check.equal(
+            select_movie_gui.rows,
+            [
+                MovieBag(title="Test Movie 1", year=MovieInteger(4041)),
+                MovieBag(
+                    title="Test Movie 2",
+                    year=MovieInteger(4042),
+                    directors={"Dick Dir", "Edgar Ebo"},
+                    duration=MovieInteger(42),
+                    notes="A note",
+                ),
+                MovieBag(title="Test Movie 3", year=MovieInteger(4043)),
+            ],
+        )
+        with check:
+            tree.insert.assert_has_calls(
+                [
+                    call(
+                        "", "end", iid=0, text="Test Movie 1", values=(4041, "", "", "")
+                    ),
+                    call(
+                        "",
+                        "end",
+                        iid=1,
+                        text="Test Movie 2",
+                        values=(4042, "Dick Dir, Edgar Ebo", 42, "A note"),
+                    ),
+                    call(
+                        "", "end", iid=2, text="Test Movie 3", values=(4043, "", "", "")
+                    ),
+                ]
+            )
+
 
 @pytest.fixture(scope="function")
 def select_gui(tk, monkeypatch):
@@ -290,7 +335,7 @@ def select_tag_gui(tk, monkeypatch):
     return mut.SelectTagGUI(
         tk.Tk,
         selection_callback=selection_callback,
-        rows=["test tag 1", "test tag 2", "test tag 3"],
+        rows=["test tag 3", "test tag 2", "test tag 1"],
     )
 
 
@@ -309,8 +354,14 @@ def select_movie_gui(tk, monkeypatch):
         tk.Tk,
         selection_callback=selection_callback,
         rows=[
-            MovieBag(title="Test Movie 1", year=MovieInteger(4041)),
-            MovieBag(title="Test Movie 2", year=MovieInteger(4042)),
             MovieBag(title="Test Movie 3", year=MovieInteger(4043)),
+            MovieBag(
+                title="Test Movie 2",
+                year=MovieInteger(4042),
+                directors={"Dick Dir", "Edgar Ebo"},
+                duration=MovieInteger(42),
+                notes="A note",
+            ),
+            MovieBag(title="Test Movie 1", year=MovieInteger(4041)),
         ],
     )

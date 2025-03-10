@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/8/25, 1:12 PM by stephen.
+#  Last modified 3/10/25, 12:52 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +20,15 @@ from functools import partial
 from collections.abc import Callable
 from dataclasses import dataclass, KW_ONLY, field
 
-from globalconstants import MovieBag, TITLE, YEAR, DIRECTORS, DURATION, NOTES
+from globalconstants import (
+    MovieBag,
+    setstr_to_str,
+    TITLE,
+    YEAR,
+    DIRECTORS,
+    DURATION,
+    NOTES,
+)
 from gui import common
 
 BAD_TITLES_AND_WIDTHS = (
@@ -187,16 +195,25 @@ class SelectMovieGUI(SelectGUI):
             tree.heading(f"#{ix}", text=self.titles[ix])
         tree.configure(height=25)
 
+    def populate(self, tree: ttk.Treeview):
+        """Populates the treeview with data.
 
-"""
-Notes for SelectMovieGUI
-------------------------
-Attributes: All constants
-titles = ["test col 1", "test col 2"]
-widths = [42, 43]
-rows:  
-    [{"title": "movie 1", "year": 1942}, {"title": "movie 2", "year": 1943}]
-
-columns
-populate
-"""
+        Args:
+            tree:
+        """
+        self.rows.sort(key=lambda movie_bag: movie_bag["title"])
+        for ix, movie in enumerate(self.rows):
+            duration = movie.get("duration")
+            duration = int(duration) if duration else ""
+            tree.insert(
+                "",
+                "end",
+                iid=ix,
+                text=movie["title"],
+                values=(
+                    int(movie["year"]),
+                    setstr_to_str(movie.get("directors", "")),
+                    duration,
+                    movie.get("notes", ""),
+                ),
+            )

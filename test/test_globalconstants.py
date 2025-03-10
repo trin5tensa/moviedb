@@ -1,7 +1,7 @@
 """Test module."""
 
-#  Copyright© 2024. Stephen Rigden.
-#  Last modified 7/6/24, 12:16 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 3/10/25, 12:52 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,9 +13,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import pytest
 from pytest_check import check
 
-from globalconstants import MovieInteger
+from globalconstants import MovieInteger, setstr_to_str
 
 
 class TestMovieInteger:
@@ -47,3 +48,17 @@ class TestMovieInteger:
     def test_bad_range(self):
         with check.raises(ValueError):
             MovieInteger("2020-garbage")
+
+
+@pytest.mark.parametrize(
+    "it, ot",
+    [
+        ({"ts"}, "ts"),
+        ({"ts2", "ts1"}, "ts1, ts2"),
+        ({""}, ""),
+        (None, ""),
+    ],
+)
+def test_setstr_to_str(it, ot):
+    # Act and assert
+    assert setstr_to_str(it) == ot

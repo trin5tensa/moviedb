@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/18/25, 6:56 AM by stephen.
+#  Last modified 3/10/25, 12:52 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -55,6 +55,9 @@ class MovieBag(TypedDict, total=False):
     the responsibility of the data producer and data consumer.
     There is also no guarantee that any present item will have a truthful
     value.
+
+    See function setstr_to_str for a display conversion of directors, stars,
+    and tags.
     """
 
     title: str
@@ -110,8 +113,8 @@ class MovieInteger(set):
         ValueError: invalid literal for int() with base 10: 'wxyz'
 
     Use case:
-        This simplifies the layout of the GUI, otherwise movie search and movie display movies
-        require separate layouts and support code.
+        This simplifies the layout of the GUI, otherwise movie search and
+        movie display movies require separate layouts and support code.
     """
 
     _value: str | int
@@ -157,3 +160,27 @@ class MovieInteger(set):
             return list(self._values)[0]
         else:
             raise TypeError(f"{NO_INTEGER_VALUE}: {self._values}")
+
+
+def setstr_to_str(setstr: set[str] | None) -> str:
+    """Converts a MovieBag set of strings into a single comma-delimited
+    string for display. The strings are sorted alphabetically for ease
+    of testing.
+
+    Examples:
+        In each case the setstr argument is the expected result of
+        movie_bag.get('key', None).
+
+        {"ts"} → "ts"
+        {"ts1", "ts2"} → "ts1, ts2"
+        {""} → ""
+        None → ""
+
+    Args:
+        setstr: Either a set of strings or None
+
+    Returns:
+        A single comma-delimited string.
+    """
+    setstr = setstr if setstr else ""
+    return ", ".join(sorted(setstr))
