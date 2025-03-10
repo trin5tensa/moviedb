@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/10/25, 12:52 PM by stephen.
+#  Last modified 3/10/25, 1:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -238,25 +238,27 @@ class TestSelectMovieGUI:
         with check:
             tree.heading.assert_has_calls(
                 [
-                    call("#0", text=mut.TITLE),
-                    call("#1", text=mut.YEAR),
-                    call("#2", text=mut.DIRECTORS),
-                    call("#3", text=mut.DURATION),
-                    call("#4", text=mut.NOTES),
+                    call("#0", text=mut.TITLE.title()),
+                    call("#1", text=mut.YEAR.title()),
+                    call("#2", text=mut.DIRECTORS.title()),
+                    call("#3", text=mut.DURATION.title()),
+                    call("#4", text=mut.NOTES.title()),
                 ]
             )
         with check:
             tree.column.assert_has_calls(
                 [
-                    call("#0", width=200),
+                    call("#0", width=225),
                     call("#1", width=40),
                     call("#2", width=200),
-                    call("#3", width=35),
-                    call("#4", width=1000),
+                    call("#3", width=50),
+                    call("#4", width=550),
                 ]
             )
         with check:
-            tree.configure.assert_called_once_with(height=25)
+            tree.configure.assert_called_once_with(
+                height=25, columns=select_movie_gui.titles[1:]
+            )
 
     def test_populate(self, select_movie_gui, ttk, monkeypatch):
         # Arrange

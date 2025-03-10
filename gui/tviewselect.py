@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/10/25, 12:52 PM by stephen.
+#  Last modified 3/10/25, 1:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -179,7 +179,7 @@ class SelectMovieGUI(SelectGUI):
 
     def __post_init__(self):
         self.titles = [TITLE, YEAR, DIRECTORS, DURATION, NOTES]
-        self.widths = [200, 40, 200, 35, 1000]
+        self.widths = [225, 40, 200, 50, 550]
         super().__post_init__()
 
     def columns(self, tree: ttk.Treeview):
@@ -190,10 +190,10 @@ class SelectMovieGUI(SelectGUI):
         Args:
             tree:
         """
+        tree.configure(height=25, columns=self.titles[1:])
         for ix, title in enumerate(self.titles):
             tree.column(f"#{ix}", width=self.widths[ix])
-            tree.heading(f"#{ix}", text=self.titles[ix])
-        tree.configure(height=25)
+            tree.heading(f"#{ix}", text=self.titles[ix].title())
 
     def populate(self, tree: ttk.Treeview):
         """Populates the treeview with data.
@@ -212,7 +212,7 @@ class SelectMovieGUI(SelectGUI):
                 text=movie["title"],
                 values=(
                     int(movie["year"]),
-                    setstr_to_str(movie.get("directors", "")),
+                    setstr_to_str(movie.get("directors")),
                     duration,
                     movie.get("notes", ""),
                 ),
