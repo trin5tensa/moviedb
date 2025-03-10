@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/6/25, 8:18 AM by stephen.
+#  Last modified 3/10/25, 2:12 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -429,108 +429,6 @@ class SearchMovieGUI(MovieGUIBase):
                     f"Length of value must be 1 or 2 not" f" {len(value)}. {value=}"
                 )
         return MovieInteger(duration_range)
-
-
-@dataclass
-class SelectMovieGUI(MovieGUIBase):
-    """A form for selecting a movie.
-
-    WARNING:
-        This module uses the original subclassed approach to Tkinter primary widgets. It
-        is fragile and should not be used as template for future developments.
-        Any proposed refactoring should consider abandoning these classes and using the newer
-        composed classes of guiwidgets_2 as a model for future development.
-    """
-
-    # todo The test suite for this class needs to be rewritten to current standards
-
-    # Movie records retrieved from the database.
-    movies: List[MovieBag]
-    # On exit this callback will be called with a dictionary of fields and user entered values.
-    callback: Callable
-    # Attributes for managing the treeview
-    treeview: ttk.Treeview = field(default=None, init=False, repr=False)
-    treeview_items: dict[str:MovieBag] = field(
-        default_factory=MovieBag, init=False, repr=False
-    )
-
-    def create_body(self, outerframe: ttk.Frame):
-        """Create the body of the form."""
-        body_frame = super().create_body(outerframe)
-
-        # Create and grid treeview
-        self.treeview = ttk.Treeview(
-            body_frame,
-            columns=[YEAR, DIRECTORS, DURATION, NOTES],
-            height=25,
-            selectmode="browse",
-        )
-        self.treeview.grid(column=0, row=0, sticky="w")
-
-        # Set up column widths and titles
-        column_widths = (200, 40, 200, 35, 1000)
-        for column_ix, internal_name in enumerate(
-            (TITLE, YEAR, DIRECTORS, DURATION, NOTES)
-        ):
-            if column_ix == 0:
-                internal_name = "#0"
-            self.treeview.column(internal_name, width=column_widths[column_ix])
-            self.treeview.heading(
-                internal_name,
-                text=(TITLE_TEXT, YEAR_TEXT, DIRECTORS_TEXT, DURATION_TEXT, NOTES_TEXT)[
-                    column_ix
-                ],
-            )
-
-        # Populate rows with movies and build a lookup dictionary.
-        for movie in self.movies:
-            item_id = self.treeview.insert(
-                "",
-                "end",
-                text=movie["title"],
-                values=(
-                    movie["year"],
-                    movie.get("directors", ""),
-                    movie.get("duration", ""),
-                    movie.get("notes", ""),
-                ),
-                tags="title",
-            )
-            self.treeview_items[item_id] = movie
-        self.treeview.bind(
-            "<<TreeviewSelect>>", func=self.treeview_callback(self.treeview)
-        )
-
-    def treeview_callback(self, tree: ttk.Treeview):
-        """Create a callback which will be called when the user makes a selection.
-
-        Args:
-            tree:
-
-        Returns: The callback.
-        """
-
-        # noinspection PyUnusedLocal
-        def func(*args):
-            """Save the newly changed user selection.
-
-            Args:
-                *args: Not used. Needed for compatibility with Tk:Tcl caller.
-            """
-            (item_id,) = tree.selection()
-            # Return control to Tk/Tcl and delete this dialog *before*
-            #   running the callback.
-            self.parent.after(0, self.callback, self.treeview_items[item_id])
-            self.destroy()
-
-        return func
-
-    def create_buttonbox(self, outerframe: ttk.Frame):
-        """Create the buttons."""
-        buttonbox = super().create_buttonbox(outerframe)
-
-        # Cancel button
-        self.create_cancel_button(buttonbox, column=0)
 
 
 @dataclass
