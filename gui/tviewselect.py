@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/8/25, 9:15 AM by stephen.
+#  Last modified 3/10/25, 1:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +20,15 @@ from functools import partial
 from collections.abc import Callable
 from dataclasses import dataclass, KW_ONLY, field
 
-from globalconstants import MovieBag
+from globalconstants import (
+    MovieBag,
+    setstr_to_str,
+    TITLE,
+    YEAR,
+    DIRECTORS,
+    DURATION,
+    NOTES,
+)
 from gui import common
 
 BAD_TITLES_AND_WIDTHS = (
@@ -87,6 +95,7 @@ class SelectGUI:
         tree.bind("<<TreeviewSelect>>", func=partial(self.treeview_callback, tree))
         return tree
 
+    # noinspection PyUnusedLocal
     def treeview_callback(self, tree: ttk.Treeview, *args):
         """Handles the <<TreeviewSelect>> event of the treeview.
 
@@ -157,15 +166,54 @@ class SelectTagGUI(SelectGUI):
             tree.insert("", "end", iid=str(ix), text=tag_text, values=[])
 
 
-"""
-Notes for SelectMovieGUI
-------------------------
-Attributes: All constants
-titles = ["test col 1", "test col 2"]
-widths = [42, 43]
-rows:  
-    [{"title": "movie 1", "year": 1942}, {"title": "movie 2", "year": 1943}]
+@dataclass
+class SelectMovieGUI(SelectGUI):
+    """Creates and manages a widget for selecting one of a list of movies."""
 
-columns
-populate
-"""
+    _: KW_ONLY
+    selection_callback: Callable[[MovieBag], None]
+    titles: list[str] = field(default_factory=list)
+    widths: list[int] = field(default_factory=list)
+    # The index of self.rows list is also the treeview index.
+    rows: list[MovieBag]
+
+    def __post_init__(self):
+        self.titles = [TITLE, YEAR, DIRECTORS, DURATION, NOTES]
+        self.widths = [225, 40, 200, 50, 550]
+        super().__post_init__()
+
+    def columns(self, tree: ttk.Treeview):
+        """Sets up the internal structure of the treeview.
+
+        This includes column titles, column widths, and the number of rows to display.
+
+        Args:
+            tree:
+        """
+        tree.configure(height=25, columns=self.titles[1:])
+        for ix, title in enumerate(self.titles):
+            tree.column(f"#{ix}", width=self.widths[ix])
+            tree.heading(f"#{ix}", text=self.titles[ix].title())
+
+    def populate(self, tree: ttk.Treeview):
+        """Populates the treeview with data.
+
+        Args:
+            tree:
+        """
+        self.rows.sort(key=lambda movie_bag: movie_bag["title"])
+        for ix, movie in enumerate(self.rows):
+            duration = movie.get("duration")
+            duration = int(duration) if duration else ""
+            tree.insert(
+                "",
+                "end",
+                iid=ix,
+                text=movie["title"],
+                values=(
+                    int(movie["year"]),
+                    setstr_to_str(movie.get("directors")),
+                    duration,
+                    movie.get("notes", ""),
+                ),
+            )

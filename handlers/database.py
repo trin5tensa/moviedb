@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/8/25, 9:15 AM by stephen.
+#  Last modified 3/10/25, 1:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -81,7 +81,9 @@ def gui_select_movie(*, movies: list[MovieBag]):
     Args:
         movies:
     """
-    guiwidgets.SelectMovieGUI(config.current.tk_root, movies, db_select_movie)
+    gui.tviewselect.SelectMovieGUI(
+        config.current.tk_root, selection_callback=db_select_movie, rows=movies
+    )
 
 
 def gui_edit_movie(old_movie: MovieBag, *, prepopulate: MovieBag = None):

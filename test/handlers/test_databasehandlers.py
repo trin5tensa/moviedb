@@ -1,7 +1,7 @@
 """Menu handlers test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/8/25, 9:15 AM by stephen.
+#  Last modified 3/10/25, 1:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -155,14 +155,16 @@ def test_gui_search_movie(monkeypatch, config_current, test_tags):
 def test_gui_select_movie(monkeypatch, config_current):
     select_movie_gui = MagicMock(name="select_movie_gui")
     monkeypatch.setattr(
-        handlers.database.guiwidgets, "SelectMovieGUI", select_movie_gui
+        handlers.database.gui.tviewselect, "SelectMovieGUI", select_movie_gui
     )
     movies = [MovieBag(title="", year=MovieInteger(0))]
 
     handlers.database.gui_select_movie(movies=movies)
 
     select_movie_gui.assert_called_once_with(
-        config.current.tk_root, movies, handlers.database.db_select_movie
+        config.current.tk_root,
+        selection_callback=handlers.database.db_select_movie,
+        rows=movies,
     )
 
 
