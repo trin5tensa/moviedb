@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/12/25, 6:54 AM by stephen.
+#  Last modified 3/12/25, 9:47 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,6 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import pytest
 from pytest_check import check
 from unittest.mock import MagicMock
 
@@ -79,3 +80,35 @@ class TestMovieGUI:
             fill_tmdb.assert_called_once_with(tmdb_frame)
         with check:
             init_button_enablements.assert_called_once_with(movies_gui.entry_fields)
+
+    def test_create_tmdb_frame(self, tk, ttk, moviegui_post_init, monkeypatch):
+        # Arrange
+        monkeypatch.setattr(movies, "ttk", ttk)
+        tmdb_callback = MagicMock(name="tmdb_callback", autospec=True)
+        all_tags = []
+        movie_gui = movies.MovieGUI(
+            tk.Tk, tmdb_callback=tmdb_callback, all_tags=all_tags
+        )
+
+        # Act
+        movie_gui.create_tmdb_frame(ttk.Frame)
+
+        # Assert
+        with check:
+            ttk.Frame.columnconfigure.assert_called_once_with(1, weight=1000)
+        with check:
+            ttk.Frame.assert_called_once_with(ttk.Frame, padding=10)
+        with check:
+            ttk.Frame().grid.assert_called_once_with(column=1, row=0, sticky="nw")
+        with check:
+            ttk.Frame().columnconfigure.assert_called_once_with(0, weight=1, minsize=25)
+
+
+@pytest.fixture(scope="function")
+def moviegui_post_init(monkeypatch):
+    """Stops the MovieGUI.__post_init__ method from running."""
+    monkeypatch.setattr(
+        movies.MovieGUI,
+        "__post_init__",
+        lambda *args, **kwargs: None,
+    )

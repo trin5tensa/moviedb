@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/12/25, 6:54 AM by stephen.
+#  Last modified 3/12/25, 9:47 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -52,9 +52,21 @@ class MovieGUI:
         self.fill_tmdb(tmdb_frame)
         common.init_button_enablements(self.entry_fields)
 
-    def create_tmdb_frame(self, outer_frame: ttk.Frame) -> ttk.Frame:
-        """Stub method."""
-        pass
+    @staticmethod
+    def create_tmdb_frame(outer_frame: ttk.Frame) -> ttk.Frame:
+        """Creates a frame which will contain movies found in TMDB.
+
+        Args:
+            outer_frame:
+
+        Returns:
+            tmdb_frame:
+        """
+        outer_frame.columnconfigure(1, weight=1000)
+        tmdb_frame = ttk.Frame(outer_frame, padding=10)
+        tmdb_frame.grid(column=1, row=0, sticky="nw")
+        tmdb_frame.columnconfigure(0, weight=1, minsize=25)
+        return tmdb_frame
 
     def fill_body(self, body_frame: ttk.Frame):
         """Stub method."""
