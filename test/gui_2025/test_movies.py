@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/12/25, 9:47 AM by stephen.
+#  Last modified 3/13/25, 12:53 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,7 @@
 
 import pytest
 from pytest_check import check
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 from gui import movies
 
@@ -87,7 +87,7 @@ class TestMovieGUI:
         tmdb_callback = MagicMock(name="tmdb_callback", autospec=True)
         all_tags = []
         movie_gui = movies.MovieGUI(
-            tk.Tk, tmdb_callback=tmdb_callback, all_tags=all_tags
+            tk.Tk(), tmdb_callback=tmdb_callback, all_tags=all_tags
         )
 
         # Act
@@ -102,6 +102,59 @@ class TestMovieGUI:
             ttk.Frame().grid.assert_called_once_with(column=1, row=0, sticky="nw")
         with check:
             ttk.Frame().columnconfigure.assert_called_once_with(0, weight=1, minsize=25)
+
+    def test_fill_body(self, tk, ttk, moviegui_post_init, monkeypatch):
+        # Arrange
+        body_frame = ttk.Frame()
+        label_and_field = MagicMock(name="label_and_field", autospec=True)
+        monkeypatch.setattr(movies.common, "LabelAndField", label_and_field)
+        # noinspection DuplicatedCode
+        tk_facade_entry = MagicMock(name="tk_facade_entry", autospec=True)
+        monkeypatch.setattr(movies.tk_facade, "Entry", tk_facade_entry)
+        tk_facade_text = MagicMock(name="tk_facade_text", autospec=True)
+        monkeypatch.setattr(movies.tk_facade, "Text", tk_facade_text)
+        tk_facade_treeview = MagicMock(name="tk_facade_treeview", autospec=True)
+        monkeypatch.setattr(movies.tk_facade, "Treeview", tk_facade_treeview)
+        tmdb_callback = MagicMock(name="tmdb_callback", autospec=True)
+        all_tags = []
+        movie_gui = movies.MovieGUI(
+            tk.Tk(), tmdb_callback=tmdb_callback, all_tags=all_tags
+        )
+
+        # Act
+        movie_gui.fill_body(body_frame)
+
+        # Assert
+        with check:
+            label_and_field.assert_called_once_with(body_frame)
+        with check:
+            assert movie_gui.entry_fields == {
+                movies.TITLE: tk_facade_entry(),
+                movies.YEAR: tk_facade_entry(),
+                movies.DIRECTORS: tk_facade_entry(),
+                movies.DURATION: tk_facade_entry(),
+                movies.NOTES: tk_facade_text(),
+                movies.MOVIE_TAGS: tk_facade_treeview(),
+            }
+        with check:
+            label_and_field().add_entry_row.assert_has_calls(
+                [
+                    call(movie_gui.entry_fields[movies.TITLE]),
+                    call(movie_gui.entry_fields[movies.YEAR]),
+                    call(movie_gui.entry_fields[movies.DIRECTORS]),
+                    call(movie_gui.entry_fields[movies.DURATION]),
+                ]
+            )
+        with check:
+            label_and_field().add_text_row.assert_called_once_with(
+                movie_gui.entry_fields[movies.NOTES]
+            )
+        with check:
+            label_and_field().add_treeview_row.assert_called_once_with(
+                movie_gui.entry_fields[movies.MOVIE_TAGS], movie_gui.all_tags
+            )
+        with check:
+            tk_facade_entry().widget.focus_set.assert_called_once_with()
 
 
 @pytest.fixture(scope="function")

@@ -1,7 +1,7 @@
 """This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/8/25, 8:16 AM by stephen.
+#  Last modified 3/13/25, 12:53 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -52,8 +52,11 @@ type TkParentType = tk.Tk | tk.Toplevel | ttk.Frame
 
 @dataclass
 class LabelAndField:
-    """Configures a parent frame with two columns for labels and data
-    entry widgets.
+    """Formats a parent frame with three columns for labels, fields and a scrollbar.
+
+    Individual methods can be called to add rows for entry, text, checkbox,
+    or treeview widgets. The scrollbar column provides a home for the scrollbar of the
+    treeview widget.
     """
 
     parent: TkParentType
@@ -80,7 +83,7 @@ class LabelAndField:
             entry_field:
         """
         row_ix = next(self.row)
-        self.create_label(entry_field.label_text, row_ix)
+        self._create_label(entry_field.label_text, row_ix)
         entry_field.widget.configure(width=self.col_1_width)
         entry_field.widget.grid(column=1, row=row_ix)
 
@@ -91,7 +94,7 @@ class LabelAndField:
             entry_field:
         """
         row_ix = next(self.row)
-        self.create_label(entry_field.label_text, row_ix)
+        self._create_label(entry_field.label_text, row_ix)
 
         entry_field.widget.configure(
             width=self.col_1_width - 2,
@@ -139,7 +142,7 @@ class LabelAndField:
             all_tags:
         """
         row_ix = next(self.row)
-        self.create_label(entry_field.label_text, row_ix)
+        self._create_label(entry_field.label_text, row_ix)
 
         entry_field.widget.configure(
             columns=("tags",),
@@ -166,7 +169,7 @@ class LabelAndField:
         entry_field.widget.configure(yscrollcommand=scrollbar.set)
         scrollbar.grid(column=2, row=row_ix, sticky="ns")
 
-    def create_label(self, text: str, row_ix: int):
+    def _create_label(self, text: str, row_ix: int):
         """Creates a label for the current row.
 
         Args:

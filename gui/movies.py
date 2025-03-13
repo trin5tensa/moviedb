@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/12/25, 9:47 AM by stephen.
+#  Last modified 3/13/25, 12:53 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,8 +20,23 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, KW_ONLY, field
 import queue
 
-from globalconstants import MovieBag
+from globalconstants import (
+    MovieBag,
+    TITLE,
+    YEAR,
+    DIRECTORS,
+    DURATION,
+    NOTES,
+    MOVIE_TAGS,
+)
 from gui import common, tk_facade
+
+TITLE_TEXT = "Title"
+YEAR_TEXT = "Year"
+DIRECTORS_TEXT = "Directors"
+DURATION_TEXT = "Runtime"
+NOTES_TEXT = "Notes"
+MOVIE_TAGS_TEXT = "Tags"
 
 
 @dataclass
@@ -69,8 +84,39 @@ class MovieGUI:
         return tmdb_frame
 
     def fill_body(self, body_frame: ttk.Frame):
-        """Stub method."""
-        pass
+        """Creates the widgets for the entry form and the data structures for their
+        support.
+
+        The widgets are:
+            title: ttk.Entry
+            year: ttk.Entry
+            directors: ttk.Entry
+            duration: ttk.Entry
+            notes: ttk.Text
+            tags: ttk.Treeview
+
+        Args:
+            body_frame:
+        """
+        label_and_field = common.LabelAndField(body_frame)
+
+        # Create entry rows for title, year, director, and duration.
+        for name, text in zip(
+            (TITLE, YEAR, DIRECTORS, DURATION),
+            (TITLE_TEXT, YEAR_TEXT, DIRECTORS_TEXT, DURATION_TEXT),
+        ):
+            self.entry_fields[name] = tk_facade.Entry(text, body_frame)
+            label_and_field.add_entry_row(self.entry_fields[name])
+
+        # Create label and text widget.
+        self.entry_fields[NOTES] = tk_facade.Text(NOTES_TEXT, body_frame)
+        label_and_field.add_text_row(self.entry_fields[NOTES])
+
+        # Create a label and treeview for movie tags.
+        self.entry_fields[MOVIE_TAGS] = tk_facade.Treeview(MOVIE_TAGS_TEXT, body_frame)
+        label_and_field.add_treeview_row(self.entry_fields[MOVIE_TAGS], self.all_tags)
+
+        self.entry_fields[TITLE].widget.focus_set()
 
     def fill_buttonbox(self, buttonbox: ttk.Frame):
         """Stub method."""

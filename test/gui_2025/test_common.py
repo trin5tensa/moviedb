@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/6/25, 8:18 AM by stephen.
+#  Last modified 3/13/25, 12:53 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,7 +16,6 @@
 from collections import UserDict
 from unittest.mock import MagicMock, call
 
-import pytest
 from pytest_check import check
 
 from gui import common
@@ -59,7 +58,7 @@ class TestLabelAndField:
 
         # Act
         input_zone = common.LabelAndField(parent)
-        input_zone.create_label(text, row_ix)
+        input_zone._create_label(text, row_ix)
 
         # Assert
         with check:
@@ -78,7 +77,7 @@ class TestLabelAndField:
         create_label = MagicMock(name="create_label", autospec=True)
         monkeypatch.setattr(
             common.LabelAndField,
-            "create_label",
+            "_create_label",
             create_label,
         )
         entry_field = MagicMock(name="entry_field", autospec=True)
@@ -107,7 +106,7 @@ class TestLabelAndField:
         create_label = MagicMock(name="create_label", autospec=True)
         monkeypatch.setattr(
             common.LabelAndField,
-            "create_label",
+            "_create_label",
             create_label,
         )
         entry_field = MagicMock(name="entry_field", autospec=True)
@@ -182,7 +181,7 @@ class TestLabelAndField:
         create_label = MagicMock(name="create_label", autospec=True)
         monkeypatch.setattr(
             common.LabelAndField,
-            "create_label",
+            "_create_label",
             create_label,
         )
         entry_field = MagicMock(name="entry_field", autospec=True)
@@ -387,19 +386,3 @@ def test_test_init_button_enablements(monkeypatch):
 
     # Assert
     notify.assert_called_once_with()
-
-
-# @pytest.fixture(scope="function")
-# def tk(monkeypatch) -> MagicMock:
-#     """Stops Tk from starting."""
-#     tk = MagicMock(name="tk", autospec=True)
-#     monkeypatch.setattr(common, "tk", tk)
-#     return tk
-#
-#
-# @pytest.fixture(scope="function")
-# def ttk(monkeypatch) -> MagicMock:
-#     """Stops Tk.Ttk from starting."""
-#     ttk = MagicMock(name="ttk", autospec=True)
-#     monkeypatch.setattr(common, "ttk", ttk)
-#     return ttk
