@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/14/25, 7:39 AM by stephen.
+#  Last modified 3/14/25, 1:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -174,6 +174,17 @@ class TestMovieGUI:
                 command=movie_gui_obj.destroy,
                 default="active",
             )
+
+    def test_create_buttons(self, ttk, movie_gui_obj, monkeypatch):
+        # Arrange
+        buttonbox = ttk.Frame()
+        count = MagicMock(name="count", autospec=True)
+        monkeypatch.setattr(movies, "count", count)
+        column_counter = count()
+
+        # Act and Assert
+        with check.raises(NotImplementedError):
+            movie_gui_obj._create_buttons(buttonbox, column_counter)
 
     @pytest.fixture(scope="function")
     def movie_gui_obj(self, tk, moviegui_post_init, monkeypatch):

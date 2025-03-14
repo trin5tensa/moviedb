@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/14/25, 7:39 AM by stephen.
+#  Last modified 3/14/25, 1:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -119,6 +119,12 @@ class MovieGUI:
 
         self.entry_fields[TITLE].widget.focus_set()
 
+    def populate(self):
+        """Stub method."""
+        pass
+
+    # todo as_movie_bag
+
     def fill_buttonbox(self, buttonbox: ttk.Frame):
         """Fills the buttonbox with buttons.
 
@@ -140,6 +146,18 @@ class MovieGUI:
         )
 
     def _create_buttons(self, buttonbox: ttk.Frame, column_counter: Iterator):
+        """Create buttons within the buttonbox.
+
+        Subclasses may call create_button to place a button in the buttonbox at
+        next(column_counter).
+
+        Args:
+            buttonbox:
+            column_counter:
+        """
+        raise NotImplementedError
+
+    def destroy(self):
         """Stub method."""
         pass
 
@@ -151,13 +169,3 @@ class MovieGUI:
     #  tmdb_search
     #  tmdb_consumer
     #  tmdb_treeview_callback
-
-    def populate(self):
-        """Stub method."""
-        pass
-
-    # todo as_movie_bag
-
-    def destroy(self):
-        """Stub method."""
-        pass
