@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/13/25, 12:53 PM by stephen.
+#  Last modified 3/14/25, 7:39 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,8 +16,9 @@
 # This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Sequence, Iterator
 from dataclasses import dataclass, KW_ONLY, field
+from itertools import count
 import queue
 
 from globalconstants import (
@@ -119,6 +120,26 @@ class MovieGUI:
         self.entry_fields[TITLE].widget.focus_set()
 
     def fill_buttonbox(self, buttonbox: ttk.Frame):
+        """Fills the buttonbox with buttons.
+
+        This adds one default Cancel button after any buttons added by
+        subclasses. It calls the abstract class method create_button which
+        must be overridden by subclasses.
+
+        Args:
+            buttonbox:
+        """
+        column_counter = count()
+        self._create_buttons(buttonbox, column_counter)
+        common.create_button(
+            buttonbox,
+            common.CANCEL_TEXT,
+            column=next(column_counter),
+            command=self.destroy,
+            default="active",
+        )
+
+    def _create_buttons(self, buttonbox: ttk.Frame, column_counter: Iterator):
         """Stub method."""
         pass
 
@@ -126,9 +147,16 @@ class MovieGUI:
         """Stub method."""
         pass
 
+    # todo
+    #  tmdb_search
+    #  tmdb_consumer
+    #  tmdb_treeview_callback
+
     def populate(self):
         """Stub method."""
         pass
+
+    # todo as_movie_bag
 
     def destroy(self):
         """Stub method."""
