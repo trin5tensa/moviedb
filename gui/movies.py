@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/15/25, 11:20 AM by stephen.
+#  Last modified 3/15/25, 1:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -55,18 +55,24 @@ class MovieGUI:
     tmdb_callback: Callable[[str, queue.LifoQueue], None]
     all_tags: Sequence[str]
 
-    prepopulate: MovieBag = field(default_factory=MovieBag, kw_only=True)
-    # A more convenient data structure for entry fields.
+    prepopulate: MovieBag = field(
+        default_factory=MovieBag, init=False, repr=False, compare=False
+    )
     entry_fields: dict[
         str,
         tk_facade.Entry | tk_facade.Text | tk_facade.Treeview,
-    ] = field(default_factory=dict, init=False, repr=False)
+    ] = field(default_factory=dict, init=False, repr=False, compare=False)
+    outer_frame: ttk.Frame = field(default=None, init=False, repr=False, compare=False)
+
+    # These variables are used for the consumer end of the TMDB
+    # producer/consumer pattern.
+    tmdb_poller: str = field(default=None, init=False, repr=False, compare=False)
 
     def __post_init__(self):
-        outer_frame, body_frame, buttonbox = common.create_body_and_buttonbox(
+        self.outer_frame, body_frame, buttonbox = common.create_body_and_buttonbox(
             self.parent, type(self).__name__.lower(), self.destroy
         )
-        tmdb_frame = self.create_tmdb_frame(outer_frame)
+        tmdb_frame = self.create_tmdb_frame(self.outer_frame)
         self.fill_body(body_frame)
         self.populate()
         self.fill_buttonbox(buttonbox)
@@ -104,6 +110,7 @@ class MovieGUI:
         Args:
             body_frame:
         """
+        # noinspection DuplicatedCode
         label_and_field = common.LabelAndField(body_frame)
 
         # Create entry rows for title, year, director, and duration.
@@ -144,6 +151,7 @@ class MovieGUI:
         else:
             self.entry_fields[MOVIE_TAGS].original_value = []
 
+    # noinspection DuplicatedCode
     def as_movie_bag(self) -> MovieBag:
         """Returns the form data as a movie bag
 
@@ -205,9 +213,16 @@ class MovieGUI:
         """
         raise NotImplementedError
 
-    def destroy(self):
-        """Stub method."""
-        pass
+    # noinspection PyUnusedLocal
+    def destroy(self, *args):
+        """
+        Destroy all widgets of this class.
+
+        Args:
+            *args: Not used but needed to match external caller.
+        """
+        self.parent.after_cancel(self.tmdb_poller)
+        self.outer_frame.destroy()
 
     def fill_tmdb(self, tmdb_frame: ttk.Frame):
         """Stub method."""

@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/15/25, 11:20 AM by stephen.
+#  Last modified 3/15/25, 1:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -248,6 +248,7 @@ class TestMovieGUI:
             [],
         )
 
+    # noinspection DuplicatedCode
     def test_as_movie_bag(self, movie_gui_obj, monkeypatch):
         # Arrange
         ef_title = "AMB Title"
@@ -285,7 +286,8 @@ class TestMovieGUI:
 
         assert movie_bag == expected_movie_bag
 
-    def test_as_movie_bag_with_bad_key(self, movie_gui_obj, monkeypatch, log_error):
+    # noinspection DuplicatedCode
+    def test_as_movie_bag_with_bad_key(self, movie_gui_obj, monkeypatch, caplog):
         bad_key = "garbage"
         monkeypatch.setattr(movies.MovieGUI, "__post_init__", lambda *args: None)
         widget = MagicMock(name=bad_key)
@@ -296,8 +298,9 @@ class TestMovieGUI:
         with check:
             with pytest.raises(KeyError, match=exc_notes):
                 movie_gui_obj.as_movie_bag()
-        check.equal(log_error, [((exc_notes,), {})])
+        check.equal(caplog.messages, [exc_notes])
 
+    # noinspection DuplicatedCode
     def test_as_movie_bag_with_blank_input_field(self, movie_gui_obj, monkeypatch):
         ef_title = "AMB Title"
         for k, v in [("title", ef_title), ("notes", "")]:
@@ -349,6 +352,22 @@ class TestMovieGUI:
         with check.raises(NotImplementedError):
             movie_gui_obj._create_buttons(buttonbox, column_counter)
 
+    def test_destroy(self, tk, ttk, movie_gui_obj, monkeypatch):
+        # Arrange
+        movie_gui_obj.tmdb_poller = "tmdb_poller"
+        outer_frame = MagicMock(name="outer_frame", autospec=True)
+        monkeypatch.setattr(movies.MovieGUI, "outer_frame", outer_frame)
+        movie_gui_obj.outer_frame = outer_frame
+
+        # Act
+        movie_gui_obj.destroy()
+
+        # Assert
+        with check:
+            tk.Tk().after_cancel.assert_called_once_with(movie_gui_obj.tmdb_poller)
+        with check:
+            outer_frame.destroy.assert_called_once_with()
+
     @pytest.fixture(scope="function")
     def movie_gui_obj(self, tk, moviegui_post_init, monkeypatch):
         """Creates a MovieGUI object without running the __post_init__ method."""
@@ -365,15 +384,3 @@ def moviegui_post_init(monkeypatch):
         "__post_init__",
         lambda *args, **kwargs: None,
     )
-
-
-@pytest.fixture(scope="function")
-def log_error(monkeypatch):
-    """Logs arguments of calls to logging.error."""
-    calls = []
-    monkeypatch.setattr(
-        movies.logging,
-        "error",
-        lambda *args, **kwargs: calls.append((args, kwargs)),
-    )
-    return calls
