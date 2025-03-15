@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/14/25, 1:00 PM by stephen.
+#  Last modified 3/15/25, 11:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,10 +19,13 @@ import tkinter.ttk as ttk
 from collections.abc import Callable, Sequence, Iterator
 from dataclasses import dataclass, KW_ONLY, field
 from itertools import count
+import logging
 import queue
 
 from globalconstants import (
     MovieBag,
+    MovieInteger,
+    setstr_to_str,
     TITLE,
     YEAR,
     DIRECTORS,
@@ -38,6 +41,8 @@ DIRECTORS_TEXT = "Directors"
 DURATION_TEXT = "Runtime"
 NOTES_TEXT = "Notes"
 MOVIE_TAGS_TEXT = "Tags"
+
+UNEXPECTED_KEY = "Unexpected key"
 
 
 @dataclass
@@ -120,10 +125,53 @@ class MovieGUI:
         self.entry_fields[TITLE].widget.focus_set()
 
     def populate(self):
-        """Stub method."""
-        pass
+        """Initialises field values."""
+        self.entry_fields[TITLE].original_value = self.prepopulate.get("title", "")
+        if year := self.prepopulate.get("year"):
+            self.entry_fields[YEAR].original_value = str(year)
+        else:
+            self.entry_fields[YEAR].original_value = ""
+        self.entry_fields[DIRECTORS].original_value = setstr_to_str(
+            self.prepopulate.get("directors")
+        )
+        if duration := self.prepopulate.get("duration"):
+            self.entry_fields[DURATION].original_value = str(duration)
+        else:
+            self.entry_fields[DURATION].original_value = ""
+        self.entry_fields[NOTES].original_value = self.prepopulate.get("notes", "")
+        if tags := self.prepopulate.get("tags"):
+            self.entry_fields[MOVIE_TAGS].original_value = sorted(list(tags))
+        else:
+            self.entry_fields[MOVIE_TAGS].original_value = []
 
-    # todo as_movie_bag
+    def as_movie_bag(self) -> MovieBag:
+        """Returns the form data as a movie bag
+
+        Returns:
+            movie bag
+        """
+        movie_bag = MovieBag()
+        for name, widget in self.entry_fields.items():
+            if widget.current_value:
+                match name:
+                    case "title":
+                        movie_bag["title"] = widget.current_value
+                    case "year":
+                        movie_bag["year"] = MovieInteger(widget.current_value)
+                    case "duration":
+                        movie_bag["duration"] = MovieInteger(widget.current_value)
+                    case "directors":
+                        movie_bag["directors"] = set(widget.current_value.split(", "))
+                    case "notes":
+                        movie_bag["notes"] = widget.current_value
+                    case "tags":
+                        movie_bag["tags"] = {  # pragma no branch
+                            tag for tag in widget.current_value
+                        }
+                    case _:
+                        logging.error(f"Unexpected key: {name}")
+                        raise KeyError(f"Unexpected key: {name}")
+        return movie_bag
 
     def fill_buttonbox(self, buttonbox: ttk.Frame):
         """Fills the buttonbox with buttons.

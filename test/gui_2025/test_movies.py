@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/14/25, 1:00 PM by stephen.
+#  Last modified 3/15/25, 11:20 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,6 +17,7 @@ import pytest
 from pytest_check import check
 from unittest.mock import MagicMock, call
 
+from globalconstants import MovieBag
 from gui import movies
 
 
@@ -150,6 +151,168 @@ class TestMovieGUI:
         with check:
             tk_facade_entry().widget.focus_set.assert_called_once_with()
 
+    def test_populate(self, movie_gui_obj, monkeypatch):
+        # Arrange
+        for field_name in [
+            movies.TITLE,
+            movies.YEAR,
+            movies.DIRECTORS,
+            movies.DURATION,
+            movies.NOTES,
+            movies.MOVIE_TAGS,
+        ]:
+            movie_gui_obj.entry_fields[field_name] = MagicMock(
+                name=f"tk_facade_{field_name}", autospec=True
+            )
+        movie_bag: MovieBag = {
+            "title": "Populate Title",
+            "year": movies.MovieInteger(4042),
+            "directors": {"Tina Tangle", "Sam Smith"},
+            "duration": movies.MovieInteger(142),
+            "notes": "A populate note",
+            "tags": {"Tag Y", "Tag X"},
+        }
+        movie_gui_obj.prepopulate = movie_bag
+
+        # Act
+        # noinspection DuplicatedCode
+        movie_gui_obj.populate()
+
+        # Assert
+        check.equal(
+            movie_gui_obj.entry_fields[movies.TITLE].original_value,
+            "Populate Title",
+        )
+        check.equal(
+            movie_gui_obj.entry_fields[movies.YEAR].original_value,
+            "4042",
+        )
+        check.equal(
+            movie_gui_obj.entry_fields[movies.DIRECTORS].original_value,
+            "Sam Smith, Tina Tangle",
+        )
+        check.equal(
+            movie_gui_obj.entry_fields[movies.DURATION].original_value,
+            "142",
+        )
+        check.equal(
+            movie_gui_obj.entry_fields[movies.NOTES].original_value,
+            "A populate note",
+        )
+        check.equal(
+            movie_gui_obj.entry_fields[movies.MOVIE_TAGS].original_value,
+            ["Tag X", "Tag Y"],
+        )
+
+    def test_populate_with_empty_prepopulate(self, movie_gui_obj, monkeypatch):
+        # Arrange
+        for field_name in [
+            movies.TITLE,
+            movies.YEAR,
+            movies.DIRECTORS,
+            movies.DURATION,
+            movies.NOTES,
+            movies.MOVIE_TAGS,
+        ]:
+            mock = MagicMock(name=f"tk_facade_{field_name}", autospec=True)
+            mock.__str__.return_value = ""
+            movie_gui_obj.entry_fields[field_name] = mock
+
+        # Act
+        # noinspection DuplicatedCode
+        movie_gui_obj.populate()
+
+        # Assert
+        check.equal(
+            movie_gui_obj.entry_fields[movies.TITLE].original_value,
+            "",
+        )
+        check.equal(
+            movie_gui_obj.entry_fields[movies.YEAR].original_value,
+            "",
+        )
+        check.equal(
+            movie_gui_obj.entry_fields[movies.DIRECTORS].original_value,
+            "",
+        )
+        check.equal(
+            movie_gui_obj.entry_fields[movies.DURATION].original_value,
+            "",
+        )
+        check.equal(
+            movie_gui_obj.entry_fields[movies.NOTES].original_value,
+            "",
+        )
+        check.equal(
+            movie_gui_obj.entry_fields[movies.MOVIE_TAGS].original_value,
+            [],
+        )
+
+    def test_as_movie_bag(self, movie_gui_obj, monkeypatch):
+        # Arrange
+        ef_title = "AMB Title"
+        ef_year = "4242"
+        ef_director = "Sidney Stoneheart, Tina Tatum"
+        ef_duration = "42"
+        ef_notes = "AMB Notes"
+        ef_tags = {"Alpha", "Beta"}
+        for k, v in [
+            (movies.TITLE, ef_title),
+            (movies.YEAR, ef_year),
+            (movies.DIRECTORS, ef_director),
+            (movies.DURATION, ef_duration),
+            (movies.NOTES, ef_notes),
+            (movies.MOVIE_TAGS, ef_tags),
+        ]:
+            widget = MagicMock(name=k)
+            widget.current_value = v
+            monkeypatch.setitem(movie_gui_obj.entry_fields, k, widget)
+
+        mb_year = movies.MovieInteger("4242")
+        mb_director = {"Sidney Stoneheart", "Tina Tatum"}
+        mb_duration = movies.MovieInteger("42")
+        expected_movie_bag = MovieBag(
+            title=ef_title,
+            year=mb_year,
+            duration=mb_duration,
+            directors=mb_director,
+            notes=ef_notes,
+            tags=ef_tags,
+        )
+
+        # Act
+        movie_bag = movie_gui_obj.as_movie_bag()
+
+        assert movie_bag == expected_movie_bag
+
+    def test_as_movie_bag_with_bad_key(self, movie_gui_obj, monkeypatch, log_error):
+        bad_key = "garbage"
+        monkeypatch.setattr(movies.MovieGUI, "__post_init__", lambda *args: None)
+        widget = MagicMock(name=bad_key)
+        widget.current_value = "Has a current_value"
+        monkeypatch.setitem(movie_gui_obj.entry_fields, bad_key, widget)
+        exc_notes = f"{movies.UNEXPECTED_KEY}: {bad_key}"
+
+        with check:
+            with pytest.raises(KeyError, match=exc_notes):
+                movie_gui_obj.as_movie_bag()
+        check.equal(log_error, [((exc_notes,), {})])
+
+    def test_as_movie_bag_with_blank_input_field(self, movie_gui_obj, monkeypatch):
+        ef_title = "AMB Title"
+        for k, v in [("title", ef_title), ("notes", "")]:
+            widget = MagicMock(name=k)
+            widget.current_value = v
+            monkeypatch.setitem(movie_gui_obj.entry_fields, k, widget)
+
+        expected_movie_bag = MovieBag(
+            title=ef_title,
+        )
+
+        movie_bag = movie_gui_obj.as_movie_bag()
+
+        assert movie_bag == expected_movie_bag
+
     def test_fill_buttonbox(self, ttk, movie_gui_obj, monkeypatch):
         # Arrange
         buttonbox = ttk.Frame()
@@ -202,3 +365,15 @@ def moviegui_post_init(monkeypatch):
         "__post_init__",
         lambda *args, **kwargs: None,
     )
+
+
+@pytest.fixture(scope="function")
+def log_error(monkeypatch):
+    """Logs arguments of calls to logging.error."""
+    calls = []
+    monkeypatch.setattr(
+        movies.logging,
+        "error",
+        lambda *args, **kwargs: calls.append((args, kwargs)),
+    )
+    return calls
