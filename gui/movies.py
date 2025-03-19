@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/15/25, 1:44 PM by stephen.
+#  Last modified 3/19/25, 10:12 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -76,7 +76,7 @@ class MovieGUI:
         self.fill_body(body_frame)
         self.populate()
         self.fill_buttonbox(buttonbox)
-        self.fill_tmdb(tmdb_frame)
+        self.fill_tmdb_frame(tmdb_frame)
         common.init_button_enablements(self.entry_fields)
 
     @staticmethod
@@ -224,7 +224,48 @@ class MovieGUI:
         self.parent.after_cancel(self.tmdb_poller)
         self.outer_frame.destroy()
 
-    def fill_tmdb(self, tmdb_frame: ttk.Frame):
+    def fill_tmdb_frame(self, tmdb_frame: ttk.Frame):
+        """
+        This creates a treeview which will display movies retrieved from TMDB. It also
+        sets up the queue for the producer and consumer pattern used to retrieve the
+        on-line data from TMDB.
+
+        Args:
+            tmdb_frame: The frame into which the widgets will be placed.
+        """
+        tview = ttk.Treeview(
+            tmdb_frame,
+            columns=(TITLE, YEAR, DIRECTORS),
+            show=["headings"],
+            height=20,
+            selectmode="browse",
+        )
+
+        # Create the table columns
+        tview.column(TITLE, width=300, stretch=True)
+        tview.heading(TITLE, text=TITLE_TEXT, anchor="w")
+        tview.column(YEAR, width=40, stretch=True)
+        tview.heading(YEAR, text=YEAR_TEXT, anchor="w")
+        tview.column(DIRECTORS, width=200, stretch=True)
+        tview.heading(DIRECTORS, text=DIRECTORS_TEXT, anchor="w")
+        tview.grid(column=0, row=0, sticky="nsew")
+        tview.bind("<<TreeviewSelect>>", func=self.tmdb_treeview_callback)
+
+        # Start polling the consumer queue
+        self.tmdb_consumer()
+
+        # Register the TMDB search function with the title field's observer.
+        self.entry_fields[TITLE].observer.register(self.tmdb_search)
+
+    def tmdb_treeview_callback(self, *args, **kwargs):
+        """Stub method."""
+        pass
+
+    def tmdb_consumer(self):
+        """Stub method."""
+        pass
+
+    def tmdb_search(self, *args, **kwargs):
         """Stub method."""
         pass
 

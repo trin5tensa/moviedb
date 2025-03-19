@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/15/25, 1:44 PM by stephen.
+#  Last modified 3/19/25, 10:12 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -53,8 +53,8 @@ class TestMovieGUI:
         monkeypatch.setattr(movies.MovieGUI, "populate", populate)
         fill_buttonbox = MagicMock(name="fill_buttonbox", autospec=True)
         monkeypatch.setattr(movies.MovieGUI, "fill_buttonbox", fill_buttonbox)
-        fill_tmdb = MagicMock(name="fill_tmdb", autospec=True)
-        monkeypatch.setattr(movies.MovieGUI, "fill_tmdb", fill_tmdb)
+        fill_tmdb_frame = MagicMock(name="fill_tmdb_frame", autospec=True)
+        monkeypatch.setattr(movies.MovieGUI, "fill_tmdb_frame", fill_tmdb_frame)
         init_button_enablements = MagicMock(
             name="init_button_enablements", autospec=True
         )
@@ -81,7 +81,7 @@ class TestMovieGUI:
         with check:
             fill_buttonbox.assert_called_once_with(buttonbox)
         with check:
-            fill_tmdb.assert_called_once_with(tmdb_frame)
+            fill_tmdb_frame.assert_called_once_with(tmdb_frame)
         with check:
             init_button_enablements.assert_called_once_with(movies_gui.entry_fields)
 
@@ -367,6 +367,61 @@ class TestMovieGUI:
             tk.Tk().after_cancel.assert_called_once_with(movie_gui_obj.tmdb_poller)
         with check:
             outer_frame.destroy.assert_called_once_with()
+
+    def test_fill_tmdb_frame(self, ttk, movie_gui_obj, monkeypatch):
+        # Arrange
+        ttk = MagicMock(name="ttk", autospec=True)
+        monkeypatch.setattr(movies, "ttk", ttk)
+        tmdb_frame = MagicMock(name="tmdb_frame", autospec=True)
+        monkeypatch.setattr(movies.ttk, "Frame", tmdb_frame)
+        # noinspection DuplicatedCode
+        tview = MagicMock(name="tview", autospec=True)
+        monkeypatch.setattr(movies.ttk, "Treeview", tview)
+        tmdb_consumer = MagicMock(name="tmdb_consumer", autospec=True)
+        monkeypatch.setattr(movies.MovieGUI, "tmdb_consumer", tmdb_consumer)
+        entry = MagicMock(name="entry", autospec=True)
+        monkeypatch.setattr(movies.tk_facade, "Entry", entry)
+        monkeypatch.setitem(movie_gui_obj.entry_fields, movies.TITLE, entry)
+
+        # Act
+        movie_gui_obj.fill_tmdb_frame(tmdb_frame)
+
+        # Assert
+        with check:
+            tview.assert_called_once_with(
+                ttk.Frame,
+                columns=(movies.TITLE, movies.YEAR, movies.DIRECTORS),
+                show=["headings"],
+                height=20,
+                selectmode="browse",
+            )
+        with check:
+            tview().column.assert_has_calls(
+                [
+                    call(movies.TITLE, width=300, stretch=True),
+                    call(movies.YEAR, width=40, stretch=True),
+                    call(movies.DIRECTORS, width=200, stretch=True),
+                ]
+            )
+        with check:
+            tview().heading.assert_has_calls(
+                [
+                    call(movies.TITLE, text=movies.TITLE_TEXT, anchor="w"),
+                    call(movies.YEAR, text=movies.YEAR_TEXT, anchor="w"),
+                    call(movies.DIRECTORS, text=movies.DIRECTORS_TEXT, anchor="w"),
+                ],
+            )
+        with check:
+            tview().grid.assert_called_once_with(column=0, row=0, sticky="nsew")
+        with check:
+            tview().bind.assert_called_once_with(
+                "<<TreeviewSelect>>",
+                func=movie_gui_obj.tmdb_treeview_callback,
+            )
+        with check:
+            tmdb_consumer.assert_called_once_with()
+        with check:
+            entry.observer.register.assert_called_once_with(movie_gui_obj.tmdb_search)
 
     @pytest.fixture(scope="function")
     def movie_gui_obj(self, tk, moviegui_post_init, monkeypatch):
