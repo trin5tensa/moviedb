@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/19/25, 10:12 AM by stephen.
+#  Last modified 3/20/25, 11:56 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,6 +18,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from collections.abc import Callable, Sequence, Iterator
 from dataclasses import dataclass, KW_ONLY, field
+from functools import partial
 from itertools import count
 import logging
 import queue
@@ -67,6 +68,9 @@ class MovieGUI:
     # These variables are used for the consumer end of the TMDB
     # producer/consumer pattern.
     tmdb_poller: str = field(default=None, init=False, repr=False, compare=False)
+    tmdb_movies: dict[str, MovieBag] = field(
+        default_factory=MovieBag, init=False, repr=False
+    )
 
     def __post_init__(self):
         self.outer_frame, body_frame, buttonbox = common.create_body_and_buttonbox(
@@ -242,6 +246,8 @@ class MovieGUI:
         )
 
         # Create the table columns
+        # todo could 'Notes' be added? Needs to be done during integration
+        #  testing to check widths and stretching.
         tview.column(TITLE, width=300, stretch=True)
         tview.heading(TITLE, text=TITLE_TEXT, anchor="w")
         tview.column(YEAR, width=40, stretch=True)
@@ -249,7 +255,9 @@ class MovieGUI:
         tview.column(DIRECTORS, width=200, stretch=True)
         tview.heading(DIRECTORS, text=DIRECTORS_TEXT, anchor="w")
         tview.grid(column=0, row=0, sticky="nsew")
-        tview.bind("<<TreeviewSelect>>", func=self.tmdb_treeview_callback)
+        tview.bind(
+            "<<TreeviewSelect>>", func=partial(self.tmdb_treeview_callback, tview)
+        )
 
         # Start polling the consumer queue
         self.tmdb_consumer()
@@ -257,9 +265,39 @@ class MovieGUI:
         # Register the TMDB search function with the title field's observer.
         self.entry_fields[TITLE].observer.register(self.tmdb_search)
 
-    def tmdb_treeview_callback(self, *args, **kwargs):
-        """Stub method."""
-        pass
+    # noinspection PyUnusedLocal
+    def tmdb_treeview_callback(self, treeview: ttk.Treeview, *args, **kwargs):
+        """Populates the input form with data from the selected TMDB movie.
+
+        Args:
+            treeview: The table of TMDB movies from which the user has just selected
+            one movie. If the event loop is delayed it is possible for the user to
+            deselect movie in which case this method must handle an empty treeview
+            selection list.
+            *args: Not used but needed to match Tk/Tcl caller's arguments.
+            **kwargs: Not used but needed to match Tk/Tcl caller's arguments.
+        """
+        try:
+            item_id = treeview.selection()[0]
+        except IndexError:  # pragma nocover
+            # User has deselected prior
+            # selection. This can 'get through' to here
+            #  only if the Tk/Tcl event loop has been blocked from rapid
+            #  processing.
+            return
+
+        for k, v in self.tmdb_movies[item_id].items():
+            match k:
+                case "title" | "year" | "duration" | "notes":
+                    self.entry_fields[k].current_value = str(v)
+                case "directors":  # pragma nocover
+                    self.entry_fields[k].current_value = ", ".join(
+                        [director for director in sorted(list(v))]
+                    )
+                case _:  # pragma nocover
+                    logging.error(f"Unexpected key: {k}")
+                    raise KeyError(f"Unexpected key: {k}")
+        return
 
     def tmdb_consumer(self):
         """Stub method."""

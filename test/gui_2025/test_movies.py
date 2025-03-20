@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/19/25, 10:12 AM by stephen.
+#  Last modified 3/20/25, 11:56 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +17,6 @@ import pytest
 from pytest_check import check
 from unittest.mock import MagicMock, call
 
-from globalconstants import MovieBag
 from gui import movies
 
 
@@ -164,7 +163,7 @@ class TestMovieGUI:
             movie_gui_obj.entry_fields[field_name] = MagicMock(
                 name=f"tk_facade_{field_name}", autospec=True
             )
-        movie_bag: MovieBag = {
+        movie_bag: movies.MovieBag = {
             "title": "Populate Title",
             "year": movies.MovieInteger(4042),
             "directors": {"Tina Tangle", "Sam Smith"},
@@ -272,7 +271,7 @@ class TestMovieGUI:
         mb_year = movies.MovieInteger("4242")
         mb_director = {"Sidney Stoneheart", "Tina Tatum"}
         mb_duration = movies.MovieInteger("42")
-        expected_movie_bag = MovieBag(
+        expected_movie_bag = movies.MovieBag(
             title=ef_title,
             year=mb_year,
             duration=mb_duration,
@@ -308,7 +307,7 @@ class TestMovieGUI:
             widget.current_value = v
             monkeypatch.setitem(movie_gui_obj.entry_fields, k, widget)
 
-        expected_movie_bag = MovieBag(
+        expected_movie_bag = movies.MovieBag(
             title=ef_title,
         )
 
@@ -370,13 +369,16 @@ class TestMovieGUI:
 
     def test_fill_tmdb_frame(self, ttk, movie_gui_obj, monkeypatch):
         # Arrange
+        # noinspection DuplicatedCode
         ttk = MagicMock(name="ttk", autospec=True)
         monkeypatch.setattr(movies, "ttk", ttk)
         tmdb_frame = MagicMock(name="tmdb_frame", autospec=True)
         monkeypatch.setattr(movies.ttk, "Frame", tmdb_frame)
-        # noinspection DuplicatedCode
         tview = MagicMock(name="tview", autospec=True)
         monkeypatch.setattr(movies.ttk, "Treeview", tview)
+        # noinspection DuplicatedCode
+        partial = MagicMock(name="partial", autospec=True)
+        monkeypatch.setattr(movies, "partial", partial)
         tmdb_consumer = MagicMock(name="tmdb_consumer", autospec=True)
         monkeypatch.setattr(movies.MovieGUI, "tmdb_consumer", tmdb_consumer)
         entry = MagicMock(name="entry", autospec=True)
@@ -416,12 +418,50 @@ class TestMovieGUI:
         with check:
             tview().bind.assert_called_once_with(
                 "<<TreeviewSelect>>",
-                func=movie_gui_obj.tmdb_treeview_callback,
+                func=movies.partial(movie_gui_obj.tmdb_treeview_callback, tview()),
             )
         with check:
             tmdb_consumer.assert_called_once_with()
         with check:
             entry.observer.register.assert_called_once_with(movie_gui_obj.tmdb_search)
+
+    def test_tmdb_treeview_callback(self, movie_gui_obj, monkeypatch):
+        # Arrange the partial callable with its preset part set to the treeview.
+        item_id = "42"
+        treeview = MagicMock(name="treeview", autospec=True)
+        treeview.selection.return_value = [item_id]
+        callback = movies.partial(movie_gui_obj.tmdb_treeview_callback, treeview)
+
+        # Arrange the tmdb_movies item which contains the twst movie selection
+        movie_bag = movies.MovieBag(
+            title="Test TMDB Callback",
+            year=movies.MovieInteger(4242),
+            duration=movies.MovieInteger(942),
+            directors={"Simon Simple", "Rachel River"},
+            notes="Notes for 'Test TMDB Callback'",
+        )
+        movie_gui_obj.tmdb_movies[item_id] = movie_bag
+
+        # Arrange entry_fields with mocked tk_facade.TkinterFacade for each field name.
+        movie_gui_obj.entry_fields = {
+            k: MagicMock(name=k, autospec=True) for k in movie_bag.keys()
+        }
+
+        # Rearrange the movie_bag fields into their displayed formats.
+        expected = dict(
+            title="Test TMDB Callback",
+            year="4242",
+            duration="942",
+            directors="Rachel River, Simon Simple",
+            notes="Notes for 'Test TMDB Callback'",
+        )
+
+        # Act
+        callback()
+
+        # Assert
+        for k, v in expected.items():
+            check.equal(movie_gui_obj.entry_fields[k].current_value, v)
 
     @pytest.fixture(scope="function")
     def movie_gui_obj(self, tk, moviegui_post_init, monkeypatch):
