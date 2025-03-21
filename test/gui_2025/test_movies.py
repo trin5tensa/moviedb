@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/21/25, 7:57 AM by stephen.
+#  Last modified 3/21/25, 3:49 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -506,6 +506,78 @@ class TestMovieGUI:
         # Assert
         with check:
             after_cancel.assert_called_once_with(event_id)
+
+    def test_tmdb_consumer_with_empty_data_queue(self, movie_gui_obj, monkeypatch):
+        # Arrange
+        # noinspection DuplicatedCode
+        data_queue = MagicMock(name="data_queue", autospec=True)
+        monkeypatch.setattr(movie_gui_obj, "tmdb_data_queue", data_queue)
+        tview = MagicMock(name="tview", autospec=True)
+        monkeypatch.setattr(movie_gui_obj, "tmdb_treeview", tview)
+        after = MagicMock(name="after", autospec=True)
+        monkeypatch.setattr(movie_gui_obj.parent, "after", after)
+        movie_gui_obj.tmdb_data_queue.get_nowait.side_effect = movies.queue.Empty
+
+        # Act
+        movie_gui_obj.tmdb_consumer()
+
+        # Assert
+        with check:
+            data_queue.get_nowait.assert_called_once_with()
+        with check:
+            tview.get_children.assert_not_called()
+        with check:
+            after.assert_called_once_with(
+                movie_gui_obj.tmdb_poller, movie_gui_obj.tmdb_consumer
+            )
+
+    def test_tmdb_consumer_with_filled_data_queue(self, movie_gui_obj, monkeypatch):
+        # Arrange
+        title = "Test of test_tmdb_consumer_with_filled_data_queue"
+        year = 4242
+        directors_in = {"II", "GG", "HH"}
+        directors_out = "GG, HH, II"
+        movie_bag = movies.MovieBag(
+            title=title, year=movies.MovieInteger(year), directors=directors_in
+        )
+        expected = {"4242 Test of test_tmdb_consumer_with_filled_data_queue": movie_bag}
+
+        data_queue = MagicMock(name="data_queue", autospec=True)
+        monkeypatch.setattr(movie_gui_obj, "tmdb_data_queue", data_queue)
+        get_nowait = MagicMock(name="get_nowait", autospec=True)
+        monkeypatch.setattr(movie_gui_obj.tmdb_data_queue, "get_nowait", get_nowait)
+        get_nowait.return_value = [movie_bag]
+
+        tview = MagicMock(name="tview", autospec=True)
+        tview_content = ["Old title", "Old year", "Old directors"]
+        tview.get_children.return_value = tview_content
+        monkeypatch.setattr(movie_gui_obj, "tmdb_treeview", tview)
+        after = MagicMock(name="after", autospec=True)
+        monkeypatch.setattr(movie_gui_obj.parent, "after", after)
+        movie_gui_obj.tmdb_movies["cuckoo"] = movies.MovieBag()
+
+        # Act
+        movie_gui_obj.tmdb_consumer()
+
+        # Assert
+        with check:
+            data_queue.get_nowait.assert_called_once_with()
+        with check:
+            tview.get_children.assert_called_with()
+        with check:
+            tview.delete.assert_called_with(*tview_content)
+        with check:
+            tview.insert.assert_called_with(
+                "",
+                "end",
+                iid=f"{year} {title}",
+                values=(title, str(year), directors_out),
+            )
+        check.equal(movie_gui_obj.tmdb_movies, expected)
+        with check:
+            after.assert_called_once_with(
+                movie_gui_obj.tmdb_poller, movie_gui_obj.tmdb_consumer
+            )
 
     @pytest.fixture(scope="function")
     def movie_gui_obj(self, tk, moviegui_post_init, monkeypatch):

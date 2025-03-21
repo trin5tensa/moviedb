@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/21/25, 7:57 AM by stephen.
+#  Last modified 3/21/25, 3:49 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -64,6 +64,7 @@ class MovieGUI:
         tk_facade.Entry | tk_facade.Text | tk_facade.Treeview,
     ] = field(default_factory=dict, init=False, repr=False, compare=False)
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False, compare=False)
+    tmdb_treeview: ttk.Treeview = field(default=None, init=False, repr=False)
 
     # These attributes are used for the consumer end of the TMDB
     # producer/consumer pattern.
@@ -307,7 +308,7 @@ class MovieGUI:
 
     # noinspection PyUnusedLocal
     def tmdb_search(self, *args, **kwargs):
-        """Search TMDB for matching movies titles.
+        """Searches TMDB for matching movies titles.
 
         A delayed search event is placed in the Tk/Tcl event queue. This will
         supersede and remove an earlier call awaiting execution.
@@ -329,5 +330,44 @@ class MovieGUI:
             )
 
     def tmdb_consumer(self):
-        """Stub method."""
-        pass
+        """Consumer of queued records of movies found on the TMDB website.
+
+        Movies arriving in the work queue are placed into a treeview. Complete
+        movie details are stored in a dict for later retrieval.
+        """
+        try:
+            # Tkinter can't wait for the thread blocking `get` method…
+            data_package = self.tmdb_data_queue.get_nowait()
+
+        except queue.Empty:
+            pass
+            # …so an empty queue is not exceptional.
+
+        else:
+            # Process a data package.
+            items = self.tmdb_treeview.get_children()
+            self.tmdb_treeview.delete(*items)
+            self.tmdb_movies = {}
+            for movie_bag in data_package:
+                title = movie_bag.get("title", "")
+                year = str(movie_bag.get("year", ""))
+                directors = movie_bag.get("directors", "")
+                directors = ", ".join(  # pragma no branch
+                    [director for director in sorted(list(directors))]
+                )
+                iid = f"{year} {title}"
+                self.tmdb_treeview.insert(
+                    "",
+                    "end",
+                    iid=iid,
+                    values=(title, year, directors),
+                )
+                self.tmdb_movies[iid] = movie_bag
+
+        finally:
+            # Have tkinter call this function again after the poll interval.
+            # noinspection PyTypeChecker
+            self.tmdb_event_id = self.parent.after(
+                self.tmdb_poller,
+                self.tmdb_consumer,
+            )
