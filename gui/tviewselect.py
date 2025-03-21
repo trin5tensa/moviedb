@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/10/25, 1:59 PM by stephen.
+#  Last modified 3/12/25, 6:54 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -47,12 +47,10 @@ class SelectGUI:
 
     parent: tk.Tk
     _: KW_ONLY
-    # todo subclasses should override with either str or Movie Bag
     selection_callback: Callable[[str | MovieBag], None]
     titles: list[str]
     widths: list[int]
     # The index of self.rows list is also the treeview index.
-    # todo subclasses should override with either list[str] or list[dict[str, MovieBag]]
     rows: list[str | dict[str, MovieBag]]
 
     outer_frame: ttk.Frame = None
