@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/20/25, 11:56 AM by stephen.
+#  Last modified 3/21/25, 7:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -462,6 +462,50 @@ class TestMovieGUI:
         # Assert
         for k, v in expected.items():
             check.equal(movie_gui_obj.entry_fields[k].current_value, v)
+
+    def test_initialize_tmdb_search(self, movie_gui_obj, monkeypatch):
+        # Arrange
+        match = "test_tmdb_search match"
+        # noinspection DuplicatedCode
+        after = MagicMock(name="after", autospec=True)
+        monkeypatch.setattr(movie_gui_obj.parent, "after", after)
+        after_cancel = MagicMock(name="after_cancel", autospec=True)
+        monkeypatch.setattr(movie_gui_obj.parent, "after_cancel", after_cancel)
+        entry = MagicMock(name="entry", autospec=True)
+        monkeypatch.setattr(movies.tk_facade, "Entry", entry)
+        movie_gui_obj.entry_fields[movies.TITLE] = entry
+        entry.current_value = match
+
+        # Act
+        movie_gui_obj.tmdb_search()
+
+        # Assert
+        with check:
+            after_cancel.assert_not_called()
+        with check:
+            after.assert_called_once_with(
+                movie_gui_obj.tmdb_event_timer,
+                movie_gui_obj.tmdb_callback,
+                match,
+                movie_gui_obj.tmdb_data_queue,
+            )
+
+    def test_subsequent_tmdb_search(self, movie_gui_obj, monkeypatch):
+        # Arrange
+        event_id = "42"
+        movie_gui_obj.tmdb_event_id = event_id
+        after_cancel = MagicMock(name="after_cancel", autospec=True)
+        monkeypatch.setattr(movie_gui_obj.parent, "after_cancel", after_cancel)
+        entry = MagicMock(name="entry", autospec=True)
+        monkeypatch.setattr(movies.tk_facade, "Entry", entry)
+        movie_gui_obj.entry_fields[movies.TITLE] = entry
+
+        # Act
+        movie_gui_obj.tmdb_search()
+
+        # Assert
+        with check:
+            after_cancel.assert_called_once_with(event_id)
 
     @pytest.fixture(scope="function")
     def movie_gui_obj(self, tk, moviegui_post_init, monkeypatch):

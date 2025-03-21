@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/20/25, 11:56 AM by stephen.
+#  Last modified 3/21/25, 7:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -65,12 +65,18 @@ class MovieGUI:
     ] = field(default_factory=dict, init=False, repr=False, compare=False)
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False, compare=False)
 
-    # These variables are used for the consumer end of the TMDB
+    # These attributes are used for the consumer end of the TMDB
     # producer/consumer pattern.
+    tmdb_data_queue: queue.LifoQueue = field(
+        default_factory=queue.Queue, init=False, repr=False
+    )
     tmdb_poller: str = field(default=None, init=False, repr=False, compare=False)
     tmdb_movies: dict[str, MovieBag] = field(
         default_factory=MovieBag, init=False, repr=False
     )
+    # These variables help to decide if the user has finished entering the title.
+    tmdb_event_timer: int = field(default=500, init=False, repr=False)
+    tmdb_event_id: str = field(default="", init=False, repr=False)
 
     def __post_init__(self):
         self.outer_frame, body_frame, buttonbox = common.create_body_and_buttonbox(
@@ -299,15 +305,29 @@ class MovieGUI:
                     raise KeyError(f"Unexpected key: {k}")
         return
 
+    # noinspection PyUnusedLocal
+    def tmdb_search(self, *args, **kwargs):
+        """Search TMDB for matching movies titles.
+
+        A delayed search event is placed in the Tk/Tcl event queue. This will
+        supersede and remove an earlier call awaiting execution.
+
+        Args:
+            *args: Unused argument supplied by tkinter.
+            **kwargs: Unused argument supplied by tkinter.
+        """
+        if match := self.entry_fields[TITLE].current_value:  # pragma no branch
+            if self.tmdb_event_id:
+                self.parent.after_cancel(self.tmdb_event_id)
+
+            # Place a new call to tmdb_search_callback.
+            self.tmdb_event_id = self.parent.after(
+                self.tmdb_event_timer,
+                self.tmdb_callback,
+                match,
+                self.tmdb_data_queue,
+            )
+
     def tmdb_consumer(self):
         """Stub method."""
         pass
-
-    def tmdb_search(self, *args, **kwargs):
-        """Stub method."""
-        pass
-
-    # todo
-    #  tmdb_search
-    #  tmdb_consumer
-    #  tmdb_treeview_callback
