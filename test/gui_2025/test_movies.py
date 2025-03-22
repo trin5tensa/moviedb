@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/21/25, 3:49 PM by stephen.
+#  Last modified 3/22/25, 10:04 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -584,6 +584,48 @@ class TestMovieGUI:
         """Creates a MovieGUI object without running the __post_init__ method."""
         return movies.MovieGUI(
             tk.Tk(), tmdb_callback=self.tmdb_callback, all_tags=self.all_tags
+        )
+
+
+class TestAddMovieGUI:
+    """Tests for the AddMovieGUI class."""
+
+    add_movie_callback = MagicMock(name="add_movie_callback", autospec=True)
+    tmdb_callback = MagicMock(name="tmdb_callback", autospec=True)
+    all_tags = []
+
+    def test_enable_commit_button(self, add_movie_obj, monkeypatch):
+        # Arrange
+        entry = MagicMock(name="entry", autospec=True)
+        entry.title.has_data.return_value = True
+        entry.year.has_data.return_value = False
+        # noinspection DuplicatedCode
+        monkeypatch.setattr(movies.tk_facade, "Entry", entry)
+        commit_button = MagicMock(name="commit_button", autospec=True)
+        monkeypatch.setattr(movies.ttk, "Button", commit_button)
+        enable_button = MagicMock(name="enable_button", autospec=True)
+        monkeypatch.setattr(movies.common, "enable_button", enable_button)
+
+        # Act
+        add_movie_obj.enable_commit_button(commit_button, entry.title, entry.year)
+
+        # Assert
+        enable_button.assert_called_once_with(
+            commit_button,
+            state=entry.title.has_data() and entry.year.has_data(),
+        )
+
+    # todo commit
+    # todo _create_buttons
+
+    @pytest.fixture(scope="function")
+    def add_movie_obj(self, tk, moviegui_post_init, monkeypatch):
+        """Creates a MovieGUI object without running the __post_init__ method."""
+        return movies.AddMovieGUI(
+            tk.Tk(),
+            add_movie_callback=self.add_movie_callback,
+            tmdb_callback=self.tmdb_callback,
+            all_tags=self.all_tags,
         )
 
 

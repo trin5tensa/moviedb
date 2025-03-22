@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/21/25, 3:49 PM by stephen.
+#  Last modified 3/22/25, 10:04 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -371,3 +371,35 @@ class MovieGUI:
                 self.tmdb_poller,
                 self.tmdb_consumer,
             )
+
+
+@dataclass
+class AddMovieGUI(MovieGUI):
+    add_movie_callback: Callable[[MovieBag], None] = None
+
+    # noinspection PyUnusedLocal
+    @staticmethod
+    def enable_commit_button(
+        commit_button: ttk.Button,
+        title: tk_facade.Entry,
+        year: tk_facade.Entry,
+        *args,
+        **kwargs,
+    ):
+        """Enables the Commit button if either the title or the year field
+        has data.
+
+        This function will be registered with the observers for the title
+        and year fields. It should be created as a partial function.
+
+        Args:
+            commit_button: Partial argument.
+            title: Partial argument.
+            year: Partial argument.
+            *args: Unused but needed to match caller's arguments
+            **kwargs: Unused but needed to match caller's arguments
+        """
+        common.enable_button(
+            commit_button,
+            state=title.has_data() and year.has_data(),
+        )
