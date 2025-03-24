@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/22/25, 10:04 AM by stephen.
+#  Last modified 3/24/25, 1:03 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -615,8 +615,44 @@ class TestAddMovieGUI:
             state=entry.title.has_data() and entry.year.has_data(),
         )
 
-    # todo commit
+    def test_commit(self, add_movie_obj, monkeypatch, tk):
+        print("\nTest")
+        # Arrange clear_current_value
+        entry = MagicMock(name="entry", autospec=True)
+        monkeypatch.setattr(movies.tk_facade, "Entry", entry)
+        add_movie_obj.entry_fields["title"] = entry
+
+        # Arrange as_movie_bag
+        as_movie_bag = MagicMock(name="as_movie_bag", autospec=True)
+        as_movie_bag.return_value = movies.MovieBag(title=entry.current_value)
+        monkeypatch.setattr(as_movie_bag, "as_movie_bag", as_movie_bag)
+
+        # Arrange tview
+        tview_content = ["Old title", "Old year", "Old directors"]
+        tview = MagicMock(name="tview", autospec=True)
+        tview.get_children.return_value = tview_content
+        monkeypatch.setattr(movies.ttk, "Treeview", tview)
+        add_movie_obj.tmdb_treeview = tview
+
+        # Act
+        add_movie_obj.commit()
+
+        # Assert
+        print("\nTest after Act")
+        with check:
+            self.add_movie_callback.assert_called_once_with(
+                add_movie_obj.as_movie_bag()
+            )
+        with check:
+            entry.clear_current_value.assert_called_once_with()
+            print(f"{tview=}")
+        with check:
+            tview.get_children.assert_called_once_with()
+        with check:
+            tview.delete.assert_called_once_with(*tview_content)
+
     # todo _create_buttons
+    # todo Is autospec being done correctly?
 
     @pytest.fixture(scope="function")
     def add_movie_obj(self, tk, moviegui_post_init, monkeypatch):

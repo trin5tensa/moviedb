@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/22/25, 10:04 AM by stephen.
+#  Last modified 3/24/25, 1:03 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -403,3 +403,21 @@ class AddMovieGUI(MovieGUI):
             commit_button,
             state=title.has_data() and year.has_data(),
         )
+
+    def commit(self):
+        """Commits a new movie to the database.
+
+        The form is cleared of entries so the user can enter and commit
+        another movie.
+        """
+        print("\nCOde")
+        for v in self.entry_fields.values():
+            v.clear_current_value()
+        tview_items = self.tmdb_treeview.get_children()
+        self.tmdb_treeview.delete(*tview_items)
+
+        # todo Next line line needs thorough integration testing. It's
+        #  possible for an exception on commit to cause the record to be
+        #  returned for editing. This may interfere with a user's attempt
+        #  to enter a subsequent record.
+        self.add_movie_callback(self.as_movie_bag())
