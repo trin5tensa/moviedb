@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/24/25, 1:03 PM by stephen.
+#  Last modified 3/25/25, 6:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -42,6 +42,8 @@ DIRECTORS_TEXT = "Directors"
 DURATION_TEXT = "Runtime"
 NOTES_TEXT = "Notes"
 MOVIE_TAGS_TEXT = "Tags"
+COMMIT_TEXT = "Commit"
+
 
 UNEXPECTED_KEY = "Unexpected key"
 
@@ -203,7 +205,7 @@ class MovieGUI:
             buttonbox:
         """
         column_counter = count()
-        self._create_buttons(buttonbox, column_counter)
+        self.create_buttons(buttonbox, column_counter)
         common.create_button(
             buttonbox,
             common.CANCEL_TEXT,
@@ -212,7 +214,7 @@ class MovieGUI:
             default="active",
         )
 
-    def _create_buttons(self, buttonbox: ttk.Frame, column_counter: Iterator):
+    def create_buttons(self, buttonbox: ttk.Frame, column_counter: Iterator):
         """Create buttons within the buttonbox.
 
         Subclasses may call create_button to place a button in the buttonbox at
@@ -377,6 +379,39 @@ class MovieGUI:
 class AddMovieGUI(MovieGUI):
     add_movie_callback: Callable[[MovieBag], None] = None
 
+    def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
+        """Adds a commit button and registers its enabler function with
+        the observers of the title and year fields.
+
+        Args:
+            buttonbox:
+            column_num:
+        """
+        commit_button = common.create_button(
+            buttonbox,
+            COMMIT_TEXT,
+            column=next(column_num),
+            command=self.commit,
+            default="normal",
+        )
+
+        self.entry_fields[TITLE].observer.register(
+            partial(
+                self.enable_commit_button,
+                commit_button,
+                self.entry_fields[TITLE],
+                self.entry_fields[YEAR],
+            )
+        )
+        self.entry_fields[YEAR].observer.register(
+            partial(
+                self.enable_commit_button,
+                commit_button,
+                self.entry_fields[TITLE],
+                self.entry_fields[YEAR],
+            )
+        )
+
     # noinspection PyUnusedLocal
     @staticmethod
     def enable_commit_button(
@@ -410,7 +445,6 @@ class AddMovieGUI(MovieGUI):
         The form is cleared of entries so the user can enter and commit
         another movie.
         """
-        print("\nCOde")
         for v in self.entry_fields.values():
             v.clear_current_value()
         tview_items = self.tmdb_treeview.get_children()
