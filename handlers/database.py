@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/10/25, 1:59 PM by stephen.
+#  Last modified 3/28/25, 8:21 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,6 +21,7 @@ import logging
 import guiwidgets
 import guiwidgets_2
 import gui.tags
+import gui.movies
 import gui.tviewselect
 from database import tables
 
@@ -51,10 +52,12 @@ def gui_add_movie(*, prepopulate: MovieBag = None):
             tag selection.
     """
     all_tags = tables.select_all_tags()
-    guiwidgets_2.AddMovieGUI(
+    if not prepopulate:
+        prepopulate = MovieBag()
+    gui.movies.AddMovieGUI(
         config.current.tk_root,
-        _tmdb_io_handler,
-        list(all_tags),
+        tmdb_callback=_tmdb_io_handler,
+        all_tags=all_tags,
         prepopulate=prepopulate,
         add_movie_callback=db_add_movie,
     )

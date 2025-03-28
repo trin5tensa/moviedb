@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/21/25, 3:49 PM by stephen.
+#  Last modified 3/28/25, 12:52 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,7 +16,7 @@
 # This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
-from collections.abc import Callable, Sequence, Iterator
+from collections.abc import Callable, Iterator, Collection
 from dataclasses import dataclass, KW_ONLY, field
 from functools import partial
 from itertools import count
@@ -42,6 +42,8 @@ DIRECTORS_TEXT = "Directors"
 DURATION_TEXT = "Runtime"
 NOTES_TEXT = "Notes"
 MOVIE_TAGS_TEXT = "Tags"
+COMMIT_TEXT = "Commit"
+
 
 UNEXPECTED_KEY = "Unexpected key"
 
@@ -54,11 +56,9 @@ class MovieGUI:
 
     _: KW_ONLY
     tmdb_callback: Callable[[str, queue.LifoQueue], None]
-    all_tags: Sequence[str]
+    all_tags: Collection[str]
+    prepopulate: MovieBag
 
-    prepopulate: MovieBag = field(
-        default_factory=MovieBag, init=False, repr=False, compare=False
-    )
     entry_fields: dict[
         str,
         tk_facade.Entry | tk_facade.Text | tk_facade.Treeview,
@@ -66,18 +66,22 @@ class MovieGUI:
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False, compare=False)
     tmdb_treeview: ttk.Treeview = field(default=None, init=False, repr=False)
 
-    # These attributes are used for the consumer end of the TMDB
-    # producer/consumer pattern.
+    # TMDB Producer/consumer queue.
     tmdb_data_queue: queue.LifoQueue = field(
         default_factory=queue.Queue, init=False, repr=False
     )
-    tmdb_poller: str = field(default=None, init=False, repr=False, compare=False)
+    # Polling frequency for queue consumer.
+    tmdb_consumer_poll: int = field(default=40, init=False, repr=False)
+    # ID of consumer event used for cancellation of queue polling.
+    tmdb_consumer_recall_id: str = field(default=None, init=False, repr=False)
+    # Used to hold movies sent from TMDB
     tmdb_movies: dict[str, MovieBag] = field(
         default_factory=MovieBag, init=False, repr=False
     )
-    # These variables help to decide if the user has finished entering the title.
-    tmdb_event_timer: int = field(default=500, init=False, repr=False)
-    tmdb_event_id: str = field(default="", init=False, repr=False)
+    # Used to pause the Internet call to TMDB while the user is still
+    #  entering match data.
+    match_pause: int = field(default=500, init=False, repr=False)
+    match_pause_id: str = field(default="", init=False, repr=False)
 
     def __post_init__(self):
         self.outer_frame, body_frame, buttonbox = common.create_body_and_buttonbox(
@@ -138,7 +142,10 @@ class MovieGUI:
 
         # Create a label and treeview for movie tags.
         self.entry_fields[MOVIE_TAGS] = tk_facade.Treeview(MOVIE_TAGS_TEXT, body_frame)
-        label_and_field.add_treeview_row(self.entry_fields[MOVIE_TAGS], self.all_tags)
+        label_and_field.add_treeview_row(
+            self.entry_fields[MOVIE_TAGS],
+            sorted(self.all_tags),
+        )
 
         self.entry_fields[TITLE].widget.focus_set()
 
@@ -203,7 +210,7 @@ class MovieGUI:
             buttonbox:
         """
         column_counter = count()
-        self._create_buttons(buttonbox, column_counter)
+        self.create_buttons(buttonbox, column_counter)
         common.create_button(
             buttonbox,
             common.CANCEL_TEXT,
@@ -212,7 +219,7 @@ class MovieGUI:
             default="active",
         )
 
-    def _create_buttons(self, buttonbox: ttk.Frame, column_counter: Iterator):
+    def create_buttons(self, buttonbox: ttk.Frame, column_counter: Iterator):
         """Create buttons within the buttonbox.
 
         Subclasses may call create_button to place a button in the buttonbox at
@@ -232,7 +239,7 @@ class MovieGUI:
         Args:
             *args: Not used but needed to match external caller.
         """
-        self.parent.after_cancel(self.tmdb_poller)
+        self.parent.after_cancel(self.tmdb_consumer_recall_id)
         self.outer_frame.destroy()
 
     def fill_tmdb_frame(self, tmdb_frame: ttk.Frame):
@@ -244,23 +251,23 @@ class MovieGUI:
         Args:
             tmdb_frame: The frame into which the widgets will be placed.
         """
-        tview = ttk.Treeview(
+        tview = self.tmdb_treeview = ttk.Treeview(
             tmdb_frame,
-            columns=(TITLE, YEAR, DIRECTORS),
+            columns=(TITLE, YEAR, DIRECTORS, NOTES),
             show=["headings"],
             height=20,
             selectmode="browse",
         )
 
         # Create the table columns
-        # todo could 'Notes' be added? Needs to be done during integration
-        #  testing to check widths and stretching.
-        tview.column(TITLE, width=300, stretch=True)
+        tview.column(TITLE, width=250, stretch=True)
         tview.heading(TITLE, text=TITLE_TEXT, anchor="w")
         tview.column(YEAR, width=40, stretch=True)
         tview.heading(YEAR, text=YEAR_TEXT, anchor="w")
         tview.column(DIRECTORS, width=200, stretch=True)
         tview.heading(DIRECTORS, text=DIRECTORS_TEXT, anchor="w")
+        tview.column(NOTES, width=400, stretch=True)
+        tview.heading(NOTES, text=NOTES_TEXT, anchor="w")
         tview.grid(column=0, row=0, sticky="nsew")
         tview.bind(
             "<<TreeviewSelect>>", func=partial(self.tmdb_treeview_callback, tview)
@@ -308,22 +315,24 @@ class MovieGUI:
 
     # noinspection PyUnusedLocal
     def tmdb_search(self, *args, **kwargs):
-        """Searches TMDB for matching movies titles.
+        """Schedules a delayed search of TMDB for matching movie titles.
 
-        A delayed search event is placed in the Tk/Tcl event queue. This will
-        supersede and remove an earlier call awaiting execution.
+        The Internet call to TMDB will not be made until the user has finished
+        entering match data.
+        finished: When no new data has been entered for self.match_pause
+        milliseconds.
 
         Args:
             *args: Unused argument supplied by tkinter.
             **kwargs: Unused argument supplied by tkinter.
         """
         if match := self.entry_fields[TITLE].current_value:  # pragma no branch
-            if self.tmdb_event_id:
-                self.parent.after_cancel(self.tmdb_event_id)
+            if self.match_pause_id:
+                self.parent.after_cancel(self.match_pause_id)
 
             # Place a new call to tmdb_search_callback.
-            self.tmdb_event_id = self.parent.after(
-                self.tmdb_event_timer,
+            self.match_pause_id = self.parent.after(
+                self.match_pause,
                 self.tmdb_callback,
                 match,
                 self.tmdb_data_queue,
@@ -337,7 +346,7 @@ class MovieGUI:
         """
         try:
             # Tkinter can't wait for the thread blocking `get` method…
-            data_package = self.tmdb_data_queue.get_nowait()
+            work_package = self.tmdb_data_queue.get_nowait()
 
         except queue.Empty:
             pass
@@ -348,26 +357,106 @@ class MovieGUI:
             items = self.tmdb_treeview.get_children()
             self.tmdb_treeview.delete(*items)
             self.tmdb_movies = {}
-            for movie_bag in data_package:
+            for movie_bag in work_package:
                 title = movie_bag.get("title", "")
                 year = str(movie_bag.get("year", ""))
                 directors = movie_bag.get("directors", "")
                 directors = ", ".join(  # pragma no branch
                     [director for director in sorted(list(directors))]
                 )
-                iid = f"{year} {title}"
-                self.tmdb_treeview.insert(
+                notes = movie_bag.get("notes", "")
+                iid = self.tmdb_treeview.insert(
                     "",
                     "end",
-                    iid=iid,
-                    values=(title, year, directors),
+                    values=(title, year, directors, notes),
                 )
                 self.tmdb_movies[iid] = movie_bag
 
         finally:
             # Have tkinter call this function again after the poll interval.
             # noinspection PyTypeChecker
-            self.tmdb_event_id = self.parent.after(
-                self.tmdb_poller,
+            self.tmdb_consumer_recall_id = self.parent.after(
+                self.tmdb_consumer_poll,
                 self.tmdb_consumer,
             )
+
+
+@dataclass
+class AddMovieGUI(MovieGUI):
+    """Create and manage a GUI form for entering a new movie."""
+
+    add_movie_callback: Callable[[MovieBag], None] = None
+
+    def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
+        """Adds a commit button and registers its enabler function with
+        the observers of the title and year fields.
+
+        Args:
+            buttonbox:
+            column_num:
+        """
+        commit_button = common.create_button(
+            buttonbox,
+            COMMIT_TEXT,
+            column=next(column_num),
+            command=self.commit,
+            default="normal",
+        )
+
+        self.entry_fields[TITLE].observer.register(
+            partial(
+                self.enable_commit_button,
+                commit_button,
+                self.entry_fields[TITLE],
+                self.entry_fields[YEAR],
+            )
+        )
+        self.entry_fields[YEAR].observer.register(
+            partial(
+                self.enable_commit_button,
+                commit_button,
+                self.entry_fields[TITLE],
+                self.entry_fields[YEAR],
+            )
+        )
+
+    # noinspection PyUnusedLocal
+    @staticmethod
+    def enable_commit_button(
+        commit_button: ttk.Button,
+        title: tk_facade.Entry,
+        year: tk_facade.Entry,
+        *args,
+        **kwargs,
+    ):
+        """Enables the Commit button if either the title or the year field
+        has data.
+
+        This function will be registered with the observers for the title
+        and year fields. It should be created as a partial function.
+
+        Args:
+            commit_button: Partial argument.
+            title: Partial argument.
+            year: Partial argument.
+            *args: Unused but needed to match caller's arguments
+            **kwargs: Unused but needed to match caller's arguments
+        """
+        common.enable_button(
+            commit_button,
+            state=title.has_data() and year.has_data(),
+        )
+
+    def commit(self):
+        """Commits a new movie to the database.
+
+        The form is cleared of entries so the user can enter and commit
+        another movie.
+        """
+        movie_bag = self.as_movie_bag()
+        self.add_movie_callback(movie_bag)
+
+        for v in self.entry_fields.values():
+            v.clear_current_value()
+        tview_items = self.tmdb_treeview.get_children()
+        self.tmdb_treeview.delete(*tview_items)

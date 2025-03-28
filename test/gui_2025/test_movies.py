@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/21/25, 3:49 PM by stephen.
+#  Last modified 3/28/25, 12:52 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,6 +17,7 @@ import pytest
 from pytest_check import check
 from unittest.mock import MagicMock, call
 
+from globalconstants import MovieBag
 from gui import movies
 
 
@@ -24,7 +25,8 @@ class TestMovieGUI:
     """Tests for the MovieGUI class."""
 
     tmdb_callback = MagicMock(name="tmdb_callback", autospec=True)
-    all_tags = []
+    all_tags = set()
+    prepopulate = MovieBag()
 
     def test_post_init(self, tk, ttk, monkeypatch):
         # Arrange
@@ -61,11 +63,14 @@ class TestMovieGUI:
             movies.common, "init_button_enablements", init_button_enablements
         )
         tmdb_callback = MagicMock(name="tmdb_callback")
-        all_tags = []
+        all_tags = set()
 
         # Act
         movies_gui = movies.MovieGUI(
-            tk.Tk, tmdb_callback=tmdb_callback, all_tags=all_tags
+            tk.Tk,
+            tmdb_callback=tmdb_callback,
+            all_tags=all_tags,
+            prepopulate=self.prepopulate,
         )
 
         # Assert
@@ -106,7 +111,6 @@ class TestMovieGUI:
         body_frame = ttk.Frame()
         label_and_field = MagicMock(name="label_and_field", autospec=True)
         monkeypatch.setattr(movies.common, "LabelAndField", label_and_field)
-        # todo Fix or accept ALL 'noinspection DuplicatedCode' pragmas.
         # noinspection DuplicatedCode
         tk_facade_entry = MagicMock(name="tk_facade_entry", autospec=True)
         monkeypatch.setattr(movies.tk_facade, "Entry", tk_facade_entry)
@@ -145,7 +149,8 @@ class TestMovieGUI:
             )
         with check:
             label_and_field().add_treeview_row.assert_called_once_with(
-                movie_gui_obj.entry_fields[movies.MOVIE_TAGS], movie_gui_obj.all_tags
+                movie_gui_obj.entry_fields[movies.MOVIE_TAGS],
+                sorted(movie_gui_obj.all_tags),
             )
         with check:
             tk_facade_entry().widget.focus_set.assert_called_once_with()
@@ -247,9 +252,9 @@ class TestMovieGUI:
             [],
         )
 
-    # noinspection DuplicatedCode
     def test_as_movie_bag(self, movie_gui_obj, monkeypatch):
         # Arrange
+        # noinspection DuplicatedCode
         ef_title = "AMB Title"
         ef_year = "4242"
         ef_director = "Sidney Stoneheart, Tina Tatum"
@@ -285,8 +290,8 @@ class TestMovieGUI:
 
         assert movie_bag == expected_movie_bag
 
-    # noinspection DuplicatedCode
     def test_as_movie_bag_with_bad_key(self, movie_gui_obj, monkeypatch, caplog):
+        # noinspection DuplicatedCode
         bad_key = "garbage"
         monkeypatch.setattr(movies.MovieGUI, "__post_init__", lambda *args: None)
         widget = MagicMock(name=bad_key)
@@ -299,7 +304,6 @@ class TestMovieGUI:
                 movie_gui_obj.as_movie_bag()
         check.equal(caplog.messages, [exc_notes])
 
-    # noinspection DuplicatedCode
     def test_as_movie_bag_with_blank_input_field(self, movie_gui_obj, monkeypatch):
         ef_title = "AMB Title"
         for k, v in [("title", ef_title), ("notes", "")]:
@@ -321,7 +325,7 @@ class TestMovieGUI:
         count = MagicMock(name="count", autospec=True)
         monkeypatch.setattr(movies, "count", count)
         create_buttons = MagicMock(name="create_buttons", autospec=True)
-        monkeypatch.setattr(movie_gui_obj, "_create_buttons", create_buttons)
+        monkeypatch.setattr(movie_gui_obj, "create_buttons", create_buttons)
         create_button = MagicMock(name="create_button", autospec=True)
         monkeypatch.setattr(movies.common, "create_button", create_button)
 
@@ -349,11 +353,11 @@ class TestMovieGUI:
 
         # Act and Assert
         with check.raises(NotImplementedError):
-            movie_gui_obj._create_buttons(buttonbox, column_counter)
+            movie_gui_obj.create_buttons(buttonbox, column_counter)
 
     def test_destroy(self, tk, ttk, movie_gui_obj, monkeypatch):
         # Arrange
-        movie_gui_obj.tmdb_poller = "tmdb_poller"
+        movie_gui_obj.tmdb_consumer_poll = 42
         outer_frame = MagicMock(name="outer_frame", autospec=True)
         monkeypatch.setattr(movies.MovieGUI, "outer_frame", outer_frame)
         movie_gui_obj.outer_frame = outer_frame
@@ -363,7 +367,9 @@ class TestMovieGUI:
 
         # Assert
         with check:
-            tk.Tk().after_cancel.assert_called_once_with(movie_gui_obj.tmdb_poller)
+            tk.Tk().after_cancel.assert_called_once_with(
+                movie_gui_obj.tmdb_consumer_recall_id
+            )
         with check:
             outer_frame.destroy.assert_called_once_with()
 
@@ -392,7 +398,7 @@ class TestMovieGUI:
         with check:
             tview.assert_called_once_with(
                 ttk.Frame,
-                columns=(movies.TITLE, movies.YEAR, movies.DIRECTORS),
+                columns=(movies.TITLE, movies.YEAR, movies.DIRECTORS, movies.NOTES),
                 show=["headings"],
                 height=20,
                 selectmode="browse",
@@ -400,9 +406,10 @@ class TestMovieGUI:
         with check:
             tview().column.assert_has_calls(
                 [
-                    call(movies.TITLE, width=300, stretch=True),
+                    call(movies.TITLE, width=250, stretch=True),
                     call(movies.YEAR, width=40, stretch=True),
                     call(movies.DIRECTORS, width=200, stretch=True),
+                    call(movies.NOTES, width=400, stretch=True),
                 ]
             )
         with check:
@@ -411,6 +418,7 @@ class TestMovieGUI:
                     call(movies.TITLE, text=movies.TITLE_TEXT, anchor="w"),
                     call(movies.YEAR, text=movies.YEAR_TEXT, anchor="w"),
                     call(movies.DIRECTORS, text=movies.DIRECTORS_TEXT, anchor="w"),
+                    call(movies.NOTES, text=movies.NOTES_TEXT, anchor="w"),
                 ],
             )
         with check:
@@ -484,7 +492,7 @@ class TestMovieGUI:
             after_cancel.assert_not_called()
         with check:
             after.assert_called_once_with(
-                movie_gui_obj.tmdb_event_timer,
+                movie_gui_obj.match_pause,
                 movie_gui_obj.tmdb_callback,
                 match,
                 movie_gui_obj.tmdb_data_queue,
@@ -493,7 +501,7 @@ class TestMovieGUI:
     def test_subsequent_tmdb_search(self, movie_gui_obj, monkeypatch):
         # Arrange
         event_id = "42"
-        movie_gui_obj.tmdb_event_id = event_id
+        movie_gui_obj.match_pause_id = event_id
         after_cancel = MagicMock(name="after_cancel", autospec=True)
         monkeypatch.setattr(movie_gui_obj.parent, "after_cancel", after_cancel)
         entry = MagicMock(name="entry", autospec=True)
@@ -528,7 +536,7 @@ class TestMovieGUI:
             tview.get_children.assert_not_called()
         with check:
             after.assert_called_once_with(
-                movie_gui_obj.tmdb_poller, movie_gui_obj.tmdb_consumer
+                movie_gui_obj.tmdb_consumer_poll, movie_gui_obj.tmdb_consumer
             )
 
     def test_tmdb_consumer_with_filled_data_queue(self, movie_gui_obj, monkeypatch):
@@ -537,10 +545,15 @@ class TestMovieGUI:
         year = 4242
         directors_in = {"II", "GG", "HH"}
         directors_out = "GG, HH, II"
+        notes = "A note"
         movie_bag = movies.MovieBag(
-            title=title, year=movies.MovieInteger(year), directors=directors_in
+            title=title,
+            year=movies.MovieInteger(year),
+            directors=directors_in,
+            notes=notes,
         )
-        expected = {"4242 Test of test_tmdb_consumer_with_filled_data_queue": movie_bag}
+        iid = "item id"
+        expected = {iid: movie_bag}
 
         data_queue = MagicMock(name="data_queue", autospec=True)
         monkeypatch.setattr(movie_gui_obj, "tmdb_data_queue", data_queue)
@@ -551,6 +564,7 @@ class TestMovieGUI:
         tview = MagicMock(name="tview", autospec=True)
         tview_content = ["Old title", "Old year", "Old directors"]
         tview.get_children.return_value = tview_content
+        tview.insert.return_value = iid
         monkeypatch.setattr(movie_gui_obj, "tmdb_treeview", tview)
         after = MagicMock(name="after", autospec=True)
         monkeypatch.setattr(movie_gui_obj.parent, "after", after)
@@ -570,20 +584,155 @@ class TestMovieGUI:
             tview.insert.assert_called_with(
                 "",
                 "end",
-                iid=f"{year} {title}",
-                values=(title, str(year), directors_out),
+                values=(title, str(year), directors_out, notes),
             )
         check.equal(movie_gui_obj.tmdb_movies, expected)
         with check:
             after.assert_called_once_with(
-                movie_gui_obj.tmdb_poller, movie_gui_obj.tmdb_consumer
+                movie_gui_obj.tmdb_consumer_poll, movie_gui_obj.tmdb_consumer
             )
 
     @pytest.fixture(scope="function")
     def movie_gui_obj(self, tk, moviegui_post_init, monkeypatch):
         """Creates a MovieGUI object without running the __post_init__ method."""
         return movies.MovieGUI(
-            tk.Tk(), tmdb_callback=self.tmdb_callback, all_tags=self.all_tags
+            tk.Tk(),
+            tmdb_callback=self.tmdb_callback,
+            all_tags=self.all_tags,
+            prepopulate=self.prepopulate,
+        )
+
+
+class TestAddMovieGUI:
+    """Tests for the AddMovieGUI class."""
+
+    add_movie_callback = MagicMock(name="add_movie_callback", autospec=True)
+    tmdb_callback = MagicMock(name="tmdb_callback", autospec=True)
+    all_tags = set()
+    prepopulate = MovieBag()
+
+    def test_create_buttons(self, add_movie_obj, monkeypatch, ttk):
+        # Arrange create_button
+        # noinspection DuplicatedCode
+        create_button = MagicMock(name="create_button", autospec=True)
+        monkeypatch.setattr(movies.common, "create_button", create_button)
+        buttonbox = MagicMock(name="buttonbox", autospec=True)
+
+        # Arrange buttonbox and commit button
+        monkeypatch.setattr(ttk.Frame, "buttonbox", buttonbox)
+        commit_button = MagicMock(name="commit_button", autospec=True)
+        monkeypatch.setattr(movies.ttk, "Button", commit_button)
+        create_button.return_value = commit_button
+
+        # Arrange entry_fields for title and year
+        title_entry_field = MagicMock(name="title_entry_field", autospec=True)
+        monkeypatch.setattr(movies.tk_facade, "Entry", title_entry_field)
+        add_movie_obj.entry_fields[movies.TITLE] = title_entry_field
+        year_entry_field = MagicMock(name="year_entry_field", autospec=True)
+        monkeypatch.setattr(movies.tk_facade, "Entry", year_entry_field)
+        add_movie_obj.entry_fields[movies.YEAR] = year_entry_field
+
+        # Arrange partial
+        partial = MagicMock(name="partial", autospec=True)
+        monkeypatch.setattr(movies, "partial", partial)
+
+        # Arrange column number
+        column_num = movies.count(42)
+
+        # Act
+        add_movie_obj.create_buttons(buttonbox, column_num)
+
+        # Assert
+        with check:
+            create_button.assert_called_once_with(
+                buttonbox,
+                movies.COMMIT_TEXT,
+                column=42,
+                command=add_movie_obj.commit,
+                default="normal",
+            )
+        with check:
+            title_entry_field.observer.register.assert_called_once_with(
+                partial(
+                    add_movie_obj.enable_commit_button,
+                    commit_button,
+                    title_entry_field,
+                    year_entry_field,
+                )
+            )
+        with check:
+            year_entry_field.observer.register.assert_called_once_with(
+                partial(
+                    add_movie_obj.enable_commit_button,
+                    commit_button,
+                    title_entry_field,
+                    year_entry_field,
+                )
+            )
+
+    def test_enable_commit_button(self, add_movie_obj, monkeypatch):
+        # Arrange
+        entry = MagicMock(name="entry", autospec=True)
+        entry.title.has_data.return_value = True
+        entry.year.has_data.return_value = False
+        # noinspection DuplicatedCode
+        monkeypatch.setattr(movies.tk_facade, "Entry", entry)
+        commit_button = MagicMock(name="commit_button", autospec=True)
+        monkeypatch.setattr(movies.ttk, "Button", commit_button)
+        enable_button = MagicMock(name="enable_button", autospec=True)
+        monkeypatch.setattr(movies.common, "enable_button", enable_button)
+
+        # Act
+        add_movie_obj.enable_commit_button(commit_button, entry.title, entry.year)
+
+        # Assert
+        enable_button.assert_called_once_with(
+            commit_button,
+            state=entry.title.has_data() and entry.year.has_data(),
+        )
+
+    def test_commit(self, add_movie_obj, monkeypatch, tk):
+        # Arrange clear_current_value
+        entry = MagicMock(name="entry", autospec=True)
+        monkeypatch.setattr(movies.tk_facade, "Entry", entry)
+        add_movie_obj.entry_fields["title"] = entry
+
+        # Arrange as_movie_bag
+        as_movie_bag = MagicMock(name="as_movie_bag", autospec=True)
+        as_movie_bag.return_value = movies.MovieBag(title=entry.current_value)
+        monkeypatch.setattr(as_movie_bag, "as_movie_bag", as_movie_bag)
+
+        # Arrange tview
+        tview_content = ["Old title", "Old year", "Old directors"]
+        tview = MagicMock(name="tview", autospec=True)
+        tview.get_children.return_value = tview_content
+        monkeypatch.setattr(movies.ttk, "Treeview", tview)
+        add_movie_obj.tmdb_treeview = tview
+
+        # Act
+        add_movie_obj.commit()
+
+        # Assert
+        with check:
+            self.add_movie_callback.assert_called_once_with(
+                add_movie_obj.as_movie_bag()
+            )
+        with check:
+            entry.clear_current_value.assert_called_once_with()
+        with check:
+            tview.get_children.assert_called_once_with()
+        with check:
+            tview.delete.assert_called_once_with(*tview_content)
+
+    @pytest.fixture(scope="function")
+    def add_movie_obj(self, tk, moviegui_post_init, monkeypatch):
+        """Creates a MovieGUI object without running the __post_init__ method."""
+        return movies.AddMovieGUI(
+            tk.Tk(),
+            add_movie_callback=self.add_movie_callback,
+            tmdb_callback=self.tmdb_callback,
+            all_tags=self.all_tags,
+            prepopulate=self.prepopulate,
         )
 
 

@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/12/25, 9:47 AM by stephen.
+#  Last modified 3/28/25, 11:38 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,7 +19,6 @@ This module includes windows for presenting data and returning entered data to i
 import itertools
 import logging
 import queue
-from functools import partial
 
 from tkinter import filedialog, messagebox
 
@@ -134,7 +133,7 @@ class MovieGUI:
         outer_frame = ttk.Frame(parent, padding=10, name=name)
         outer_frame.grid(column=0, row=0, sticky="nsew")
         outer_frame.columnconfigure(0, weight=1)
-        outer_frame.columnconfigure(1, weight=1000)  # todo tmdb
+        outer_frame.columnconfigure(1, weight=1000)
         outer_frame.rowconfigure(0)
         config.current.escape_key_dict[name] = self.destroy
 
@@ -142,9 +141,9 @@ class MovieGUI:
         input_zone.grid(column=0, row=0, sticky="nw")
         input_zone.columnconfigure(0, weight=1, minsize=25)
 
-        internet_zone = ttk.Frame(outer_frame, padding=10)  # todo tmdb
-        internet_zone.grid(column=1, row=0, sticky="nw")  # todo tmdb
-        internet_zone.columnconfigure(0, weight=1, minsize=25)  # todo tmdb
+        internet_zone = ttk.Frame(outer_frame, padding=10)
+        internet_zone.grid(column=1, row=0, sticky="nw")
+        internet_zone.columnconfigure(0, weight=1, minsize=25)
 
         input_form = ttk.Frame(input_zone, padding=10)
         input_form.grid(column=0, row=0, sticky="new")
@@ -162,7 +161,6 @@ class MovieGUI:
         Args:
             body_frame:The frame into which the widgets will be placed.
         """
-        # todo The test suite for this method needs to be rewritten to current standards
 
         input_zone = common.LabelAndField(body_frame)
 
@@ -391,83 +389,6 @@ class MovieGUI:
         """
         self.parent.after_cancel(self.recall_id)
         self.outer_frame.destroy()
-
-
-@dataclass
-class AddMovieGUI(MovieGUI):
-    """Create and manage a GUI form for entering a new movie."""
-
-    add_movie_callback: Callable[[MovieBag], None] = field(default=None, kw_only=True)
-
-    def _create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
-        commit_button = common.create_button(
-            buttonbox,
-            COMMIT_TEXT,
-            column=next(column_num),
-            command=self.commit,
-            default="normal",
-        )
-
-        # Commit button registration with title and year field observers
-        title_entry_field = self.entry_fields[TITLE]
-        year_entry_field = self.entry_fields[YEAR]
-        title_entry_field.observer.register(
-            self.enable_commit_button(
-                commit_button, title_entry_field, year_entry_field
-            )
-        )
-        year_entry_field.observer.register(
-            self.enable_commit_button(
-                commit_button, title_entry_field, year_entry_field
-            )
-        )
-
-    @staticmethod
-    def enable_commit_button(
-        commit_button: ttk.Button,
-        title: tk_facade.Entry,
-        year: tk_facade.Entry,
-    ) -> Callable:
-        """
-        The returned function may be registered with any observer of widgets that need to
-        affect the enabled or disabled state of the commit button.
-
-        Args:
-            commit_button:
-            title:
-            year:
-
-        Returns:
-            A callable which will be invoked by tkinter whenever the observed fields
-            are changed by the user.
-        """
-
-        # noinspection PyUnusedLocal
-        def func(*args, **kwargs):
-            """The commit button will be enabled if the title and the year fields contain data.
-
-            Args:
-                *args: Sent by tkinter but not used.
-                **kwargs: Sent by tkinter but not used.
-            """
-            common.enable_button(
-                commit_button, state=title.has_data() and year.has_data()
-            )
-
-        return func
-
-    def commit(self):
-        """Commits a new movie to the database.
-
-        The form is cleared of entries so the user can enter and commit
-        another movie.
-        """
-        self.add_movie_callback(self.as_movie_bag())
-
-        for v in self.entry_fields.values():
-            v.clear_current_value()
-        items = self.tmdb_treeview.get_children()
-        self.tmdb_treeview.delete(*items)
 
 
 @dataclass

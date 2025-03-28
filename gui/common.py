@@ -1,7 +1,7 @@
 """This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/13/25, 12:53 PM by stephen.
+#  Last modified 3/28/25, 11:38 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -31,10 +31,10 @@ import itertools
 # This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
-from collections.abc import Callable
+from collections.abc import Callable, Collection, Iterator
 from dataclasses import field, dataclass
 from functools import partial
-from typing import Literal, Iterator, Sequence
+from typing import Literal
 
 import config
 from gui import tk_facade
@@ -133,7 +133,7 @@ class LabelAndField:
     def add_treeview_row(
         self,
         entry_field: tk_facade,
-        all_tags: Sequence[str],
+        all_tags: Collection[str],
     ):
         """Adds a label and a treeview as the bottom row in the form.
 
@@ -228,10 +228,11 @@ def create_button(
     command: Callable,
     default: DefaultLiteral,
 ) -> ttk.Button:
+    # noinspection GrazieInspection
     """Creates a button.
 
-    The <Return> button is bound and will effect a mouse click on the button when the
-    button is active.
+    The <Return> button is bound and will effect a mouse click on the button
+    when the button is active.
 
     Args: The following arguments are the Tkinter arguments for a ttk.Button.
         buttonbox:

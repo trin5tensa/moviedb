@@ -1,7 +1,7 @@
-"""Menu handlers test module."""
+"""Menu handlers fpr movies."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/10/25, 1:59 PM by stephen.
+#  Last modified 3/28/25, 8:21 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,23 +24,48 @@ from globalconstants import MovieInteger, MovieBag
 import handlers
 
 
-# noinspection
-def test_gui_add_movie(monkeypatch, config_current, test_tags):
-    mock_add_movie_gui = MagicMock(name="mock_add_movie_gui")
+def test_gui_add_movie_without_prepopulate(monkeypatch, config_current, test_tags):
+    # Arrange
+    add_movie_gui = MagicMock(name="add_movie_gui", autospec=True)
     monkeypatch.setattr(
-        handlers.database.guiwidgets_2,
+        handlers.database.gui.movies,
         "AddMovieGUI",
-        mock_add_movie_gui,
-        # handlers.database.guiwidgets_2, "AddMovieGUI", mock_add_movie_gui
+        add_movie_gui,
     )
-    movie_bag = handlers.database.MovieBag()
+    movie_bag = MagicMock(name="movie_bag", autospec=True)
+    monkeypatch.setattr(handlers.database, "MovieBag", movie_bag)
 
+    # Assert
+    handlers.database.gui_add_movie()
+
+    # Act
+    add_movie_gui.assert_called_once_with(
+        handlers.database.config.current.tk_root,
+        tmdb_callback=handlers.sundries._tmdb_io_handler,
+        all_tags=test_tags,
+        prepopulate=movie_bag(),
+        add_movie_callback=handlers.database.db_add_movie,
+    )
+
+
+def test_gui_add_movie_with_prepopulate(monkeypatch, config_current, test_tags):
+    # Arrange
+    add_movie_gui = MagicMock(name="add_movie_gui", autospec=True)
+    monkeypatch.setattr(
+        handlers.database.gui.movies,
+        "AddMovieGUI",
+        add_movie_gui,
+    )
+    movie_bag = handlers.database.MovieBag(title="title dummy")
+
+    # Act
     handlers.database.gui_add_movie(prepopulate=movie_bag)
 
-    mock_add_movie_gui.assert_called_once_with(
+    # Assert
+    add_movie_gui.assert_called_once_with(
         handlers.database.config.current.tk_root,
-        handlers.sundries._tmdb_io_handler,
-        list(test_tags),
+        tmdb_callback=handlers.sundries._tmdb_io_handler,
+        all_tags=test_tags,
         prepopulate=movie_bag,
         add_movie_callback=handlers.database.db_add_movie,
     )
