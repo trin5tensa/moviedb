@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/12/25, 9:47 AM by stephen.
+#  Last modified 3/28/25, 8:21 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -134,7 +134,7 @@ class MovieGUI:
         outer_frame = ttk.Frame(parent, padding=10, name=name)
         outer_frame.grid(column=0, row=0, sticky="nsew")
         outer_frame.columnconfigure(0, weight=1)
-        outer_frame.columnconfigure(1, weight=1000)  # todo tmdb
+        outer_frame.columnconfigure(1, weight=1000)
         outer_frame.rowconfigure(0)
         config.current.escape_key_dict[name] = self.destroy
 
@@ -142,9 +142,9 @@ class MovieGUI:
         input_zone.grid(column=0, row=0, sticky="nw")
         input_zone.columnconfigure(0, weight=1, minsize=25)
 
-        internet_zone = ttk.Frame(outer_frame, padding=10)  # todo tmdb
-        internet_zone.grid(column=1, row=0, sticky="nw")  # todo tmdb
-        internet_zone.columnconfigure(0, weight=1, minsize=25)  # todo tmdb
+        internet_zone = ttk.Frame(outer_frame, padding=10)
+        internet_zone.grid(column=1, row=0, sticky="nw")
+        internet_zone.columnconfigure(0, weight=1, minsize=25)
 
         input_form = ttk.Frame(input_zone, padding=10)
         input_form.grid(column=0, row=0, sticky="new")
@@ -162,7 +162,6 @@ class MovieGUI:
         Args:
             body_frame:The frame into which the widgets will be placed.
         """
-        # todo The test suite for this method needs to be rewritten to current standards
 
         input_zone = common.LabelAndField(body_frame)
 

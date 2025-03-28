@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/25/25, 6:57 AM by stephen.
+#  Last modified 3/28/25, 8:21 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,7 +16,7 @@
 # This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
-from collections.abc import Callable, Sequence, Iterator
+from collections.abc import Callable, Iterator, Collection
 from dataclasses import dataclass, KW_ONLY, field
 from functools import partial
 from itertools import count
@@ -56,11 +56,9 @@ class MovieGUI:
 
     _: KW_ONLY
     tmdb_callback: Callable[[str, queue.LifoQueue], None]
-    all_tags: Sequence[str]
+    all_tags: Collection[str]
+    prepopulate: MovieBag
 
-    prepopulate: MovieBag = field(
-        default_factory=MovieBag, init=False, repr=False, compare=False
-    )
     entry_fields: dict[
         str,
         tk_facade.Entry | tk_facade.Text | tk_facade.Treeview,
@@ -70,16 +68,18 @@ class MovieGUI:
 
     # These attributes are used for the consumer end of the TMDB
     # producer/consumer pattern.
-    tmdb_data_queue: queue.LifoQueue = field(
+    # todo Improve the meaningfulness of tmdb attribute names.
+    tmdb_work_queue: queue.LifoQueue = field(
         default_factory=queue.Queue, init=False, repr=False
     )
-    tmdb_poller: str = field(default=None, init=False, repr=False, compare=False)
+    work_queue_poll: int = field(default=40, init=False, repr=False)
+    recall_id: str = field(default=None, init=False, repr=False)
     tmdb_movies: dict[str, MovieBag] = field(
         default_factory=MovieBag, init=False, repr=False
     )
     # These variables help to decide if the user has finished entering the title.
-    tmdb_event_timer: int = field(default=500, init=False, repr=False)
-    tmdb_event_id: str = field(default="", init=False, repr=False)
+    last_text_queue_timer: int = field(default=500, init=False, repr=False)
+    last_text_event_id: str = field(default="", init=False, repr=False)
 
     def __post_init__(self):
         self.outer_frame, body_frame, buttonbox = common.create_body_and_buttonbox(
@@ -140,7 +140,10 @@ class MovieGUI:
 
         # Create a label and treeview for movie tags.
         self.entry_fields[MOVIE_TAGS] = tk_facade.Treeview(MOVIE_TAGS_TEXT, body_frame)
-        label_and_field.add_treeview_row(self.entry_fields[MOVIE_TAGS], self.all_tags)
+        label_and_field.add_treeview_row(
+            self.entry_fields[MOVIE_TAGS],
+            sorted(self.all_tags),
+        )
 
         self.entry_fields[TITLE].widget.focus_set()
 
@@ -234,7 +237,7 @@ class MovieGUI:
         Args:
             *args: Not used but needed to match external caller.
         """
-        self.parent.after_cancel(self.tmdb_poller)
+        self.parent.after_cancel(self.recall_id)
         self.outer_frame.destroy()
 
     def fill_tmdb_frame(self, tmdb_frame: ttk.Frame):
@@ -246,7 +249,7 @@ class MovieGUI:
         Args:
             tmdb_frame: The frame into which the widgets will be placed.
         """
-        tview = ttk.Treeview(
+        tview = self.tmdb_treeview = ttk.Treeview(
             tmdb_frame,
             columns=(TITLE, YEAR, DIRECTORS),
             show=["headings"],
@@ -312,23 +315,25 @@ class MovieGUI:
     def tmdb_search(self, *args, **kwargs):
         """Searches TMDB for matching movies titles.
 
-        A delayed search event is placed in the Tk/Tcl event queue. This will
-        supersede and remove an earlier call awaiting execution.
+        This should be called whenever the title field is changed by the user.
+        It schedules a TMDB search after 'self.last_text_queue_timer'
+        milliseconds. This will be cancelled if the user types anything
+        before 'self.last_text_queue_timer' milliseconds has elapsed.
 
         Args:
             *args: Unused argument supplied by tkinter.
             **kwargs: Unused argument supplied by tkinter.
         """
         if match := self.entry_fields[TITLE].current_value:  # pragma no branch
-            if self.tmdb_event_id:
-                self.parent.after_cancel(self.tmdb_event_id)
+            if self.last_text_event_id:
+                self.parent.after_cancel(self.last_text_event_id)
 
             # Place a new call to tmdb_search_callback.
-            self.tmdb_event_id = self.parent.after(
-                self.tmdb_event_timer,
+            self.last_text_event_id = self.parent.after(
+                self.last_text_queue_timer,
                 self.tmdb_callback,
                 match,
-                self.tmdb_data_queue,
+                self.tmdb_work_queue,
             )
 
     def tmdb_consumer(self):
@@ -339,7 +344,7 @@ class MovieGUI:
         """
         try:
             # Tkinter can't wait for the thread blocking `get` method…
-            data_package = self.tmdb_data_queue.get_nowait()
+            work_package = self.tmdb_work_queue.get_nowait()
 
         except queue.Empty:
             pass
@@ -350,18 +355,16 @@ class MovieGUI:
             items = self.tmdb_treeview.get_children()
             self.tmdb_treeview.delete(*items)
             self.tmdb_movies = {}
-            for movie_bag in data_package:
+            for movie_bag in work_package:
                 title = movie_bag.get("title", "")
                 year = str(movie_bag.get("year", ""))
                 directors = movie_bag.get("directors", "")
                 directors = ", ".join(  # pragma no branch
                     [director for director in sorted(list(directors))]
                 )
-                iid = f"{year} {title}"
-                self.tmdb_treeview.insert(
+                iid = self.tmdb_treeview.insert(
                     "",
                     "end",
-                    iid=iid,
                     values=(title, year, directors),
                 )
                 self.tmdb_movies[iid] = movie_bag
@@ -369,14 +372,16 @@ class MovieGUI:
         finally:
             # Have tkinter call this function again after the poll interval.
             # noinspection PyTypeChecker
-            self.tmdb_event_id = self.parent.after(
-                self.tmdb_poller,
+            self.recall_id = self.parent.after(
+                self.work_queue_poll,
                 self.tmdb_consumer,
             )
 
 
 @dataclass
 class AddMovieGUI(MovieGUI):
+    """Create and manage a GUI form for entering a new movie."""
+
     add_movie_callback: Callable[[MovieBag], None] = None
 
     def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
@@ -445,13 +450,10 @@ class AddMovieGUI(MovieGUI):
         The form is cleared of entries so the user can enter and commit
         another movie.
         """
+        movie_bag = self.as_movie_bag()
+        self.add_movie_callback(movie_bag)
+
         for v in self.entry_fields.values():
             v.clear_current_value()
         tview_items = self.tmdb_treeview.get_children()
         self.tmdb_treeview.delete(*tview_items)
-
-        # todo Next line line needs thorough integration testing. It's
-        #  possible for an exception on commit to cause the record to be
-        #  returned for editing. This may interfere with a user's attempt
-        #  to enter a subsequent record.
-        self.add_movie_callback(self.as_movie_bag())

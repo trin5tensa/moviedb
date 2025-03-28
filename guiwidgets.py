@@ -5,7 +5,7 @@ callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/10/25, 2:12 PM by stephen.
+#  Last modified 3/28/25, 8:21 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -221,8 +221,6 @@ class SearchMovieGUI(MovieGUIBase):
         Any proposed refactoring should consider abandoning these classes and using the newer
         composed classes of guiwidgets_2 as a model for future development.
     """
-
-    # todo The test suite for this class needs to be rewritten to current standards
 
     # On exit this callback will be called with a dictionary of fields and user entered values.
     callback: Callable[[MovieBag], None]
