@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/28/25, 11:05 AM by stephen.
+#  Last modified 3/28/25, 12:52 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,9 +19,6 @@ from unittest.mock import MagicMock, call
 
 from globalconstants import MovieBag
 from gui import movies
-
-
-# todo Fix or accept 'noinspection DuplicatedCode' pragmas.
 
 
 class TestMovieGUI:
@@ -255,9 +252,9 @@ class TestMovieGUI:
             [],
         )
 
-    # noinspection DuplicatedCode
     def test_as_movie_bag(self, movie_gui_obj, monkeypatch):
         # Arrange
+        # noinspection DuplicatedCode
         ef_title = "AMB Title"
         ef_year = "4242"
         ef_director = "Sidney Stoneheart, Tina Tatum"
@@ -293,8 +290,8 @@ class TestMovieGUI:
 
         assert movie_bag == expected_movie_bag
 
-    # noinspection DuplicatedCode
     def test_as_movie_bag_with_bad_key(self, movie_gui_obj, monkeypatch, caplog):
+        # noinspection DuplicatedCode
         bad_key = "garbage"
         monkeypatch.setattr(movies.MovieGUI, "__post_init__", lambda *args: None)
         widget = MagicMock(name=bad_key)
@@ -307,7 +304,6 @@ class TestMovieGUI:
                 movie_gui_obj.as_movie_bag()
         check.equal(caplog.messages, [exc_notes])
 
-    # noinspection DuplicatedCode
     def test_as_movie_bag_with_blank_input_field(self, movie_gui_obj, monkeypatch):
         ef_title = "AMB Title"
         for k, v in [("title", ef_title), ("notes", "")]:
@@ -402,7 +398,7 @@ class TestMovieGUI:
         with check:
             tview.assert_called_once_with(
                 ttk.Frame,
-                columns=(movies.TITLE, movies.YEAR, movies.DIRECTORS),
+                columns=(movies.TITLE, movies.YEAR, movies.DIRECTORS, movies.NOTES),
                 show=["headings"],
                 height=20,
                 selectmode="browse",
@@ -410,9 +406,10 @@ class TestMovieGUI:
         with check:
             tview().column.assert_has_calls(
                 [
-                    call(movies.TITLE, width=300, stretch=True),
+                    call(movies.TITLE, width=250, stretch=True),
                     call(movies.YEAR, width=40, stretch=True),
                     call(movies.DIRECTORS, width=200, stretch=True),
+                    call(movies.NOTES, width=400, stretch=True),
                 ]
             )
         with check:
@@ -421,6 +418,7 @@ class TestMovieGUI:
                     call(movies.TITLE, text=movies.TITLE_TEXT, anchor="w"),
                     call(movies.YEAR, text=movies.YEAR_TEXT, anchor="w"),
                     call(movies.DIRECTORS, text=movies.DIRECTORS_TEXT, anchor="w"),
+                    call(movies.NOTES, text=movies.NOTES_TEXT, anchor="w"),
                 ],
             )
         with check:
@@ -547,8 +545,12 @@ class TestMovieGUI:
         year = 4242
         directors_in = {"II", "GG", "HH"}
         directors_out = "GG, HH, II"
+        notes = "A note"
         movie_bag = movies.MovieBag(
-            title=title, year=movies.MovieInteger(year), directors=directors_in
+            title=title,
+            year=movies.MovieInteger(year),
+            directors=directors_in,
+            notes=notes,
         )
         iid = "item id"
         expected = {iid: movie_bag}
@@ -582,7 +584,7 @@ class TestMovieGUI:
             tview.insert.assert_called_with(
                 "",
                 "end",
-                values=(title, str(year), directors_out),
+                values=(title, str(year), directors_out, notes),
             )
         check.equal(movie_gui_obj.tmdb_movies, expected)
         with check:

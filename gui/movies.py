@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/28/25, 11:05 AM by stephen.
+#  Last modified 3/28/25, 12:52 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -253,21 +253,21 @@ class MovieGUI:
         """
         tview = self.tmdb_treeview = ttk.Treeview(
             tmdb_frame,
-            columns=(TITLE, YEAR, DIRECTORS),
+            columns=(TITLE, YEAR, DIRECTORS, NOTES),
             show=["headings"],
             height=20,
             selectmode="browse",
         )
 
         # Create the table columns
-        # todo could 'Notes' be added? Needs to be done during integration
-        #  testing to check widths and stretching.
-        tview.column(TITLE, width=300, stretch=True)
+        tview.column(TITLE, width=250, stretch=True)
         tview.heading(TITLE, text=TITLE_TEXT, anchor="w")
         tview.column(YEAR, width=40, stretch=True)
         tview.heading(YEAR, text=YEAR_TEXT, anchor="w")
         tview.column(DIRECTORS, width=200, stretch=True)
         tview.heading(DIRECTORS, text=DIRECTORS_TEXT, anchor="w")
+        tview.column(NOTES, width=400, stretch=True)
+        tview.heading(NOTES, text=NOTES_TEXT, anchor="w")
         tview.grid(column=0, row=0, sticky="nsew")
         tview.bind(
             "<<TreeviewSelect>>", func=partial(self.tmdb_treeview_callback, tview)
@@ -364,10 +364,11 @@ class MovieGUI:
                 directors = ", ".join(  # pragma no branch
                     [director for director in sorted(list(directors))]
                 )
+                notes = movie_bag.get("notes", "")
                 iid = self.tmdb_treeview.insert(
                     "",
                     "end",
-                    values=(title, year, directors),
+                    values=(title, year, directors, notes),
                 )
                 self.tmdb_movies[iid] = movie_bag
 
