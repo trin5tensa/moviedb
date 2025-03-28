@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/10/25, 2:54 PM by stephen.
+#  Last modified 3/28/25, 11:38 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -90,31 +90,6 @@ class TestMovieGUI:
         movie_bag = movie_gui.as_movie_bag()
 
         assert movie_bag == expected_movie_bag
-
-
-class TestAddMovieGUI:
-
-    def test_commit(self, add_movie_gui, monkeypatch):
-        # Arrange
-        as_movie_bag = MagicMock(name="as_movie_bag")
-        monkeypatch.setattr(guiwidgets_2.MovieGUI, "as_movie_bag", as_movie_bag)
-        widget = MagicMock(name="widget")
-        monkeypatch.setitem(add_movie_gui.entry_fields, "mock widget", widget)
-        items = ["item 1", "item 2"]
-        tmdb_treeview = MagicMock(name="tmdb_treeview")
-        monkeypatch.setattr(guiwidgets_2.MovieGUI, "tmdb_treeview", tmdb_treeview)
-        tmdb_treeview.get_children.return_value = items
-
-        # Act
-        add_movie_gui.commit()
-
-        with check:
-            # noinspection PyUnresolvedReferences
-            add_movie_gui.add_movie_callback.assert_called_once_with(as_movie_bag())
-        with check:
-            widget.clear_current_value.assert_called_once_with()
-        with check:
-            tmdb_treeview.delete.assert_called_once_with(*items)
 
 
 class TestEditMovieGUI:
