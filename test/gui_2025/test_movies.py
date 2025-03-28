@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/28/25, 8:21 AM by stephen.
+#  Last modified 3/28/25, 11:05 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,6 +19,9 @@ from unittest.mock import MagicMock, call
 
 from globalconstants import MovieBag
 from gui import movies
+
+
+# todo Fix or accept 'noinspection DuplicatedCode' pragmas.
 
 
 class TestMovieGUI:
@@ -111,7 +114,6 @@ class TestMovieGUI:
         body_frame = ttk.Frame()
         label_and_field = MagicMock(name="label_and_field", autospec=True)
         monkeypatch.setattr(movies.common, "LabelAndField", label_and_field)
-        # todo Fix or accept ALL 'noinspection DuplicatedCode' pragmas.
         # noinspection DuplicatedCode
         tk_facade_entry = MagicMock(name="tk_facade_entry", autospec=True)
         monkeypatch.setattr(movies.tk_facade, "Entry", tk_facade_entry)
@@ -359,7 +361,7 @@ class TestMovieGUI:
 
     def test_destroy(self, tk, ttk, movie_gui_obj, monkeypatch):
         # Arrange
-        movie_gui_obj.work_queue_poll = 42
+        movie_gui_obj.tmdb_consumer_poll = 42
         outer_frame = MagicMock(name="outer_frame", autospec=True)
         monkeypatch.setattr(movies.MovieGUI, "outer_frame", outer_frame)
         movie_gui_obj.outer_frame = outer_frame
@@ -369,7 +371,9 @@ class TestMovieGUI:
 
         # Assert
         with check:
-            tk.Tk().after_cancel.assert_called_once_with(movie_gui_obj.recall_id)
+            tk.Tk().after_cancel.assert_called_once_with(
+                movie_gui_obj.tmdb_consumer_recall_id
+            )
         with check:
             outer_frame.destroy.assert_called_once_with()
 
@@ -490,16 +494,16 @@ class TestMovieGUI:
             after_cancel.assert_not_called()
         with check:
             after.assert_called_once_with(
-                movie_gui_obj.last_text_queue_timer,
+                movie_gui_obj.match_pause,
                 movie_gui_obj.tmdb_callback,
                 match,
-                movie_gui_obj.tmdb_work_queue,
+                movie_gui_obj.tmdb_data_queue,
             )
 
     def test_subsequent_tmdb_search(self, movie_gui_obj, monkeypatch):
         # Arrange
         event_id = "42"
-        movie_gui_obj.last_text_event_id = event_id
+        movie_gui_obj.match_pause_id = event_id
         after_cancel = MagicMock(name="after_cancel", autospec=True)
         monkeypatch.setattr(movie_gui_obj.parent, "after_cancel", after_cancel)
         entry = MagicMock(name="entry", autospec=True)
@@ -517,12 +521,12 @@ class TestMovieGUI:
         # Arrange
         # noinspection DuplicatedCode
         data_queue = MagicMock(name="data_queue", autospec=True)
-        monkeypatch.setattr(movie_gui_obj, "tmdb_work_queue", data_queue)
+        monkeypatch.setattr(movie_gui_obj, "tmdb_data_queue", data_queue)
         tview = MagicMock(name="tview", autospec=True)
         monkeypatch.setattr(movie_gui_obj, "tmdb_treeview", tview)
         after = MagicMock(name="after", autospec=True)
         monkeypatch.setattr(movie_gui_obj.parent, "after", after)
-        movie_gui_obj.tmdb_work_queue.get_nowait.side_effect = movies.queue.Empty
+        movie_gui_obj.tmdb_data_queue.get_nowait.side_effect = movies.queue.Empty
 
         # Act
         movie_gui_obj.tmdb_consumer()
@@ -534,7 +538,7 @@ class TestMovieGUI:
             tview.get_children.assert_not_called()
         with check:
             after.assert_called_once_with(
-                movie_gui_obj.work_queue_poll, movie_gui_obj.tmdb_consumer
+                movie_gui_obj.tmdb_consumer_poll, movie_gui_obj.tmdb_consumer
             )
 
     def test_tmdb_consumer_with_filled_data_queue(self, movie_gui_obj, monkeypatch):
@@ -550,9 +554,9 @@ class TestMovieGUI:
         expected = {iid: movie_bag}
 
         data_queue = MagicMock(name="data_queue", autospec=True)
-        monkeypatch.setattr(movie_gui_obj, "tmdb_work_queue", data_queue)
+        monkeypatch.setattr(movie_gui_obj, "tmdb_data_queue", data_queue)
         get_nowait = MagicMock(name="get_nowait", autospec=True)
-        monkeypatch.setattr(movie_gui_obj.tmdb_work_queue, "get_nowait", get_nowait)
+        monkeypatch.setattr(movie_gui_obj.tmdb_data_queue, "get_nowait", get_nowait)
         get_nowait.return_value = [movie_bag]
 
         tview = MagicMock(name="tview", autospec=True)
@@ -583,7 +587,7 @@ class TestMovieGUI:
         check.equal(movie_gui_obj.tmdb_movies, expected)
         with check:
             after.assert_called_once_with(
-                movie_gui_obj.work_queue_poll, movie_gui_obj.tmdb_consumer
+                movie_gui_obj.tmdb_consumer_poll, movie_gui_obj.tmdb_consumer
             )
 
     @pytest.fixture(scope="function")

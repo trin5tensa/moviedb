@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/28/25, 8:21 AM by stephen.
+#  Last modified 3/28/25, 11:05 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -66,20 +66,22 @@ class MovieGUI:
     outer_frame: ttk.Frame = field(default=None, init=False, repr=False, compare=False)
     tmdb_treeview: ttk.Treeview = field(default=None, init=False, repr=False)
 
-    # These attributes are used for the consumer end of the TMDB
-    # producer/consumer pattern.
-    # todo Improve the meaningfulness of tmdb attribute names.
-    tmdb_work_queue: queue.LifoQueue = field(
+    # TMDB Producer/consumer queue.
+    tmdb_data_queue: queue.LifoQueue = field(
         default_factory=queue.Queue, init=False, repr=False
     )
-    work_queue_poll: int = field(default=40, init=False, repr=False)
-    recall_id: str = field(default=None, init=False, repr=False)
+    # Polling frequency for queue consumer.
+    tmdb_consumer_poll: int = field(default=40, init=False, repr=False)
+    # ID of consumer event used for cancellation of queue polling.
+    tmdb_consumer_recall_id: str = field(default=None, init=False, repr=False)
+    # Used to hold movies sent from TMDB
     tmdb_movies: dict[str, MovieBag] = field(
         default_factory=MovieBag, init=False, repr=False
     )
-    # These variables help to decide if the user has finished entering the title.
-    last_text_queue_timer: int = field(default=500, init=False, repr=False)
-    last_text_event_id: str = field(default="", init=False, repr=False)
+    # Used to pause the Internet call to TMDB while the user is still
+    #  entering match data.
+    match_pause: int = field(default=500, init=False, repr=False)
+    match_pause_id: str = field(default="", init=False, repr=False)
 
     def __post_init__(self):
         self.outer_frame, body_frame, buttonbox = common.create_body_and_buttonbox(
@@ -237,7 +239,7 @@ class MovieGUI:
         Args:
             *args: Not used but needed to match external caller.
         """
-        self.parent.after_cancel(self.recall_id)
+        self.parent.after_cancel(self.tmdb_consumer_recall_id)
         self.outer_frame.destroy()
 
     def fill_tmdb_frame(self, tmdb_frame: ttk.Frame):
@@ -313,27 +315,27 @@ class MovieGUI:
 
     # noinspection PyUnusedLocal
     def tmdb_search(self, *args, **kwargs):
-        """Searches TMDB for matching movies titles.
+        """Schedules a delayed search of TMDB for matching movie titles.
 
-        This should be called whenever the title field is changed by the user.
-        It schedules a TMDB search after 'self.last_text_queue_timer'
-        milliseconds. This will be cancelled if the user types anything
-        before 'self.last_text_queue_timer' milliseconds has elapsed.
+        The Internet call to TMDB will not be made until the user has finished
+        entering match data.
+        finished: When no new data has been entered for self.match_pause
+        milliseconds.
 
         Args:
             *args: Unused argument supplied by tkinter.
             **kwargs: Unused argument supplied by tkinter.
         """
         if match := self.entry_fields[TITLE].current_value:  # pragma no branch
-            if self.last_text_event_id:
-                self.parent.after_cancel(self.last_text_event_id)
+            if self.match_pause_id:
+                self.parent.after_cancel(self.match_pause_id)
 
             # Place a new call to tmdb_search_callback.
-            self.last_text_event_id = self.parent.after(
-                self.last_text_queue_timer,
+            self.match_pause_id = self.parent.after(
+                self.match_pause,
                 self.tmdb_callback,
                 match,
-                self.tmdb_work_queue,
+                self.tmdb_data_queue,
             )
 
     def tmdb_consumer(self):
@@ -344,7 +346,7 @@ class MovieGUI:
         """
         try:
             # Tkinter can't wait for the thread blocking `get` method…
-            work_package = self.tmdb_work_queue.get_nowait()
+            work_package = self.tmdb_data_queue.get_nowait()
 
         except queue.Empty:
             pass
@@ -372,8 +374,8 @@ class MovieGUI:
         finally:
             # Have tkinter call this function again after the poll interval.
             # noinspection PyTypeChecker
-            self.recall_id = self.parent.after(
-                self.work_queue_poll,
+            self.tmdb_consumer_recall_id = self.parent.after(
+                self.tmdb_consumer_poll,
                 self.tmdb_consumer,
             )
 
