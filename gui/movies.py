@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/28/25, 12:52 PM by stephen.
+#  Last modified 3/29/25, 12:44 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,6 +16,7 @@
 # This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
+from tkinter import messagebox
 from collections.abc import Callable, Iterator, Collection
 from dataclasses import dataclass, KW_ONLY, field
 from functools import partial
@@ -44,10 +45,13 @@ NOTES_TEXT = "Notes"
 MOVIE_TAGS_TEXT = "Tags"
 COMMIT_TEXT = "Commit"
 
-
+MOVIE_DELETE_MESSAGE = "Do you want to delete this movie?"
 UNEXPECTED_KEY = "Unexpected key"
 
+# todo Review all # noinspection DuplicatedCode
 
+
+# noinspection DuplicatedCode
 @dataclass
 class MovieGUI:
     """This base class for movies creates a standard movies input form."""
@@ -125,7 +129,6 @@ class MovieGUI:
         Args:
             body_frame:
         """
-        # noinspection DuplicatedCode
         label_and_field = common.LabelAndField(body_frame)
 
         # Create entry rows for title, year, director, and duration.
@@ -169,7 +172,6 @@ class MovieGUI:
         else:
             self.entry_fields[MOVIE_TAGS].original_value = []
 
-    # noinspection DuplicatedCode
     def as_movie_bag(self) -> MovieBag:
         """Returns the form data as a movie bag
 
@@ -460,3 +462,56 @@ class AddMovieGUI(MovieGUI):
             v.clear_current_value()
         tview_items = self.tmdb_treeview.get_children()
         self.tmdb_treeview.delete(*tview_items)
+
+
+# noinspection DuplicatedCode
+@dataclass
+class EditMovieGUI(MovieGUI):
+    """Create and manage a GUI form for viewing, editing, or deleting a movie."""
+
+    edit_movie_callback: Callable[[MovieBag], None] = None
+    delete_movie_callback: Callable[..., None] = None
+
+    # noinspection PyUnusedLocal
+    def enable_buttons(
+        self, commit_button: ttk.Button, delete_button: ttk.Button, *args, **kwargs
+    ):
+        """Enables the Commit and Delete buttons depending on the state of the entered
+        data.
+
+        This function will be registered with the observers for all fields. It should be
+        created as a partial function.
+
+        Args:
+            commit_button:
+            delete_button:
+            *args:
+            **kwargs:
+        """
+        changes = any(  # pragma no branch
+            [entry_field.changed() for entry_field in self.entry_fields.values()]
+        )
+        db_keys_present = all(  # pragma no branch
+            [self.entry_fields[k].has_data() for k in (TITLE, YEAR)]
+        )
+        common.enable_button(commit_button, state=changes and db_keys_present)
+        common.enable_button(delete_button, state=not changes)
+
+    def delete(self):
+        """Delete a movie from the database.
+
+        Ask the user for permission to delete the movie and, if given,
+        delete it.
+        """
+        if messagebox.askyesno(
+            message=MOVIE_DELETE_MESSAGE,
+            icon="question",
+            parent=self.parent,
+        ):
+            self.parent.after(0, self.delete_movie_callback, ())
+            self.destroy()
+
+    def commit(self):
+        """Commit an edited movie to the database."""
+        self.parent.after(0, self.edit_movie_callback, self.as_movie_bag())
+        self.destroy()
