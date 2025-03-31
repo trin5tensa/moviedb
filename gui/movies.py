@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/29/25, 12:44 PM by stephen.
+#  Last modified 3/31/25, 1:39 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -37,13 +37,14 @@ from globalconstants import (
 )
 from gui import common, tk_facade
 
-TITLE_TEXT = "Title"
-YEAR_TEXT = "Year"
+COMMIT_TEXT = "Commit"
+DELETE_TEXT = "Delete"
 DIRECTORS_TEXT = "Directors"
 DURATION_TEXT = "Runtime"
 NOTES_TEXT = "Notes"
 MOVIE_TAGS_TEXT = "Tags"
-COMMIT_TEXT = "Commit"
+TITLE_TEXT = "Title"
+YEAR_TEXT = "Year"
 
 MOVIE_DELETE_MESSAGE = "Do you want to delete this movie?"
 UNEXPECTED_KEY = "Unexpected key"
@@ -471,6 +472,34 @@ class EditMovieGUI(MovieGUI):
 
     edit_movie_callback: Callable[[MovieBag], None] = None
     delete_movie_callback: Callable[..., None] = None
+
+    def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
+        """Create commit and delete buttons.
+
+        Args:
+            buttonbox:
+            column_num:
+        """
+        commit_button = common.create_button(
+            buttonbox,
+            COMMIT_TEXT,
+            column=next(column_num),
+            command=self.commit,
+            default="disabled",
+        )
+        delete_button = common.create_button(
+            buttonbox,
+            DELETE_TEXT,
+            column=next(column_num),
+            command=self.delete,
+            default="active",
+        )
+
+        # Register buttons with the fields' observers.
+        for entry_field in self.entry_fields.values():
+            entry_field.observer.register(
+                partial(self.enable_buttons, commit_button, delete_button)
+            )
 
     # noinspection PyUnusedLocal
     def enable_buttons(

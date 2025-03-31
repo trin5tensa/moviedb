@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/29/25, 12:44 PM by stephen.
+#  Last modified 3/31/25, 1:39 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -736,12 +736,63 @@ class TestEditMovieGUI:
     all_tags = set()
     prepopulate = MovieBag()
 
+    def test_create_buttons(self, edit_movie_obj, monkeypatch):
+        # Arrange button box and buttons
+        buttonbox = MagicMock(name="buttonbox", autospec=True)
+        monkeypatch.setattr(movies.ttk, "Frame", buttonbox)
+        button = MagicMock(name="button", autospec=True)
+        monkeypatch.setattr(movies.ttk, "Button", button)
+        create_button = MagicMock(name="create_button", autospec=True)
+        create_button.return_value = button
+        monkeypatch.setattr(movies.common, "create_button", create_button)
+        column_num = movies.count()
+
+        # Arrange entry_fields.
+        entry = MagicMock(name="entry", autospec=True)
+        monkeypatch.setattr(movies.tk_facade, "Entry", entry)
+        monkeypatch.setitem(edit_movie_obj.entry_fields, movies.TITLE, entry)
+
+        # Arrange enable_buttons and its partial call
+        enable_buttons = MagicMock(name="enable_buttons", autospec=True)
+        monkeypatch.setattr(edit_movie_obj, "enable_buttons", enable_buttons)
+        partial = MagicMock(name="partial", autospec=True)
+        monkeypatch.setattr(movies, "partial", partial)
+
+        # Act
+        edit_movie_obj.create_buttons(buttonbox, column_num)
+
+        # Assert
+        check.equal(
+            create_button.call_args_list,
+            [
+                call(
+                    buttonbox,
+                    movies.COMMIT_TEXT,
+                    column=0,
+                    command=edit_movie_obj.commit,
+                    default="disabled",
+                ),
+                call(
+                    buttonbox,
+                    movies.DELETE_TEXT,
+                    column=1,
+                    command=edit_movie_obj.delete,
+                    default="active",
+                ),
+            ],
+        )
+        with check:
+            partial.assert_called_once_with(enable_buttons, button, button)
+        with check:
+            entry.observer.register.assert_called_once_with(
+                partial(enable_buttons, button, button)
+            )
+
     def test_enable_buttons(self, edit_movie_obj, monkeypatch):
         # Arrange
-        commit_button = MagicMock(name="commit_button", autospec=True)
-        monkeypatch.setattr(movies.ttk, "Button", commit_button)
-        delete_button = MagicMock(name="commit_button", autospec=True)
-        monkeypatch.setattr(movies.ttk, "Button", commit_button)
+        button = MagicMock(name="commit_button", autospec=True)
+        monkeypatch.setattr(movies.ttk, "Button", button)
+
         enable_button = MagicMock(name="enable_button", autospec=True)
         monkeypatch.setattr(movies.common, "enable_button", enable_button)
         entry = MagicMock(name="entry", autospec=True)
@@ -752,18 +803,18 @@ class TestEditMovieGUI:
         edit_movie_obj.entry_fields[movies.YEAR] = entry
 
         # Act
-        edit_movie_obj.enable_buttons(commit_button, delete_button)
+        edit_movie_obj.enable_buttons(button, button)
 
         # Assert
         with check:
             enable_button.assert_has_calls(
                 [
                     call(
-                        commit_button,
+                        button,
                         state=True,
                     ),
                     call(
-                        delete_button,
+                        button,
                         state=False,
                     ),
                 ]
