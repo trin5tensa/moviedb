@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/31/25, 1:39 PM by stephen.
+#  Last modified 4/1/25, 8:07 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -388,7 +388,7 @@ class MovieGUI:
 class AddMovieGUI(MovieGUI):
     """Create and manage a GUI form for entering a new movie."""
 
-    add_movie_callback: Callable[[MovieBag], None] = None
+    add_movie_callback: Callable[[MovieBag], None]
 
     def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         """Adds a commit button and registers its enabler function with
@@ -470,8 +470,8 @@ class AddMovieGUI(MovieGUI):
 class EditMovieGUI(MovieGUI):
     """Create and manage a GUI form for viewing, editing, or deleting a movie."""
 
-    edit_movie_callback: Callable[[MovieBag], None] = None
-    delete_movie_callback: Callable[..., None] = None
+    edit_movie_callback: Callable[[MovieBag], None]
+    delete_movie_callback: Callable
 
     def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         """Create commit and delete buttons.

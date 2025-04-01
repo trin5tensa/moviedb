@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/28/25, 8:21 AM by stephen.
+#  Last modified 4/1/25, 8:07 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -103,10 +103,10 @@ def gui_edit_movie(old_movie: MovieBag, *, prepopulate: MovieBag = None):
             tag selection.
     """
     all_tags = tables.select_all_tags()
-    guiwidgets_2.EditMovieGUI(
+    gui.movies.EditMovieGUI(
         config.current.tk_root,
-        _tmdb_io_handler,
-        list(all_tags),
+        tmdb_callback=_tmdb_io_handler,
+        all_tags=all_tags,
         prepopulate=prepopulate,
         edit_movie_callback=partial(db_edit_movie, old_movie),
         delete_movie_callback=partial(db_delete_movie, old_movie),

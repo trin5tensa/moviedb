@@ -1,7 +1,7 @@
 """Menu handlers fpr movies."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/28/25, 8:21 AM by stephen.
+#  Last modified 4/1/25, 8:07 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -664,36 +664,35 @@ def test_db_delete_tag(monkeypatch):
 
 
 def test_gui_edit_movie(monkeypatch, config_current, test_tags):
-    widget_edit_movie = MagicMock(name="widget_edit_movie")
-    monkeypatch.setattr(
-        handlers.database.guiwidgets_2, "EditMovieGUI", widget_edit_movie
-    )
-    db_edit_movie = MagicMock(name="db_edit_movie")
-    monkeypatch.setattr(handlers.database, "db_edit_movie", db_edit_movie)
-    db_delete_movie = MagicMock(name="db_delete_movie")
-    monkeypatch.setattr(handlers.database, "db_delete_movie", db_delete_movie)
+    # Arrange
     partial = MagicMock(name="partial")
     monkeypatch.setattr(handlers.database, "partial", partial)
     old_movie = MovieBag(title="test gui movie title", year=MovieInteger(42))
+    edit_movie = MagicMock(name="edit_movie", autospec=True)
+    monkeypatch.setattr(handlers.database.gui.movies, "EditMovieGUI", edit_movie)
 
-    handlers.database.gui_edit_movie(old_movie)
+    # Act
+    handlers.database.gui_edit_movie(old_movie, prepopulate=old_movie)
 
-    check.equal(
-        partial.call_args_list,
-        [
-            call(db_edit_movie, old_movie),
-            call(db_delete_movie, old_movie),
-        ],
-    )
+    # Assert
     with check:
-        widget_edit_movie.assert_called_once_with(
-            config.current.tk_root,
-            handlers.sundries._tmdb_io_handler,
-            list(handlers.database.tables.select_all_tags()),
-            prepopulate=None,
+        edit_movie.assert_called_once_with(
+            handlers.database.config.current.tk_root,
+            tmdb_callback=handlers.sundries._tmdb_io_handler,
+            all_tags=test_tags,
+            prepopulate=old_movie,
             edit_movie_callback=partial(),
             delete_movie_callback=partial(),
         )
+    check.equal(
+        partial.call_args_list,
+        [
+            call(handlers.database.db_edit_movie, old_movie),
+            call(handlers.database.db_delete_movie, old_movie),
+            call(),
+            call(),
+        ],
+    )
 
 
 @pytest.fixture(scope="function")
