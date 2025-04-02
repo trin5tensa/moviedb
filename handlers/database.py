@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/1/25, 8:07 AM by stephen.
+#  Last modified 4/2/25, 7:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -154,6 +154,8 @@ def db_match_movies(criteria: MovieBag):
     Args:
         criteria:
     """
+    # todo Review. There are no 'old style arguments' but still need to ensure only
+    #   criteria items with truthful values are passed on for processing.
     # Cleans up old style arguments
     # Removes empty items because SQL treats them as meaningful.
     criteria = {
@@ -170,6 +172,7 @@ def db_match_movies(criteria: MovieBag):
                 config.current.tk_root,
                 message=tables.MOVIE_NOT_FOUND,
             )
+            # todo add argument prepopulate=criteria AND test its integration.
             gui_search_movie()
 
         case 1:
