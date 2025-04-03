@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/2/25, 7:48 AM by stephen.
+#  Last modified 4/3/25, 8:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -50,10 +50,7 @@ YEAR_TEXT = "Year"
 MOVIE_DELETE_MESSAGE = "Do you want to delete this movie?"
 UNEXPECTED_KEY = "Unexpected key"
 
-# todo Review all # noinspection DuplicatedCode
 
-
-# noinspection DuplicatedCode
 @dataclass
 class MovieGUI:
     """This base class for movies creates a standard movies input form."""
@@ -466,7 +463,6 @@ class AddMovieGUI(MovieGUI):
         self.tmdb_treeview.delete(*tview_items)
 
 
-# noinspection DuplicatedCode
 @dataclass
 class EditMovieGUI(MovieGUI):
     """Create and manage a GUI form for viewing, editing, or deleting a movie."""

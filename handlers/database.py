@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/3/25, 7:48 AM by stephen.
+#  Last modified 4/3/25, 8:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -83,8 +83,6 @@ def gui_search_movie(*, prepopulate: MovieBag = None):
         all_tags=all_tags,
         prepopulate=prepopulate,
     )
-    # todo Zombie code
-    # guiwidgets.SearchMovieGUI(config.current.tk_root, db_match_movies, list(all_tags))
 
 
 def gui_select_movie(*, movies: list[MovieBag]):
