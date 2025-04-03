@@ -1,7 +1,7 @@
 """Menu handlers fpr movies."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/3/25, 7:48 AM by stephen.
+#  Last modified 4/3/25, 8:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -267,7 +267,7 @@ def test_db_match_movies(monkeypatch, config_current, messagebox, new_movie):
         "match_movies",
         match_movies,
     )
-    monkeypatch.setattr(handlers.database, "gui_search_movie", lambda: None)
+    monkeypatch.setattr(handlers.database, "gui_search_movie", lambda prepopulate: None)
 
     # Act
     handlers.database.db_match_movies(new_movie)
@@ -284,7 +284,7 @@ def test_db_match_movies_with_year_range(
     year_1 = "4242"
     year_2 = "4247"
     new_movie["year"] = MovieInteger(f"{year_1}-{year_2}")
-    monkeypatch.setattr(handlers.database, "gui_search_movie", lambda: None)
+    monkeypatch.setattr(handlers.database, "gui_search_movie", lambda prepopulate: None)
 
     handlers.database.db_match_movies(new_movie)
 
@@ -312,7 +312,7 @@ def test_db_match_movies_returning_0_movies(
             message=handlers.database.tables.MOVIE_NOT_FOUND,
         )
     with check:
-        gui_search_movie.assert_called_once_with()
+        gui_search_movie.assert_called_once_with(prepopulate=criteria)
 
 
 def test_db_match_movies_returning_1_movie(monkeypatch, config_current, test_tags):

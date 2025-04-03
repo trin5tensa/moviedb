@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/3/25, 8:18 AM by stephen.
+#  Last modified 4/3/25, 8:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -161,26 +161,20 @@ def db_match_movies(criteria: MovieBag):
     Args:
         criteria:
     """
-    # todo Review. There are no 'old style arguments' but still need to ensure only
-    #   criteria items with truthful values are passed on for processing.
-    # Cleans up old style arguments
     # Removes empty items because SQL treats them as meaningful.
     criteria = {
-        k: v
-        for k, v in criteria.items()
-        if v != "" and v != [] and v != () and v != ["", ""]
+        k: v for k, v in criteria.items() if v != "" and v != ()
     }  # pragma nocover
 
     movies_found = tables.match_movies(match=criteria)
     match len(movies_found):
         case 0:
-            # Informs user and represent the search window.
+            # Informs user and represents the search window.
             guiwidgets_2.gui_messagebox(
                 config.current.tk_root,
                 message=tables.MOVIE_NOT_FOUND,
             )
-            # todo add argument prepopulate=criteria AND test its integration.
-            gui_search_movie()
+            gui_search_movie(prepopulate=criteria)
 
         case 1:
             # Presents an Edit/View/Delete window to user
