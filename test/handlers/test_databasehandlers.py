@@ -1,7 +1,7 @@
 """Menu handlers fpr movies."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/1/25, 8:07 AM by stephen.
+#  Last modified 4/3/25, 8:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -162,19 +162,85 @@ def test_db_add_movie_handles_IntegrityError_for_invalid_year(monkeypatch):
         gui_add_movie.assert_called_once_with(prepopulate=movie_bag)
 
 
-def test_gui_search_movie(monkeypatch, config_current, test_tags):
-    mock_search_movie_gui = MagicMock(name="mock_search_movie_gui")
-    monkeypatch.setattr(
-        handlers.database.guiwidgets, "SearchMovieGUI", mock_search_movie_gui
+def test_gui_search_movie_with_prepopulate(
+    monkeypatch,
+    config_current,
+    test_tags,
+):
+    # Arrange prepopulate
+    prepopulate = handlers.database.MovieBag(
+        title="Dummy GUI Search Movie title",
     )
 
+    # Arrange select_all_tags
+    select_all_tags = MagicMock(name="select_all_tags", autospec=True)
+    select_all_tags.return_value = test_tags
+    monkeypatch.setattr(
+        handlers.database.tables,
+        "select_all_tags",
+        select_all_tags,
+    )
+
+    # Arrange search_movie
+    search_movie = MagicMock(name="search_movie", autospec=True)
+    monkeypatch.setattr(
+        handlers.database.gui.movies,
+        "SearchMovieGUI",
+        search_movie,
+    )
+
+    # Act
+    handlers.database.gui_search_movie(prepopulate=prepopulate)
+
+    # Assert
+    with check:
+        select_all_tags.assert_called_once_with()
+    with check:
+        search_movie.assert_called_once_with(
+            handlers.database.config.current.tk_root,
+            match_movie_callback=handlers.database.db_match_movies,
+            tmdb_callback=handlers.database._tmdb_io_handler,
+            all_tags=test_tags,
+            prepopulate=prepopulate,
+        )
+
+
+def test_gui_search_movie_without_prepopulate(
+    monkeypatch,
+    config_current,
+    test_tags,
+):
+    # Arrange select_all_tags
+    select_all_tags = MagicMock(name="select_all_tags", autospec=True)
+    select_all_tags.return_value = test_tags
+    monkeypatch.setattr(
+        handlers.database.tables,
+        "select_all_tags",
+        select_all_tags,
+    )
+
+    # Arrange search_movie
+    search_movie = MagicMock(name="search_movie", autospec=True)
+    monkeypatch.setattr(
+        handlers.database.gui.movies,
+        "SearchMovieGUI",
+        search_movie,
+    )
+
+    # Act
     handlers.database.gui_search_movie()
 
-    mock_search_movie_gui.assert_called_once_with(
-        handlers.database.config.current.tk_root,
-        handlers.database.db_match_movies,
-        list(test_tags),
-    )
+    # Assert
+    with check:
+        select_all_tags.assert_called_once_with()
+    with check:
+        search_movie.assert_called_once_with(
+            handlers.database.config.current.tk_root,
+            match_movie_callback=handlers.database.db_match_movies,
+            tmdb_callback=handlers.database._tmdb_io_handler,
+            all_tags=test_tags,
+            prepopulate={},
+        )
 
 
 def test_gui_select_movie(monkeypatch, config_current):
@@ -201,7 +267,7 @@ def test_db_match_movies(monkeypatch, config_current, messagebox, new_movie):
         "match_movies",
         match_movies,
     )
-    monkeypatch.setattr(handlers.database, "gui_search_movie", lambda: None)
+    monkeypatch.setattr(handlers.database, "gui_search_movie", lambda prepopulate: None)
 
     # Act
     handlers.database.db_match_movies(new_movie)
@@ -218,7 +284,7 @@ def test_db_match_movies_with_year_range(
     year_1 = "4242"
     year_2 = "4247"
     new_movie["year"] = MovieInteger(f"{year_1}-{year_2}")
-    monkeypatch.setattr(handlers.database, "gui_search_movie", lambda: None)
+    monkeypatch.setattr(handlers.database, "gui_search_movie", lambda prepopulate: None)
 
     handlers.database.db_match_movies(new_movie)
 
@@ -246,7 +312,7 @@ def test_db_match_movies_returning_0_movies(
             message=handlers.database.tables.MOVIE_NOT_FOUND,
         )
     with check:
-        gui_search_movie.assert_called_once_with()
+        gui_search_movie.assert_called_once_with(prepopulate=criteria)
 
 
 def test_db_match_movies_returning_1_movie(monkeypatch, config_current, test_tags):

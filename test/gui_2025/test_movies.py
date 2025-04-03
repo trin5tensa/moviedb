@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/31/25, 1:39 PM by stephen.
+#  Last modified 4/2/25, 7:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -607,9 +607,9 @@ class TestAddMovieGUI:
         # Arrange create_button
         create_button = MagicMock(name="create_button", autospec=True)
         monkeypatch.setattr(movies.common, "create_button", create_button)
-        buttonbox = MagicMock(name="buttonbox", autospec=True)
 
         # Arrange buttonbox and commit button
+        buttonbox = MagicMock(name="buttonbox", autospec=True)
         monkeypatch.setattr(ttk.Frame, "buttonbox", buttonbox)
         commit_button = MagicMock(name="commit_button", autospec=True)
         monkeypatch.setattr(movies.ttk, "Button", commit_button)
@@ -716,7 +716,9 @@ class TestAddMovieGUI:
 
     @pytest.fixture(scope="function")
     def add_movie_obj(self, tk, moviegui_post_init, monkeypatch):
-        """Creates a MovieGUI object without running the __post_init__ method."""
+        """Creates an AddMovieGUI object without running the __post_init__
+        method.
+        """
         return movies.AddMovieGUI(
             tk.Tk(),
             add_movie_callback=self.add_movie_callback,
@@ -890,6 +892,124 @@ class TestEditMovieGUI:
             tk.Tk(),
             edit_movie_callback=self.edit_movie_callback,
             delete_movie_callback=self.delete_movie_callback,
+            tmdb_callback=self.tmdb_callback,
+            all_tags=self.all_tags,
+            prepopulate=self.prepopulate,
+        )
+
+
+# noinspection DuplicatedCode
+class TestSearchMovieGUI:
+    """Tests for the SearchMovieGUI class."""
+
+    match_movie_callback = MagicMock(name="match_movie_callback", autospec=True)
+    tmdb_callback = MagicMock(name="tmdb_callback", autospec=True)
+    all_tags = set()
+    prepopulate = MovieBag()
+
+    def test_create_buttons(self, search_movie_obj, monkeypatch, ttk):
+        # Arrange create_button
+        create_button = MagicMock(name="create_button", autospec=True)
+        monkeypatch.setattr(movies.common, "create_button", create_button)
+
+        # Arrange buttonbox and commit button
+        buttonbox = MagicMock(name="buttonbox", autospec=True)
+        monkeypatch.setattr(ttk.Frame, "buttonbox", buttonbox)
+        search_button = MagicMock(name="search_button", autospec=True)
+        monkeypatch.setattr(movies.ttk, "Button", search_button)
+        create_button.return_value = search_button
+
+        # Arrange entry_fields for title and year
+        entry_field = MagicMock(name="entry_field", autospec=True)
+        monkeypatch.setattr(movies.tk_facade, "Entry", entry_field)
+        search_movie_obj.entry_fields["dummy field name"] = entry_field
+
+        # Arrange partial
+        partial = MagicMock(name="partial", autospec=True)
+        monkeypatch.setattr(movies, "partial", partial)
+
+        # Arrange column number
+        column_num = movies.count(42)
+
+        # Act
+        search_movie_obj.create_buttons(buttonbox, column_num)
+
+        # Assert
+        with check:
+            create_button.assert_called_once_with(
+                buttonbox,
+                movies.SEARCH_TEXT,
+                column=42,
+                command=search_movie_obj.search,
+                default="normal",
+            )
+        with check:
+            entry_field.observer.register.assert_called_once_with(
+                partial(
+                    search_movie_obj.enable_search_button,
+                    search_button,
+                )
+            )
+
+    @pytest.mark.parametrize(
+        "data_present, state",
+        [
+            (True, True),
+            (False, False),
+        ],
+    )
+    def test_enable_search_button(
+        self, data_present, state, search_movie_obj, monkeypatch
+    ):
+        # Arrange data_present
+        entry = MagicMock(name="entry", autospec=True)
+        entry.changed.return_value = data_present
+        monkeypatch.setattr(movies.tk_facade, "Entry", entry)
+        search_movie_obj.entry_fields[movies.TITLE] = entry
+
+        # Arrange search button
+        search_button = MagicMock(name="search_button", autospec=True)
+        monkeypatch.setattr(movies.ttk, "Button", search_button)
+
+        # Arrange enable button
+        enable_button = MagicMock(name="enable_button", autospec=True)
+        monkeypatch.setattr(movies.common, "enable_button", enable_button)
+
+        # Act
+        search_movie_obj.enable_search_button(search_button)
+
+        # Assert
+        enable_button.assert_called_once_with(
+            search_button,
+            state=state,
+        )
+
+    def test_search(self, search_movie_obj, monkeypatch, tk):
+        # Arrange
+        after = MagicMock(name="after", autospec=True)
+        monkeypatch.setattr(search_movie_obj.parent, "after", after)
+        destroy = MagicMock(name="destroy", autospec=True)
+        monkeypatch.setattr(search_movie_obj, "destroy", destroy)
+
+        # Act
+        search_movie_obj.search()
+
+        # Assert
+        with check:
+            after.assert_called_once_with(
+                0, self.match_movie_callback, search_movie_obj.as_movie_bag()
+            )
+        with check:
+            destroy.assert_called_once_with()
+
+    @pytest.fixture(scope="function")
+    def search_movie_obj(self, tk, moviegui_post_init, monkeypatch):
+        """Creates a SearchMovieGUI object without running the __post_init__
+        method.
+        """
+        return movies.SearchMovieGUI(
+            tk.Tk(),
+            match_movie_callback=self.match_movie_callback,
             tmdb_callback=self.tmdb_callback,
             all_tags=self.all_tags,
             prepopulate=self.prepopulate,

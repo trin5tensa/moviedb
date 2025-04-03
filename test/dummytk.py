@@ -1,7 +1,7 @@
 """Test support module for Tk dummies."""
 
-#  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 2/13/24, 1:59 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 4/3/25, 8:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -134,44 +134,6 @@ class TkToplevel:
 
     def destroy(self):
         self.destroy_calls.append(True)
-
-
-# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
-@dataclass
-class TkText:
-    parent: "TtkFrame"
-    width: str
-    height: str
-    wrap: str
-    padx: str
-    pady: str
-    yview: str = None
-    yscrollcommand: Callable = None
-    text: str = ""
-
-    delete_calls = []
-    insert_calls = []
-
-    def grid(self, *args, **kwargs):
-        ...
-
-    def configure(self, *args, **kwargs):
-        ...
-
-    def tag_configure(self, *args, **kwargs):
-        ...
-
-    def delete(self, start: str, end: str):
-        self.delete_calls.append((start, end))
-        self.text = ""
-
-    def insert(self, pos: str, text: str, tags: tuple[str]):
-        self.insert_calls.append((pos, text, tags))
-        self.text = text
-
-    # noinspection PyUnusedLocal
-    def get(self, *args):
-        return self.text
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -399,8 +361,7 @@ class TtkButton:
     def invoke(self):
         self.invoke_calls.append(True)
 
-    def configure(self, *args, **kwargs):
-        ...
+    def configure(self, *args, **kwargs): ...
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -507,27 +468,3 @@ class TtkScrollbar:
 
     def set(self):
         pass
-
-
-# noinspection PyMissingOrEmptyDocstring
-@dataclass
-class TkMenu:
-    parent: ParentType
-    name: Optional[str] = None
-
-    add_cascade_calls: list = field(
-        default_factory=list, init=False, repr=False, compare=False
-    )
-    add_command_calls: list = field(
-        default_factory=list, init=False, repr=False, compare=False
-    )
-    add_separator_count: int = field(default=0, init=False, repr=False, compare=False)
-
-    def add_cascade(self, *args, **kwargs):
-        self.add_cascade_calls.append((args, kwargs))
-
-    def add_command(self, *args, **kwargs):
-        self.add_command_calls.append((args, kwargs))
-
-    def add_separator(self):
-        self.add_separator_count += 1

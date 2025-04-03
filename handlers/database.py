@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/1/25, 8:07 AM by stephen.
+#  Last modified 4/3/25, 8:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,6 @@ from functools import partial
 import config
 import logging
 
-import guiwidgets
 import guiwidgets_2
 import gui.tags
 import gui.movies
@@ -75,7 +74,15 @@ def gui_search_movie(*, prepopulate: MovieBag = None):
             input errors.
     """
     all_tags = tables.select_all_tags()
-    guiwidgets.SearchMovieGUI(config.current.tk_root, db_match_movies, list(all_tags))
+    if not prepopulate:
+        prepopulate = MovieBag()
+    gui.movies.SearchMovieGUI(
+        config.current.tk_root,
+        match_movie_callback=db_match_movies,
+        tmdb_callback=_tmdb_io_handler,
+        all_tags=all_tags,
+        prepopulate=prepopulate,
+    )
 
 
 def gui_select_movie(*, movies: list[MovieBag]):
@@ -99,8 +106,8 @@ def gui_edit_movie(old_movie: MovieBag, *, prepopulate: MovieBag = None):
             This argument can be used to prepopulate the movie widget. This
             is useful if the initial attempt to edit a movie caused an
             exception. It gives the user the opportunity to fix input errors.
-            If present, the item "prepopulate['tags']" contains the
-            tag selection.
+            If the key "prepopulate['tags']" is present, it will contain the tag
+            selection.
     """
     all_tags = tables.select_all_tags()
     gui.movies.EditMovieGUI(
@@ -154,23 +161,20 @@ def db_match_movies(criteria: MovieBag):
     Args:
         criteria:
     """
-    # Cleans up old style arguments
     # Removes empty items because SQL treats them as meaningful.
     criteria = {
-        k: v
-        for k, v in criteria.items()
-        if v != "" and v != [] and v != () and v != ["", ""]
+        k: v for k, v in criteria.items() if v != "" and v != ()
     }  # pragma nocover
 
     movies_found = tables.match_movies(match=criteria)
     match len(movies_found):
         case 0:
-            # Informs user and represent the search window.
+            # Informs user and represents the search window.
             guiwidgets_2.gui_messagebox(
                 config.current.tk_root,
                 message=tables.MOVIE_NOT_FOUND,
             )
-            gui_search_movie()
+            gui_search_movie(prepopulate=criteria)
 
         case 1:
             # Presents an Edit/View/Delete window to user

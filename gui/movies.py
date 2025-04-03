@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/1/25, 8:07 AM by stephen.
+#  Last modified 4/3/25, 8:18 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -43,16 +43,14 @@ DIRECTORS_TEXT = "Directors"
 DURATION_TEXT = "Runtime"
 NOTES_TEXT = "Notes"
 MOVIE_TAGS_TEXT = "Tags"
+SEARCH_TEXT = "Search"
 TITLE_TEXT = "Title"
 YEAR_TEXT = "Year"
 
 MOVIE_DELETE_MESSAGE = "Do you want to delete this movie?"
 UNEXPECTED_KEY = "Unexpected key"
 
-# todo Review all # noinspection DuplicatedCode
 
-
-# noinspection DuplicatedCode
 @dataclass
 class MovieGUI:
     """This base class for movies creates a standard movies input form."""
@@ -465,7 +463,6 @@ class AddMovieGUI(MovieGUI):
         self.tmdb_treeview.delete(*tview_items)
 
 
-# noinspection DuplicatedCode
 @dataclass
 class EditMovieGUI(MovieGUI):
     """Create and manage a GUI form for viewing, editing, or deleting a movie."""
@@ -505,17 +502,17 @@ class EditMovieGUI(MovieGUI):
     def enable_buttons(
         self, commit_button: ttk.Button, delete_button: ttk.Button, *args, **kwargs
     ):
-        """Enables the Commit and Delete buttons depending on the state of the entered
-        data.
+        """Enables the Commit and Delete buttons depending on the state of the
+        entered data.
 
-        This function will be registered with the observers for all fields. It should be
-        created as a partial function.
+        This function will be registered with the observers for all fields.
+        It should be created as a partial function.
 
         Args:
             commit_button:
             delete_button:
-            *args:
-            **kwargs:
+            *args: Unused but needed to match caller's arguments
+            **kwargs: Unused but needed to match caller's arguments
         """
         changes = any(  # pragma no branch
             [entry_field.changed() for entry_field in self.entry_fields.values()]
@@ -543,4 +540,56 @@ class EditMovieGUI(MovieGUI):
     def commit(self):
         """Commit an edited movie to the database."""
         self.parent.after(0, self.edit_movie_callback, self.as_movie_bag())
+        self.destroy()
+
+
+@dataclass
+class SearchMovieGUI(MovieGUI):
+    """Create and manage a GUI form to search movies in the database."""
+
+    match_movie_callback: Callable[[MovieBag], None]
+
+    def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
+        """Adds a search button and registers its enabler function with
+        all field observers.
+
+        Args:
+            buttonbox:
+            column_num:
+        """
+        search_button = common.create_button(
+            buttonbox,
+            SEARCH_TEXT,
+            column=next(column_num),
+            command=self.search,
+            default="normal",
+        )
+        for widget in self.entry_fields.values():
+            widget.observer.register(
+                partial(
+                    self.enable_search_button,
+                    search_button,
+                )
+            )
+
+    # noinspection PyUnusedLocal
+    def enable_search_button(self, search_button, *args, **kwargs):
+        """Enables the Search button depending on the state of the entered data.
+
+        This function will be registered with the observers for all fields.
+        It should be created as a partial function.
+
+        Args:
+            search_button:
+            *args: Unused but needed to match caller's arguments
+            **kwargs: Unused but needed to match caller's arguments
+        """
+        changes = any(  # pragma no branch
+            [entry_field.changed() for entry_field in self.entry_fields.values()]
+        )
+        common.enable_button(search_button, state=changes)
+
+    def search(self):
+        """Search for matching movies."""
+        self.parent.after(0, self.match_movie_callback, self.as_movie_bag())
         self.destroy()
