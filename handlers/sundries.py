@@ -1,7 +1,7 @@
 """Sundry Menu handlers."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/21/25, 6:49 AM by stephen.
+#  Last modified 4/5/25, 1:52 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,13 +17,19 @@ import concurrent.futures
 import logging
 import queue
 from collections import UserDict
+
+# todo Temporary Tk/Tcl code is in the wrong place
+from tkinter import messagebox
 from typing import Callable, Optional, Literal
 
 import config
 
-import exception
 import guiwidgets_2
 import tmdb
+
+TMDB_UNREACHABLE = "TMDB database cannot be reached."
+INVALID_API_KEY = "Invalid API key for TMDB."
+SET_API_KEY = "Do you want to set the TMDB API key?"
 
 
 # noinspection DuplicatedCode
@@ -106,19 +112,28 @@ class EscapeKeyDict(UserDict):
                 case 1:
                     pass
                 case 0:
-                    message = (
+                    detail = (
                         f"{self.accelerator_txt} {accelerator} {self.no_valid_name_txt}"
                     )
-                    logging.warning(f"{message} {keypress_event.widget=}")
-                    guiwidgets_2.gui_messagebox(
-                        parent, self.internal_error_txt, message, icon="warning"
+                    logging.warning(f"{detail} {keypress_event.widget=}")
+                    messagebox.showinfo(
+                        config.current.tk_root,
+                        self.internal_error_txt,
+                        detail=detail,
+                        icon="warning",
                     )
                     return
                 case _:
-                    message = f"{self.accelerator_txt} {accelerator} {self.gt1_valid_name_txt}"
-                    logging.warning(f"{message} {keypress_event.widget=}")
-                    guiwidgets_2.gui_messagebox(
-                        parent, self.internal_error_txt, message, icon="warning"
+                    detail = (
+                        f"{self.accelerator_txt} {accelerator}"
+                        f" {self.gt1_valid_name_txt}"
+                    )
+                    logging.warning(f"{detail} {keypress_event.widget=}")
+                    messagebox.showinfo(
+                        config.current.tk_root,
+                        self.internal_error_txt,
+                        detail=detail,
+                        icon="warning",
                     )
                     return
 
@@ -127,16 +142,25 @@ class EscapeKeyDict(UserDict):
             try:
                 self.data[outer_frame_name]()
             except KeyError:
-                message = f"{self.accelerator_txt}  {accelerator} {self.key_error_text}"
-                logging.warning(f"{message} {self.data.keys()}")
-                guiwidgets_2.gui_messagebox(
-                    parent, self.internal_error_txt, message, icon="warning"
+                detail = f"{self.accelerator_txt}  {accelerator} {self.key_error_text}"
+                logging.warning(f"{detail} {self.data.keys()}")
+                messagebox.showinfo(
+                    config.current.tk_root,
+                    self.internal_error_txt,
+                    detail=detail,
+                    icon="warning",
                 )
             except TypeError:
-                message = f"{self.type_error_text} {self.accelerator_txt.lower()}  {accelerator}."
-                logging.warning(f"{message} {self.data[outer_frame_name]}")
-                guiwidgets_2.gui_messagebox(
-                    parent, self.internal_error_txt, message, icon="warning"
+                detail = (
+                    f"{self.type_error_text} {self.accelerator_txt.lower()}"
+                    f"  {accelerator}."
+                )
+                logging.warning(f"{detail} {self.data[outer_frame_name]}")
+                messagebox.showinfo(
+                    config.current.tk_root,
+                    self.internal_error_txt,
+                    detail=detail,
+                    icon="warning",
                 )
 
         return closure
@@ -144,10 +168,10 @@ class EscapeKeyDict(UserDict):
 
 def about_dialog():
     """Display the 'about' dialog."""
-    guiwidgets_2.gui_messagebox(
+    messagebox.showinfo(
         config.current.tk_root,
         config.persistent.program_name,
-        config.persistent.program_version,
+        detail=config.persistent.program_version,
     )
 
 
@@ -203,8 +227,8 @@ def _settings_callback(tmdb_api_key: str, use_tmdb: bool):
 # noinspection DuplicatedCode
 def _tmdb_search_exception_callback(fut: concurrent.futures.Future):
     """
-    This handles exceptions encountered while running tmdb.search_tmdb and which need user
-    interaction.
+    This handles exceptions encountered while running tmdb.search_tmdb and
+    which need user interaction.
 
     Args:
         fut:
@@ -212,18 +236,19 @@ def _tmdb_search_exception_callback(fut: concurrent.futures.Future):
     try:
         fut.result()
 
-    except exception.TMDBAPIKeyException as exc:
+    except tmdb.exception.TMDBAPIKeyException as exc:
         logging.error(exc)
-        msg = "Invalid API key for TMDB."
-        detail = "Do you want to set the key?"
-        if guiwidgets_2.gui_askyesno(
-            config.current.tk_root, msg, detail
-        ):  # pragma no branch
+        if messagebox.askyesno(  # pragma no branch
+            config.current.tk_root,
+            INVALID_API_KEY,
+            detail=SET_API_KEY,
+            icon="question",
+            default="no",
+        ):
             settings_dialog()
 
-    except exception.TMDBConnectionTimeout:
-        msg = "TMDB database cannot be reached."
-        guiwidgets_2.gui_messagebox(config.current.tk_root, msg)
+    except tmdb.exception.TMDBConnectionTimeout:
+        messagebox.showinfo(config.current.tk_root, TMDB_UNREACHABLE)
 
 
 def _tmdb_io_handler(search_string: str, work_queue: queue.Queue):

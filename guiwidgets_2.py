@@ -4,7 +4,7 @@ This module includes windows for presenting data and returning entered data to i
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/1/25, 8:24 AM by stephen.
+#  Last modified 4/5/25, 1:52 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,48 +17,21 @@ This module includes windows for presenting data and returning entered data to i
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import itertools
-import logging
-import queue
-
-from tkinter import filedialog, messagebox
 
 # noinspection PyUnresolvedReferences
 from dataclasses import dataclass, field
 from typing import (
     Callable,
     Dict,
-    Iterable,
-    Literal,
-    Optional,
     Union,
-    Sequence,
 )
 
-import config
 from gui import tk_facade, common
 from globalconstants import *
 
 # noinspection DuplicatedCode
-TITLE_TEXT = "Title"
-YEAR_TEXT = "Year"
-DIRECTORS_TEXT = "Directors"
-DURATION_TEXT = "Runtime"
-NOTES_TEXT = "Notes"
-MOVIE_TAGS_TEXT = "Tags"
-SEARCH_TEXT = "Search"
-COMMIT_TEXT = "Commit"
 SAVE_TEXT = "Save"
-DELETE_TEXT = "Delete"
 CANCEL_TEXT = "Cancel"
-
-MOVIE_DELETE_MESSAGE = "Do you want to delete this movie?"
-TAG_DELETE_MESSAGE = "Do you want to delete this tag?"
-NO_MATCH_MESSAGE = "No matches"
-NO_MATCH_DETAIL = "There are no matching tags in the database."
-UNEXPECTED_KEY = "Unexpected key"
-
-DefaultLiteral = Literal["normal", "active", "disabled"]
-StateFlags = Optional[list[Literal["active", "normal", "disabled", "!disabled"]]]
 
 
 @dataclass
@@ -177,46 +150,3 @@ class PreferencesGUI:
     def destroy(self):
         """Destroy all widgets of this class."""
         self.toplevel.destroy()
-
-
-def gui_messagebox(
-    parent: TkParentType, message: str, detail: str = "", icon: str = "info"
-):
-    """Present a Tk messagebox."""
-    # noinspection PyTypeChecker
-    messagebox.showinfo(parent, message, detail=detail, icon=icon)
-
-
-def gui_askyesno(
-    parent: TkParentType,
-    message: str,
-    detail: str = "",
-    icon: str = "question",
-    default="no",
-) -> bool:
-    """
-    Present a Tk askyesno dialog.
-
-    Args:
-        default:
-        parent:
-        message:
-        detail:
-        icon:
-
-    Returns:
-        True if user clicks 'Yes', False if user clicks 'No'
-    """
-    # noinspection PyTypeChecker
-    return messagebox.askyesno(
-        parent, message, detail=detail, icon=icon, default=default
-    )
-
-
-# todo remove this unused function
-def gui_askopenfilename(
-    parent: TkParentType,
-    filetypes: Iterable[tuple[str, str | list[str] | tuple[str, ...]]] | None,
-):
-    """Present a Tk askopenfilename."""
-    return filedialog.askopenfilename(parent=parent, filetypes=filetypes)

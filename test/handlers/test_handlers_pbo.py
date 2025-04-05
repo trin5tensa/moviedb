@@ -4,7 +4,7 @@ This module contains new tests written after Brian Okken's course and book on py
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/18/25, 6:41 AM by stephen.
+#  Last modified 4/5/25, 1:52 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -49,8 +49,8 @@ class TestEscapeKeyDict:
         keypress_event = MagicMock()
         mock_logging = MagicMock()
         monkeypatch.setattr(sundries, "logging", mock_logging)
-        mock_messagebox = MagicMock()
-        monkeypatch.setattr(sundries.guiwidgets_2, "gui_messagebox", mock_messagebox)
+        messagebox = MagicMock(name="messagebox", autospec=True)
+        monkeypatch.setattr(sundries, "messagebox", messagebox)
 
         # Test 'no valid name' error handling
         keypress_event.widget = ".!frame.!frame.!button"
@@ -60,8 +60,8 @@ class TestEscapeKeyDict:
         with check:
             mock_logging.warning.assert_called_with(logging_msg)
         with check:
-            mock_messagebox.assert_called_with(
-                parent, ecd.internal_error_txt, message, icon="warning"
+            messagebox.showinfo.assert_called_with(
+                parent, ecd.internal_error_txt, detail=message, icon="warning"
             )
 
         # Test 'more than one valid name' error handling
@@ -72,8 +72,8 @@ class TestEscapeKeyDict:
         with check:
             mock_logging.warning.assert_called_with(logging_msg)
         with check:
-            mock_messagebox.assert_called_with(
-                parent, ecd.internal_error_txt, message, icon="warning"
+            messagebox.showinfo.assert_called_with(
+                parent, ecd.internal_error_txt, detail=message, icon="warning"
             )
 
         # Set up for call to method 'destroy'
@@ -93,8 +93,8 @@ class TestEscapeKeyDict:
         with check:
             mock_logging.warning.assert_called_with(f"{message} {ecd.data.keys()}")
         with check:
-            mock_messagebox.assert_called_with(
-                parent, ecd.internal_error_txt, message, icon="warning"
+            messagebox.showinfo.assert_called_with(
+                parent, ecd.internal_error_txt, detail=message, icon="warning"
             )
 
         # Test type error handling
@@ -107,8 +107,8 @@ class TestEscapeKeyDict:
                 f"{message} {ecd.data['valid name']}"
             )
         with check:
-            mock_messagebox.assert_called_with(
-                parent, ecd.internal_error_txt, message, icon="warning"
+            messagebox.showinfo.assert_called_with(
+                parent, ecd.internal_error_txt, detail=message, icon="warning"
             )
 
 
