@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/5/25, 1:52 PM by stephen.
+#  Last modified 4/9/25, 9:26 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,9 +16,10 @@
 from functools import partial
 import config
 import logging
+
+# todo Temporary Tk/Tcl code is in the wrong place
 from tkinter import messagebox
 
-import guiwidgets_2
 import gui.tags
 import gui.movies
 import gui.tviewselect

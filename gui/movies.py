@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/3/25, 8:18 AM by stephen.
+#  Last modified 4/9/25, 9:26 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -534,7 +534,8 @@ class EditMovieGUI(MovieGUI):
             icon="question",
             parent=self.parent,
         ):
-            self.parent.after(0, self.delete_movie_callback, ())
+            # noinspection PyTypeChecker
+            self.parent.after(0, self.delete_movie_callback)
             self.destroy()
 
     def commit(self):

@@ -1,7 +1,7 @@
 """Sundry Menu handlers."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/5/25, 1:52 PM by stephen.
+#  Last modified 4/9/25, 9:26 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,12 +18,10 @@ import logging
 import queue
 from collections import UserDict
 
-# todo Temporary Tk/Tcl code is in the wrong place
-from tkinter import messagebox
 from typing import Callable, Optional, Literal
 
 import config
-
+from gui import common
 import guiwidgets_2
 import tmdb
 
@@ -82,6 +80,7 @@ class EscapeKeyDict(UserDict):
         if outer_frame not in self:
             self.data[outer_frame] = destroy
 
+    # todo Remove 'parent' from signature
     def escape(
         self,
         parent: guiwidgets_2.TkParentType,
@@ -101,7 +100,7 @@ class EscapeKeyDict(UserDict):
             Args:
                 keypress_event:
             """
-            outer_frame_names = [
+            outer_frame_names = [  # pragma no branch
                 widget_name
                 for widget_name in str(keypress_event.widget).split(".")
                 if widget_name and widget_name[:1] != "!"
@@ -116,8 +115,7 @@ class EscapeKeyDict(UserDict):
                         f"{self.accelerator_txt} {accelerator} {self.no_valid_name_txt}"
                     )
                     logging.warning(f"{detail} {keypress_event.widget=}")
-                    messagebox.showinfo(
-                        config.current.tk_root,
+                    common.showinfo(
                         self.internal_error_txt,
                         detail=detail,
                         icon="warning",
@@ -129,8 +127,7 @@ class EscapeKeyDict(UserDict):
                         f" {self.gt1_valid_name_txt}"
                     )
                     logging.warning(f"{detail} {keypress_event.widget=}")
-                    messagebox.showinfo(
-                        config.current.tk_root,
+                    common.showinfo(
                         self.internal_error_txt,
                         detail=detail,
                         icon="warning",
@@ -144,8 +141,7 @@ class EscapeKeyDict(UserDict):
             except KeyError:
                 detail = f"{self.accelerator_txt}  {accelerator} {self.key_error_text}"
                 logging.warning(f"{detail} {self.data.keys()}")
-                messagebox.showinfo(
-                    config.current.tk_root,
+                common.showinfo(
                     self.internal_error_txt,
                     detail=detail,
                     icon="warning",
@@ -156,8 +152,7 @@ class EscapeKeyDict(UserDict):
                     f"  {accelerator}."
                 )
                 logging.warning(f"{detail} {self.data[outer_frame_name]}")
-                messagebox.showinfo(
-                    config.current.tk_root,
+                common.showinfo(
                     self.internal_error_txt,
                     detail=detail,
                     icon="warning",
@@ -168,8 +163,7 @@ class EscapeKeyDict(UserDict):
 
 def about_dialog():
     """Display the 'about' dialog."""
-    messagebox.showinfo(
-        config.current.tk_root,
+    common.showinfo(
         config.persistent.program_name,
         detail=config.persistent.program_version,
     )
@@ -238,17 +232,14 @@ def _tmdb_search_exception_callback(fut: concurrent.futures.Future):
 
     except tmdb.exception.TMDBAPIKeyException as exc:
         logging.error(exc)
-        if messagebox.askyesno(  # pragma no branch
-            config.current.tk_root,
+        if common.askyesno(  # pragma no branch
             INVALID_API_KEY,
             detail=SET_API_KEY,
-            icon="question",
-            default="no",
         ):
             settings_dialog()
 
     except tmdb.exception.TMDBConnectionTimeout:
-        messagebox.showinfo(config.current.tk_root, TMDB_UNREACHABLE)
+        common.showinfo(TMDB_UNREACHABLE)
 
 
 def _tmdb_io_handler(search_string: str, work_queue: queue.Queue):

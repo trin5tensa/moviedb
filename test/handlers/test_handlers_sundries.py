@@ -1,7 +1,7 @@
 """Menu handlers for movies."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/5/25, 1:52 PM by stephen.
+#  Last modified 4/9/25, 9:26 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,6 @@
 
 from unittest.mock import MagicMock
 
-import pytest
 from pytest_check import check
 
 from handlers import sundries
@@ -35,11 +34,11 @@ def test_tmdb_search_exception_callback_calls_future(monkeypatch):
 
 # noinspection PyPep8Naming
 def test_tmdb_search_exception_callback_raises_TMDBConnectionTimeout(
-    config_current, monkeypatch, messagebox
+    monkeypatch,
 ):
     # Arrange
-    messagebox = MagicMock(name="messagebox", autospec=True)
-    monkeypatch.setattr(sundries, "messagebox", messagebox)
+    showinfo = MagicMock(name="showinfo", autospec=True)
+    monkeypatch.setattr(sundries.common, "showinfo", showinfo)
     fut = MagicMock(name="fut", autospec=True)
     fut.result.side_effect = sundries.tmdb.exception.TMDBConnectionTimeout
     monkeypatch.setattr(sundries.concurrent.futures, "Future", fut)
@@ -48,14 +47,14 @@ def test_tmdb_search_exception_callback_raises_TMDBConnectionTimeout(
     sundries._tmdb_search_exception_callback(fut)
 
     # Assert
-    messagebox.showinfo.assert_called_once_with(
-        sundries.config.current.tk_root,
+    showinfo.assert_called_once_with(
         sundries.TMDB_UNREACHABLE,
     )
 
 
 def test_tmdb_search_exception_with_settings_update(
-    config_current, monkeypatch, caplog, messagebox
+    monkeypatch,
+    caplog,
 ):
     # Arrange
     fut = MagicMock(name="fut", autospec=True)
@@ -64,7 +63,9 @@ def test_tmdb_search_exception_with_settings_update(
     monkeypatch.setattr(sundries.concurrent.futures, "Future", fut)
     settings_dialog = MagicMock(name="settings_dialog", autospec=True)
     monkeypatch.setattr(sundries, "settings_dialog", settings_dialog)
-    messagebox.askyesno.return_value = True
+    askyesno = MagicMock(name="askyesno", autospec=True)
+    askyesno.return_value = True
+    monkeypatch.setattr(sundries.common, "askyesno", askyesno)
 
     # Act
     sundries._tmdb_search_exception_callback(fut)
@@ -72,12 +73,9 @@ def test_tmdb_search_exception_with_settings_update(
     # Assert
     check.equal(caplog.messages, [log_msg])
     with check:
-        messagebox.askyesno.assert_called_once_with(
-            sundries.config.current.tk_root,
+        askyesno.assert_called_once_with(
             sundries.INVALID_API_KEY,
             detail=sundries.SET_API_KEY,
-            icon="question",
-            default="no",
         )
     with check:
         settings_dialog.assert_called_once_with()
@@ -85,13 +83,14 @@ def test_tmdb_search_exception_with_settings_update(
 
 def test_tmdb_search_exception_with_settings_update_declined(
     monkeypatch,
-    messagebox,
 ):
     # Arrange
     fut = MagicMock(name="fut", autospec=True)
     settings_dialog = MagicMock(name="settings_dialog", autospec=True)
     monkeypatch.setattr(sundries, "settings_dialog", settings_dialog)
-    messagebox.askyesno.return_value = False
+    askyesno = MagicMock(name="askyesno", autospec=True)
+    askyesno.return_value = True
+    monkeypatch.setattr(sundries.common, "askyesno", askyesno)
 
     # Act
     sundries._tmdb_search_exception_callback(fut)
@@ -99,24 +98,3 @@ def test_tmdb_search_exception_with_settings_update_declined(
     # Assert
     with check:
         settings_dialog.assert_not_called()
-
-
-@pytest.fixture(scope="function")
-def config_current(monkeypatch):
-    """This fixture patches a call to current.tk_root to suppress
-    initiation of tk/tcl.
-
-    Args:
-        monkeypatch:
-    """
-    current = MagicMock(name="current", autospec=True)
-    monkeypatch.setattr(sundries.config, "current", current)
-
-
-# todo Temporary Tk/Tcl code is in the wrong place
-@pytest.fixture(scope="function")
-def messagebox(monkeypatch) -> MagicMock:
-    """Stops Tk from starting."""
-    messagebox = MagicMock(name="messagebox", autospec=True)
-    monkeypatch.setattr(sundries, "messagebox", messagebox)
-    return messagebox
