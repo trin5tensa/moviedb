@@ -1,7 +1,7 @@
 """Menu handlers for TMDB and dialogs."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/11/25, 8:12 AM by stephen.
+#  Last modified 4/11/25, 8:19 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -108,18 +108,3 @@ class TestTmdbIOHandler:
             assert mock_executor.fut.add_done_callback_calls == [
                 (sundries._tmdb_search_exception_callback,)
             ]
-
-
-@dataclass
-class DummyParent:
-    """Provide a dummy for Tk root."""
-
-    pass
-
-
-dummy_gui_messagebox_calls = []
-
-
-# noinspection PyMissingOrEmptyDocstring
-def dummy_gui_messagebox(*args, **kwargs):
-    dummy_gui_messagebox_calls.append((args, kwargs))
