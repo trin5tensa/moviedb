@@ -1,7 +1,7 @@
 """Menu handlers for TMDB and dialogs."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/9/25, 9:26 AM by stephen.
+#  Last modified 4/11/25, 8:12 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -35,7 +35,7 @@ def test_about_dialog(monkeypatch):
     # Assert
     showinfo.assert_called_once_with(
         persistent.program_name,
-        detail=persistent.program_version,
+        detail=f"{sundries.VERSION} {persistent.program_version}",
     )
 
 

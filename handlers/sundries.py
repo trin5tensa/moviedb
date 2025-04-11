@@ -1,7 +1,7 @@
 """Sundry Menu handlers."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/9/25, 9:26 AM by stephen.
+#  Last modified 4/11/25, 8:12 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -28,6 +28,7 @@ import tmdb
 TMDB_UNREACHABLE = "TMDB database cannot be reached."
 INVALID_API_KEY = "Invalid API key for TMDB."
 SET_API_KEY = "Do you want to set the TMDB API key?"
+VERSION = "Version"
 
 
 # noinspection DuplicatedCode
@@ -35,8 +36,8 @@ class EscapeKeyDict(UserDict):
     """Support for Apple's <Escape> amd <Command-.> key presses.
 
     Use Case:
-        Apple GUI docs state the <Escape> and <Command-.> accelerator keys should end the current
-         activity.
+        Apple GUI docs state the <Escape> and <Command-.> accelerator keys
+        should end the current activity.
 
     Application of the Apple requirements to moviedb is accomplished by calling
     the destroy method of the moviedb object. The precise nature of what
@@ -48,17 +49,20 @@ class EscapeKeyDict(UserDict):
     bind_all function. When either accelerator is pressed the closure within
     the escape method will be called.
 
-    The complicated design of this class has been dictated by the inadequacy of information
-    provided by the keypress event callback from tkinter. A moviedb object will be destroyed
-    by the closure and this object is identified by naming the outer frame widget. This outer
-    frame name can be extracted from the keypress event supplied by tkinter. This is used to
-    match an entry in the 'data' attribute of this class. This entry should be registered when
-    the moviedb object is initialized. Extensive validation is necessary to ensure that
-    each element is in place.
+    The complicated design of this class has been dictated by the inadequacy
+    of information provided by the keypress event callback from tkinter. A
+    moviedb object will be destroyed by the closure and this object is
+    identified by naming the outer frame widget. This outer frame name
+    can be extracted from the keypress event supplied by tkinter. This is
+    used to match an entry in the 'data' attribute of this class. This
+    entry should be registered when the moviedb object is initialized.
+    Extensive validation is necessary to ensure that each element is in place.
 
     The matching is accomplished by:
-    1) Uniquely naming the outer frame widget with the name of the moviedb class.
-    2) Registering in this class the mapping of the outer frame name and its destroy method.
+    1) Uniquely naming the outer frame widget with the name of the moviedb
+    class.
+    2) Registering in this class the mapping of the outer frame name and its
+    destroy method.
     """
 
     # todo Move this class to gui.sundries module.
@@ -165,7 +169,7 @@ def about_dialog():
     """Display the 'about' dialog."""
     common.showinfo(
         config.persistent.program_name,
-        detail=config.persistent.program_version,
+        detail=f"{VERSION} {config.persistent.program_version}",
     )
 
 

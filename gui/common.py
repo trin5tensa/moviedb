@@ -1,7 +1,7 @@
 """This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/9/25, 9:26 AM by stephen.
+#  Last modified 4/11/25, 8:12 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -302,7 +302,7 @@ def showinfo(message: str, **kwargs):
             parent: A window upon which this messagebox will be centered.
                 This argument defaults to the root window.
     """
-    messagebox.showinfo(message, **kwargs)
+    messagebox.showinfo(message=message, **kwargs)
 
 
 def askyesno(message: str, **kwargs):
@@ -320,4 +320,4 @@ def askyesno(message: str, **kwargs):
             parent: A window upon which this messagebox will be centered.
                 This argument defaults to the root window.
     """
-    return messagebox.askyesno(message, **kwargs)
+    return messagebox.askyesno(message=message, **kwargs)

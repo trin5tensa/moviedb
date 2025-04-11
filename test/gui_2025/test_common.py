@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/9/25, 9:26 AM by stephen.
+#  Last modified 4/11/25, 8:12 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -414,7 +414,7 @@ def test_showinfo(monkeypatch):
 
     # Assert
     showinfo.assert_called_once_with(
-        message, parent=parent, detail=detail, icon=icon, default=default
+        message=message, parent=parent, detail=detail, icon=icon, default=default
     )
 
 
@@ -443,6 +443,6 @@ def test_askyesno(monkeypatch):
     # Assert
     with check:
         askyesno.assert_called_once_with(
-            message, parent=parent, detail=detail, icon=icon, default=default
+            message=message, parent=parent, detail=detail, icon=icon, default=default
         )
     check.equal(result, askyesno.return_value)
