@@ -1,7 +1,7 @@
 """Sundry Menu handlers."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/11/25, 8:12 AM by stephen.
+#  Last modified 4/15/25, 12:32 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,8 +21,7 @@ from collections import UserDict
 from typing import Callable, Optional, Literal
 
 import config
-from gui import common
-import guiwidgets_2
+from gui import common, settings
 import tmdb
 
 TMDB_UNREACHABLE = "TMDB database cannot be reached."
@@ -87,7 +86,7 @@ class EscapeKeyDict(UserDict):
     # todo Remove 'parent' from signature
     def escape(
         self,
-        parent: guiwidgets_2.TkParentType,
+        parent,
         accelerator: Literal["<Escape>", "<Command-.>"],
     ):
         """Sets up the callback which will destroy a moviedb logical window.
@@ -179,11 +178,12 @@ def settings_dialog():
         display_key = config.persistent.tmdb_api_key
     except (config.ConfigTMDBAPIKeyNeedsSetting, config.ConfigTMDBDoNotUse):
         display_key = ""
-    guiwidgets_2.PreferencesGUI(
+    # noinspection PyArgumentList
+    settings.Settings(
         config.current.tk_root,
-        display_key,
-        config.persistent.use_tmdb,
-        _settings_callback,
+        tmdb_api_key=display_key,
+        use_tmdb=config.persistent.use_tmdb,
+        save_callback=_settings_callback,
     )
 
 

@@ -1,7 +1,7 @@
 """This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/11/25, 8:12 AM by stephen.
+#  Last modified 4/15/25, 12:32 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -184,7 +184,8 @@ def create_body_and_buttonbox(
 
     Args:
         parent: The Tk parent frame.
-        name: Name which identifies which moviedb class has the destroy method.
+        name: Name which identifies which moviedb class has the destroy
+        method. This is used as the key in the escape_key_dict.
         destroy:
 
     Returns:
