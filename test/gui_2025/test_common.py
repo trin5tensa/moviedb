@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/13/25, 12:53 PM by stephen.
+#  Last modified 4/11/25, 8:12 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -175,6 +175,7 @@ class TestLabelAndField:
 
     def test_add_treeview_row(self, tk, ttk, monkeypatch):
         # Arrange
+        # noinspection DuplicatedCode
         parent = ttk.Frame()
         input_zone = common.LabelAndField(parent)
         input_zone.col_1_width = 38
@@ -320,6 +321,7 @@ def test_create_button(tk, ttk, monkeypatch):
 
 def test_enable_button_with_true_state(monkeypatch):
     # Arrange
+    # noinspection DuplicatedCode
     state = MagicMock(name="state", autospec=True)
     configure = MagicMock(name="configure", autospec=True)
     button = MagicMock(name="button", autospec=True)
@@ -340,6 +342,7 @@ def test_enable_button_with_true_state(monkeypatch):
 
 def test_enable_button_with_false_state(monkeypatch):
     # Arrange
+    # noinspection DuplicatedCode
     state = MagicMock(name="state", autospec=True)
     configure = MagicMock(name="configure", autospec=True)
     button = MagicMock(name="button", autospec=True)
@@ -386,3 +389,60 @@ def test_test_init_button_enablements(monkeypatch):
 
     # Assert
     notify.assert_called_once_with()
+
+
+# noinspection DuplicatedCode
+def test_showinfo(monkeypatch):
+    # Arrange
+    message = "Dummy showinfo"
+    detail = "Dummy detail"
+    parent = MagicMock(name="parent", autospec=True)
+    monkeypatch.setattr(common.ttk, "Frame", parent)
+    icon = common.messagebox.INFO
+    default = common.messagebox.OK
+    showinfo = MagicMock(name="showinfo", autospec=True)
+    monkeypatch.setattr(common.messagebox, "showinfo", showinfo)
+    kwargs = {
+        "parent": parent,
+        "detail": detail,
+        "icon": icon,
+        "default": default,
+    }
+
+    # Act
+    common.showinfo(message, **kwargs)
+
+    # Assert
+    showinfo.assert_called_once_with(
+        message=message, parent=parent, detail=detail, icon=icon, default=default
+    )
+
+
+# noinspection DuplicatedCode
+def test_askyesno(monkeypatch):
+    # Arrange
+    message = "Dummy askyesno"
+    detail = "Dummy detail"
+    parent = MagicMock(name="parent", autospec=True)
+    monkeypatch.setattr(common.ttk, "Frame", parent)
+    icon = common.messagebox.QUESTION
+    default = common.messagebox.NO
+    askyesno = MagicMock(name="askyesno", autospec=True)
+    askyesno.return_value = True
+    monkeypatch.setattr(common.messagebox, "askyesno", askyesno)
+    kwargs = {
+        "parent": parent,
+        "detail": detail,
+        "icon": icon,
+        "default": default,
+    }
+
+    # Act
+    result = common.askyesno(message, **kwargs)
+
+    # Assert
+    with check:
+        askyesno.assert_called_once_with(
+            message=message, parent=parent, detail=detail, icon=icon, default=default
+        )
+    check.equal(result, askyesno.return_value)

@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/2/25, 7:48 AM by stephen.
+#  Last modified 4/9/25, 9:26 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -860,7 +860,7 @@ class TestEditMovieGUI:
                 parent=edit_movie_obj.parent,
             )
         with check:
-            after.assert_called_once_with(0, self.delete_movie_callback, ())
+            after.assert_called_once_with(0, self.delete_movie_callback)
         with check:
             destroy.assert_called_once_with()
 

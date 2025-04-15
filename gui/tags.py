@@ -1,7 +1,7 @@
 """This module contains code for movie tag maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/7/25, 1:36 PM by stephen.
+#  Last modified 4/5/25, 1:52 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,13 +16,13 @@
 # This tkinter import method supports accurate test mocking of tk and ttk.
 
 import tkinter as tk
+from tkinter import messagebox
 import tkinter.ttk as ttk
 from collections.abc import Callable
 from functools import partial
 import itertools
 from dataclasses import dataclass, field
 
-from guiwidgets_2 import gui_askyesno
 from globalconstants import MOVIE_TAGS
 from gui import common
 from gui.tk_facade import EntryFields, Entry
@@ -82,6 +82,7 @@ class TagGUI:
         self.outer_frame.destroy()
 
 
+# noinspection DuplicatedCode
 @dataclass
 class AddTagGUI(TagGUI):
     """Presents a form for adding a tag."""
@@ -231,7 +232,7 @@ class EditTagGUI(TagGUI):
         If the user declines the alert asking for confirmation the form
         is re-initialized.
         """
-        if gui_askyesno(
+        if messagebox.askyesno(
             message=f"{TAG_DELETE_MESSAGE}",
             icon="question",
             default="no",
@@ -245,6 +246,7 @@ class EditTagGUI(TagGUI):
             self.entry_fields[MOVIE_TAGS].widget.focus_set()
 
 
+# noinspection DuplicatedCode
 @dataclass
 class SearchTagGUI(TagGUI):
     """Presents a form for searching for a tag."""

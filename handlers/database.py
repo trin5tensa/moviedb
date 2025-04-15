@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/3/25, 8:48 AM by stephen.
+#  Last modified 4/11/25, 8:12 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,11 +14,11 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from functools import partial
-
 import config
 import logging
 
-import guiwidgets_2
+
+import gui.common
 import gui.tags
 import gui.movies
 import gui.tviewselect
@@ -170,10 +170,7 @@ def db_match_movies(criteria: MovieBag):
     match len(movies_found):
         case 0:
             # Informs user and represents the search window.
-            guiwidgets_2.gui_messagebox(
-                config.current.tk_root,
-                message=tables.MOVIE_NOT_FOUND,
-            )
+            gui.common.showinfo(tables.MOVIE_NOT_FOUND)
             gui_search_movie(prepopulate=criteria)
 
         case 1:
@@ -230,6 +227,8 @@ def db_edit_movie(old_movie: MovieBag, new_movie: MovieBag):
             tables.INVALID_YEAR,
         ):
             _exc_messagebox(exc)
+            # todo Integration test required to ensure that edit movie form is
+            #  represented with the newly entered user data.
             gui_edit_movie(old_movie, prepopulate=new_movie)
         else:  # pragma nocover
             raise
@@ -330,9 +329,7 @@ def db_match_tags(match: str):
     tags = tables.match_tags(match=match)
 
     if len(tags) == 0:
-        guiwidgets_2.gui_messagebox(
-            config.current.tk_root, message=tables.TAG_NOT_FOUND
-        )
+        gui.common.showinfo(message=tables.TAG_NOT_FOUND)
         gui_search_tag(prepopulate=match)
 
     elif len(tags) == 1:
@@ -390,16 +387,11 @@ def _exc_messagebox(exc):
         are missing.
     """
     if len(exc.__notes__) == 1:
-        guiwidgets_2.gui_messagebox(
-            config.current.tk_root,
-            message=exc.__notes__[0],
-        )
+        gui.common.showinfo(message=exc.__notes__[0])
 
     elif len(exc.__notes__) > 1:
-        guiwidgets_2.gui_messagebox(
-            config.current.tk_root,
-            message=exc.__notes__[0],
-            detail=", ".join(exc.__notes__[1:]) + ".",
+        gui.common.showinfo(
+            message=exc.__notes__[0], detail=", ".join(exc.__notes__[1:]) + "."
         )
 
     else:  # pragma nocover

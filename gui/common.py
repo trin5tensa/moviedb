@@ -1,22 +1,7 @@
 """This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/28/25, 11:38 AM by stephen.
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-import itertools
-
-#  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/22/25, 12:30 PM by stephen.
+#  Last modified 4/15/25, 12:32 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -31,9 +16,11 @@ import itertools
 # This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
+import tkinter.messagebox as messagebox
 from collections.abc import Callable, Collection, Iterator
 from dataclasses import field, dataclass
 from functools import partial
+import itertools
 from typing import Literal
 
 import config
@@ -197,7 +184,8 @@ def create_body_and_buttonbox(
 
     Args:
         parent: The Tk parent frame.
-        name: Name which identifies which moviedb class has the destroy method.
+        name: Name which identifies which moviedb class has the destroy
+        method. This is used as the key in the escape_key_dict.
         destroy:
 
     Returns:
@@ -298,3 +286,39 @@ def init_button_enablements(entry_fields: tk_facade.EntryFields):
     """
     for entry_field in entry_fields.values():
         entry_field.observer.notify()
+
+
+def showinfo(message: str, **kwargs):
+    """Displays a Tk showinfo dialog.
+
+    Args:
+        message: The message to be displayed
+        kwargs: Optional arguments
+            detail: Detailed information about the message. This argument
+                defaults to an empty string.
+            default: The default button. This argument defaults to
+                the first button.
+            icon: one of these constants defined in messagebox: ERROR, INFO,
+                QUESTION, or WARNING. This argument defaults to INFO.
+            parent: A window upon which this messagebox will be centered.
+                This argument defaults to the root window.
+    """
+    messagebox.showinfo(message=message, **kwargs)
+
+
+def askyesno(message: str, **kwargs):
+    """Displays a Tk askyesno dialog.
+
+    Args:
+        message: The message to be displayed
+        kwargs: Optional arguments
+            detail: Detailed information about the message. This argument
+                defaults to an empty string.
+            default: The default button. This argument defaults to
+                the first button.
+            icon: one of these constants defined in messagebox: ERROR, INFO,
+                QUESTION, or WARNING. This argument defaults to QUESTION.
+            parent: A window upon which this messagebox will be centered.
+                This argument defaults to the root window.
+    """
+    return messagebox.askyesno(message=message, **kwargs)

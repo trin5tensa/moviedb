@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/7/25, 1:36 PM by stephen.
+#  Last modified 4/5/25, 1:52 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -129,7 +129,7 @@ class TestTagGUI:
             tag_gui.outer_frame.destroy.assert_called_once_with()
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring, DuplicatedCode
 class TestAddTagGUI:
     def test_create_buttons(self, tk, ttk, taggui_post_init, monkeypatch):
         # Arrange
@@ -250,6 +250,7 @@ class TestEditTagGUI:
         commit_button = MagicMock(name="commit_button", autospec=True)
         delete_button = MagicMock(name="delete_button", autospec=True)
         create_button.side_effect = [commit_button, delete_button, "unused"]
+        # noinspection DuplicatedCode
         monkeypatch.setattr(tags.common, "create_button", create_button)
 
         buttonbox = MagicMock(name="buttonbox", autospec=True)
@@ -380,8 +381,8 @@ class TestEditTagGUI:
             edit_tag_callback=edit_tag_callback,
             delete_tag_callback=delete_tag_callback,
         )
-        gui_askyesno = MagicMock(name="gui_askyesno", autospec=True)
-        monkeypatch.setattr(tags, "gui_askyesno", gui_askyesno)
+        messagebox = MagicMock(name="messagebox", autospec=True)
+        monkeypatch.setattr(tags, "messagebox", messagebox)
         destroy = MagicMock(name="destroy", autospec=True)
         monkeypatch.setattr(edit_tag, "destroy", destroy)
 
@@ -390,7 +391,7 @@ class TestEditTagGUI:
 
         # Assert
         with check:
-            gui_askyesno.assert_called_once_with(
+            messagebox.askyesno.assert_called_once_with(
                 message=f"{tags.TAG_DELETE_MESSAGE}",
                 icon="question",
                 default="no",
@@ -413,9 +414,9 @@ class TestEditTagGUI:
             edit_tag_callback=edit_tag_callback,
             delete_tag_callback=delete_tag_callback,
         )
-        gui_askyesno = MagicMock(name="gui_askyesno", autospec=True)
-        gui_askyesno.return_value = False
-        monkeypatch.setattr(tags, "gui_askyesno", gui_askyesno)
+        messagebox = MagicMock(name="messagebox", autospec=True)
+        messagebox.askyesno.return_value = False
+        monkeypatch.setattr(tags, "messagebox", messagebox)
         tag_entry_field = MagicMock(name="tag_entry_field", autospec=True)
         tag_entry_field.current_value = tag
         edit_tag.entry_fields[tags.MOVIE_TAGS] = tag_entry_field
@@ -432,7 +433,7 @@ class TestEditTagGUI:
             tag_entry_field.widget.focus_set.assert_called_once_with()
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring, DuplicatedCode
 class TestSearchTagGUI:
     def test_create_buttons(self, tk, ttk, taggui_post_init, monkeypatch):
         # Arrange
