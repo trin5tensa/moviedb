@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/11/25, 8:12 AM by stephen.
+#  Last modified 4/16/25, 8:25 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -227,8 +227,6 @@ def db_edit_movie(old_movie: MovieBag, new_movie: MovieBag):
             tables.INVALID_YEAR,
         ):
             _exc_messagebox(exc)
-            # todo Integration test required to ensure that edit movie form is
-            #  represented with the newly entered user data.
             gui_edit_movie(old_movie, prepopulate=new_movie)
         else:  # pragma nocover
             raise
