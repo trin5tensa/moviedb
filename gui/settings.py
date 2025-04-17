@@ -5,7 +5,7 @@ to its callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/15/25, 12:32 PM by stephen.
+#  Last modified 4/17/25, 9:54 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +17,10 @@ to its callers.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from dataclasses import KW_ONLY
+# This tkinter import method supports accurate test mocking of tk and ttk.
+import tkinter as tk
+import tkinter.ttk as ttk
+from dataclasses import dataclass, KW_ONLY, field
 from functools import partial
 import itertools
 from typing import (
@@ -25,17 +28,16 @@ from typing import (
     Dict,
 )
 
-from globalconstants import *
+from gui.constants import (
+    SAVE_TEXT,
+    CANCEL_TEXT,
+    API_KEY_NAME,
+    API_KEY_TEXT,
+    USE_TMDB_NAME,
+    USE_TMDB_TEXT,
+    WINDOW_TITLE,
+)
 from gui import tk_facade, common
-
-# noinspection DuplicatedCode
-SAVE_TEXT = "Save"
-CANCEL_TEXT = "Cancel"
-API_KEY_NAME = "api_key"
-API_KEY_TEXT = "TMDB API key"
-USE_TMDB_NAME = "use_tmdb"
-USE_TMDB_TEXT = "Use TMDB (The Movie Database)"
-WINDOW_TITLE = "Settings"
 
 
 @dataclass

@@ -1,7 +1,7 @@
 """This module contains code for movie tag maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/5/25, 1:52 PM by stephen.
+#  Last modified 4/17/25, 9:54 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,7 +23,14 @@ from functools import partial
 import itertools
 from dataclasses import dataclass, field
 
-from globalconstants import MOVIE_TAGS
+from gui.constants import (
+    COMMIT_TEXT,
+    CANCEL_TEXT,
+    DELETE_TEXT,
+    MOVIE_TAGS,
+    MOVIE_TAGS_TEXT,
+    SEARCH_TEXT,
+)
 from gui import common
 from gui.tk_facade import EntryFields, Entry
 
@@ -66,7 +73,7 @@ class TagGUI:
         """
         input_zone = common.LabelAndField(body_frame)
 
-        self.entry_fields[MOVIE_TAGS] = Entry(common.MOVIE_TAGS_TEXT, body_frame)
+        self.entry_fields[MOVIE_TAGS] = Entry(MOVIE_TAGS_TEXT, body_frame)
         self.entry_fields[MOVIE_TAGS].original_value = self.tag
         input_zone.add_entry_row(self.entry_fields[MOVIE_TAGS])
         self.entry_fields[MOVIE_TAGS].widget.focus_set()
@@ -102,14 +109,14 @@ class AddTagGUI(TagGUI):
         column_num = itertools.count()
         commit_button = common.create_button(
             buttonbox,
-            common.COMMIT_TEXT,
+            COMMIT_TEXT,
             column=next(column_num),
             command=self.commit,
             default="disabled",
         )
         common.create_button(
             buttonbox,
-            common.CANCEL_TEXT,
+            CANCEL_TEXT,
             column=next(column_num),
             command=self.destroy,
             default="active",
@@ -170,21 +177,21 @@ class EditTagGUI(TagGUI):
         column_num = itertools.count()
         commit_button = common.create_button(
             buttonbox,
-            common.COMMIT_TEXT,
+            COMMIT_TEXT,
             column=next(column_num),
             command=self.commit,
             default="disabled",
         )
         delete_button = common.create_button(
             buttonbox,
-            common.DELETE_TEXT,
+            DELETE_TEXT,
             column=next(column_num),
             command=self.delete,
             default="active",
         )
         common.create_button(
             buttonbox,
-            common.CANCEL_TEXT,
+            CANCEL_TEXT,
             column=next(column_num),
             command=self.destroy,
             default="active",
@@ -266,14 +273,14 @@ class SearchTagGUI(TagGUI):
         column_num = itertools.count()
         search_button = common.create_button(
             buttonbox,
-            common.SEARCH_TEXT,
+            SEARCH_TEXT,
             column=next(column_num),
             command=self.search,
             default="disabled",
         )
         common.create_button(
             buttonbox,
-            common.CANCEL_TEXT,
+            CANCEL_TEXT,
             column=next(column_num),
             command=self.destroy,
             default="active",

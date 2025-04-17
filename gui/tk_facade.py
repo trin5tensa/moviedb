@@ -1,7 +1,7 @@
 """Facade pattern for tkinter widgets."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/27/25, 10:25 AM by stephen.
+#  Last modified 4/17/25, 9:54 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,11 +17,10 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-# This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
 
-import globalconstants
+from gui import constants
 
 type EntryFields = dict[str, Entry | Text | Treeview | Checkbutton]
 
@@ -81,7 +80,7 @@ class TkinterFacade:
     """
 
     label_text: str
-    parent: globalconstants.TkParentType
+    parent: constants.TkParentType
     _original_value: Any = field(default=None, init=False, repr=False)
     observer: Observer = field(default_factory=Observer, init=False, repr=False)
 
@@ -244,7 +243,7 @@ class Treeview(TkinterFacade):
 
     # noinspection PyMissingOrEmptyDocstring
     @original_value.setter
-    def original_value(self, values: globalconstants.TkSequence):
+    def original_value(self, values: constants.TkSequence):
         self._original_value = set(values)
         self.current_value = values
 
@@ -253,14 +252,15 @@ class Treeview(TkinterFacade):
         return set(self.widget.selection())
 
     @current_value.setter
-    def current_value(self, values: globalconstants.TkSequence):
+    def current_value(self, values: constants.TkSequence):
         self.widget.selection_set(values)
 
     def clear_current_value(self):
         self.current_value = []
 
     def has_data(self) -> bool:
-        """The current selection is inspected and True is returned if any items are selected."""
+        """The current selection is inspected and True is returned if any
+        items are selected."""
         return self.current_value != set()
 
 

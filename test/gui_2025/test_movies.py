@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/9/25, 9:26 AM by stephen.
+#  Last modified 4/17/25, 9:54 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -333,7 +333,7 @@ class TestMovieGUI:
         with check:
             create_button.assert_called_once_with(
                 buttonbox,
-                movies.common.CANCEL_TEXT,
+                movies.CANCEL_TEXT,
                 column=next(count()),
                 command=movie_gui_obj.destroy,
                 default="active",
