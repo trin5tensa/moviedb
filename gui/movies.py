@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 9:54 AM by stephen.
+#  Last modified 4/17/25, 12:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,24 +30,7 @@ from globalconstants import (
     setstr_to_str,
 )
 from gui import common, tk_facade
-from gui.constants import (
-    CANCEL_TEXT,
-    COMMIT_TEXT,
-    DELETE_TEXT,
-    DIRECTORS,
-    DIRECTORS_TEXT,
-    DURATION,
-    DURATION_TEXT,
-    MOVIE_TAGS,
-    MOVIE_TAGS_TEXT,
-    NOTES,
-    NOTES_TEXT,
-    SEARCH_TEXT,
-    TITLE,
-    TITLE_TEXT,
-    YEAR,
-    YEAR_TEXT,
-)
+from gui.constants import *
 
 
 MOVIE_DELETE_MESSAGE = "Do you want to delete this movie?"

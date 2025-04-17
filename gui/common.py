@@ -1,7 +1,7 @@
 """This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 9:54 AM by stephen.
+#  Last modified 4/17/25, 12:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -26,7 +26,7 @@ from typing import Literal
 
 import config
 from gui import tk_facade
-from gui.constants import TkParentType
+from gui.types import TkParentType
 
 
 DefaultLiteral = Literal["normal", "active", "disabled"]

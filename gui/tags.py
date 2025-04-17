@@ -1,7 +1,7 @@
 """This module contains code for movie tag maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 9:54 AM by stephen.
+#  Last modified 4/17/25, 12:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,14 +23,7 @@ from functools import partial
 import itertools
 from dataclasses import dataclass, field
 
-from gui.constants import (
-    COMMIT_TEXT,
-    CANCEL_TEXT,
-    DELETE_TEXT,
-    MOVIE_TAGS,
-    MOVIE_TAGS_TEXT,
-    SEARCH_TEXT,
-)
+from gui.constants import *
 from gui import common
 from gui.tk_facade import EntryFields, Entry
 

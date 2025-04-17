@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 9:54 AM by stephen.
+#  Last modified 4/17/25, 12:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,15 +24,7 @@ from globalconstants import (
     MovieBag,
     setstr_to_str,
 )
-from gui.constants import (
-    CANCEL_TEXT,
-    DIRECTORS,
-    DURATION,
-    MOVIE_TAGS_TEXT,
-    NOTES,
-    TITLE,
-    YEAR,
-)
+from gui.constants import *
 from gui import common
 
 BAD_TITLES_AND_WIDTHS = (
