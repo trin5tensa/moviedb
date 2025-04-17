@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 12:51 PM by stephen.
+#  Last modified 4/17/25, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,7 @@ from itertools import count
 import logging
 import queue
 
-from globalconstants import (
+from moviebag import (
     MovieBag,
     MovieInteger,
     setstr_to_str,

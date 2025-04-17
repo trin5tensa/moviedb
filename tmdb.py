@@ -13,7 +13,7 @@ https://github.com/celiao/tmdbsimple
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/7/25, 2:01 PM by stephen.
+#  Last modified 4/17/25, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -32,7 +32,7 @@ import requests
 import tmdbsimple
 
 import exception
-from globalconstants import MovieBag, MovieInteger
+from moviebag import MovieBag, MovieInteger
 
 tmdbsimple.REQUESTS_TIMEOUT = (2, 5)  # seconds for connect and read.
 

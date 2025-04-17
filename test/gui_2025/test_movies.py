@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 9:54 AM by stephen.
+#  Last modified 4/17/25, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +17,7 @@ import pytest
 from pytest_check import check
 from unittest.mock import MagicMock, call
 
-from globalconstants import MovieBag
+from moviebag import MovieBag
 from gui import movies
 
 
