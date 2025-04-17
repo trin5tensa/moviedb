@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/10/25, 1:59 PM by stephen.
+#  Last modified 4/17/25, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,7 @@ from unittest.mock import MagicMock, call
 
 from pytest_check import check
 
-from globalconstants import MovieBag, MovieInteger
+from moviebag import MovieBag, MovieInteger
 from gui import tviewselect as mut
 
 
@@ -39,6 +39,7 @@ class TestSelectGUI:
         destroy = MagicMock(name="destroy", autospec=True)
         monkeypatch.setattr(mut.SelectGUI, "destroy", destroy)
         treeview = MagicMock(name="treeview", autospec=True)
+        # noinspection DuplicatedCode
         monkeypatch.setattr(mut.SelectGUI, "treeview", treeview)
         columns = MagicMock(name="columns", autospec=True)
         monkeypatch.setattr(mut.SelectGUI, "columns", columns)
@@ -46,7 +47,7 @@ class TestSelectGUI:
         monkeypatch.setattr(mut.SelectGUI, "populate", populate)
         create_button = MagicMock(name="create_button", autospec=True)
         monkeypatch.setattr(mut.common, "create_button", create_button)
-        text = mut.common.CANCEL_TEXT
+        text = mut.CANCEL_TEXT
         column = 0
         default = "active"
         selection_callback = MagicMock(name="selection_callback", autospec=True)
@@ -199,7 +200,7 @@ class TestSelectTagGUI:
         with check:
             tree.column.assert_called_once_with("#0", width=width)
         with check:
-            tree.heading.assert_called_once_with("#0", text=mut.common.MOVIE_TAGS_TEXT)
+            tree.heading.assert_called_once_with("#0", text=mut.MOVIE_TAGS_TEXT)
         with check:
             tree.configure.assert_called_once_with(height=15)
 
@@ -207,8 +208,6 @@ class TestSelectTagGUI:
         # Arrange
         tree = MagicMock(name="tree", autospec=True)
         monkeypatch.setattr(mut.ttk, "Treeview", tree)
-        # sort = MagicMock(name="sort", autospec=True)
-        # monkeypatch.setattr(select_tag_gui.rows, "sort", sort)
 
         # Act
         select_tag_gui.populate(tree)

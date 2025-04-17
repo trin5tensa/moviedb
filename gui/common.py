@@ -1,7 +1,7 @@
 """This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/15/25, 12:32 PM by stephen.
+#  Last modified 4/17/25, 12:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,6 +14,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # This tkinter import method supports accurate test mocking of tk and ttk.
+# noinspection PyUnresolvedReferences
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.messagebox as messagebox
@@ -25,16 +26,10 @@ from typing import Literal
 
 import config
 from gui import tk_facade
+from gui.types import TkParentType
 
-COMMIT_TEXT = "Commit"
-CANCEL_TEXT = "Cancel"
-DELETE_TEXT = "Delete"
-SEARCH_TEXT = "Search"
-MOVIE_TAGS_TEXT = "Tags"
 
 DefaultLiteral = Literal["normal", "active", "disabled"]
-
-type TkParentType = tk.Tk | tk.Toplevel | ttk.Frame
 
 
 @dataclass

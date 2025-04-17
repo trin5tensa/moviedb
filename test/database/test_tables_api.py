@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/30/25, 1:41 PM by stephen.
+#  Last modified 4/17/25, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,7 +21,7 @@ from sqlalchemy.exc import NoResultFound
 
 from database import schema, tables
 from database.tables import sessionmaker
-from globalconstants import *
+from moviebag import *
 
 TEST_DIRECTORS = {"Donald Director"}
 TEST_STARS = {"Edgar Ethelred", "Fanny Fullworthy"}

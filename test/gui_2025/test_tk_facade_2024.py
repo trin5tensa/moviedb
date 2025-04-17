@@ -1,7 +1,7 @@
-""" Test module"""
+"""Test module"""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/17/25, 1:36 PM by stephen.
+#  Last modified 4/17/25, 12:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,8 +18,7 @@ from unittest.mock import MagicMock, call
 import pytest
 from pytest_check import check
 
-import globalconstants
-from gui import tk_facade
+from gui import tk_facade, types
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -75,10 +74,12 @@ class TestEntry:
             check.equal(cut._textvariable, tk.StringVar())
             check.equal(cut._original_value, "")
             with check:
+                # noinspection PyUnresolvedReferences
                 cut.widget.configure.assert_called_once_with(
                     textvariable=tk.StringVar()
                 )
             with check:
+                # noinspection PyUnresolvedReferences
                 cut._textvariable.trace_add.assert_called_once_with(
                     "write", cut.observer.notify
                 )
@@ -88,6 +89,7 @@ class TestEntry:
             cut.original_value = self.test_value
             check.equal(cut.original_value, self.test_value)
             with check:
+                # noinspection PyUnresolvedReferences
                 cut._textvariable.set.assert_has_calls(
                     [
                         call(""),
@@ -100,6 +102,7 @@ class TestEntry:
             test_value = "test current value"
             cut.current_value = test_value
             with check:
+                # noinspection PyUnresolvedReferences
                 cut._textvariable.set.assert_called_with(test_value)
 
             result = cut.current_value
@@ -107,6 +110,7 @@ class TestEntry:
 
             cut.clear_current_value()
             with check:
+                # noinspection PyUnresolvedReferences
                 cut._textvariable.set.assert_called_with("")
 
     def test_has_data(self, tk, ttk):
@@ -147,8 +151,10 @@ class TestText:
             check.equal(cut.widget, tk.Text())
             check.equal(cut._original_value, "")
             with check:
+                # noinspection PyUnresolvedReferences
                 cut.widget.bind.assert_called_once_with("<<Modified>>", mock_modified())
             with check:
+                # noinspection PyUnresolvedReferences
                 cut.widget.replace.assert_called_once_with("1.0", "end", "")
 
     def test_original_value(self, tk, ttk):
@@ -157,6 +163,7 @@ class TestText:
             cut.original_value = test_value
             check.equal(cut.original_value, test_value)
             with check:
+                # noinspection PyUnresolvedReferences
                 cut.widget.replace.assert_has_calls(
                     [call("1.0", "end", ""), call("1.0", "end", test_value)]
                 )
@@ -166,13 +173,16 @@ class TestText:
             test_value = "test current value"
             cut.current_value = test_value
             with check:
+                # noinspection PyUnresolvedReferences
                 cut.widget.replace.assert_called_with("1.0", "end", test_value)
 
             result = cut.current_value
+            # noinspection PyArgumentList
             check.equal(result, cut.widget.get())
 
             cut.clear_current_value()
             with check:
+                # noinspection PyUnresolvedReferences
                 cut.widget.replace.assert_called_with("1.0", "end", "")
 
     def test_modified(self, tk, ttk, monkeypatch):
@@ -180,8 +190,10 @@ class TestText:
             monkeypatch.setattr(cut.observer, "notify", MagicMock())
             cut.modified()()
             with check:
+                # noinspection PyUnresolvedReferences
                 cut.widget.edit_modified.assert_called_once_with(False)
             with check:
+                # noinspection PyUnresolvedReferences
                 cut.observer.notify.assert_called_once_with()
 
     def test_has_data(self, tk, ttk):
@@ -213,6 +225,7 @@ class TestTreeview:
             check.equal(cut.widget, ttk.Treeview())
             with check:
                 # This has a lambda parameter
+                # noinspection PyUnresolvedReferences
                 cut.widget.bind.assert_called()
             check.equal(cut._original_value, set())
 
@@ -221,6 +234,7 @@ class TestTreeview:
             cut.original_value = self.test_value
             check.equal(cut.original_value, self.test_value)
             with check:
+                # noinspection PyUnresolvedReferences
                 cut.widget.selection_set.assert_has_calls(
                     [call(self.empty_value), call(self.test_value)]
                 )
@@ -231,6 +245,7 @@ class TestTreeview:
             cut.current_value = self.test_value
             cut.clear_current_value()
             with check:
+                # noinspection PyUnresolvedReferences
                 cut.widget.selection_set.assert_has_calls(
                     [
                         call(self.empty_value),  # Initialization
@@ -276,8 +291,10 @@ class TestCheckbutton:
             check.equal(cut._variable, tk.IntVar())
             check.equal(cut._original_value, self.initial_value)
             with check:
+                # noinspection PyUnresolvedReferences
                 cut.widget.configure.assert_called_once_with(variable=cut._variable)
             with check:
+                # noinspection PyUnresolvedReferences
                 cut._variable.trace_add.assert_called_once_with(
                     "write", cut.observer.notify
                 )
@@ -287,6 +304,7 @@ class TestCheckbutton:
             cut.original_value = self.initial_value
             check.equal(cut.original_value, self.initial_value)
             with check:
+                # noinspection PyUnresolvedReferences
                 cut._variable.set.assert_has_calls(
                     [
                         call(self.initial_value),
@@ -299,6 +317,7 @@ class TestCheckbutton:
             # Test setter
             cut.current_value = self.test_value
             with check:
+                # noinspection PyUnresolvedReferences
                 cut._variable.set.assert_called_with(self.test_value)
 
             # Test getter
@@ -309,6 +328,7 @@ class TestCheckbutton:
             # Test clearer
             cut.clear_current_value()
             with check:
+                # noinspection PyUnresolvedReferences
                 cut._variable.set.assert_called_with(self.clear_value)
 
     @contextmanager
@@ -318,7 +338,7 @@ class TestCheckbutton:
         yield cut
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 @pytest.fixture
 def tk(monkeypatch):
     monkeypatch.setattr(tk_facade, "tk", tk := MagicMock())
@@ -335,5 +355,5 @@ def ttk(monkeypatch):
 # noinspection PyMissingOrEmptyDocstring
 @pytest.fixture
 def tk_parent_type(monkeypatch):
-    monkeypatch.setattr(globalconstants, "TkParentType", tk_parent_type := MagicMock)
+    monkeypatch.setattr(types, "TkParentType", tk_parent_type := MagicMock)
     return tk_parent_type

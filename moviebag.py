@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/10/25, 12:52 PM by stephen.
+#  Last modified 4/17/25, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -17,34 +17,11 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TypedDict
 
-# todo move these imports to gui.common
-# This tkinter import method supports accurate test mocking of tk and ttk.
-import tkinter as tk
-import tkinter.ttk as ttk
-
 # todo Clean up
 #  Rename module to moviebag.py
 
 
-# Field names
-# noinspection DuplicatedCode
-TITLE = "title"
-YEAR = "year"
-DURATION = "duration"
-DIRECTORS = "directors"
-NOTES = "notes"
-MOVIE_TAGS = "tags"
-STARS = "stars"
-SYNOPSIS = "synopsis"
-ID = "id"
-CREATED = "created"
-UPDATED = "updated"
-
 NO_INTEGER_VALUE = "This object cannot provide an integer value"
-
-# todo move these types to gui.common
-type TkParentType = tk.Tk | tk.Toplevel | ttk.Frame
-type TkSequence = list[str] | tuple[str, ...]
 
 
 class MovieBag(TypedDict, total=False):

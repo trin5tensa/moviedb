@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/12/25, 6:54 AM by stephen.
+#  Last modified 4/17/25, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,15 +20,11 @@ from functools import partial
 from collections.abc import Callable
 from dataclasses import dataclass, KW_ONLY, field
 
-from globalconstants import (
+from moviebag import (
     MovieBag,
     setstr_to_str,
-    TITLE,
-    YEAR,
-    DIRECTORS,
-    DURATION,
-    NOTES,
 )
+from gui.constants import *
 from gui import common
 
 BAD_TITLES_AND_WIDTHS = (
@@ -74,7 +70,7 @@ class SelectGUI:
         self.populate(tree)
         common.create_button(
             buttonbox,
-            text=common.CANCEL_TEXT,
+            text=CANCEL_TEXT,
             column=0,
             command=self.destroy,
             default="active",
@@ -137,7 +133,7 @@ class SelectTagGUI(SelectGUI):
     rows: list[str]
 
     def __post_init__(self):
-        self.titles = [common.MOVIE_TAGS_TEXT]
+        self.titles = [MOVIE_TAGS_TEXT]
         self.widths = [500]
         super().__post_init__()
 

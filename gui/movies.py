@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/9/25, 9:26 AM by stephen.
+#  Last modified 4/17/25, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,28 +24,14 @@ from itertools import count
 import logging
 import queue
 
-from globalconstants import (
+from moviebag import (
     MovieBag,
     MovieInteger,
     setstr_to_str,
-    TITLE,
-    YEAR,
-    DIRECTORS,
-    DURATION,
-    NOTES,
-    MOVIE_TAGS,
 )
 from gui import common, tk_facade
+from gui.constants import *
 
-COMMIT_TEXT = "Commit"
-DELETE_TEXT = "Delete"
-DIRECTORS_TEXT = "Directors"
-DURATION_TEXT = "Runtime"
-NOTES_TEXT = "Notes"
-MOVIE_TAGS_TEXT = "Tags"
-SEARCH_TEXT = "Search"
-TITLE_TEXT = "Title"
-YEAR_TEXT = "Year"
 
 MOVIE_DELETE_MESSAGE = "Do you want to delete this movie?"
 UNEXPECTED_KEY = "Unexpected key"
@@ -214,7 +200,7 @@ class MovieGUI:
         self.create_buttons(buttonbox, column_counter)
         common.create_button(
             buttonbox,
-            common.CANCEL_TEXT,
+            CANCEL_TEXT,
             column=next(column_counter),
             command=self.destroy,
             default="active",

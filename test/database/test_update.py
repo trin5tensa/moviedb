@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/18/25, 6:41 AM by stephen.
+#  Last modified 4/17/25, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -33,7 +33,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Session
 
 from database import update
-from globalconstants import MovieBag
+from moviebag import MovieBag
 
 
 def test_update_old_database_matching_v0(monkeypatch):
