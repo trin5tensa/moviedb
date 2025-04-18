@@ -1,7 +1,22 @@
 """This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/15/25, 12:32 PM by stephen.
+#  Last modified 4/18/25, 8:13 AM by stephen.
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import logging
+
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 4/18/25, 7:17 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,9 +29,11 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # This tkinter import method supports accurate test mocking of tk and ttk.
+# noinspection PyUnresolvedReferences
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.messagebox as messagebox
+from collections import UserDict
 from collections.abc import Callable, Collection, Iterator
 from dataclasses import field, dataclass
 from functools import partial
@@ -25,16 +42,10 @@ from typing import Literal
 
 import config
 from gui import tk_facade
+from gui.types import TkParentType
 
-COMMIT_TEXT = "Commit"
-CANCEL_TEXT = "Cancel"
-DELETE_TEXT = "Delete"
-SEARCH_TEXT = "Search"
-MOVIE_TAGS_TEXT = "Tags"
 
 DefaultLiteral = Literal["normal", "active", "disabled"]
-
-type TkParentType = tk.Tk | tk.Toplevel | ttk.Frame
 
 
 @dataclass
@@ -166,6 +177,139 @@ class LabelAndField:
 
         label = ttk.Label(self.parent, text=text)
         label.grid(column=0, row=row_ix, sticky="ne", padx=5)
+
+
+# noinspection DuplicatedCode
+class EscapeKeyDict(UserDict):
+    """Support for Apple's <Escape> amd <Command-.> key presses.
+
+    Use Case:
+        Apple GUI docs state the <Escape> and <Command-.> accelerator keys
+        should end the current activity.
+
+    Application of the Apple requirements to moviedb is accomplished by calling
+    the destroy method of the moviedb object. The precise nature of what
+    happens when a specific destroy method is called can vary so this
+    approach can accommodate any tkinter widget managed by a moviedb class.
+    This excludes 'convenience' windows such as messageboxes.
+
+    The two escape accelerators have been attached to Tk/Tcl's root with the
+    bind_all function. When either accelerator is pressed the closure within
+    the escape method will be called.
+
+    # todo Isn't this what 'partials' are for?
+    The complicated design of this class has been dictated by the inadequacy
+    of information provided by the keypress event callback from tkinter. A
+    moviedb object will be destroyed by the closure and this object is
+    identified by naming the outer frame widget. This outer frame name
+    can be extracted from the keypress event supplied by tkinter. This is
+    used to match an entry in the 'data' attribute of this class. This
+    entry should be registered when the moviedb object is initialized.
+    Extensive validation is necessary to ensure that each element is in place.
+
+    The matching is accomplished by:
+    1) Uniquely naming the outer frame widget with the name of the moviedb
+    class.
+    2) Registering in this class the mapping of the outer frame name and its
+    destroy method.
+    """
+
+    # todo Move this class to gui.sundries module.
+    #  Move globalconstants.TkParentType and TkSequence to tk_facade.
+
+    internal_error_txt = "Internal Error"
+    accelerator_txt = "Accelerator"
+    no_valid_name_txt = (
+        "detected but no valid name was found in the topmost Tk/Tcl window."
+    )
+    gt1_valid_name_txt = (
+        "detected but more than one valid name was found in the topmost Tk/Tcl window."
+    )
+    key_error_text = "detected but not found in lookup dictionary."
+    type_error_text = "Invalid callback for"
+
+    def __setitem__(self, outer_frame: str, destroy: Callable):
+        """Register a destroy method for a particular outer frame."""
+        # todo Why is it necessary to avoid overwriting an existing value for a key?
+        if outer_frame not in self:
+            self.data[outer_frame] = destroy
+
+    def escape(
+        self,
+        accelerator: Literal["<Escape>", "<Command-.>"],
+    ):
+        """Sets up the callback which will destroy a moviedb logical window.
+
+
+        Args:
+            accelerator: User readable text used for reporting exceptions.
+        """
+
+        def closure(keypress_event):
+            """Destroys a moviedb logical window.
+
+            Args:
+                keypress_event:
+            """
+            outer_frame_names = [  # pragma no branch
+                widget_name
+                for widget_name in str(keypress_event.widget).split(".")
+                if widget_name and widget_name[:1] != "!"
+            ]
+
+            # Validate the Tk/Tcl name
+            match len(outer_frame_names):
+                case 1:
+                    pass
+                case 0:
+                    detail = (
+                        f"{self.accelerator_txt} {accelerator} {self.no_valid_name_txt}"
+                    )
+                    logging.warning(f"{detail} {keypress_event.widget=}")
+                    showinfo(
+                        self.internal_error_txt,
+                        detail=detail,
+                        icon="warning",
+                    )
+                    return
+                case _:
+                    detail = (
+                        f"{self.accelerator_txt} {accelerator}"
+                        f" {self.gt1_valid_name_txt}"
+                    )
+                    logging.warning(f"{detail} {keypress_event.widget=}")
+                    showinfo(
+                        self.internal_error_txt,
+                        detail=detail,
+                        icon="warning",
+                    )
+                    return
+
+            # Try to call the widget's destroy method.
+            outer_frame_name = outer_frame_names[0]
+            try:
+                self.data[outer_frame_name]()
+            except KeyError:
+                detail = f"{self.accelerator_txt}  {accelerator} {self.key_error_text}"
+                logging.warning(f"{detail} {self.data.keys()}")
+                showinfo(
+                    self.internal_error_txt,
+                    detail=detail,
+                    icon="warning",
+                )
+            except TypeError:
+                detail = (
+                    f"{self.type_error_text} {self.accelerator_txt.lower()}"
+                    f"  {accelerator}."
+                )
+                logging.warning(f"{detail} {self.data[outer_frame_name]}")
+                showinfo(
+                    self.internal_error_txt,
+                    detail=detail,
+                    icon="warning",
+                )
+
+        return closure
 
 
 def create_body_and_buttonbox(

@@ -1,7 +1,7 @@
-"""Test Module."""
+"""Global constants and type definitions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/18/25, 8:41 AM by stephen.
+#  Last modified 4/17/25, 12:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,25 +13,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import pytest
-from unittest.mock import MagicMock
+import tkinter as tk
+import tkinter.ttk as ttk
 
-
-@pytest.fixture(scope="function")
-def tk(monkeypatch) -> MagicMock:
-    """Returns a MagicMock object called tk
-
-    It does not monkeypatch tkinter.Tk()
-    """
-    tk = MagicMock(name="tk", autospec=True)
-    return tk
-
-
-@pytest.fixture(scope="function")
-def ttk(monkeypatch) -> MagicMock:
-    """Returns a MagicMock object called ttk
-
-    It does not monkeypatch tkinter.Tk().ttk
-    """
-    ttk = MagicMock(name="ttk", autospec=True)
-    return ttk
+type TkParentType = tk.Tk | tk.Toplevel | ttk.Frame
+type TkSequence = list[str] | tuple[str, ...]

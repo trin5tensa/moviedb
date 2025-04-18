@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/6/25, 9:20 AM by stephen.
+#  Last modified 4/17/25, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +15,7 @@
 
 import pytest
 
-from globalconstants import MovieBag, MovieInteger
+from moviebag import MovieBag, MovieInteger
 from .moxenstubs import *
 
 

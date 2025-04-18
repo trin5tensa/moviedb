@@ -1,7 +1,7 @@
 """Database update functions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/16/25, 1:20 PM by stephen.
+#  Last modified 4/17/25, 12:59 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,7 +19,7 @@ from pathlib import Path
 from sqlalchemy import MetaData, Engine, Table, select, create_engine
 from sqlalchemy.orm import Session
 
-from globalconstants import *
+from moviebag import *
 
 DIALECT = "sqlite+pysqlite:///"
 INFO_UPDATE_V0_STARTING = "The update from the v0 database is starting."

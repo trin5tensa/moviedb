@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/5/25, 1:52 PM by stephen.
+#  Last modified 4/17/25, 9:54 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,7 +18,7 @@ from unittest.mock import MagicMock, call
 import pytest
 from pytest_check import check
 
-from gui import common, tags
+from gui import tags
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -41,7 +41,7 @@ class TestTagGUI:
             buttonbox,
         )
         monkeypatch.setattr(
-            common,
+            tags.common,
             "create_body_and_buttonbox",
             create_body_and_buttonbox,
         )
@@ -53,7 +53,9 @@ class TestTagGUI:
             name="init_button_enablements",
             autospec=True,
         )
-        monkeypatch.setattr(common, "init_button_enablements", init_button_enablements)
+        monkeypatch.setattr(
+            tags.common, "init_button_enablements", init_button_enablements
+        )
 
         # Act
         tag_gui = tags.TagGUI(tk)
@@ -76,7 +78,7 @@ class TestTagGUI:
 
         body_frame = MagicMock(name="body_frame", autospec=True)
         label_and_field = MagicMock(name="label_and_field", autospec=True)
-        monkeypatch.setattr(common, "LabelAndField", label_and_field)
+        monkeypatch.setattr(tags.common, "LabelAndField", label_and_field)
         entry = MagicMock(name="entry", autospec=True)
         monkeypatch.setattr(tags, "Entry", entry)
 
@@ -87,7 +89,7 @@ class TestTagGUI:
         with check:
             label_and_field.assert_called_once_with(body_frame)
         with check:
-            entry.assert_called_once_with(common.MOVIE_TAGS_TEXT, body_frame)
+            entry.assert_called_once_with(tags.MOVIE_TAGS_TEXT, body_frame)
         check.equal(tag_gui.entry_fields[tags.MOVIE_TAGS], entry())
         check.equal(
             tag_gui.entry_fields[tags.MOVIE_TAGS].original_value,
@@ -159,14 +161,14 @@ class TestAddTagGUI:
                 [
                     call(
                         buttonbox,
-                        common.COMMIT_TEXT,
+                        tags.COMMIT_TEXT,
                         column=next(column_num),
                         command=add_tag.commit,
                         default="disabled",
                     ),
                     call(
                         buttonbox,
-                        common.CANCEL_TEXT,
+                        tags.CANCEL_TEXT,
                         column=next(column_num),
                         command=add_tag.destroy,
                         default="active",
@@ -270,21 +272,21 @@ class TestEditTagGUI:
                 [
                     call(
                         buttonbox,
-                        common.COMMIT_TEXT,
+                        tags.COMMIT_TEXT,
                         column=next(column_num),
                         command=edit_tag.commit,
                         default="disabled",
                     ),
                     call(
                         buttonbox,
-                        common.DELETE_TEXT,
+                        tags.DELETE_TEXT,
                         column=next(column_num),
                         command=edit_tag.delete,
                         default="active",
                     ),
                     call(
                         buttonbox,
-                        common.CANCEL_TEXT,
+                        tags.CANCEL_TEXT,
                         column=next(column_num),
                         command=edit_tag.destroy,
                         default="active",
@@ -463,14 +465,14 @@ class TestSearchTagGUI:
                 [
                     call(
                         buttonbox,
-                        common.SEARCH_TEXT,
+                        tags.SEARCH_TEXT,
                         column=next(column_num),
                         command=search_tag.search,
                         default="disabled",
                     ),
                     call(
                         buttonbox,
-                        common.CANCEL_TEXT,
+                        tags.CANCEL_TEXT,
                         column=next(column_num),
                         command=search_tag.destroy,
                         default="active",
