@@ -4,7 +4,7 @@ This module contains new tests written after Brian Okken's course and book on py
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/8/25, 2:02 PM by stephen.
+#  Last modified 4/18/25, 8:13 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -36,7 +36,7 @@ class TestMainWindow:
         )
         monkeypatch.setattr(mainwindow.MainWindow, "place_menubar", MagicMock())
         monkeypatch.setattr(
-            mainwindow.handlers.sundries,
+            mainwindow.common,
             "EscapeKeyDict",
             mock_escape_key_dict := MagicMock(),
         )

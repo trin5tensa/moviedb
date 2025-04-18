@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 3/6/25, 8:18 AM by stephen.
+#  Last modified 4/18/25, 8:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,13 +19,19 @@ from unittest.mock import MagicMock
 
 @pytest.fixture(scope="function")
 def tk(monkeypatch) -> MagicMock:
-    """Stops Tk from starting."""
+    """Returns a MagicMock object called tk
+
+    It does not monkeypatch tkinter.Tk()
+    """
     tk = MagicMock(name="tk", autospec=True)
     return tk
 
 
 @pytest.fixture(scope="function")
 def ttk(monkeypatch) -> MagicMock:
-    """Stops Tk.Ttk from starting."""
+    """Returns a MagicMock object called ttk
+
+    It does not monkeypatch tkinter.Tk().ttk
+    """
     ttk = MagicMock(name="ttk", autospec=True)
     return ttk
