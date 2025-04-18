@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 8:50 AM by stephen.
+#  Last modified 4/18/25, 8:13 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from typing import Tuple
 
 import config
+from gui import common
 
 import handlers
 
@@ -48,17 +49,11 @@ class MainWindow:
         self.place_menubar()
 
         # Set up handling of <Escape> and <Command-.>
-        config.current.escape_key_dict = escape_key_dict = (
-            handlers.sundries.EscapeKeyDict()
-        )
+        config.current.escape_key_dict = escape_key_dict = common.EscapeKeyDict()
         # noinspection PyTypeChecker
-        self.parent.bind_all(
-            key := "<Escape>", escape_key_dict.escape(self.parent, key)
-        )
+        self.parent.bind_all(key := "<Escape>", escape_key_dict.escape(key))
         # noinspection PyTypeChecker
-        self.parent.bind_all(
-            key := "<Command-.>", escape_key_dict.escape(self.parent, key)
-        )
+        self.parent.bind_all(key := "<Command-.>", escape_key_dict.escape(key))
 
     def set_geometry(self) -> str:
         """Set window geometry from a default value or app.geometry and make sure it will

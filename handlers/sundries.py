@@ -1,7 +1,7 @@
 """Sundry Menu handlers."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/15/25, 12:32 PM by stephen.
+#  Last modified 4/18/25, 8:13 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -48,6 +48,7 @@ class EscapeKeyDict(UserDict):
     bind_all function. When either accelerator is pressed the closure within
     the escape method will be called.
 
+    # todo Isn't this what 'partials' are for?
     The complicated design of this class has been dictated by the inadequacy
     of information provided by the keypress event callback from tkinter. A
     moviedb object will be destroyed by the closure and this object is
@@ -80,13 +81,12 @@ class EscapeKeyDict(UserDict):
 
     def __setitem__(self, outer_frame: str, destroy: Callable):
         """Register a destroy method for a particular outer frame."""
+        # todo Why is it necessary to avoid overwriting an existing value for a key?
         if outer_frame not in self:
             self.data[outer_frame] = destroy
 
-    # todo Remove 'parent' from signature
     def escape(
         self,
-        parent,
         accelerator: Literal["<Escape>", "<Command-.>"],
     ):
         """Sets up the callback which will destroy a moviedb logical window.
