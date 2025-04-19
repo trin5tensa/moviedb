@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 11:48 AM by stephen.
+#  Last modified 4/19/25, 1:55 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -69,8 +69,7 @@ class TestSettings:
         monkeypatch.setattr(settings.Settings, "create_buttons", create_buttons)
 
         # Act
-        # noinspection PyArgumentList
-        settings_obj = settings.Settings(
+        settings.Settings(
             parent,
             tmdb_api_key=self.tmdb_api_key,
             use_tmdb=self.use_tmdb,
@@ -86,7 +85,6 @@ class TestSettings:
             create_body_and_buttonbox.assert_called_once_with(
                 toplevel(),
                 settings.Settings.__name__.lower(),
-                settings_obj.destroy,
             )
         with check:
             create_fields.assert_called_once_with(body_frame)

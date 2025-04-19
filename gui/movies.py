@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 12:59 PM by stephen.
+#  Last modified 4/19/25, 1:55 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -74,7 +74,8 @@ class MovieGUI:
 
     def __post_init__(self):
         self.outer_frame, body_frame, buttonbox = common.create_body_and_buttonbox(
-            self.parent, type(self).__name__.lower(), self.destroy
+            self.parent,
+            type(self).__name__.lower(),
         )
         tmdb_frame = self.create_tmdb_frame(self.outer_frame)
         self.fill_body(body_frame)

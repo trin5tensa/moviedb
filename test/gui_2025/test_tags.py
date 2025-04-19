@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 11:48 AM by stephen.
+#  Last modified 4/19/25, 1:55 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -40,8 +40,6 @@ class TestTagGUI:
         """
         # Arrange
         name = tags.TagGUI.__name__.lower()
-        destroy = MagicMock(name="destroy", autospec=True)
-        monkeypatch.setattr(tags.TagGUI, "destroy", destroy)
         create_body_and_buttonbox = MagicMock(
             name="create_body_and_buttonbox",
             autospec=True,
@@ -76,7 +74,7 @@ class TestTagGUI:
 
         # Assert
         with check:
-            create_body_and_buttonbox.assert_called_once_with(tk, name, destroy)
+            create_body_and_buttonbox.assert_called_once_with(tk, name)
         check.equal(tag_gui.outer_frame, outer_frame)
         with check:
             user_input_frame.assert_called_once_with(body_frame)

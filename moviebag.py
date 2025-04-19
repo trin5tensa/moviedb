@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 12:59 PM by stephen.
+#  Last modified 4/19/25, 1:55 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,9 +16,6 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TypedDict
-
-# todo Clean up
-#  Rename module to moviebag.py
 
 
 NO_INTEGER_VALUE = "This object cannot provide an integer value"

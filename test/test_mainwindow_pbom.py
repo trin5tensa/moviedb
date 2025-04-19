@@ -4,7 +4,7 @@ This module contains new tests written after Brian Okken's course and book on py
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 11:48 AM by stephen.
+#  Last modified 4/19/25, 1:55 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -33,35 +33,6 @@ TEST_VERSION = "Test version"
 
 class TestMainWindow:
     """Ensure that MainWindow is correctly initialized."""
-
-    # todo Remove zombie code
-    # def test_main_window_initialization(self, monkeypatch):
-    #     monkeypatch.setattr(
-    #         mainwindow.MainWindow, "set_geometry", mock_set_geometry := MagicMock()
-    #     )
-    #     monkeypatch.setattr(mainwindow.MainWindow, "place_menubar", MagicMock())
-    #     # monkeypatch.setattr(
-    #     #     mainwindow.common,
-    #     #     "EscapeKeyDict",
-    #     #     mock_escape_key_dict := MagicMock(),
-    #     # )
-    #     tk_shutdown = MagicMock(name="tk_shutdown", autospec=True)
-    #     monkeypatch.setattr(mainwindow.MainWindow, "tk_shutdown", tk_shutdown)
-    #
-    #     with main_window(monkeypatch) as cut:
-    #         with check:
-    #             cut.parent.title.assert_called_once_with(TEST_TITLE)
-    #         with check:
-    #             cut.parent.geometry.assert_called_once_with(mock_set_geometry())
-    #         with check:
-    #             cut.place_menubar.assert_called_once_with()
-    #         with check:
-    #             cut.parent.bind_all.assert_has_calls(
-    #                 [
-    #                     call("<Escape>", tk_shutdown()),
-    #                     call("<Command-.>", tk_shutdown()),
-    #                 ]
-    #             )
 
     # noinspection PyUnresolvedReferences
     def test_place_menubar(self, monkeypatch):

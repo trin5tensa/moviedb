@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 12:59 PM by stephen.
+#  Last modified 4/19/25, 1:55 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -63,7 +63,6 @@ class SelectGUI:
         self.outer_frame, body_frame, buttonbox = common.create_body_and_buttonbox(
             self.parent,
             type(self).__name__.lower(),
-            self.destroy,
         )
         tree = self.treeview(body_frame)
         self.columns(tree)

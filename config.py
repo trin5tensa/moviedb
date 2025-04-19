@@ -1,7 +1,7 @@
 """Application configuration data"""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 11:48 AM by stephen.
+#  Last modified 4/19/25, 1:55 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +13,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from collections import UserDict
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -31,23 +30,22 @@ persistent: Optional["PersistentConfig"] = None
 class CurrentConfig:
     """The application's configuration data.
 
-    This transient configuration data is created during a single program_name run and is discarded when the program_name
-    terminates.
+    This transient configuration data is created during a single program_name
+    run and is discarded when the program_name terminates.
     """
 
     # todo Move tk_root to gui.common
     tk_root: "tk.Tk" = None
     safeprint: Callable = None
     threadpool_executor: ThreadPoolExecutor = None
-    # todo Remove zombie code AND everything that uses it.
-    escape_key_dict: UserDict = None
 
 
 @dataclass
 class PersistentConfig:
     """The application's configuration data.
 
-    This persistent configuration data is loaded in the application's start_up() function and saved on exit.
+    This persistent configuration data is loaded in the application's
+    start_up() function and saved on exit.
     """
 
     # Program
@@ -63,7 +61,8 @@ class PersistentConfig:
 
     @property
     def tmdb_api_key(self):
-        """Return the tmdb_api_key but raise exceptions for missing key and user suppressed access."""
+        """Return the tmdb_api_key but raise exceptions for missing key and
+        user suppressed access."""
         # User wants to use TMDB
         if self.use_tmdb:
             # …but the key has not been set so raise exception
