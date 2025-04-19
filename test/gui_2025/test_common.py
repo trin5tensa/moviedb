@@ -1,7 +1,25 @@
-"""Test Module."""
+"""Tests for the gui.common module.
+
+This module contains tests for the common GUI components and utility functions
+used throughout the application. It tests:
+
+1. The LabelAndField class, which formats a parent frame with columns for labels,
+   fields, and scrollbars, and provides methods to add different types of UI elements.
+
+2. Utility functions for creating UI elements and handling button interactions:
+   - create_body_and_buttonbox: Creates frames for an input form
+   - create_button: Creates a button with Return key binding
+   - enable_button: Enables or disables a button
+   - invoke_button: Invokes a button's command
+   - init_button_enablements: Sets initial button states
+   - showinfo: Displays an info dialog
+   - askyesno: Displays a yes/no dialog
+
+Each test follows the Arrange-Act-Assert pattern, with comments marking each section.
+"""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/11/25, 8:12 AM by stephen.
+#  Last modified 4/19/25, 1:55 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +31,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from collections import UserDict
 from unittest.mock import MagicMock, call
 
 from pytest_check import check
@@ -21,10 +38,35 @@ from pytest_check import check
 from gui import common
 
 
-# noinspection PyMissingOrEmptyDocstring
+# noinspection GrazieInspection
 class TestLabelAndField:
+    """Tests for the LabelAndField class in the common module.
+
+    The LabelAndField class formats a parent frame with three columns for labels,
+    fields, and scrollbars, and provides methods to add different types of UI elements.
+
+    These tests verify:
+    - Proper initialization of the LabelAndField instance
+    - Creation of labels
+    - Adding entry fields
+    - Adding text fields with scrollbars
+    - Adding checkboxes
+    - Adding treeviews with scrollbars
+    """
 
     def test_input_zone_init(self, tk, ttk):
+        """Test the initialization of the LabelAndField class.
+
+        This test verifies that:
+        - The parent frame is correctly stored
+        - The row iterator is properly initialized
+        - Default column widths are set correctly
+        - The parent frame's columns are configured properly
+
+        Args:
+            tk: Pytest fixture for tkinter
+            ttk: Pytest fixture for tkinter.ttk
+        """
         # Arrange
         parent = ttk.Frame()
         col_0_width: int = 30
@@ -49,6 +91,17 @@ class TestLabelAndField:
             )
 
     def test_create_label(self, tk, ttk, monkeypatch):
+        """Test the _create_label method of LabelAndField.
+
+        This test verifies that:
+        - A ttk.Label is created with the correct parent and text
+        - The label is properly positioned in the grid with the correct parameters
+
+        Args:
+            tk: Pytest fixture for tkinter
+            ttk: Pytest fixture for tkinter.ttk
+            monkeypatch: Pytest fixture for patching objects
+        """
         # Arrange
         parent = ttk.Frame()
         label = MagicMock(name="label", autospec=True)
@@ -69,6 +122,18 @@ class TestLabelAndField:
             )
 
     def test_add_entry_row(self, tk, ttk, monkeypatch):
+        """Test the add_entry_row method of LabelAndField.
+
+        This test verifies that:
+        - The _create_label method is called with the correct parameters
+        - The entry field widget is configured with the correct width
+        - The entry field widget is properly positioned in the grid
+
+        Args:
+            tk: Pytest fixture for tkinter
+            ttk: Pytest fixture for tkinter.ttk
+            monkeypatch: Pytest fixture for patching objects
+        """
         # Arrange
         # noinspection DuplicatedCode
         parent = ttk.Frame()
@@ -98,6 +163,20 @@ class TestLabelAndField:
             entry_field.widget.grid.assert_called_once_with(column=1, row=row_ix)
 
     def test_add_text_row(self, tk, ttk, monkeypatch):
+        """Test the add_text_row method of LabelAndField.
+
+        This test verifies that:
+        - The _create_label method is called with the correct parameters
+        - The text field widget is properly positioned in the grid
+        - A scrollbar is created with the correct parameters
+        - The text field widget is configured with the correct parameters
+        - The scrollbar is properly positioned in the grid
+
+        Args:
+            tk: Pytest fixture for tkinter
+            ttk: Pytest fixture for tkinter.ttk
+            monkeypatch: Pytest fixture for patching objects
+        """
         # Arrange
         # noinspection DuplicatedCode
         parent = ttk.Frame()
@@ -154,6 +233,17 @@ class TestLabelAndField:
             )
 
     def test_add_checkbox_row(self, tk, ttk, monkeypatch):
+        """Test the add_checkbox_row method of LabelAndField.
+
+        This test verifies that:
+        - The checkbox widget is configured with the correct text and width
+        - The checkbox widget is properly positioned in the grid
+
+        Args:
+            tk: Pytest fixture for tkinter
+            ttk: Pytest fixture for tkinter.ttk
+            monkeypatch: Pytest fixture for patching objects
+        """
         # Arrange
         parent = ttk.Frame()
         input_zone = common.LabelAndField(parent)
@@ -174,6 +264,22 @@ class TestLabelAndField:
             entry_field.widget.grid.assert_called_with(column=1, row=row_ix)
 
     def test_add_treeview_row(self, tk, ttk, monkeypatch):
+        """Test the add_treeview_row method of LabelAndField.
+
+        This test verifies that:
+        - The _create_label method is called with the correct parameters
+        - The treeview widget's column is configured correctly
+        - Items are properly inserted into the treeview
+        - The treeview widget is properly positioned in the grid
+        - A scrollbar is created with the correct parameters
+        - The treeview widget is configured with the correct parameters
+        - The scrollbar is properly positioned in the grid
+
+        Args:
+            tk: Pytest fixture for tkinter
+            ttk: Pytest fixture for tkinter.ttk
+            monkeypatch: Pytest fixture for patching objects
+        """
         # Arrange
         # noinspection DuplicatedCode
         parent = ttk.Frame()
@@ -250,21 +356,26 @@ class TestLabelAndField:
 
 
 def test_create_body_and_buttonbox(monkeypatch, tk, ttk):
+    """Test the create_body_and_buttonbox function.
+
+    This test verifies that:
+    - The frames are created with the correct parameters
+    - The frames are properly positioned in the grid
+    - The frames are configured correctly
+    - The function returns the correct frames
+
+    Args:
+        monkeypatch: Pytest fixture for patching objects
+        tk: Pytest fixture for tkinter
+        ttk: Pytest fixture for tkinter.ttk
+    """
     # Arrange
     frame = MagicMock(name="frame", autospec=True)
     monkeypatch.setattr(common.ttk, "Frame", frame)
-    destroy = MagicMock(name="destroy", autospec=True)
-    config = MagicMock(name="config", autospec=True)
-    monkeypatch.setattr(common, "config", config)
     name = "test frame name"
-    monkeypatch.setitem(common.config.current.escape_key_dict, name, destroy)
-    common.config.current.escape_key_dict = UserDict()
-    common.config.current.escape_key_dict[name] = None
 
     # Act
-    outer_frame, body_frame, buttonbox = common.create_body_and_buttonbox(
-        tk, name, destroy
-    )
+    outer_frame, body_frame, buttonbox = common.create_body_and_buttonbox(tk, name)
 
     # Assert
     with check:
@@ -281,11 +392,23 @@ def test_create_body_and_buttonbox(monkeypatch, tk, ttk):
                 call().grid(column=0, row=1, sticky="e"),
             ]
         )
-    check.equal(common.config.current.escape_key_dict[name], destroy)
     check.equal((outer_frame, body_frame, buttonbox), (frame(), frame(), frame()))
 
 
 def test_create_button(tk, ttk, monkeypatch):
+    """Test the create_button function.
+
+    This test verifies that:
+    - The button is created with the correct parameters
+    - The button is properly positioned in the grid
+    - The Return key is bound to invoke the button
+    - The function returns the created button
+
+    Args:
+        tk: Pytest fixture for tkinter
+        ttk: Pytest fixture for tkinter.ttk
+        monkeypatch: Pytest fixture for patching objects
+    """
     # Arrange
     grid = MagicMock(name="grid", autospec=True)
     bind = MagicMock(name="bind", autospec=True)
@@ -320,6 +443,15 @@ def test_create_button(tk, ttk, monkeypatch):
 
 
 def test_enable_button_with_true_state(monkeypatch):
+    """Test the enable_button function with state=True.
+
+    This test verifies that when enable_button is called with state=True:
+    - The button's state is set to ["!disabled"]
+    - The button's default is configured as "active"
+
+    Args:
+        monkeypatch: Pytest fixture for patching objects
+    """
     # Arrange
     # noinspection DuplicatedCode
     state = MagicMock(name="state", autospec=True)
@@ -341,6 +473,15 @@ def test_enable_button_with_true_state(monkeypatch):
 
 
 def test_enable_button_with_false_state(monkeypatch):
+    """Test the enable_button function with state=False.
+
+    This test verifies that when enable_button is called with state=False:
+    - The button's state is set to ["disabled"]
+    - The button's default is configured as "disabled"
+
+    Args:
+        monkeypatch: Pytest fixture for patching objects
+    """
     # Arrange
     # noinspection DuplicatedCode
     state = MagicMock(name="state", autospec=True)
@@ -362,6 +503,14 @@ def test_enable_button_with_false_state(monkeypatch):
 
 
 def test_invoke_button(monkeypatch):
+    """Test the invoke_button function.
+
+    This test verifies that:
+    - The button's invoke method is called
+
+    Args:
+        monkeypatch: Pytest fixture for patching objects
+    """
     # Arrange
     invoke = MagicMock(name="invoke")
     button = MagicMock(name="button")
@@ -377,6 +526,14 @@ def test_invoke_button(monkeypatch):
 
 
 def test_test_init_button_enablements(monkeypatch):
+    """Test the init_button_enablements function.
+
+    This test verifies that:
+    - The notify method of each entry field's observer is called
+
+    Args:
+        monkeypatch: Pytest fixture for patching objects
+    """
     # Arrange
     notify = MagicMock(name="observer", autospec=True)
     entry = MagicMock(name="entry", autospec=True)
@@ -393,6 +550,14 @@ def test_test_init_button_enablements(monkeypatch):
 
 # noinspection DuplicatedCode
 def test_showinfo(monkeypatch):
+    """Test the showinfo function.
+
+    This test verifies that:
+    - The messagebox.showinfo function is called with the correct parameters
+
+    Args:
+        monkeypatch: Pytest fixture for patching objects
+    """
     # Arrange
     message = "Dummy showinfo"
     detail = "Dummy detail"
@@ -420,6 +585,15 @@ def test_showinfo(monkeypatch):
 
 # noinspection DuplicatedCode
 def test_askyesno(monkeypatch):
+    """Test the askyesno function.
+
+    This test verifies that:
+    - The messagebox.askyesno function is called with the correct parameters
+    - The function returns the result from messagebox.askyesno
+
+    Args:
+        monkeypatch: Pytest fixture for patching objects
+    """
     # Arrange
     message = "Dummy askyesno"
     detail = "Dummy detail"

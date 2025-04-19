@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/18/25, 8:13 AM by stephen.
+#  Last modified 4/19/25, 11:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -21,7 +21,6 @@ from dataclasses import dataclass, field
 from typing import Tuple
 
 import config
-from gui import common
 
 import handlers
 
@@ -49,11 +48,10 @@ class MainWindow:
         self.place_menubar()
 
         # Set up handling of <Escape> and <Command-.>
-        config.current.escape_key_dict = escape_key_dict = common.EscapeKeyDict()
         # noinspection PyTypeChecker
-        self.parent.bind_all(key := "<Escape>", escape_key_dict.escape(key))
+        self.parent.bind_all("<Escape>", self.tk_shutdown)
         # noinspection PyTypeChecker
-        self.parent.bind_all(key := "<Command-.>", escape_key_dict.escape(key))
+        self.parent.bind_all("<Command-.>", self.tk_shutdown)
 
     def set_geometry(self) -> str:
         """Set window geometry from a default value or app.geometry and make sure it will
@@ -97,9 +95,9 @@ class MainWindow:
             available: screen width or height.
 
         Returns:
-            If the geometry will fit onto the screen the length and width are returned
-            unchanged. If the geometry is too large the maximum screen dimension is returned
-            with a zero offset.
+            If the geometry will fit onto the screen the length and width are
+            returned unchanged. If the geometry is too large the maximum
+            screen dimension is returned with a zero offset.
         """
         length = int(length)
         offset = int(offset)
@@ -241,6 +239,7 @@ class MainWindow:
 
 def run_tktcl():
     """Run the GUI."""
+    # todo move tk_root tp somewhere inside gui
     config.current.tk_root = tk.Tk()
     root = config.current.tk_root
     root.columnconfigure(0, weight=1)

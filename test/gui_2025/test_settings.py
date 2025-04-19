@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/15/25, 12:32 PM by stephen.
+#  Last modified 4/19/25, 1:55 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,6 +30,18 @@ class TestSettings:
     save_callback: Callable = MagicMock(name="save_callback")
 
     def test_post_init(self, monkeypatch):
+        """Test that Settings.__post_init__ correctly initializes the GUI.
+
+        This test verifies that the __post_init__ method:
+        1. Creates a Toplevel window
+        2. Sets the window title
+        3. Creates the body and buttonbox using create_body_and_buttonbox
+        4. Calls the create_fields method to create input fields
+        5. Calls the create_buttons method to create buttons
+
+        Args:
+            monkeypatch: Pytest fixture for patching dependencies
+        """
         # Arrange Toplevel
         parent = MagicMock(name="parent", autospec=True)
         monkeypatch.setattr(settings.tk, "Tk", parent)
@@ -57,8 +69,7 @@ class TestSettings:
         monkeypatch.setattr(settings.Settings, "create_buttons", create_buttons)
 
         # Act
-        # noinspection PyArgumentList
-        settings_obj = settings.Settings(
+        settings.Settings(
             parent,
             tmdb_api_key=self.tmdb_api_key,
             use_tmdb=self.use_tmdb,
@@ -74,7 +85,6 @@ class TestSettings:
             create_body_and_buttonbox.assert_called_once_with(
                 toplevel(),
                 settings.Settings.__name__.lower(),
-                settings_obj.destroy,
             )
         with check:
             create_fields.assert_called_once_with(body_frame)

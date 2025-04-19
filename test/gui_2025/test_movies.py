@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 12:59 PM by stephen.
+#  Last modified 4/19/25, 1:55 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,10 +30,24 @@ class TestMovieGUI:
     prepopulate = MovieBag()
 
     def test_post_init(self, tk, ttk, monkeypatch):
+        """Test that MovieGUI.__post_init__ correctly initializes the GUI.
+
+        This test verifies that the __post_init__ method:
+        1. Creates the body and buttonbox using create_body_and_buttonbox
+        2. Creates the TMDB frame using create_tmdb_frame
+        3. Fills the body with widgets using fill_body
+        4. Populates the fields with initial values using populate
+        5. Fills the buttonbox with buttons using fill_buttonbox
+        6. Fills the TMDB frame with widgets using fill_tmdb_frame
+        7. Initializes button enablements using init_button_enablements
+
+        Args:
+            tk: Mock for tkinter module
+            ttk: Mock for tkinter.ttk module
+            monkeypatch: Pytest fixture for patching dependencies
+        """
         # Arrange
         name = movies.MovieGUI.__name__.lower()
-        destroy = MagicMock(name="destroy", autospec=True)
-        monkeypatch.setattr(movies.MovieGUI, "destroy", destroy)
         create_body_and_buttonbox = MagicMock(
             name="create_body_and_buttonbox", autospec=True
         )
@@ -75,7 +89,7 @@ class TestMovieGUI:
 
         # Assert
         with check:
-            create_body_and_buttonbox.assert_called_once_with(tk.Tk, name, destroy)
+            create_body_and_buttonbox.assert_called_once_with(tk.Tk, name)
         with check:
             create_tmdb_frame.assert_called_once_with(outer_frame)
         with check:
