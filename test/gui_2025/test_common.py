@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/11/25, 8:12 AM by stephen.
+#  Last modified 4/19/25, 11:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -281,7 +281,8 @@ def test_create_body_and_buttonbox(monkeypatch, tk, ttk):
                 call().grid(column=0, row=1, sticky="e"),
             ]
         )
-    check.equal(common.config.current.escape_key_dict[name], destroy)
+    # todo remove zombie? code
+    # check.equal(common.config.current.escape_key_dict[name], destroy)
     check.equal((outer_frame, body_frame, buttonbox), (frame(), frame(), frame()))
 
 

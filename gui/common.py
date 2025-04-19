@@ -1,7 +1,7 @@
 """This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/18/25, 8:13 AM by stephen.
+#  Last modified 4/19/25, 11:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -179,6 +179,7 @@ class LabelAndField:
         label.grid(column=0, row=row_ix, sticky="ne", padx=5)
 
 
+# todo Delete zombie code
 # noinspection DuplicatedCode
 class EscapeKeyDict(UserDict):
     """Support for Apple's <Escape> amd <Command-.> key presses.
@@ -213,9 +214,6 @@ class EscapeKeyDict(UserDict):
     2) Registering in this class the mapping of the outer frame name and its
     destroy method.
     """
-
-    # todo Move this class to gui.sundries module.
-    #  Move globalconstants.TkParentType and TkSequence to tk_facade.
 
     internal_error_txt = "Internal Error"
     accelerator_txt = "Accelerator"
@@ -287,6 +285,7 @@ class EscapeKeyDict(UserDict):
 
             # Try to call the widget's destroy method.
             outer_frame_name = outer_frame_names[0]
+            print("\nCalling a registered destroy method from EscapeKeyDict")
             try:
                 self.data[outer_frame_name]()
             except KeyError:
@@ -342,7 +341,8 @@ def create_body_and_buttonbox(
     outer_frame.columnconfigure(0, weight=1)
     outer_frame.rowconfigure(0, weight=1)
     outer_frame.rowconfigure(1, minsize=35)
-    config.current.escape_key_dict[name] = destroy
+    # todo remove zombie? code
+    # config.current.escape_key_dict[name] = destroy
 
     body_frame = ttk.Frame(outer_frame, padding=(10, 25, 10, 0))
     body_frame.grid(column=0, row=0, sticky="n")

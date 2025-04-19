@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 9:54 AM by stephen.
+#  Last modified 4/19/25, 11:48 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,6 +24,20 @@ from gui import tags
 # noinspection PyMissingOrEmptyDocstring
 class TestTagGUI:
     def test_post_init(self, tk, ttk, monkeypatch):
+        """Test that TagGUI.__post_init__ correctly initializes the GUI.
+
+        This test verifies that the __post_init__ method:
+        1. Creates the body and buttonbox using create_body_and_buttonbox
+        2. Sets the outer_frame attribute
+        3. Calls the user_input_frame method to create input widgets
+        4. Calls the create_buttons method to create buttons
+        5. Initializes button enablements using init_button_enablements
+
+        Args:
+            tk: Mock for tkinter module
+            ttk: Mock for tkinter.ttk module
+            monkeypatch: Pytest fixture for patching dependencies
+        """
         # Arrange
         name = tags.TagGUI.__name__.lower()
         destroy = MagicMock(name="destroy", autospec=True)
