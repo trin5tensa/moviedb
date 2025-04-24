@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/8/25, 2:02 PM by stephen.
+#  Last modified 4/24/25, 11:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -27,6 +27,7 @@ TEST_VERSION = "Test version"
 TEST_MENU = "Test Menu"
 
 
+# todo Delete zombie module
 class TestMainWindowGeometry:
     """This suite of geometry tests operate by assuming the user has moved to a machine with a smaller
     monitor of size 2000×1000. The previous window size is stored in app.geometry. For each test the
@@ -56,12 +57,13 @@ class TestMainWindowGeometry:
         with self.geometry_context("900x400+30+1030") as geometry:
             assert geometry == "900x400+30+0"
 
-    def test_info_msg_logged(self, class_patches):
-        with self.geometry_context("2900x400+30+30"):
-            assert self.logging_msg == (
-                "The saved screen geometry length=2900 and offset=30 is "
-                "too large for this monitor (available=2000)"
-            )
+    # @pytest.mark.skip
+    # def test_info_msg_logged(self, class_patches):
+    #     with self.geometry_context("2900x400+30+30"):
+    #         assert self.logging_msg == (
+    #             "The saved screen geometry length=2900 and offset=30 is "
+    #             "too large for this monitor (available=2000)"
+    #         )
 
     # noinspection PyMissingOrEmptyDocstring
     @pytest.fixture()

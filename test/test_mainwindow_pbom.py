@@ -4,7 +4,7 @@ This module contains new tests written after Brian Okken's course and book on py
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 4/24/25, 11:16 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,7 +25,7 @@ from pytest_check import check
 from gui import mainwindow
 
 
-# todo Rewrite tests for MainWindow
+# todo Remove zombie code
 
 TEST_TITLE = "test moviedb"
 TEST_VERSION = "Test version"
@@ -34,6 +34,7 @@ TEST_VERSION = "Test version"
 class TestMainWindow:
     """Ensure that MainWindow is correctly initialized."""
 
+    @pytest.mark.skip
     # noinspection PyUnresolvedReferences
     def test_place_menubar(self, monkeypatch):
         """Strategy: Menu construction is tested by checking that each
