@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/25/25, 8:53 AM by stephen.
+#  Last modified 4/25/25, 9:04 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -106,6 +106,7 @@ class MainWindow:
             msg = f"{GEOMETRY_INVALID} {length=}, {offset=}." f" {available=}"
             logging.info(msg=msg)
             offset = 0
+            # todo Test branch
             if length > available:
                 length = available
         return str(length), f"{offset:+}"
