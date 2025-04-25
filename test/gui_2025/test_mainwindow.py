@@ -6,7 +6,7 @@ including setting the title, geometry, menubar, and key bindings.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/25/25, 8:53 AM by stephen.
+#  Last modified 4/25/25, 2:12 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -151,6 +151,7 @@ class TestMainWindow:
         "length_offset, available",
         [
             (("420", "42"), 100),
+            (("42", "142"), 100),
             (("42", "42"), 100),
         ],
     )
@@ -160,7 +161,8 @@ class TestMainWindow:
         # Arrange
         parent = tk.Tk()
         des_length, des_offset = length_offset
-        too_big = available < int(des_length) - int(des_offset)
+        requested = int(des_length) + int(des_offset)
+        too_big = available < requested
         msg = (
             f"{mainwindow.GEOMETRY_INVALID} length={des_length}, offset={des_offset}."
             f" available={available}"
@@ -178,7 +180,10 @@ class TestMainWindow:
             # Assert
             if too_big:
                 check.equal(caplog.messages[0], msg)
-                check.equal(result, (str(available), "+0"))
+                if int(des_length) > available:
+                    check.equal(result, (str(available), "+0"))
+                else:
+                    check.equal(result, (str(des_length), "+0"))
             else:
                 check.equal(result, (des_length, f"+{des_offset}"))
 
