@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 11:48 AM by stephen.
+#  Last modified 4/25/25, 2:12 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,13 +16,14 @@
 import logging
 import re
 import tkinter as tk
-from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from functools import partial
 from typing import Tuple
 
 import config
-
 import handlers
+
+GEOMETRY_INVALID = f"The saved screen geometry is too large for this monitor."
 
 
 @dataclass
@@ -31,31 +32,29 @@ class MainWindow:
 
     parent: tk.Tk
 
-    # Expose local variables for test access
-    menubar: tk.Menu = field(default=None, init=False, repr=False)
-    moviedb_menu: tk.Menu = field(default=None, init=False, repr=False)
-    edit_menu: tk.Menu = field(default=None, init=False, repr=False)
-    movie_menu: tk.Menu = field(default=None, init=False, repr=False)
-    window_menu: tk.Menu = field(default=None, init=False, repr=False)
-    cut_command: Callable = field(default=None, init=False, repr=False)
-    copy_command: Callable = field(default=None, init=False, repr=False)
-    paste_command: Callable = field(default=None, init=False, repr=False)
-    clear_command: Callable = field(default=None, init=False, repr=False)
-
     def __post_init__(self):
         self.parent.title(config.persistent.program_name)
         self.parent.geometry(self.set_geometry())
         self.place_menubar()
 
-        # Set up handling of <Escape> and <Command-.>
         # noinspection PyTypeChecker
         self.parent.bind_all("<Escape>", self.tk_shutdown)
         # noinspection PyTypeChecker
         self.parent.bind_all("<Command-.>", self.tk_shutdown)
 
     def set_geometry(self) -> str:
-        """Set window geometry from a default value or app.geometry and make sure it will
-        fit on the screen.
+        """Sets window geometry.
+
+        The geometry is set to the window position saved from the previous
+        session or, if the saved position is not available, to the defaults
+        - width 900
+        - height 400
+        - horizontal offset 30
+        - vertical offset 30
+
+        If necessary, the geometry will be adjusted to fit on the available
+        output device. The authority for teh available output device is
+        tkinter's
 
         Returns:
             tkinter geometry string.
@@ -104,10 +103,7 @@ class MainWindow:
         req_length = length + abs(offset)
         available = int(available)
         if req_length > available:
-            msg = (
-                f"The saved screen geometry {length=} and {offset=} "
-                f"is too large for this monitor ({available=})"
-            )
+            msg = f"{GEOMETRY_INVALID} {length=}, {offset=}." f" {available=}"
             logging.info(msg=msg)
             offset = 0
             if length > available:
@@ -141,88 +137,113 @@ class MainWindow:
         intercepted by the command tk::mac::Quit. The close box is
         intercepted by the protocol 'WM_DELETE_WINDOW'.
         """
+        # Menubar
         self.parent.option_add("*tearOff", False)
         # Intercepts the window close button (red 'x')
         self.parent.protocol("WM_DELETE_WINDOW", self.tk_shutdown)
-        # Intercepts the <Command-Q> key press, the application menu item 'Quit',
-        # and the dock application popup 'Quit' item.
+        # # Intercepts the <Command-Q> key press, the application menu item 'Quit',
+        # # and the dock application popup 'Quit' item.
         self.parent.createcommand("tk::mac::Quit", self.tk_shutdown)
         self.parent.createcommand(
             "tk::mac::ShowPreferences", handlers.sundries.settings_dialog
         )
-        self.menubar = tk.Menu(self.parent)
+        menubar = tk.Menu(self.parent, name="menubar")
 
-        self.moviedb_menu = tk.Menu(self.menubar)
-        self.menubar.add_cascade(menu=self.moviedb_menu, label="Moviedb")
-        self.moviedb_menu.add_command(
+        # moviedb menu
+        moviedb_menu = tk.Menu(menubar, name="moviedb")
+        menubar.add_cascade(menu=moviedb_menu, label="Moviedb")
+        moviedb_menu.add_command(
             label="About " + config.persistent.program_name + "…",
             command=handlers.sundries.about_dialog,
         )
-        self.moviedb_menu.add_separator()
-        self.moviedb_menu.add_command(
+        moviedb_menu.add_separator()
+        moviedb_menu.add_command(
             label="Settings for Moviedb…",
             command=handlers.sundries.settings_dialog,
         )
-        self.moviedb_menu.add_separator()
-        self.moviedb_menu.add_command(label="Quit Moviedb", command=self.tk_shutdown)
+        moviedb_menu.add_separator()
+        moviedb_menu.add_command(label="Quit Moviedb", command=self.tk_shutdown)
 
-        self.edit_menu = tk.Menu(self.menubar)
-        self.menubar.add_cascade(menu=self.edit_menu, label="Edit")
-        self.cut_command = lambda: self.parent.focus_get().event_generate(
-            "<<Cut>>"
-        )  # pragma nocover
-        self.edit_menu.add_command(
-            label="Cut", command=self.cut_command, accelerator="Command+X"
-        )  # pragma nocover
-        self.copy_command = lambda: self.parent.focus_get().event_generate("<<Copy>>")
-        self.edit_menu.add_command(
-            label="Copy", command=self.copy_command, accelerator="Command+C"
-        )  # pragma nocover
-        self.paste_command = lambda: self.parent.focus_get().event_generate("<<Paste>>")
-        self.edit_menu.add_command(
-            label="Paste", command=self.paste_command, accelerator="Command+V"
-        )  # pragma nocover
-        self.clear_command = lambda: self.parent.focus_get().event_generate(
-            "<<Clear>>",
-        )  # pragma nocover
-        self.edit_menu.add_command(label="Clear", command=self.clear_command)
+        # Edit menu
+        edit_menu = tk.Menu(menubar, name="edit")
+        menubar.add_cascade(menu=edit_menu, label="Edit")
+        edit_menu.add_command(
+            label="Cut",
+            command=(partial(self.event_generate, "<<Cut>>")),
+            accelerator="Command+X",
+        )
+        edit_menu.add_command(
+            label="Copy",
+            command=(partial(self.event_generate, "<<Copy>>")),
+            accelerator="Command+C",
+        )
+        edit_menu.add_command(
+            label="Paste",
+            command=(partial(self.event_generate, "<<Paste>>")),
+            accelerator="Command+V",
+        )
+        edit_menu.add_command(
+            label="Select All",
+            command=(partial(self.event_generate, "<<SelectAll>>")),
+            accelerator="Command+A",
+        )
 
-        self.movie_menu = tk.Menu(self.menubar)
-        self.menubar.add_cascade(menu=self.movie_menu, label="Movie")
-        self.movie_menu.add_command(
+        # Movie menu
+        movie_menu = tk.Menu(menubar, name="movie")
+        menubar.add_cascade(menu=movie_menu, label="Movie")
+        movie_menu.add_command(
             label="Add Movie…",
             command=handlers.database.gui_add_movie,
         )
-        self.movie_menu.add_command(
+        movie_menu.add_command(
             label="Edit Movie…",
             command=handlers.database.gui_search_movie,
         )
-        self.movie_menu.add_command(
+        movie_menu.add_command(
             label="View Movie…",
             command=handlers.database.gui_search_movie,
         )
-        self.movie_menu.add_command(
+        movie_menu.add_command(
             label="Delete Movie…",
             command=handlers.database.gui_search_movie,
         )
-        self.movie_menu.add_separator()
-        self.movie_menu.add_command(
+        movie_menu.add_separator()
+        movie_menu.add_command(
             label="Add Tag…",
             command=handlers.database.gui_add_tag,
         )
-        self.movie_menu.add_command(
+        movie_menu.add_command(
             label="Edit Tag…",
             command=handlers.database.gui_search_tag,
         )
-        self.movie_menu.add_command(
+        movie_menu.add_command(
             label="Delete Tag…",
             command=handlers.database.gui_search_tag,
         )
 
-        self.window_menu = tk.Menu(self.menubar, name="window")
-        self.menubar.add_cascade(menu=self.window_menu, label="Window")
+        # window_menu = tk.Menu(menubar)
+        window_menu = tk.Menu(menubar, name="window")
+        menubar.add_cascade(menu=window_menu, label="Window")
 
-        self.parent.config(menu=self.menubar)
+        self.parent.config(menu=menubar)
+
+    def event_generate(
+        self,
+        virtual_event: str,
+    ):
+        """Executes the specified virtual event.
+
+        On what?
+        The virtual event will be executed for the widget which has focus.
+        For example, if the widget is an Entry field which contains text and
+        the virtual event is <<SelectAll>> then the range of selected contents
+        will be set to all of the text.
+
+        Args:
+            virtual_event: Used within this class for the Tk/Tcl events <<Cut>>,
+            <<Copy>>, <<Paste>>, and <<SelectAll>>
+        """
+        self.parent.focus_get().event_generate(virtual_event)
 
     # noinspection PyUnusedLocal
     def tk_shutdown(self, *args):
@@ -231,7 +252,7 @@ class MainWindow:
         Args:
             *args: Not used. Required for compatibility with caller
         """
-        # Save geometry in config.current for future permanent storage.
+        # Save geometry in config.persistent for future permanent storage.
         config.persistent.geometry = self.parent.winfo_geometry()
         # Destroy all widgets and end mainloop.
         self.parent.destroy()
@@ -239,9 +260,8 @@ class MainWindow:
 
 def run_tktcl():
     """Run the GUI."""
-    # todo move tk_root tp somewhere inside gui
-    config.current.tk_root = tk.Tk()
-    root = config.current.tk_root
+    # todo move tk_root to somewhere inside gui
+    root = config.current.tk_root = tk.Tk()
     root.columnconfigure(0, weight=1)
     root.rowconfigure(0, weight=1)
     MainWindow(root)
