@@ -6,7 +6,7 @@ including setting the title, geometry, menubar, and key bindings.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/24/25, 11:16 AM by stephen.
+#  Last modified 4/25/25, 8:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -183,7 +183,6 @@ class TestMainWindow:
                 check.equal(result, (des_length, f"+{des_offset}"))
 
     def test_place_menubar(self, monkeypatch):
-        print("\nTest")
         # Arrange
         tk = MagicMock(name="tk", autospec=True)
         monkeypatch.setattr(mainwindow, "tk", tk)
@@ -224,7 +223,6 @@ class TestMainWindow:
             obj.place_menubar()
 
             # Assert parent, menubar and other general calls
-            print("\nTest after action")
             check.equal(
                 parent.mock_calls,
                 [
@@ -350,8 +348,70 @@ class TestMainWindow:
                 ],
             )
 
-        # Cleanup
-        # assert False
+    def test_event_generate(self, monkeypatch):
+        # Arrange
+        tk = MagicMock(name="tk", autospec=True)
+        monkeypatch.setattr(mainwindow, "tk", tk)
+        parent = tk.Tk()
+        virtual_event = "test virtual event"
+
+        # Act
+        with mainwindow_obj(parent, monkeypatch) as obj:
+            obj.event_generate(virtual_event)
+
+            # Assert
+            with check:
+                parent.focus_get.assert_called_once_with()
+            with check:
+                parent.focus_get().event_generate.assert_called_once_with(virtual_event)
+
+    def test_tk_shutdown(self, monkeypatch):
+        # Arrange
+        tk = MagicMock(name="tk", autospec=True)
+        monkeypatch.setattr(mainwindow, "tk", tk)
+        parent = tk.Tk()
+        geometry = "42x42+42+42"
+        parent.winfo_geometry.return_value = geometry
+
+        # Act
+        with mainwindow_obj(parent, monkeypatch) as obj:
+            obj.tk_shutdown()
+
+            # Assert
+            check.equal(mainwindow.config.persistent.geometry, geometry)
+            with check:
+                parent.destroy.assert_called_once_with()
+
+
+def test_run_tktcl(monkeypatch):
+    # Arrange
+    tk = MagicMock(name="tk", autospec=True)
+    monkeypatch.setattr(mainwindow, "tk", tk)
+    root = tk.Tk()
+    hold_config_current = mainwindow.config.current
+    mainwindow.config.current = mainwindow.config.CurrentConfig()
+    main_window = MagicMock(name="main_window", autospec=True)
+    monkeypatch.setattr(mainwindow, "MainWindow", main_window)
+
+    # Act
+    mainwindow.run_tktcl()
+
+    # Assert
+    check.equal(mainwindow.config.current.tk_root, root)
+    check.equal(
+        root.mock_calls,
+        [
+            call.columnconfigure(0, weight=1),
+            call.rowconfigure(0, weight=1),
+            call.mainloop(),
+            call.__eq__(root),
+        ],
+    )
+    with check:
+        main_window.assert_called_once_with(root)
+
+    # Cleanup
+    mainwindow.config.current = hold_config_current
 
 
 @contextmanager

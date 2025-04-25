@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/24/25, 11:16 AM by stephen.
+#  Last modified 4/25/25, 8:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -138,7 +138,6 @@ class MainWindow:
         intercepted by the protocol 'WM_DELETE_WINDOW'.
         """
         # Menubar
-        print("\nCode")
         self.parent.option_add("*tearOff", False)
         # Intercepts the window close button (red 'x')
         self.parent.protocol("WM_DELETE_WINDOW", self.tk_shutdown)
@@ -243,7 +242,8 @@ class MainWindow:
         will be set to all of the text.
 
         Args:
-            virtual_event: Used for st
+            virtual_event: Used within this class for the Tk/Tcl events <<Cut>>,
+            <<Copy>>, <<Paste>>, and <<SelectAll>>
         """
         self.parent.focus_get().event_generate(virtual_event)
 
@@ -254,7 +254,7 @@ class MainWindow:
         Args:
             *args: Not used. Required for compatibility with caller
         """
-        # Save geometry in config.current for future permanent storage.
+        # Save geometry in config.persistent for future permanent storage.
         config.persistent.geometry = self.parent.winfo_geometry()
         # Destroy all widgets and end mainloop.
         self.parent.destroy()
@@ -262,9 +262,8 @@ class MainWindow:
 
 def run_tktcl():
     """Run the GUI."""
-    # todo move tk_root tp somewhere inside gui
-    config.current.tk_root = tk.Tk()
-    root = config.current.tk_root
+    # todo move tk_root to somewhere inside gui
+    root = config.current.tk_root = tk.Tk()
     root.columnconfigure(0, weight=1)
     root.rowconfigure(0, weight=1)
     MainWindow(root)
