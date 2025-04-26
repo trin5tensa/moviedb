@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 4/26/25, 11:47 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -26,11 +26,12 @@ class TestMovieGUI:
     """Tests for the MovieGUI class."""
 
     tmdb_callback = MagicMock(name="tmdb_callback", autospec=True)
+    database_callback = MagicMock(name="database_callback", autospec=True)
     all_tags = set()
     prepopulate = MovieBag()
 
     def test_post_init(self, tk, ttk, monkeypatch):
-        """Test that MovieGUI.__post_init__ correctly initializes the GUI.
+        """Test MovieGUI.__post_init__ correctly initializes the GUI.
 
         This test verifies that the __post_init__ method:
         1. Creates the body and buttonbox using create_body_and_buttonbox
@@ -82,6 +83,7 @@ class TestMovieGUI:
         # Act
         movies_gui = movies.MovieGUI(
             tk.Tk,
+            database_callback=self.database_callback,
             tmdb_callback=tmdb_callback,
             all_tags=all_tags,
             prepopulate=self.prepopulate,
@@ -364,6 +366,24 @@ class TestMovieGUI:
         with check.raises(NotImplementedError):
             movie_gui_obj.create_buttons(buttonbox, column_counter)
 
+    def test_commit(self, movie_gui_obj, monkeypatch):
+        # Arrange
+        after = MagicMock(name="after", autospec=True)
+        monkeypatch.setattr(movie_gui_obj.parent, "after", after)
+        destroy = MagicMock(name="destroy", autospec=True)
+        monkeypatch.setattr(movie_gui_obj, "destroy", destroy)
+
+        # Act
+        movie_gui_obj.commit()
+
+        # Assert
+        with check:
+            after.assert_called_once_with(
+                0, self.database_callback, movie_gui_obj.as_movie_bag()
+            )
+        with check:
+            destroy.assert_called_once_with()
+
     def test_destroy(self, tk, ttk, movie_gui_obj, monkeypatch):
         # Arrange
         movie_gui_obj.tmdb_consumer_poll = 42
@@ -602,6 +622,7 @@ class TestMovieGUI:
         """Creates a MovieGUI object without running the __post_init__ method."""
         return movies.MovieGUI(
             tk.Tk(),
+            database_callback=self.database_callback,
             tmdb_callback=self.tmdb_callback,
             all_tags=self.all_tags,
             prepopulate=self.prepopulate,
@@ -612,7 +633,7 @@ class TestMovieGUI:
 class TestAddMovieGUI:
     """Tests for the AddMovieGUI class."""
 
-    add_movie_callback = MagicMock(name="add_movie_callback", autospec=True)
+    add_movie_callback = MagicMock(name="database_callback", autospec=True)
     tmdb_callback = MagicMock(name="tmdb_callback", autospec=True)
     all_tags = set()
     prepopulate = MovieBag()
@@ -695,39 +716,6 @@ class TestAddMovieGUI:
             state=entry.title.has_data() and entry.year.has_data(),
         )
 
-    def test_commit(self, add_movie_obj, monkeypatch, tk):
-        # Arrange clear_current_value
-        entry = MagicMock(name="entry", autospec=True)
-        monkeypatch.setattr(movies.tk_facade, "Entry", entry)
-        add_movie_obj.entry_fields["title"] = entry
-
-        # Arrange as_movie_bag
-        as_movie_bag = MagicMock(name="as_movie_bag", autospec=True)
-        as_movie_bag.return_value = movies.MovieBag(title=entry.current_value)
-        monkeypatch.setattr(as_movie_bag, "as_movie_bag", as_movie_bag)
-
-        # Arrange tview
-        tview_content = ["Old title", "Old year", "Old directors"]
-        tview = MagicMock(name="tview", autospec=True)
-        tview.get_children.return_value = tview_content
-        monkeypatch.setattr(movies.ttk, "Treeview", tview)
-        add_movie_obj.tmdb_treeview = tview
-
-        # Act
-        add_movie_obj.commit()
-
-        # Assert
-        with check:
-            self.add_movie_callback.assert_called_once_with(
-                add_movie_obj.as_movie_bag()
-            )
-        with check:
-            entry.clear_current_value.assert_called_once_with()
-        with check:
-            tview.get_children.assert_called_once_with()
-        with check:
-            tview.delete.assert_called_once_with(*tview_content)
-
     @pytest.fixture(scope="function")
     def add_movie_obj(self, tk, moviegui_post_init, monkeypatch):
         """Creates an AddMovieGUI object without running the __post_init__
@@ -735,7 +723,7 @@ class TestAddMovieGUI:
         """
         return movies.AddMovieGUI(
             tk.Tk(),
-            add_movie_callback=self.add_movie_callback,
+            database_callback=self.add_movie_callback,
             tmdb_callback=self.tmdb_callback,
             all_tags=self.all_tags,
             prepopulate=self.prepopulate,
@@ -746,7 +734,7 @@ class TestAddMovieGUI:
 class TestEditMovieGUI:
     """Tests for the AddMovieGUI class."""
 
-    edit_movie_callback = MagicMock(name="edit_movie_callback", autospec=True)
+    edit_movie_callback = MagicMock(name="database_callback", autospec=True)
     delete_movie_callback = MagicMock(name="delete_movie_callback", autospec=True)
     tmdb_callback = MagicMock(name="tmdb_callback", autospec=True)
     all_tags = set()
@@ -904,7 +892,7 @@ class TestEditMovieGUI:
         """Creates a MovieGUI object without running the __post_init__ method."""
         return movies.EditMovieGUI(
             tk.Tk(),
-            edit_movie_callback=self.edit_movie_callback,
+            database_callback=self.edit_movie_callback,
             delete_movie_callback=self.delete_movie_callback,
             tmdb_callback=self.tmdb_callback,
             all_tags=self.all_tags,
@@ -916,7 +904,7 @@ class TestEditMovieGUI:
 class TestSearchMovieGUI:
     """Tests for the SearchMovieGUI class."""
 
-    match_movie_callback = MagicMock(name="match_movie_callback", autospec=True)
+    match_movie_callback = MagicMock(name="database_callback", autospec=True)
     tmdb_callback = MagicMock(name="tmdb_callback", autospec=True)
     all_tags = set()
     prepopulate = MovieBag()
@@ -954,7 +942,7 @@ class TestSearchMovieGUI:
                 buttonbox,
                 movies.SEARCH_TEXT,
                 column=42,
-                command=search_movie_obj.search,
+                command=search_movie_obj.commit,
                 default="normal",
             )
         with check:
@@ -998,7 +986,7 @@ class TestSearchMovieGUI:
             state=state,
         )
 
-    def test_search(self, search_movie_obj, monkeypatch, tk):
+    def test_commit(self, search_movie_obj, monkeypatch, tk):
         # Arrange
         after = MagicMock(name="after", autospec=True)
         monkeypatch.setattr(search_movie_obj.parent, "after", after)
@@ -1006,7 +994,7 @@ class TestSearchMovieGUI:
         monkeypatch.setattr(search_movie_obj, "destroy", destroy)
 
         # Act
-        search_movie_obj.search()
+        search_movie_obj.commit()
 
         # Assert
         with check:
@@ -1023,7 +1011,7 @@ class TestSearchMovieGUI:
         """
         return movies.SearchMovieGUI(
             tk.Tk(),
-            match_movie_callback=self.match_movie_callback,
+            database_callback=self.match_movie_callback,
             tmdb_callback=self.tmdb_callback,
             all_tags=self.all_tags,
             prepopulate=self.prepopulate,

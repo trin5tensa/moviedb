@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 4/26/25, 11:47 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -42,6 +42,7 @@ class MovieGUI:
     """This base class for movies creates a standard movies input form."""
 
     parent: tk.Tk
+    database_callback: Callable[[MovieBag], None]
 
     _: KW_ONLY
     tmdb_callback: Callable[[str, queue.LifoQueue], None]
@@ -219,6 +220,11 @@ class MovieGUI:
         """
         raise NotImplementedError
 
+    def commit(self):
+        """Calls the callback with movie data and destroys this widget."""
+        self.parent.after(0, self.database_callback, self.as_movie_bag())
+        self.destroy()
+
     # noinspection PyUnusedLocal
     def destroy(self, *args):
         """
@@ -373,8 +379,6 @@ class MovieGUI:
 class AddMovieGUI(MovieGUI):
     """Create and manage a GUI form for entering a new movie."""
 
-    add_movie_callback: Callable[[MovieBag], None]
-
     def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         """Adds a commit button and registers its enabler function with
         the observers of the title and year fields.
@@ -435,26 +439,11 @@ class AddMovieGUI(MovieGUI):
             state=title.has_data() and year.has_data(),
         )
 
-    def commit(self):
-        """Commits a new movie to the database.
-
-        The form is cleared of entries so the user can enter and commit
-        another movie.
-        """
-        movie_bag = self.as_movie_bag()
-        self.add_movie_callback(movie_bag)
-
-        for v in self.entry_fields.values():
-            v.clear_current_value()
-        tview_items = self.tmdb_treeview.get_children()
-        self.tmdb_treeview.delete(*tview_items)
-
 
 @dataclass
 class EditMovieGUI(MovieGUI):
     """Create and manage a GUI form for viewing, editing, or deleting a movie."""
 
-    edit_movie_callback: Callable[[MovieBag], None]
     delete_movie_callback: Callable
 
     def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
@@ -525,17 +514,10 @@ class EditMovieGUI(MovieGUI):
             self.parent.after(0, self.delete_movie_callback)
             self.destroy()
 
-    def commit(self):
-        """Commit an edited movie to the database."""
-        self.parent.after(0, self.edit_movie_callback, self.as_movie_bag())
-        self.destroy()
-
 
 @dataclass
 class SearchMovieGUI(MovieGUI):
     """Create and manage a GUI form to search movies in the database."""
-
-    match_movie_callback: Callable[[MovieBag], None]
 
     def create_buttons(self, buttonbox: ttk.Frame, column_num: Iterator):
         """Adds a search button and registers its enabler function with
@@ -549,7 +531,7 @@ class SearchMovieGUI(MovieGUI):
             buttonbox,
             SEARCH_TEXT,
             column=next(column_num),
-            command=self.search,
+            command=self.commit,
             default="normal",
         )
         for widget in self.entry_fields.values():
@@ -576,8 +558,3 @@ class SearchMovieGUI(MovieGUI):
             [entry_field.changed() for entry_field in self.entry_fields.values()]
         )
         common.enable_button(search_button, state=changes)
-
-    def search(self):
-        """Search for matching movies."""
-        self.parent.after(0, self.match_movie_callback, self.as_movie_bag())
-        self.destroy()
