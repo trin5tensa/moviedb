@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/26/25, 11:47 AM by stephen.
+#  Last modified 4/26/25, 1:26 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -170,7 +170,7 @@ class TestMovieGUI:
         with check:
             tk_facade_entry().widget.focus_set.assert_called_once_with()
 
-    def test_populate(self, movie_gui_obj, monkeypatch):
+    def test_populate(self, tk, movie_gui_obj, monkeypatch):
         # Arrange
         for field_name in [
             movies.TITLE,
@@ -192,6 +192,12 @@ class TestMovieGUI:
             "tags": {"Tag Y", "Tag X"},
         }
         movie_gui_obj.prepopulate = movie_bag
+        icursor = MagicMock(name="icursor", autospec=True)
+        monkeypatch.setattr(
+            movie_gui_obj.entry_fields[movies.TITLE].widget, "icursor", icursor
+        )
+        tk_end = MagicMock(name="tk_end", autospec=True)
+        monkeypatch.setattr(movies.tk, "END", tk_end)
 
         # Act
         movie_gui_obj.populate()
@@ -201,6 +207,8 @@ class TestMovieGUI:
             movie_gui_obj.entry_fields[movies.TITLE].original_value,
             "Populate Title",
         )
+        with check:
+            icursor.assert_called_once_with(tk_end)
         check.equal(
             movie_gui_obj.entry_fields[movies.YEAR].original_value,
             "4042",

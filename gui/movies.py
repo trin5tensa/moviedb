@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/26/25, 11:47 AM by stephen.
+#  Last modified 4/26/25, 1:26 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -142,6 +142,7 @@ class MovieGUI:
     def populate(self):
         """Initialises field values."""
         self.entry_fields[TITLE].original_value = self.prepopulate.get("title", "")
+        self.entry_fields[TITLE].widget.icursor(tk.END)
         if year := self.prepopulate.get("year"):
             self.entry_fields[YEAR].original_value = str(year)
         else:
