@@ -1,7 +1,7 @@
 """Menu handlers for movies."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 12:59 PM by stephen.
+#  Last modified 4/26/25, 11:47 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -44,7 +44,7 @@ def test_gui_add_movie_without_prepopulate(monkeypatch, config_current, test_tag
         tmdb_callback=handlers.sundries._tmdb_io_handler,
         all_tags=test_tags,
         prepopulate=movie_bag(),
-        add_movie_callback=handlers.database.db_add_movie,
+        database_callback=handlers.database.db_add_movie,
     )
 
 
@@ -67,18 +67,26 @@ def test_gui_add_movie_with_prepopulate(monkeypatch, config_current, test_tags):
         tmdb_callback=handlers.sundries._tmdb_io_handler,
         all_tags=test_tags,
         prepopulate=movie_bag,
-        add_movie_callback=handlers.database.db_add_movie,
+        database_callback=handlers.database.db_add_movie,
     )
 
 
 def test_db_add_movie(monkeypatch):
-    add_movie = MagicMock(name="add_movie")
-    monkeypatch.setattr(handlers.database.tables, "add_movie", add_movie)
+    # Arrange
     movie_bag = MovieBag(title="Add movie test", year=MovieInteger("4242"))
+    tables_add_movie = MagicMock(name="tables_add_movie", autospec=True)
+    monkeypatch.setattr(handlers.database.tables, "add_movie", tables_add_movie)
+    gui_add_movie = MagicMock(name="gui_add_movie", autospec=True)
+    monkeypatch.setattr(handlers.database, "gui_add_movie", gui_add_movie)
 
+    # Act
     handlers.database.db_add_movie(movie_bag)
 
-    add_movie.assert_called_once_with(movie_bag=movie_bag)
+    # Assert
+    with check:
+        tables_add_movie.assert_called_once_with(movie_bag=movie_bag)
+    with check:
+        gui_add_movie.assert_called_once_with()
 
 
 # noinspection PyPep8Naming,DuplicatedCode
@@ -111,7 +119,7 @@ def test_db_add_movie_handles_NoResultFound_for_missing_tag(
 
 # noinspection DuplicatedCode,PyPep8Naming
 def test_db_add_movie_handles_IntegrityError_for_existing_movie(monkeypatch):
-    """Attempts to add a movie with a key that is already present in the database."""
+    """Attempts to add a movie with a key already present in the database."""
     movie_bag = MovieBag(title="Add movie test", year=MovieInteger("4242"))
     db_add_movie = MagicMock(name="mock_add_movie")
     db_add_movie.side_effect = handlers.database.tables.IntegrityError(
@@ -138,7 +146,7 @@ def test_db_add_movie_handles_IntegrityError_for_existing_movie(monkeypatch):
 
 # noinspection DuplicatedCode,PyPep8Naming
 def test_db_add_movie_handles_IntegrityError_for_invalid_year(monkeypatch):
-    """Attempts to add a movie with a key that is already present in the database."""
+    """Attempts to add a movie with a key already present in the database."""
     movie_bag = MovieBag(title="Add movie test", year=MovieInteger("4242"))
     db_add_movie = MagicMock(name="mock_add_movie")
     db_add_movie.side_effect = handlers.database.tables.IntegrityError(
@@ -198,7 +206,7 @@ def test_gui_search_movie_with_prepopulate(
     with check:
         search_movie.assert_called_once_with(
             handlers.database.config.current.tk_root,
-            match_movie_callback=handlers.database.db_match_movies,
+            database_callback=handlers.database.db_match_movies,
             tmdb_callback=handlers.database._tmdb_io_handler,
             all_tags=test_tags,
             prepopulate=prepopulate,
@@ -236,7 +244,7 @@ def test_gui_search_movie_without_prepopulate(
     with check:
         search_movie.assert_called_once_with(
             handlers.database.config.current.tk_root,
-            match_movie_callback=handlers.database.db_match_movies,
+            database_callback=handlers.database.db_match_movies,
             tmdb_callback=handlers.database._tmdb_io_handler,
             all_tags=test_tags,
             prepopulate={},
@@ -744,7 +752,7 @@ def test_gui_edit_movie(monkeypatch, config_current, test_tags):
             tmdb_callback=handlers.sundries._tmdb_io_handler,
             all_tags=test_tags,
             prepopulate=old_movie,
-            edit_movie_callback=partial(),
+            database_callback=partial(),
             delete_movie_callback=partial(),
         )
     check.equal(

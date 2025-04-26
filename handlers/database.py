@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 12:59 PM by stephen.
+#  Last modified 4/26/25, 11:47 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -58,7 +58,7 @@ def gui_add_movie(*, prepopulate: MovieBag = None):
         tmdb_callback=_tmdb_io_handler,
         all_tags=all_tags,
         prepopulate=prepopulate,
-        add_movie_callback=db_add_movie,
+        database_callback=db_add_movie,
     )
 
 
@@ -78,7 +78,7 @@ def gui_search_movie(*, prepopulate: MovieBag = None):
         prepopulate = MovieBag()
     gui.movies.SearchMovieGUI(
         config.current.tk_root,
-        match_movie_callback=db_match_movies,
+        database_callback=db_match_movies,
         tmdb_callback=_tmdb_io_handler,
         all_tags=all_tags,
         prepopulate=prepopulate,
@@ -115,7 +115,7 @@ def gui_edit_movie(old_movie: MovieBag, *, prepopulate: MovieBag = None):
         tmdb_callback=_tmdb_io_handler,
         all_tags=all_tags,
         prepopulate=prepopulate,
-        edit_movie_callback=partial(db_edit_movie, old_movie),
+        database_callback=partial(db_edit_movie, old_movie),
         delete_movie_callback=partial(db_delete_movie, old_movie),
     )
 
@@ -144,6 +144,9 @@ def db_add_movie(movie_bag: MovieBag):
         else:  # pragma nocover
             raise
 
+    else:
+        gui_add_movie()
+
 
 def db_match_movies(criteria: MovieBag):
     """Selects movies from the database which match user-entered
@@ -166,12 +169,12 @@ def db_match_movies(criteria: MovieBag):
         k: v for k, v in criteria.items() if v != "" and v != ()
     }  # pragma nocover
 
-    movies_found = tables.match_movies(match=criteria)
+    movies_found = tables.match_movies(match=MovieBag(**criteria))
     match len(movies_found):
         case 0:
             # Informs user and represents the search window.
             gui.common.showinfo(tables.MOVIE_NOT_FOUND)
-            gui_search_movie(prepopulate=criteria)
+            gui_search_movie(prepopulate=MovieBag(**criteria))
 
         case 1:
             # Presents an Edit/View/Delete window to user
