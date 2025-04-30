@@ -6,7 +6,7 @@ including setting the title, geometry, menubar, and key bindings.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/25/25, 2:12 PM by stephen.
+#  Last modified 4/30/25, 10:33 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -81,111 +81,24 @@ class TestMainWindow:
     @pytest.mark.parametrize(
         "saved, cfg_geometry",
         [
-            (None, "900x400+30+30"),
+            (None, mainwindow.DEFAULT_GEOMETRY),
             ("42x42+42+42", "42x42+42+42"),
         ],
     )
     def test_set_geometry(self, saved, cfg_geometry, tk, monkeypatch):
-        # Arrange parent
+        # Arrange 1/2
         parent = tk.Tk()
-
-        # Arrange re.search
-        regex = (
-            "(?P<width>[0-9]+)x"
-            "(?P<height>[0-9]+)"
-            "(?P<horizontal_offset>[+-]?[0-9]+)"
-            "(?P<vertical_offset>[+-]?[0-9]+)"
-        )
-        regex = mainwindow.re.compile(regex)
-        re_search = MagicMock(name="re_search", autospec=True)
-        re_geometry = re_search.return_value = MagicMock(name="re_geometry")
-        monkeypatch.setattr(mainwindow.re, "search", re_search)
-
-        # Arrange validate_desired_geometry
-        validate = MagicMock(name="validate", autospec=True)
-        validate.side_effect = [
-            ["width", "horizontal_offset"],
-            ["height", "vertical_offset"],
-        ]
-        monkeypatch.setattr(
-            mainwindow.MainWindow, "validate_desired_geometry", validate
-        )
 
         # Act
         with mainwindow_obj(parent, monkeypatch) as obj:
+            # Arrange 2/2
             mainwindow.config.persistent.geometry = saved
+
+            # Act
             geometry = obj.set_geometry()
 
             # Assert
-            with check:
-                re_search.assert_called_once_with(regex, cfg_geometry)
-                re_geometry.assert_has_calls(
-                    [
-                        call.group("width"),
-                        call.group("horizontal_offset"),
-                        call.group("height"),
-                        call.group("vertical_offset"),
-                    ]
-                )
-            check.equal(
-                validate.call_args_list,
-                [
-                    call(
-                        re_geometry.group(),
-                        re_geometry.group(),
-                        parent.winfo_screenwidth(),
-                    ),
-                    call(
-                        re_geometry.group(),
-                        re_geometry.group(),
-                        parent.winfo_screenheight(),
-                    ),
-                ],
-            )
-            check.equal(
-                geometry,
-                "width" + "x" + "height" + "horizontal_offset" + "vertical_offset",
-            )
-
-    @pytest.mark.parametrize(
-        "length_offset, available",
-        [
-            (("420", "42"), 100),
-            (("42", "142"), 100),
-            (("42", "42"), 100),
-        ],
-    )
-    def test_validate_desired_geometry(
-        self, length_offset, available, tk, monkeypatch, caplog
-    ):
-        # Arrange
-        parent = tk.Tk()
-        des_length, des_offset = length_offset
-        requested = int(des_length) + int(des_offset)
-        too_big = available < requested
-        msg = (
-            f"{mainwindow.GEOMETRY_INVALID} length={des_length}, offset={des_offset}."
-            f" available={available}"
-        )
-        caplog.set_level("INFO")
-
-        with mainwindow_obj(parent, monkeypatch) as obj:
-            # Act
-            result = obj.validate_desired_geometry(
-                des_length,
-                des_offset,
-                available,
-            )
-
-            # Assert
-            if too_big:
-                check.equal(caplog.messages[0], msg)
-                if int(des_length) > available:
-                    check.equal(result, (str(available), "+0"))
-                else:
-                    check.equal(result, (str(des_length), "+0"))
-            else:
-                check.equal(result, (des_length, f"+{des_offset}"))
+            check.equal(geometry, cfg_geometry)
 
     def test_place_menubar(self, monkeypatch):
         # Arrange

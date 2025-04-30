@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/25/25, 2:12 PM by stephen.
+#  Last modified 4/30/25, 10:33 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,17 +13,16 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import logging
-import re
 import tkinter as tk
 from dataclasses import dataclass
 from functools import partial
-from typing import Tuple
 
 import config
 import handlers
 
+
 GEOMETRY_INVALID = f"The saved screen geometry is too large for this monitor."
+DEFAULT_GEOMETRY = "1200x600+30+30"
 
 
 @dataclass
@@ -42,73 +41,21 @@ class MainWindow:
         # noinspection PyTypeChecker
         self.parent.bind_all("<Command-.>", self.tk_shutdown)
 
-    def set_geometry(self) -> str:
+    @staticmethod
+    def set_geometry() -> str:
         """Sets window geometry.
 
         The geometry is set to the window position saved from the previous
-        session or, if the saved position is not available, to the defaults
-        - width 900
-        - height 400
-        - horizontal offset 30
-        - vertical offset 30
+        session or, if the saved position is not available, to the
+        DEFAULT_GEOMETRY.
 
-        If necessary, the geometry will be adjusted to fit on the available
-        output device. The authority for teh available output device is
-        tkinter's
 
         Returns:
             tkinter geometry string.
         """
         if not config.persistent.geometry:
-            config.persistent.geometry = "900x400+30+30"
-        regex = (
-            "(?P<width>[0-9]+)x"
-            "(?P<height>[0-9]+)"
-            "(?P<horizontal_offset>[+-]?[0-9]+)"
-            "(?P<vertical_offset>[+-]?[0-9]+)"
-        )
-        regex = re.compile(regex)
-        re_geometry = re.search(regex, config.persistent.geometry)
-        width, horizontal_offset = self.validate_desired_geometry(
-            re_geometry.group("width"),
-            re_geometry.group("horizontal_offset"),
-            self.parent.winfo_screenwidth(),
-        )
-        height, vertical_offset = self.validate_desired_geometry(
-            re_geometry.group("height"),
-            re_geometry.group("vertical_offset"),
-            self.parent.winfo_screenheight(),
-        )
-        geometry = "{}x{}{}{}".format(width, height, horizontal_offset, vertical_offset)
-        return geometry
-
-    @staticmethod
-    def validate_desired_geometry(
-        length: str, offset: str, available: int
-    ) -> Tuple[str, str]:
-        """Validate the geometry against the available length or height.
-
-        Args:
-            length: width or height from tkinter's geometry.
-            offset: width or height offset from tkinter's geometry
-            available: screen width or height.
-
-        Returns:
-            If the geometry will fit onto the screen the length and width are
-            returned unchanged. If the geometry is too large the maximum
-            screen dimension is returned with a zero offset.
-        """
-        length = int(length)
-        offset = int(offset)
-        req_length = length + abs(offset)
-        available = int(available)
-        if req_length > available:
-            msg = f"{GEOMETRY_INVALID} {length=}, {offset=}." f" {available=}"
-            logging.info(msg=msg)
-            offset = 0
-            if length > available:
-                length = available
-        return str(length), f"{offset:+}"
+            config.persistent.geometry = DEFAULT_GEOMETRY
+        return config.persistent.geometry
 
     def place_menubar(self):
         # noinspection GrazieInspection
