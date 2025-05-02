@@ -1,7 +1,7 @@
 """This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 5/2/25, 3:11 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +20,6 @@ import tkinter.messagebox as messagebox
 import tkinter.ttk as ttk
 from collections.abc import Callable, Collection, Iterator
 from dataclasses import field, dataclass
-from functools import partial
 from typing import Literal
 
 from gui import tk_facade
@@ -209,9 +208,6 @@ def create_button(
     # noinspection GrazieInspection
     """Creates a button.
 
-    The <Return> button is bound and will effect a mouse click on the button
-    when the button is active.
-
     Args: The following arguments are the Tkinter arguments for a ttk.Button.
         buttonbox:
         text:
@@ -229,7 +225,6 @@ def create_button(
         command=command,
     )
     button.grid(column=column, row=0)
-    button.bind("<Return>", partial(invoke_button, button))
     return button
 
 

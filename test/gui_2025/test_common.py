@@ -19,7 +19,7 @@ Each test follows the Arrange-Act-Assert pattern, with comments marking each sec
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 5/2/25, 3:11 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -411,17 +411,13 @@ def test_create_button(tk, ttk, monkeypatch):
     """
     # Arrange
     grid = MagicMock(name="grid", autospec=True)
-    bind = MagicMock(name="bind", autospec=True)
     button = MagicMock(name="button", autospec=True)
     monkeypatch.setattr(common.ttk, "Button", button)
     button = button()
     button.grid = grid
-    button.bind = bind
     buttonbox = ttk.Frame()
     text = "Dummy"
     column = 42
-    partial = MagicMock(name="partial", autospec=True)
-    monkeypatch.setattr(common, "partial", partial)
 
     # Act
     result = common.create_button(
@@ -435,10 +431,6 @@ def test_create_button(tk, ttk, monkeypatch):
     # Assert
     with check:
         grid.assert_called_once_with(column=column, row=0)
-    with check:
-        bind.assert_called_once_with(
-            "<Return>", common.partial(common.invoke_button, button)
-        )
     check.equal(result, button)
 
 
