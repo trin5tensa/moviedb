@@ -1,7 +1,7 @@
 """This module contains code for movie tag maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 5/3/25, 3:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -79,6 +79,12 @@ class TagGUI:
 
     def destroy(self):
         """Destroys the outer frame and all the widgets it contains."""
+        self.parent.unbind("<Escape>")
+        self.parent.unbind("<Command-.>")
+        self.parent.unbind("<Return>")
+        self.parent.unbind("<KP_Enter>")
+        self.parent.unbind("<Delete>")
+
         self.outer_frame.destroy()
 
 
@@ -107,12 +113,28 @@ class AddTagGUI(TagGUI):
             command=self.commit,
             default="disabled",
         )
-        common.create_button(
+        self.parent.bind(
+            "<Return>",
+            partial(common.invoke_button, commit_button),
+        )
+        self.parent.bind(
+            "<KP_Enter>",
+            partial(common.invoke_button, commit_button),
+        )
+        cancel_button = common.create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_num),
             command=self.destroy,
             default="active",
+        )
+        self.parent.bind(
+            "<Escape>",
+            partial(common.invoke_button, cancel_button),
+        )
+        self.parent.bind(
+            "<Command-.>",
+            partial(common.invoke_button, cancel_button),
         )
 
         tag_entry_field = self.entry_fields[MOVIE_TAGS]
@@ -175,6 +197,14 @@ class EditTagGUI(TagGUI):
             command=self.commit,
             default="disabled",
         )
+        self.parent.bind(
+            "<Return>",
+            partial(common.invoke_button, commit_button),
+        )
+        self.parent.bind(
+            "<KP_Enter>",
+            partial(common.invoke_button, commit_button),
+        )
         delete_button = common.create_button(
             buttonbox,
             DELETE_TEXT,
@@ -182,13 +212,26 @@ class EditTagGUI(TagGUI):
             command=self.delete,
             default="active",
         )
-        common.create_button(
+        self.parent.bind(
+            "<Delete>",
+            partial(common.invoke_button, delete_button),
+        )
+        cancel_button = common.create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_num),
             command=self.destroy,
             default="active",
         )
+        self.parent.bind(
+            "<Escape>",
+            partial(common.invoke_button, cancel_button),
+        )
+        self.parent.bind(
+            "<Command-.>",
+            partial(common.invoke_button, cancel_button),
+        )
+
         tag_entry_field = self.entry_fields[MOVIE_TAGS]
         callback = partial(
             self.enable_button_callback,
@@ -271,12 +314,28 @@ class SearchTagGUI(TagGUI):
             command=self.search,
             default="disabled",
         )
-        common.create_button(
+        self.parent.bind(
+            "<Return>",
+            partial(common.invoke_button, search_button),
+        )
+        self.parent.bind(
+            "<KP_Enter>",
+            partial(common.invoke_button, search_button),
+        )
+        cancel_button = common.create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_num),
             command=self.destroy,
             default="active",
+        )
+        self.parent.bind(
+            "<Escape>",
+            partial(common.invoke_button, cancel_button),
+        )
+        self.parent.bind(
+            "<Command-.>",
+            partial(common.invoke_button, cancel_button),
         )
 
         tag_entry_field = self.entry_fields[MOVIE_TAGS]

@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/2/25, 3:11 PM by stephen.
+#  Last modified 5/3/25, 3:01 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +13,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox
