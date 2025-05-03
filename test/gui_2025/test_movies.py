@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/2/25, 3:11 PM by stephen.
+#  Last modified 5/3/25, 8:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -349,6 +349,8 @@ class TestMovieGUI:
         monkeypatch.setattr(movie_gui_obj, "create_buttons", create_buttons)
         create_button = MagicMock(name="create_button", autospec=True)
         monkeypatch.setattr(movies.common, "create_button", create_button)
+
+        # Arrange partial, invoke, and bind.
         partial = MagicMock(name="partial", autospec=True)
         monkeypatch.setattr(movies, "partial", partial)
         invoke_button = MagicMock(name="invoke_button", autospec=True)

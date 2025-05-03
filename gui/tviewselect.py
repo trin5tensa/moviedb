@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 5/3/25, 8:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -67,13 +67,23 @@ class SelectGUI:
         tree = self.treeview(body_frame)
         self.columns(tree)
         self.populate(tree)
-        common.create_button(
+        cancel_button = common.create_button(
             buttonbox,
             text=CANCEL_TEXT,
             column=0,
             command=self.destroy,
             default="active",
         )
+
+        self.parent.bind(
+            "<Escape>",
+            partial(common.invoke_button, cancel_button),
+        )
+        self.parent.bind(
+            "<Command-.>",
+            partial(common.invoke_button, cancel_button),
+        )
+
         # Nothing will display until the mouse is moved so…
         self.parent.update_idletasks()
 
@@ -117,6 +127,8 @@ class SelectGUI:
 
     def destroy(self):
         """Destroys this widget."""
+        self.parent.unbind("<Escape>")
+        self.parent.unbind("<Command-.>")
         self.outer_frame.destroy()
 
 

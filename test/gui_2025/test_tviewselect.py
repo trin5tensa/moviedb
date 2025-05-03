@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 5/3/25, 8:01 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,7 +25,7 @@ from gui import tviewselect as mut
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 class TestSelectGUI:
     def test_post_init(self, tk, ttk, monkeypatch):
-        """Test that SelectGUI.__post_init__ correctly initializes the GUI.
+        """Test SelectGUI.__post_init__ correctly initializes the GUI.
 
         This test verifies that the __post_init__ method:
         1. Creates the body and buttonbox using create_body_and_buttonbox
@@ -66,8 +66,14 @@ class TestSelectGUI:
         column = 0
         default = "active"
         selection_callback = MagicMock(name="selection_callback", autospec=True)
-        # update_idletasks = MagicMock(name="update_idletasks", autospec=True)
-        # monkeypatch.setattr("tk", update_idletasks)
+
+        # Arrange partial, invoke, and bind.
+        partial = MagicMock(name="partial", autospec=True)
+        monkeypatch.setattr(mut, "partial", partial)
+        invoke_button = MagicMock(name="invoke_button", autospec=True)
+        monkeypatch.setattr(mut.common, "invoke_button", invoke_button)
+        bind = MagicMock(name="bind", autospec=True)
+        monkeypatch.setattr(tk.Tk, "bind", bind)
 
         # Act
         mut.SelectGUI(
@@ -95,6 +101,20 @@ class TestSelectGUI:
                 command=destroy,
                 default=default,
             )
+        check.equal(
+            partial.call_args_list,
+            [
+                call(invoke_button, create_button()),
+                call(invoke_button, create_button()),
+            ],
+        )
+        check.equal(
+            bind.call_args_list,
+            [
+                call("<Escape>", partial()),
+                call("<Command-.>", partial()),
+            ],
+        )
         with check:
             tk.Tk.update_idletasks.assert_called_once_with()
 
@@ -191,13 +211,23 @@ class TestSelectGUI:
         # Arrange
         outer_frame = MagicMock(name="outer_frame", autospec=True)
         select_gui.outer_frame = outer_frame
+        unbind = MagicMock(name="unbind", autospec=True)
+        monkeypatch.setattr(select_gui.parent, "unbind", unbind)
+        outer_frame = MagicMock(name="outer_frame", autospec=True)
+        monkeypatch.setattr(select_gui, "outer_frame", outer_frame)
 
         # Act
         select_gui.destroy()
 
         # Assert
-        # noinspection PyUnresolvedReferences
-        select_gui.outer_frame.destroy.assert_called_once_with()
+        check.equal(
+            unbind.call_args_list,
+            [
+                call("<Escape>"),
+                call("<Command-.>"),
+            ],
+        )
+        outer_frame.destroy.assert_called_once_with()
 
 
 # noinspection PyMissingOrEmptyDocstring
