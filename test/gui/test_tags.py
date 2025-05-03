@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 5/3/25, 12:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,7 @@ from gui import tags
 # noinspection PyMissingOrEmptyDocstring
 class TestTagGUI:
     def test_post_init(self, tk, ttk, monkeypatch):
-        """Test that TagGUI.__post_init__ correctly initializes the GUI.
+        """Test TagGUI.__post_init__ correctly initializes the GUI.
 
         This test verifies that the __post_init__ method:
         1. Creates the body and buttonbox using create_body_and_buttonbox
