@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/26/25, 1:26 PM by stephen.
+#  Last modified 5/5/25, 2:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +13,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox
@@ -201,13 +200,16 @@ class MovieGUI:
         """
         column_counter = count()
         self.create_buttons(buttonbox, column_counter)
-        common.create_button(
+
+        cancel_button = common.create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_counter),
             command=self.destroy,
             default="active",
         )
+        common.bind_key(self.parent, "<Escape>", cancel_button)
+        common.bind_key(self.parent, "<Command-.>", cancel_button)
 
     def create_buttons(self, buttonbox: ttk.Frame, column_counter: Iterator):
         """Create buttons within the buttonbox.
@@ -234,6 +236,17 @@ class MovieGUI:
         Args:
             *args: Not used but needed to match external caller.
         """
+        # Undo bindings on Tk/Tcl root
+        # Shipman says tkinter bindings can only be attached to root or toplevel
+        # widgets. This seems to be borne out by observation.
+        # Issue moviedb-#500 will use toplevels throughout so obviating this
+        #  need to undo bindings.
+        self.parent.unbind("<Escape>")
+        self.parent.unbind("<Command-.>")
+        self.parent.unbind("<Return>")
+        self.parent.unbind("<KP_Enter>")
+        self.parent.unbind("<Delete>")
+
         self.parent.after_cancel(self.tmdb_consumer_recall_id)
         self.outer_frame.destroy()
 
@@ -395,6 +408,8 @@ class AddMovieGUI(MovieGUI):
             command=self.commit,
             default="normal",
         )
+        common.bind_key(self.parent, "<Return>", commit_button)
+        common.bind_key(self.parent, "<KP_Enter>", commit_button)
 
         self.entry_fields[TITLE].observer.register(
             partial(
@@ -461,6 +476,9 @@ class EditMovieGUI(MovieGUI):
             command=self.commit,
             default="disabled",
         )
+        common.bind_key(self.parent, "<Return>", commit_button)
+        common.bind_key(self.parent, "<KP_Enter>", commit_button)
+
         delete_button = common.create_button(
             buttonbox,
             DELETE_TEXT,
@@ -468,6 +486,7 @@ class EditMovieGUI(MovieGUI):
             command=self.delete,
             default="active",
         )
+        common.bind_key(self.parent, "<Delete>", delete_button)
 
         # Register buttons with the fields' observers.
         for entry_field in self.entry_fields.values():
@@ -535,6 +554,9 @@ class SearchMovieGUI(MovieGUI):
             command=self.commit,
             default="normal",
         )
+        common.bind_key(self.parent, "<Return>", search_button)
+        common.bind_key(self.parent, "<KP_Enter>", search_button)
+
         for widget in self.entry_fields.values():
             widget.observer.register(
                 partial(

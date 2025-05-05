@@ -5,7 +5,7 @@ to its callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 5/5/25, 2:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,6 +18,7 @@ to its callers.
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # This tkinter import method supports accurate test mocking of tk and ttk.
+
 import tkinter as tk
 import tkinter.ttk as ttk
 from dataclasses import dataclass, KW_ONLY, field
@@ -99,13 +100,19 @@ class Settings:
             command=self.save,
             default="disabled",
         )
-        common.create_button(
+        common.bind_key(self.toplevel, "<Return>", save_button)
+        common.bind_key(self.toplevel, "<KP_Enter>", save_button)
+
+        cancel_button = common.create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_num),
             command=self.destroy,
             default="active",
         )
+        common.bind_key(self.toplevel, "<Escape>", cancel_button)
+        common.bind_key(self.toplevel, "<Command-.>", cancel_button)
+
         # Register the save button callback with its many observers.
         for entry_field in self.entry_fields.values():
             entry_field.observer.register(

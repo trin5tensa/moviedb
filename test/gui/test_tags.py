@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 5/5/25, 2:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,7 @@ from gui import tags
 # noinspection PyMissingOrEmptyDocstring
 class TestTagGUI:
     def test_post_init(self, tk, ttk, monkeypatch):
-        """Test that TagGUI.__post_init__ correctly initializes the GUI.
+        """Test TagGUI.__post_init__ correctly initializes the GUI.
 
         This test verifies that the __post_init__ method:
         1. Creates the body and buttonbox using create_body_and_buttonbox
@@ -138,6 +138,16 @@ class TestTagGUI:
         tag_gui.destroy()
 
         # Assert
+        check.equal(
+            tk.unbind.call_args_list,
+            [
+                call("<Escape>"),
+                call("<Command-.>"),
+                call("<Return>"),
+                call("<KP_Enter>"),
+                call("<Delete>"),
+            ],
+        )
         with check:
             # noinspection PyUnresolvedReferences
             tag_gui.outer_frame.destroy.assert_called_once_with()
@@ -153,7 +163,8 @@ class TestAddTagGUI:
 
         create_button = MagicMock(name="create_button", autospec=True)
         commit_button = "commit button"
-        create_button.return_value = commit_button
+        cancel_button = "cancel button"
+        create_button.side_effect = [commit_button, cancel_button]
         monkeypatch.setattr(tags.common, "create_button", create_button)
 
         buttonbox = MagicMock(name="buttonbox", autospec=True)
@@ -163,6 +174,12 @@ class TestAddTagGUI:
         monkeypatch.setattr(tags, "partial", partial)
         tag_entry_field = MagicMock(name="tag_entry_field", autospec=True)
         add_tag.entry_fields[tags.MOVIE_TAGS] = tag_entry_field
+
+        # Arrange partial and bind_key.
+        partial = MagicMock(name="partial", autospec=True)
+        monkeypatch.setattr(tags, "partial", partial)
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(tags.common, "bind_key", bind_key)
 
         # Act
         add_tag.create_buttons(buttonbox)
@@ -193,6 +210,15 @@ class TestAddTagGUI:
                 commit_button,
                 tag_entry_field,
             )
+        check.equal(
+            bind_key.call_args_list,
+            [
+                call(tk, "<Return>", commit_button),
+                call(tk, "<KP_Enter>", commit_button),
+                call(tk, "<Escape>", cancel_button),
+                call(tk, "<Command-.>", cancel_button),
+            ],
+        )
         with check:
             tag_entry_field.observer.register.assert_called_once_with(
                 partial(),
@@ -261,9 +287,10 @@ class TestEditTagGUI:
         )
 
         create_button = MagicMock(name="create_button", autospec=True)
-        commit_button = MagicMock(name="commit_button", autospec=True)
-        delete_button = MagicMock(name="delete_button", autospec=True)
-        create_button.side_effect = [commit_button, delete_button, "unused"]
+        commit_button = "commit_button"
+        delete_button = "delete_button"
+        cancel_button = "cancel_button"
+        create_button.side_effect = [commit_button, delete_button, cancel_button]
         # noinspection DuplicatedCode
         monkeypatch.setattr(tags.common, "create_button", create_button)
 
@@ -274,6 +301,12 @@ class TestEditTagGUI:
         monkeypatch.setattr(tags, "partial", partial)
         tag_entry_field = MagicMock(name="tag_entry_field", autospec=True)
         edit_tag.entry_fields[tags.MOVIE_TAGS] = tag_entry_field
+
+        # Arrange partial and bind_key.
+        partial = MagicMock(name="partial", autospec=True)
+        monkeypatch.setattr(tags, "partial", partial)
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(tags.common, "bind_key", bind_key)
 
         # Act
         edit_tag.create_buttons(buttonbox)
@@ -305,13 +338,27 @@ class TestEditTagGUI:
                     ),
                 ]
             )
-        with check:
-            partial.assert_called_once_with(
-                edit_tag.enable_button_callback,
-                commit_button,
-                delete_button,
-                tag_entry_field,
-            )
+        check.equal(
+            partial.call_args_list,
+            [
+                call(
+                    edit_tag.enable_button_callback,
+                    commit_button,
+                    delete_button,
+                    tag_entry_field,
+                ),
+            ],
+        )
+        check.equal(
+            bind_key.call_args_list,
+            [
+                call(tk, "<Return>", commit_button),
+                call(tk, "<KP_Enter>", commit_button),
+                call(tk, "<Delete>", delete_button),
+                call(tk, "<Escape>", cancel_button),
+                call(tk, "<Command-.>", cancel_button),
+            ],
+        )
         with check:
             tag_entry_field.observer.register.assert_called_once_with(
                 partial(),
@@ -457,7 +504,8 @@ class TestSearchTagGUI:
 
         create_button = MagicMock(name="create_button", autospec=True)
         search_button = "search button"
-        create_button.return_value = search_button
+        cancel_button = "cancel button"
+        create_button.side_effect = [search_button, cancel_button]
         monkeypatch.setattr(tags.common, "create_button", create_button)
 
         buttonbox = MagicMock(name="buttonbox", autospec=True)
@@ -467,6 +515,12 @@ class TestSearchTagGUI:
         monkeypatch.setattr(tags, "partial", partial)
         tag_entry_field = MagicMock(name="tag_entry_field", autospec=True)
         search_tag.entry_fields[tags.MOVIE_TAGS] = tag_entry_field
+
+        # Arrange partial and bind key.
+        partial = MagicMock(name="partial", autospec=True)
+        monkeypatch.setattr(tags, "partial", partial)
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(tags.common, "bind_key", bind_key)
 
         # Act
         search_tag.create_buttons(buttonbox)
@@ -497,6 +551,15 @@ class TestSearchTagGUI:
                 search_button,
                 tag_entry_field,
             )
+        check.equal(
+            bind_key.call_args_list,
+            [
+                call(tk, "<Return>", search_button),
+                call(tk, "<KP_Enter>", search_button),
+                call(tk, "<Escape>", cancel_button),
+                call(tk, "<Command-.>", cancel_button),
+            ],
+        )
         with check:
             tag_entry_field.observer.register.assert_called_once_with(
                 partial(),

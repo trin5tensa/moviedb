@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 5/5/25, 2:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +30,7 @@ class TestSettings:
     save_callback: Callable = MagicMock(name="save_callback")
 
     def test_post_init(self, monkeypatch):
-        """Test that Settings.__post_init__ correctly initializes the GUI.
+        """Test Settings.__post_init__ correctly initializes the GUI.
 
         This test verifies that the __post_init__ method:
         1. Creates a Toplevel window
@@ -139,7 +139,8 @@ class TestSettings:
         monkeypatch.setattr(settings.ttk, "Frame", buttonbox)
         create_button = MagicMock(name="create_button", autospec=True)
         save_button = MagicMock(name="save_button", autospec=True)
-        create_button.return_value = save_button
+        cancel_button = MagicMock(name="cancel_button", autospec=True)
+        create_button.side_effect = [save_button, cancel_button]
         monkeypatch.setattr(settings.common, "create_button", create_button)
 
         # Arrange entry fields
@@ -156,9 +157,13 @@ class TestSettings:
             widget,
         )
 
-        # Arrange partial
+        # Arrange partial, toplevel, and bind.
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(settings.common, "bind_key", bind_key)
         partial = MagicMock(name="partial", autospec=True)
         monkeypatch.setattr(settings, "partial", partial)
+        settings_obj.toplevel = toplevel = MagicMock(name="toplevel", autospec=True)
+        monkeypatch.setattr(settings.tk, "Toplevel", toplevel)
 
         # Act
         settings_obj.create_buttons(buttonbox)
@@ -183,17 +188,25 @@ class TestSettings:
                 ),
             ],
         )
-
+        check.equal(
+            bind_key.call_args_list,
+            [
+                call(toplevel, "<Return>", save_button),
+                call(toplevel, "<KP_Enter>", save_button),
+                call(toplevel, "<Escape>", cancel_button),
+                call(toplevel, "<Command-.>", cancel_button),
+            ],
+        )
+        check.equal(
+            partial.call_args_list,
+            [
+                call(settings_obj.enable_save_button, save_button),
+                call(settings_obj.enable_save_button, save_button),
+            ],
+        )
         check.equal(
             widget.observer.register.call_args_list,
-            [
-                call(
-                    partial(settings_obj.enable_save_button, save_button),
-                ),
-                call(
-                    partial(settings_obj.enable_save_button, save_button),
-                ),
-            ],
+            [call(partial()), call(partial())],
         )
 
     def test_enable_save_button(self, settings_obj, monkeypatch):

@@ -1,5 +1,7 @@
+"""Test Module."""
+
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/27/25, 2:15 PM by stephen.
+#  Last modified 5/3/25, 12:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -10,3 +12,26 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import pytest
+from unittest.mock import MagicMock
+
+
+@pytest.fixture(scope="function")
+def tk(monkeypatch) -> MagicMock:
+    """Returns a MagicMock object called tk
+
+    It does not monkeypatch tkinter.Tk()
+    """
+    tk = MagicMock(name="tk", autospec=True)
+    return tk
+
+
+@pytest.fixture(scope="function")
+def ttk(monkeypatch) -> MagicMock:
+    """Returns a MagicMock object called ttk
+
+    It does not monkeypatch tkinter.Tk().ttk
+    """
+    ttk = MagicMock(name="ttk", autospec=True)
+    return ttk

@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 5/5/25, 2:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +13,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
 from functools import partial
@@ -67,13 +66,16 @@ class SelectGUI:
         tree = self.treeview(body_frame)
         self.columns(tree)
         self.populate(tree)
-        common.create_button(
+        cancel_button = common.create_button(
             buttonbox,
             text=CANCEL_TEXT,
             column=0,
             command=self.destroy,
             default="active",
         )
+        common.bind_key(self.parent, "<Escape>", cancel_button)
+        common.bind_key(self.parent, "<Command-.>", cancel_button)
+
         # Nothing will display until the mouse is moved so…
         self.parent.update_idletasks()
 
@@ -117,6 +119,8 @@ class SelectGUI:
 
     def destroy(self):
         """Destroys this widget."""
+        self.parent.unbind("<Escape>")
+        self.parent.unbind("<Command-.>")
         self.outer_frame.destroy()
 
 
