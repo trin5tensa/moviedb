@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/3/25, 8:01 AM by stephen.
+#  Last modified 5/5/25, 2:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -349,14 +349,8 @@ class TestMovieGUI:
         monkeypatch.setattr(movie_gui_obj, "create_buttons", create_buttons)
         create_button = MagicMock(name="create_button", autospec=True)
         monkeypatch.setattr(movies.common, "create_button", create_button)
-
-        # Arrange partial, invoke, and bind.
-        partial = MagicMock(name="partial", autospec=True)
-        monkeypatch.setattr(movies, "partial", partial)
-        invoke_button = MagicMock(name="invoke_button", autospec=True)
-        monkeypatch.setattr(movies.common, "invoke_button", invoke_button)
-        bind = MagicMock(name="bind", autospec=True)
-        monkeypatch.setattr(movie_gui_obj.parent, "bind", bind)
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(movies.common, "bind_key", bind_key)
 
         # Act
         movie_gui_obj.fill_buttonbox(buttonbox)
@@ -372,20 +366,10 @@ class TestMovieGUI:
                 command=movie_gui_obj.destroy,
                 default="active",
             )
-            check.equal(
-                partial.call_args_list,
-                [
-                    call(invoke_button, create_button()),
-                    call(invoke_button, create_button()),
-                ],
-            )
-            check.equal(
-                bind.call_args_list,
-                [
-                    call("<Escape>", partial()),
-                    call("<Command-.>", partial()),
-                ],
-            )
+            assert bind_key.call_args_list == [
+                call(movie_gui_obj.parent, "<Escape>", create_button()),
+                call(movie_gui_obj.parent, "<Command-.>", create_button()),
+            ]
 
     def test_create_buttons(self, ttk, movie_gui_obj, monkeypatch):
         # Arrange
@@ -702,13 +686,11 @@ class TestAddMovieGUI:
         monkeypatch.setattr(movies.tk_facade, "Entry", year_entry_field)
         add_movie_obj.entry_fields[movies.YEAR] = year_entry_field
 
-        # Arrange bind, partial, and invoke
-        bind = MagicMock(name="bind", autospec=True)
-        monkeypatch.setattr(add_movie_obj.parent, "bind", bind)
+        # Arrange bind and partial
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(movies.common, "bind_key", bind_key)
         partial = MagicMock(name="partial", autospec=True)
         monkeypatch.setattr(movies, "partial", partial)
-        invoke_button = MagicMock(name="invoke_button", autospec=True)
-        monkeypatch.setattr(movies.common, "invoke_button", invoke_button)
 
         # Arrange column number
         column_num = movies.count(42)
@@ -726,29 +708,27 @@ class TestAddMovieGUI:
                 default="normal",
             )
         check.equal(
-            partial.call_args_list,
+            bind_key.call_args_list,
             [
-                call(invoke_button, commit_button),
-                call(invoke_button, commit_button),
-                call(
-                    add_movie_obj.enable_commit_button,
-                    commit_button,
-                    title_entry_field,
-                    year_entry_field,
-                ),
-                call(
-                    add_movie_obj.enable_commit_button,
-                    commit_button,
-                    title_entry_field,
-                    year_entry_field,
-                ),
+                call(add_movie_obj.parent, "<Return>", commit_button),
+                call(add_movie_obj.parent, "<KP_Enter>", commit_button),
             ],
         )
         check.equal(
-            bind.call_args_list,
+            partial.call_args_list,
             [
-                call("<Return>", partial()),
-                call("<KP_Enter>", partial()),
+                call(
+                    add_movie_obj.enable_commit_button,
+                    commit_button,
+                    title_entry_field,
+                    year_entry_field,
+                ),
+                call(
+                    add_movie_obj.enable_commit_button,
+                    commit_button,
+                    title_entry_field,
+                    year_entry_field,
+                ),
             ],
         )
         with check:
@@ -810,8 +790,6 @@ class TestEditMovieGUI:
         create_button.return_value = button
         monkeypatch.setattr(movies.common, "create_button", create_button)
         column_num = movies.count()
-        invoke_button = MagicMock(name="invoke_button", autospec=True)
-        monkeypatch.setattr(movies.common, "invoke_button", invoke_button)
 
         # Arrange entry_fields.
         entry = MagicMock(name="entry", autospec=True)
@@ -819,8 +797,8 @@ class TestEditMovieGUI:
         monkeypatch.setitem(edit_movie_obj.entry_fields, movies.TITLE, entry)
 
         # Arrange enable_buttons and its partial call
-        bind = MagicMock(name="bind", autospec=True)
-        monkeypatch.setattr(edit_movie_obj.parent, "bind", bind)
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(movies.common, "bind_key", bind_key)
         enable_buttons = MagicMock(name="enable_buttons", autospec=True)
         monkeypatch.setattr(edit_movie_obj, "enable_buttons", enable_buttons)
         partial = MagicMock(name="partial", autospec=True)
@@ -849,21 +827,14 @@ class TestEditMovieGUI:
                 ),
             ],
         )
+        with check:
+            partial.assert_called_once_with(enable_buttons, button, button)
         check.equal(
-            partial.call_args_list,
+            bind_key.call_args_list,
             [
-                call(invoke_button, button),
-                call(invoke_button, button),
-                call(invoke_button, button),
-                call(enable_buttons, button, button),
-            ],
-        )
-        check.equal(
-            bind.call_args_list,
-            [
-                call("<Return>", partial()),
-                call("<KP_Enter>", partial()),
-                call("<Delete>", partial()),
+                call(edit_movie_obj.parent, "<Return>", button),
+                call(edit_movie_obj.parent, "<KP_Enter>", button),
+                call(edit_movie_obj.parent, "<Delete>", button),
             ],
         )
         with check:
@@ -1005,13 +976,11 @@ class TestSearchMovieGUI:
         monkeypatch.setattr(movies.tk_facade, "Entry", entry_field)
         search_movie_obj.entry_fields["dummy field name"] = entry_field
 
-        # Arrange bind, partial, and invoke
-        bind = MagicMock(name="bind", autospec=True)
-        monkeypatch.setattr(search_movie_obj.parent, "bind", bind)
+        # Arrange bind and partial
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(movies.common, "bind_key", bind_key)
         partial = MagicMock(name="partial", autospec=True)
         monkeypatch.setattr(movies, "partial", partial)
-        invoke_button = MagicMock(name="invoke_button", autospec=True)
-        monkeypatch.setattr(movies.common, "invoke_button", invoke_button)
 
         # Arrange column number
         column_num = movies.count(42)
@@ -1031,8 +1000,6 @@ class TestSearchMovieGUI:
         check.equal(
             partial.call_args_list,
             [
-                call(invoke_button, search_button),
-                call(invoke_button, search_button),
                 call(
                     search_movie_obj.enable_search_button,
                     search_button,
@@ -1040,10 +1007,10 @@ class TestSearchMovieGUI:
             ],
         )
         check.equal(
-            bind.call_args_list,
+            bind_key.call_args_list,
             [
-                call("<Return>", partial()),
-                call("<KP_Enter>", partial()),
+                call(search_movie_obj.parent, "<Return>", search_button),
+                call(search_movie_obj.parent, "<KP_Enter>", search_button),
             ],
         )
         with check:

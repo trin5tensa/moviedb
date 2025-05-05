@@ -1,7 +1,7 @@
 """This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/3/25, 3:01 PM by stephen.
+#  Last modified 5/5/25, 2:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -20,6 +20,7 @@ import tkinter.messagebox as messagebox
 import tkinter.ttk as ttk
 from collections.abc import Callable, Collection, Iterator
 from dataclasses import field, dataclass
+from functools import partial
 from typing import Literal
 
 from gui import tk_facade
@@ -247,10 +248,6 @@ def enable_button(button: ttk.Button, *, state: bool):
         button.configure(default="disabled")
 
 
-# todo Add new bind_key(parent: tk.Tk|tk.Toplevel, key_press: str,
-#  button: ttk.Button)
-
-
 # noinspection PyUnusedLocal
 def invoke_button(button: ttk.Button, *args):
     """Invokes the command registered to the button.
@@ -260,6 +257,21 @@ def invoke_button(button: ttk.Button, *args):
         args: Not used but needed to match Tkinter's calling signature.
     """
     button.invoke()
+
+
+def bind_key(parent: TkParentType, key_press: str, button: ttk.Button):
+    """Binds a keyboard key press to a GUI button.
+
+    Args:
+        parent: Although the manuals say the binding can be to any tkinter
+        widget, this is not borne out by observation. The binding can only
+        be to the Tk/Tcl root or a Toplevel widget. Note the binding will
+        remain in place until either the widget is destroyed or the binding
+        is explicitly unbound with the 'unbind' command.
+        key_press: A named button; for example, <Escape> or <KP_Enter>.
+        button: Tkinter Button.
+    """
+    parent.bind(key_press, partial(invoke_button, button))
 
 
 def init_button_enablements(entry_fields: tk_facade.EntryFields):

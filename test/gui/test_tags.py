@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/3/25, 3:01 PM by stephen.
+#  Last modified 5/5/25, 2:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -175,13 +175,11 @@ class TestAddTagGUI:
         tag_entry_field = MagicMock(name="tag_entry_field", autospec=True)
         add_tag.entry_fields[tags.MOVIE_TAGS] = tag_entry_field
 
-        # Arrange partial, invoke, and bind.
+        # Arrange partial and bind_key.
         partial = MagicMock(name="partial", autospec=True)
         monkeypatch.setattr(tags, "partial", partial)
-        invoke_button = MagicMock(name="invoke_button", autospec=True)
-        monkeypatch.setattr(tags.common, "invoke_button", invoke_button)
-        bind = MagicMock(name="bind", autospec=True)
-        monkeypatch.setattr(tk, "bind", bind)
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(tags.common, "bind_key", bind_key)
 
         # Act
         add_tag.create_buttons(buttonbox)
@@ -206,27 +204,19 @@ class TestAddTagGUI:
                     ),
                 ]
             )
+        with check:
+            partial.assert_called_once_with(
+                add_tag.enable_button_callback,
+                commit_button,
+                tag_entry_field,
+            )
         check.equal(
-            partial.call_args_list,
+            bind_key.call_args_list,
             [
-                call(tags.common.invoke_button, commit_button),
-                call(tags.common.invoke_button, commit_button),
-                call(tags.common.invoke_button, cancel_button),
-                call(tags.common.invoke_button, cancel_button),
-                call(
-                    add_tag.enable_button_callback,
-                    commit_button,
-                    tag_entry_field,
-                ),
-            ],
-        )
-        check.equal(
-            bind.call_args_list,
-            [
-                call("<Return>", partial()),
-                call("<KP_Enter>", partial()),
-                call("<Escape>", partial()),
-                call("<Command-.>", partial()),
+                call(tk, "<Return>", commit_button),
+                call(tk, "<KP_Enter>", commit_button),
+                call(tk, "<Escape>", cancel_button),
+                call(tk, "<Command-.>", cancel_button),
             ],
         )
         with check:
@@ -312,13 +302,11 @@ class TestEditTagGUI:
         tag_entry_field = MagicMock(name="tag_entry_field", autospec=True)
         edit_tag.entry_fields[tags.MOVIE_TAGS] = tag_entry_field
 
-        # Arrange partial, invoke, and bind.
+        # Arrange partial and bind_key.
         partial = MagicMock(name="partial", autospec=True)
         monkeypatch.setattr(tags, "partial", partial)
-        invoke_button = MagicMock(name="invoke_button", autospec=True)
-        monkeypatch.setattr(tags.common, "invoke_button", invoke_button)
-        bind = MagicMock(name="bind", autospec=True)
-        monkeypatch.setattr(tk, "bind", bind)
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(tags.common, "bind_key", bind_key)
 
         # Act
         edit_tag.create_buttons(buttonbox)
@@ -353,11 +341,6 @@ class TestEditTagGUI:
         check.equal(
             partial.call_args_list,
             [
-                call(tags.common.invoke_button, commit_button),
-                call(tags.common.invoke_button, commit_button),
-                call(tags.common.invoke_button, delete_button),
-                call(tags.common.invoke_button, cancel_button),
-                call(tags.common.invoke_button, cancel_button),
                 call(
                     edit_tag.enable_button_callback,
                     commit_button,
@@ -367,13 +350,13 @@ class TestEditTagGUI:
             ],
         )
         check.equal(
-            bind.call_args_list,
+            bind_key.call_args_list,
             [
-                call("<Return>", partial()),
-                call("<KP_Enter>", partial()),
-                call("<Delete>", partial()),
-                call("<Escape>", partial()),
-                call("<Command-.>", partial()),
+                call(tk, "<Return>", commit_button),
+                call(tk, "<KP_Enter>", commit_button),
+                call(tk, "<Delete>", delete_button),
+                call(tk, "<Escape>", cancel_button),
+                call(tk, "<Command-.>", cancel_button),
             ],
         )
         with check:
@@ -533,13 +516,11 @@ class TestSearchTagGUI:
         tag_entry_field = MagicMock(name="tag_entry_field", autospec=True)
         search_tag.entry_fields[tags.MOVIE_TAGS] = tag_entry_field
 
-        # Arrange partial, invoke, and bind.
+        # Arrange partial and bind key.
         partial = MagicMock(name="partial", autospec=True)
         monkeypatch.setattr(tags, "partial", partial)
-        invoke_button = MagicMock(name="invoke_button", autospec=True)
-        monkeypatch.setattr(tags.common, "invoke_button", invoke_button)
-        bind = MagicMock(name="bind", autospec=True)
-        monkeypatch.setattr(tk, "bind", bind)
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(tags.common, "bind_key", bind_key)
 
         # Act
         search_tag.create_buttons(buttonbox)
@@ -564,30 +545,21 @@ class TestSearchTagGUI:
                     ),
                 ]
             )
+        with check:
+            partial.assert_called_once_with(
+                search_tag.enable_button_callback,
+                search_button,
+                tag_entry_field,
+            )
         check.equal(
-            partial.call_args_list,
+            bind_key.call_args_list,
             [
-                call(tags.common.invoke_button, search_button),
-                call(tags.common.invoke_button, search_button),
-                call(tags.common.invoke_button, cancel_button),
-                call(tags.common.invoke_button, cancel_button),
-                call(
-                    search_tag.enable_button_callback,
-                    search_button,
-                    tag_entry_field,
-                ),
+                call(tk, "<Return>", search_button),
+                call(tk, "<KP_Enter>", search_button),
+                call(tk, "<Escape>", cancel_button),
+                call(tk, "<Command-.>", cancel_button),
             ],
         )
-        check.equal(
-            bind.call_args_list,
-            [
-                call("<Return>", partial()),
-                call("<KP_Enter>", partial()),
-                call("<Escape>", partial()),
-                call("<Command-.>", partial()),
-            ],
-        )
-
         with check:
             tag_entry_field.observer.register.assert_called_once_with(
                 partial(),

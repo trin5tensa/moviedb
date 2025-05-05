@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/3/25, 12:51 PM by stephen.
+#  Last modified 5/5/25, 2:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -66,14 +66,8 @@ class TestSelectGUI:
         column = 0
         default = "active"
         selection_callback = MagicMock(name="selection_callback", autospec=True)
-
-        # Arrange partial, invoke, and bind.
-        partial = MagicMock(name="partial", autospec=True)
-        monkeypatch.setattr(mut, "partial", partial)
-        invoke_button = MagicMock(name="invoke_button", autospec=True)
-        monkeypatch.setattr(mut.common, "invoke_button", invoke_button)
-        bind = MagicMock(name="bind", autospec=True)
-        monkeypatch.setattr(tk.Tk, "bind", bind)
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(mut.common, "bind_key", bind_key)
 
         # Act
         mut.SelectGUI(
@@ -102,17 +96,10 @@ class TestSelectGUI:
                 default=default,
             )
         check.equal(
-            partial.call_args_list,
+            bind_key.call_args_list,
             [
-                call(invoke_button, create_button()),
-                call(invoke_button, create_button()),
-            ],
-        )
-        check.equal(
-            bind.call_args_list,
-            [
-                call("<Escape>", partial()),
-                call("<Command-.>", partial()),
+                call(tk.Tk, "<Escape>", create_button()),
+                call(tk.Tk, "<Command-.>", create_button()),
             ],
         )
         with check:

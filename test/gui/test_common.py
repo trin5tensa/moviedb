@@ -19,7 +19,7 @@ Each test follows the Arrange-Act-Assert pattern, with comments marking each sec
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/3/25, 12:51 PM by stephen.
+#  Last modified 5/5/25, 2:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -538,6 +538,26 @@ def test_test_init_button_enablements(monkeypatch):
 
     # Assert
     notify.assert_called_once_with()
+
+
+def test_bind_button(monkeypatch, tk):
+    # Arrange
+    button = MagicMock(name="button", autospec=True)
+    monkeypatch.setattr(common.ttk, "Button", button)
+    invoke_button = MagicMock(name="invoke_button", autospec=True)
+    monkeypatch.setattr(common, "invoke_button", invoke_button)
+    key_press = "<Test_Key_Press>"
+    partial = MagicMock(name="partial", autospec=True)
+    monkeypatch.setattr(common, "partial", partial)
+
+    # Act
+    common.bind_key(tk, key_press, button)
+
+    # Assert
+    with check:
+        partial.assert_called_once_with(invoke_button, button)
+    with check:
+        tk.bind.assert_called_once_with(key_press, partial())
 
 
 # noinspection DuplicatedCode

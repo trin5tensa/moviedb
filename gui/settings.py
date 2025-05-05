@@ -5,7 +5,7 @@ to its callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/3/25, 10:37 AM by stephen.
+#  Last modified 5/5/25, 2:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -100,14 +100,8 @@ class Settings:
             command=self.save,
             default="disabled",
         )
-        self.toplevel.bind(
-            "<Return>",
-            partial(common.invoke_button, save_button),
-        )
-        self.toplevel.bind(
-            "<KP_Enter>",
-            partial(common.invoke_button, save_button),
-        )
+        common.bind_key(self.toplevel, "<Return>", save_button)
+        common.bind_key(self.toplevel, "<KP_Enter>", save_button)
 
         cancel_button = common.create_button(
             buttonbox,
@@ -116,14 +110,8 @@ class Settings:
             command=self.destroy,
             default="active",
         )
-        self.toplevel.bind(
-            "<Escape>",
-            partial(common.invoke_button, cancel_button),
-        )
-        self.toplevel.bind(
-            "<Command-.>",
-            partial(common.invoke_button, cancel_button),
-        )
+        common.bind_key(self.toplevel, "<Escape>", cancel_button)
+        common.bind_key(self.toplevel, "<Command-.>", cancel_button)
 
         # Register the save button callback with its many observers.
         for entry_field in self.entry_fields.values():

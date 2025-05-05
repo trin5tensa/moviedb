@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/3/25, 3:01 PM by stephen.
+#  Last modified 5/5/25, 2:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -208,14 +208,8 @@ class MovieGUI:
             command=self.destroy,
             default="active",
         )
-        self.parent.bind(
-            "<Escape>",
-            partial(common.invoke_button, cancel_button),
-        )
-        self.parent.bind(
-            "<Command-.>",
-            partial(common.invoke_button, cancel_button),
-        )
+        common.bind_key(self.parent, "<Escape>", cancel_button)
+        common.bind_key(self.parent, "<Command-.>", cancel_button)
 
     def create_buttons(self, buttonbox: ttk.Frame, column_counter: Iterator):
         """Create buttons within the buttonbox.
@@ -414,15 +408,8 @@ class AddMovieGUI(MovieGUI):
             command=self.commit,
             default="normal",
         )
-
-        self.parent.bind(
-            "<Return>",
-            partial(common.invoke_button, commit_button),
-        )
-        self.parent.bind(
-            "<KP_Enter>",
-            partial(common.invoke_button, commit_button),
-        )
+        common.bind_key(self.parent, "<Return>", commit_button)
+        common.bind_key(self.parent, "<KP_Enter>", commit_button)
 
         self.entry_fields[TITLE].observer.register(
             partial(
@@ -489,6 +476,9 @@ class EditMovieGUI(MovieGUI):
             command=self.commit,
             default="disabled",
         )
+        common.bind_key(self.parent, "<Return>", commit_button)
+        common.bind_key(self.parent, "<KP_Enter>", commit_button)
+
         delete_button = common.create_button(
             buttonbox,
             DELETE_TEXT,
@@ -496,19 +486,7 @@ class EditMovieGUI(MovieGUI):
             command=self.delete,
             default="active",
         )
-
-        self.parent.bind(
-            "<Return>",
-            partial(common.invoke_button, commit_button),
-        )
-        self.parent.bind(
-            "<KP_Enter>",
-            partial(common.invoke_button, commit_button),
-        )
-        self.parent.bind(
-            "<Delete>",
-            partial(common.invoke_button, delete_button),
-        )
+        common.bind_key(self.parent, "<Delete>", delete_button)
 
         # Register buttons with the fields' observers.
         for entry_field in self.entry_fields.values():
@@ -576,9 +554,8 @@ class SearchMovieGUI(MovieGUI):
             command=self.commit,
             default="normal",
         )
-
-        self.parent.bind("<Return>", partial(common.invoke_button, search_button))
-        self.parent.bind("<KP_Enter>", partial(common.invoke_button, search_button))
+        common.bind_key(self.parent, "<Return>", search_button)
+        common.bind_key(self.parent, "<KP_Enter>", search_button)
 
         for widget in self.entry_fields.values():
             widget.observer.register(

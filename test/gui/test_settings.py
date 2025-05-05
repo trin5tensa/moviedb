@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/3/25, 12:51 PM by stephen.
+#  Last modified 5/5/25, 2:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -139,7 +139,8 @@ class TestSettings:
         monkeypatch.setattr(settings.ttk, "Frame", buttonbox)
         create_button = MagicMock(name="create_button", autospec=True)
         save_button = MagicMock(name="save_button", autospec=True)
-        create_button.return_value = save_button
+        cancel_button = MagicMock(name="cancel_button", autospec=True)
+        create_button.side_effect = [save_button, cancel_button]
         monkeypatch.setattr(settings.common, "create_button", create_button)
 
         # Arrange entry fields
@@ -156,11 +157,11 @@ class TestSettings:
             widget,
         )
 
-        # Arrange partial, invoke, and bind.
+        # Arrange partial, toplevel, and bind.
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(settings.common, "bind_key", bind_key)
         partial = MagicMock(name="partial", autospec=True)
         monkeypatch.setattr(settings, "partial", partial)
-        invoke_button = MagicMock(name="invoke_button", autospec=True)
-        monkeypatch.setattr(settings.common, "invoke_button", invoke_button)
         settings_obj.toplevel = toplevel = MagicMock(name="toplevel", autospec=True)
         monkeypatch.setattr(settings.tk, "Toplevel", toplevel)
 
@@ -188,23 +189,19 @@ class TestSettings:
             ],
         )
         check.equal(
-            partial.call_args_list,
+            bind_key.call_args_list,
             [
-                call(invoke_button, create_button()),
-                call(invoke_button, create_button()),
-                call(invoke_button, create_button()),
-                call(invoke_button, create_button()),
-                call(settings_obj.enable_save_button, save_button),
-                call(settings_obj.enable_save_button, save_button),
+                call(toplevel, "<Return>", save_button),
+                call(toplevel, "<KP_Enter>", save_button),
+                call(toplevel, "<Escape>", cancel_button),
+                call(toplevel, "<Command-.>", cancel_button),
             ],
         )
         check.equal(
-            toplevel.bind.call_args_list,
+            partial.call_args_list,
             [
-                call("<Return>", partial()),
-                call("<KP_Enter>", partial()),
-                call("<Escape>", partial()),
-                call("<Command-.>", partial()),
+                call(settings_obj.enable_save_button, save_button),
+                call(settings_obj.enable_save_button, save_button),
             ],
         )
         check.equal(

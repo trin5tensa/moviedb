@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/3/25, 8:01 AM by stephen.
+#  Last modified 5/5/25, 2:00 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +13,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
 from functools import partial
@@ -74,15 +73,8 @@ class SelectGUI:
             command=self.destroy,
             default="active",
         )
-
-        self.parent.bind(
-            "<Escape>",
-            partial(common.invoke_button, cancel_button),
-        )
-        self.parent.bind(
-            "<Command-.>",
-            partial(common.invoke_button, cancel_button),
-        )
+        common.bind_key(self.parent, "<Escape>", cancel_button)
+        common.bind_key(self.parent, "<Command-.>", cancel_button)
 
         # Nothing will display until the mouse is moved so…
         self.parent.update_idletasks()
