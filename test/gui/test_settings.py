@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/5/25, 2:00 PM by stephen.
+#  Last modified 5/6/25, 9:12 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -91,6 +91,26 @@ class TestSettings:
         with check:
             create_buttons.assert_called_once_with(buttonbox)
 
+    def test_post_init_without_tmdb_key(self, monkeypatch):
+        """Test Settings.__post_init__ calls tmdb_help."""
+        # Arrange Toplevel
+        parent = MagicMock(name="parent", autospec=True)
+        monkeypatch.setattr(settings.tk, "Tk", parent)
+        toplevel = MagicMock(name="toplevel", autospec=True)
+        monkeypatch.setattr(settings.tk, "Toplevel", toplevel)
+
+        # Act
+        settings_obj = settings.Settings(
+            parent,
+            tmdb_api_key="",
+            use_tmdb=self.use_tmdb,
+            save_callback=self.save_callback,
+        )
+
+        # Assert
+        with check:
+            toplevel().after.assert_called_once_with(100, settings_obj.tmdb_help)
+
     def test_create_fields(self, settings_obj, monkeypatch):
         # Arrange
         body_frame = MagicMock(name="body_frame", autospec=True)
@@ -120,6 +140,10 @@ class TestSettings:
             label_and_field().add_entry_row.assert_called_once_with(
                 settings_obj.entry_fields[settings.API_KEY_NAME]
             )
+        with check:
+            entry().widget.bind.assert_called_once_with(
+                "<Enter>", settings_obj.tmdb_help
+            )
 
         # Assert 'Use TMDB' checkbutton
         with check:
@@ -131,6 +155,20 @@ class TestSettings:
         with check:
             label_and_field().add_checkbox_row.assert_called_once_with(
                 settings_obj.entry_fields[settings.USE_TMDB_NAME]
+            )
+
+    def test_tmdb_help(self, settings_obj, monkeypatch):
+        # Arrange
+        showinfo = MagicMock(name="showinfo", autospec=True)
+        monkeypatch.setattr(settings.common, "showinfo", showinfo)
+
+        # Act
+        settings_obj.tmdb_help("test dummy")
+
+        # Assert
+        with check:
+            showinfo.assert_called_once_with(
+                settings.API_KEY_TEXT, detail=settings.TMDB_HELP
             )
 
     def test_create_buttons(self, settings_obj, monkeypatch):
