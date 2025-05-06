@@ -5,7 +5,7 @@ to its callers.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/5/25, 2:00 PM by stephen.
+#  Last modified 5/6/25, 10:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -77,9 +77,11 @@ class Settings:
         input_zone = common.LabelAndField(body_frame)
 
         # TMDB API key field
-        self.entry_fields[API_KEY_NAME] = tk_facade.Entry(API_KEY_TEXT, body_frame)
-        self.entry_fields[API_KEY_NAME].original_value = self.tmdb_api_key
-        input_zone.add_entry_row(self.entry_fields[API_KEY_NAME])
+        key_field = tk_facade.Entry(API_KEY_TEXT, body_frame)
+        self.entry_fields[API_KEY_NAME] = key_field
+        key_field.original_value = self.tmdb_api_key
+        input_zone.add_entry_row(key_field)
+        key_field.widget.bind("<Enter>", self.tmdb_help)
 
         # 'Use TMDB' checkbutton
         self.entry_fields[USE_TMDB_NAME] = tk_facade.Checkbutton(
@@ -87,6 +89,17 @@ class Settings:
         )
         self.entry_fields[USE_TMDB_NAME].original_value = self.use_tmdb
         input_zone.add_checkbox_row(self.entry_fields[USE_TMDB_NAME])
+
+    # noinspection PyUnusedLocal
+    @staticmethod
+    def tmdb_help(event):
+        """Displays an info dialog explaining how to access TMDB for integrated
+        internet access.
+
+        Args:
+            event: Not used but needed to match the Tk/Tcl calling signature.
+        """
+        common.showinfo(API_KEY_TEXT, detail=TMDB_HELP)
 
     def create_buttons(self, buttonbox: ttk.Frame):
         """Creates buttons for the settings dialog.

@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 12:51 PM by stephen.
+#  Last modified 5/6/25, 10:57 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -42,3 +42,12 @@ USE_TMDB_TEXT = "Use TMDB (The Movie Database)"
 WINDOW_TITLE = "Settings"
 YEAR = "year"
 YEAR_TEXT = "Year"
+
+TMDB_HELP = """This program can use the TMDB (The Movie Database) API to 
+lookup online movie details. You will need to create a TMDB account and 
+register for an API key.
+https://www.themoviedb.org
+
+Getting started:
+https://developer.themoviedb.org/docs/getting-started
+"""
