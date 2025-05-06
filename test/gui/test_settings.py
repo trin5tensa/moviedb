@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/6/25, 9:12 AM by stephen.
+#  Last modified 5/6/25, 9:19 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -99,6 +99,26 @@ class TestSettings:
         toplevel = MagicMock(name="toplevel", autospec=True)
         monkeypatch.setattr(settings.tk, "Toplevel", toplevel)
 
+        # Arrange create_body_and_buttonbox
+        create_body_and_buttonbox = MagicMock(
+            name="create_body_and_buttonbox", autospec=True
+        )
+        outer_frame = MagicMock(name="outer_frame")
+        body_frame = MagicMock(name="body_frame", autospec=True)
+        monkeypatch.setattr(settings.ttk, "Frame", body_frame)
+        buttonbox = MagicMock(name="buttonbox", autospec=True)
+        monkeypatch.setattr(settings.ttk, "Frame", buttonbox)
+        create_body_and_buttonbox.return_value = (outer_frame, body_frame, buttonbox)
+        monkeypatch.setattr(
+            settings.common, "create_body_and_buttonbox", create_body_and_buttonbox
+        )
+
+        # Arrange fields and buttons
+        create_fields = MagicMock(name="create_fields", autospec=True)
+        monkeypatch.setattr(settings.Settings, "create_fields", create_fields)
+        create_buttons = MagicMock(name="create_buttons", autospec=True)
+        monkeypatch.setattr(settings.Settings, "create_buttons", create_buttons)
+
         # Act
         settings_obj = settings.Settings(
             parent,
@@ -109,7 +129,11 @@ class TestSettings:
 
         # Assert
         with check:
-            toplevel().after.assert_called_once_with(100, settings_obj.tmdb_help)
+            toplevel().after.assert_called_once_with(
+                100,
+                settings_obj.tmdb_help,
+                None,
+            )
 
     def test_create_fields(self, settings_obj, monkeypatch):
         # Arrange
