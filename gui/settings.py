@@ -65,6 +65,8 @@ class Settings:
         _, body_frame, buttonbox = frames
         self.create_fields(body_frame)
         self.create_buttons(buttonbox)
+        if not self.tmdb_api_key:
+            self.toplevel.after(100, self.tmdb_help, None)
 
     def create_fields(self, body_frame: ttk.Frame):
         """Creates labels and entry fields for the settings dialog.
@@ -92,6 +94,7 @@ class Settings:
         Args:
             buttonbox:
         """
+        # noinspection DuplicatedCode
         column_num = itertools.count()
         save_button = common.create_button(
             buttonbox,
