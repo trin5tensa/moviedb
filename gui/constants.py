@@ -1,7 +1,7 @@
 """Global constants and type definitions."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/6/25, 10:57 AM by stephen.
+#  Last modified 5/8/25, 9:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -27,13 +27,17 @@ DURATION_TEXT = "Runtime"
 ID = "id"
 MOVIE_TAGS = "tags"
 MOVIE_TAGS_TEXT = "Tags"
-# noinspection DuplicatedCode
 NOTES = "notes"
 NOTES_TEXT = "Notes"
+# noinspection DuplicatedCode
 SAVE_TEXT = "Save"
 SEARCH_TEXT = "Search"
 STARS = "stars"
+STARS_TEXT = "Stars"
 SYNOPSIS = "synopsis"
+SYNOPSIS_TEXT = "Synopsis"
+TIMESTAMP = "timestamp"
+TIMESTAMP_TEXT = "Timestamp"
 TITLE = "title"
 TITLE_TEXT = "Title"
 UPDATED = "updated"

@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/5/25, 2:00 PM by stephen.
+#  Last modified 5/8/25, 9:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -175,7 +175,7 @@ class SelectMovieGUI(SelectGUI):
     rows: list[MovieBag]
 
     def __post_init__(self):
-        self.titles = [TITLE, YEAR, DIRECTORS, DURATION, NOTES]
+        self.titles = [TITLE, YEAR, DIRECTORS, DURATION, SYNOPSIS]
         self.widths = [225, 40, 200, 50, 550]
         super().__post_init__()
 
@@ -211,6 +211,6 @@ class SelectMovieGUI(SelectGUI):
                     int(movie["year"]),
                     setstr_to_str(movie.get("directors")),
                     duration,
-                    movie.get("notes", ""),
+                    movie.get("synopsis", ""),
                 ),
             )

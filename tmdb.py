@@ -13,7 +13,7 @@ https://github.com/celiao/tmdbsimple
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 12:59 PM by stephen.
+#  Last modified 5/8/25, 9:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -24,6 +24,7 @@ https://github.com/celiao/tmdbsimple
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import logging
 import queue
 import sys
@@ -124,7 +125,7 @@ def _data_conversion(tmdb_movie: dict) -> MovieBag:
                 case "directors":
                     movie_bag["directors"] = set(v)
                 case "overview":  # pragma no branch
-                    movie_bag["notes"] = v
+                    movie_bag["synopsis"] = v
     return movie_bag
 
 
@@ -140,11 +141,13 @@ def _search_movies(
 
     Args:
         title_query: A text search pattern for movie titles.
-        primary_release_year: A filter to limit the results to a specific primary release year.
+        primary_release_year: A filter to limit the results to a specific
+        primary release year.
         year: A filter to limit the results to a specific year.
         language: ISO 639-1 code.
         include_adult: Choose whether to include adult content in the results.
-        region: Specify an ISO 3166-1 code to filter by region. Must be uppercase.
+        region: Specify an ISO 3166-1 code to filter by region. Must be
+        uppercase.
 
     Returns:
         A list of compliant TMDB movies.
@@ -178,12 +181,13 @@ def _get_tmdb_movie_info(tmdb_movie_id: str) -> dict:
 
     Raises:
         TMDBMovieIDMissing:
-            A TMDB movie cannot be found, although it is known to have formerly existed.
+            A TMDB movie cannot be found, although it is known to have
+            formerly existed.
 
     Returns:
-        A dict representation of the JSON returned from the API. This may include any or none of the
-        following keys. The list is partial and does not include keys which are not of interest to
-        this program.
+        A dict representation of the JSON returned from the API. This may
+        include any or none of the following keys. The list is partial and
+        does not include keys which are not of interest to this program.
 
         genres (Single item list containing a dictionary with keys: id, name)
         id
@@ -191,13 +195,13 @@ def _get_tmdb_movie_info(tmdb_movie_id: str) -> dict:
         original_language
         original_title
         overview
-        production_companies (Single item list containing a dictionary with keys: id, logo_path,
-        name, origin_country)
-        production_countries (Single item list containing a dictionary with keys: id, name)
-        release_date
+        production_companies (Single item list containing a dictionary with
+        keys: id, logo_path, name, origin_country)
+        production_countries (Single item list containing a dictionary with
+        keys: id, name) release_date
         runtime
-        spoken_languages (Single item list containing a dictionary with keys: id, logo_path,
-        name, origin_country)
+        spoken_languages (Single item list containing a dictionary with
+        keys: id, logo_path, name, origin_country)
         title
     """
     movie = tmdbsimple.Movies(tmdb_movie_id)
@@ -209,7 +213,10 @@ def _get_tmdb_movie_info(tmdb_movie_id: str) -> dict:
         # Movie not found. Since this movie id originated from TMDB this is unexpected.
         # The TMDB URL ends with movie/XXX where XXX is the requested tmdb_id code.
         if exc.args and (exc.args[0][:36]) == "404 Client Error: Not Found for url:":
-            msg = f"The TMDB id '{tmdb_movie_id}' was not found on the TMDB site. \n{exc.args[0]}"
+            msg = (
+                f"The TMDB id '{tmdb_movie_id}' was not found on the "
+                f"TMDB site. \n{exc.args[0]}"
+            )
             logging.error(msg)
             raise exception.TMDBMovieIDMissing(msg) from exc
         else:
