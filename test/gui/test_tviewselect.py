@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/5/25, 2:00 PM by stephen.
+#  Last modified 5/8/25, 9:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -257,6 +257,7 @@ class TestSelectTagGUI:
 
 
 class TestSelectMovieGUI:
+
     def test_columns(self, select_movie_gui, ttk, monkeypatch):
         # Arrange
         tree = MagicMock(name="tree", autospec=True)
@@ -273,7 +274,7 @@ class TestSelectMovieGUI:
                     call("#1", text=mut.YEAR.title()),
                     call("#2", text=mut.DIRECTORS.title()),
                     call("#3", text=mut.DURATION.title()),
-                    call("#4", text=mut.NOTES.title()),
+                    call("#4", text=mut.SYNOPSIS.title()),
                 ]
             )
         with check:
@@ -309,7 +310,7 @@ class TestSelectMovieGUI:
                     year=MovieInteger(4042),
                     directors={"Dick Dir", "Edgar Ebo"},
                     duration=MovieInteger(42),
-                    notes="A note",
+                    synopsis="A synopsis",
                 ),
                 MovieBag(title="Test Movie 3", year=MovieInteger(4043)),
             ],
@@ -325,7 +326,7 @@ class TestSelectMovieGUI:
                         "end",
                         iid=1,
                         text="Test Movie 2",
-                        values=(4042, "Dick Dir, Edgar Ebo", 42, "A note"),
+                        values=(4042, "Dick Dir, Edgar Ebo", 42, "A synopsis"),
                     ),
                     call(
                         "", "end", iid=2, text="Test Movie 3", values=(4043, "", "", "")
@@ -393,7 +394,7 @@ def select_movie_gui(tk, monkeypatch):
                 year=MovieInteger(4042),
                 directors={"Dick Dir", "Edgar Ebo"},
                 duration=MovieInteger(42),
-                notes="A note",
+                synopsis="A synopsis",
             ),
             MovieBag(title="Test Movie 1", year=MovieInteger(4041)),
         ],

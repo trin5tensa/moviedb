@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 12:59 PM by stephen.
+#  Last modified 5/8/25, 9:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -44,7 +44,7 @@ def test_movie_data_placed_in_work_queue(monkeypatch):
             year=MovieInteger(TEST_RELEASE_DATE[:4]),
             duration=MovieInteger(TEST_RUNTIME),
             directors=set(TEST_DIRECTORS),
-            notes=TEST_NOTES,
+            synopsis=TEST_SYNOPSIS,
         )
     ]
     assert work_queue.get() == expected
@@ -61,7 +61,7 @@ def test_movie_data_with_no_date_placed_in_work_queue(monkeypatch):
             title=TEST_TITLE,
             duration=MovieInteger(TEST_RUNTIME),
             directors=set(TEST_DIRECTORS),
-            notes=TEST_NOTES,
+            synopsis=TEST_SYNOPSIS,
         )
     ]
     assert work_queue.get() == expected

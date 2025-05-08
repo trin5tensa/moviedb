@@ -19,7 +19,7 @@ Each test follows the Arrange-Act-Assert pattern, with comments marking each sec
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/5/25, 2:00 PM by stephen.
+#  Last modified 5/8/25, 9:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -157,7 +157,7 @@ class TestLabelAndField:
             create_label.assert_called_once_with(entry_field.label_text, row_ix)
         with check:
             entry_field.widget.configure.assert_called_once_with(
-                width=input_zone.col_1_width
+                width=input_zone.col_1_width, state="!disabled"
             )
         with check:
             entry_field.widget.grid.assert_called_once_with(column=1, row=row_ix)
