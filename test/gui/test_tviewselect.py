@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/8/25, 9:37 AM by stephen.
+#  Last modified 5/9/25, 1:05 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -234,7 +234,7 @@ class TestSelectTagGUI:
         with check:
             tree.heading.assert_called_once_with("#0", text=mut.MOVIE_TAGS_TEXT)
         with check:
-            tree.configure.assert_called_once_with(height=15)
+            tree.configure.assert_called_once_with(height=len(select_tag_gui.rows))
 
     def test_populate(self, select_tag_gui, ttk, monkeypatch):
         # Arrange

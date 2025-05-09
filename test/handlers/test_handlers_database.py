@@ -1,7 +1,7 @@
 """Menu handlers for movies."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/26/25, 11:47 AM by stephen.
+#  Last modified 5/9/25, 1:05 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -543,24 +543,6 @@ def test_gui_add_tag(monkeypatch, config_current):
     )
 
 
-def test_gui_search_tag(monkeypatch, config_current):
-    search_tag_gui = MagicMock(name="search_tag_gui")
-    monkeypatch.setattr(
-        handlers.database.gui.tags,
-        "SearchTagGUI",
-        search_tag_gui,
-    )
-    prepopulate = "prep"
-
-    handlers.database.gui_search_tag(prepopulate=prepopulate)
-
-    search_tag_gui.assert_called_once_with(
-        config.current.tk_root,
-        tag=prepopulate,
-        search_tag_callback=handlers.database.db_match_tags,
-    )
-
-
 def test_gui_edit_tag(monkeypatch, config_current):
     widget_edit_tag = MagicMock(name="widget_edit_tag")
     monkeypatch.setattr(handlers.database.gui.tags, "EditTagGUI", widget_edit_tag)
@@ -586,16 +568,20 @@ def test_gui_edit_tag(monkeypatch, config_current):
         )
 
 
-def test_gui_select_tag(monkeypatch, config_current):
-    select_tag_gui = MagicMock(name="select_tag_gui")
-    monkeypatch.setattr(
-        handlers.database.gui.tviewselect, "SelectTagGUI", select_tag_gui
-    )
+def test_select_all_tags(monkeypatch, config_current):
+    # Arrange
     tags = {"tag 1", "tag 2"}
+    db_tag_list = MagicMock(name="db_tag_list", autospec=True)
+    db_tag_list.return_value = tags
+    monkeypatch.setattr(handlers.database.tables, "select_all_tags", db_tag_list)
+    select_tags = MagicMock(name="select_tags")
+    monkeypatch.setattr(handlers.database.gui.tviewselect, "SelectTagGUI", select_tags)
 
-    handlers.database.gui_select_tag(tags=tags)
+    # Act
+    handlers.database.gui_select_all_tags()
 
-    select_tag_gui.assert_called_once_with(
+    # Assert
+    select_tags.assert_called_once_with(
         config.current.tk_root,
         selection_callback=handlers.database.gui_edit_tag,
         rows=list(tags),
@@ -610,52 +596,6 @@ def test_db_add_tag(monkeypatch):
     handlers.database.db_add_tag(tag_text)
 
     add_tag.assert_called_once_with(tag_text=tag_text)
-
-
-def test_db_match_tags_finding_nothing(monkeypatch, config_current):
-    showinfo = MagicMock(name="showinfo", autospec=True)
-    monkeypatch.setattr(handlers.database.gui.common, "showinfo", showinfo)
-    gui_search_tag = MagicMock(name="gui_search_tag", autospec=True)
-    monkeypatch.setattr(handlers.database, "gui_search_tag", gui_search_tag)
-    match_tags = MagicMock(name="match_tags")
-    match_tags.return_value = {}
-    monkeypatch.setattr(handlers.database.tables, "match_tags", match_tags)
-    match = "match pattern"
-
-    handlers.database.db_match_tags(match)
-
-    showinfo.assert_called_once_with(
-        message=handlers.database.tables.TAG_NOT_FOUND,
-    )
-    gui_search_tag.assert_called_once_with(prepopulate=match)
-
-
-def test_db_match_tags_finding_one_match(monkeypatch, config_current):
-    gui_edit_tag = MagicMock(name="gui_edit_tag")
-    monkeypatch.setattr(handlers.database, "gui_edit_tag", gui_edit_tag)
-    match_tags = MagicMock(name="match_tags")
-    tag_found = "tag_found"
-    match_tags.return_value = {tag_found}
-    monkeypatch.setattr(handlers.database.tables, "match_tags", match_tags)
-    match = "Something, anything"
-
-    handlers.database.db_match_tags(match)
-
-    gui_edit_tag.assert_called_once_with(tag_found, prepopulate=match)
-
-
-def test_db_match_tags_finding_multiple_matches(monkeypatch, config_current):
-    gui_select_tag = MagicMock(name="gui_select_tag")
-    monkeypatch.setattr(handlers.database, "gui_select_tag", gui_select_tag)
-    tags = {"tag 1", "tag 2"}
-    match_tags = MagicMock(name="match_tags")
-    match_tags.return_value = tags
-    monkeypatch.setattr(handlers.database.tables, "match_tags", match_tags)
-    match = "match pattern"
-
-    handlers.database.db_match_tags(match)
-
-    gui_select_tag.assert_called_once_with(tags=tags)
 
 
 def test_db_edit_tag(monkeypatch):
@@ -680,8 +620,8 @@ def test_db_edit_tag_with_old_tag_not_found(monkeypatch):
     db_edit_tag.side_effect = handlers.database.tables.NoResultFound
     notes_0 = handlers.database.tables.TAG_NOT_FOUND
     db_edit_tag.side_effect.__notes__ = [notes_0, notes_1]
-    gui_search_tag = MagicMock(name="gui_search_tag")
-    monkeypatch.setattr(handlers.database, "gui_search_tag", gui_search_tag)
+    gui_select_all_tags = MagicMock(name="gui_select_all_tags")
+    monkeypatch.setattr(handlers.database, "gui_select_all_tags", gui_select_all_tags)
     showinfo = MagicMock(name="showinfo", autospec=True)
     monkeypatch.setattr(handlers.database.gui.common, "showinfo", showinfo)
 
@@ -693,7 +633,7 @@ def test_db_edit_tag_with_old_tag_not_found(monkeypatch):
             detail=f"{notes_1}.",
         )
     with check:
-        gui_search_tag.assert_called_once_with(prepopulate=old_tag_text)
+        gui_select_all_tags.assert_called_once_with()
 
 
 # noinspection DuplicatedCode

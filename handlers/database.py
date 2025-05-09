@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/26/25, 11:47 AM by stephen.
+#  Last modified 5/9/25, 1:05 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -255,34 +255,12 @@ def gui_add_tag():
     )
 
 
-# noinspection PyUnusedLocal
-def gui_search_tag(*, prepopulate: str = ""):
-    """Presents a GUI form for tag searches.
-
-    Args:
-        prepopulate:
-            This argument can be used to prepopulate the tag widget. This
-            is useful if the initial attempt to search for a tag caused
-            an exception. It gives the user the opportunity to fix
-            input errors.
-    """
-    gui.tags.SearchTagGUI(
-        config.current.tk_root,
-        tag=prepopulate,
-        search_tag_callback=db_match_tags,
-    )
-
-
-def gui_select_tag(*, tags: set[str]):
-    """Presents a user dialog for selecting a tag from a list.
-
-    Args:
-        tags:
-    """
+def gui_select_all_tags():
+    """Presents a user dialog for selecting a tag from a list."""
     gui.tviewselect.SelectTagGUI(
         config.current.tk_root,
         selection_callback=gui_edit_tag,
-        rows=list(tags),
+        rows=list(tables.select_all_tags()),
     )
 
 
@@ -315,32 +293,6 @@ def db_add_tag(tag_text: str):
     tables.add_tag(tag_text=tag_text)
 
 
-def db_match_tags(match: str):
-    """Selects movies from the database which match user-entered
-    criteria and tags.
-
-    If no tags match the user is alerted and the tag editing process will
-    be restarted. If a single match is found the 'edit tag' screen will
-    be presented. If multiple tags match, a selectable list of the matches
-    will be displayed.
-
-    Args:
-        match: match pattern
-    """
-    tags = tables.match_tags(match=match)
-
-    if len(tags) == 0:
-        gui.common.showinfo(message=tables.TAG_NOT_FOUND)
-        gui_search_tag(prepopulate=match)
-
-    elif len(tags) == 1:
-        tag = tags.pop()
-        gui_edit_tag(tag, prepopulate=match)
-
-    else:
-        gui_select_tag(tags=tags)
-
-
 def db_delete_tag(tag_text: str):
     """Deletes a tag.
 
@@ -367,7 +319,7 @@ def db_edit_tag(old_tag_text: str, new_tag_text: str):
 
     except tables.NoResultFound as exc:
         _exc_messagebox(exc)
-        gui_search_tag(prepopulate=old_tag_text)
+        gui_select_all_tags()
 
     except tables.IntegrityError as exc:
         _exc_messagebox(exc)

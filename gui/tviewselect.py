@@ -1,7 +1,7 @@
 """This module contains widget windows for selecting a record from a list."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/8/25, 9:37 AM by stephen.
+#  Last modified 5/9/25, 1:05 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -150,7 +150,7 @@ class SelectTagGUI(SelectGUI):
         """
         tree.column("#0", width=self.widths[0])
         tree.heading("#0", text=self.titles[0])
-        tree.configure(height=15)
+        tree.configure(height=len(self.rows))
 
     def populate(self, tree: ttk.Treeview):
         """Populates the treeview with data.
