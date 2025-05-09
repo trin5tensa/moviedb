@@ -6,7 +6,7 @@ including setting the title, geometry, menubar, and key bindings.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/3/25, 12:51 PM by stephen.
+#  Last modified 5/9/25, 1:05 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -250,11 +250,11 @@ class TestMainWindow:
                     ),
                     call.add_command(
                         label="Edit Tag…",
-                        command=mainwindow.handlers.database.gui_search_tag,
+                        command=mainwindow.handlers.database.gui_select_all_tags,
                     ),
                     call.add_command(
                         label="Delete Tag…",
-                        command=mainwindow.handlers.database.gui_search_tag,
+                        command=mainwindow.handlers.database.gui_select_all_tags,
                     ),
                 ],
             )
