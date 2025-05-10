@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/30/25, 10:33 AM by stephen.
+#  Last modified 5/9/25, 1:05 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -35,11 +35,6 @@ class MainWindow:
         self.parent.title(config.persistent.program_name)
         self.parent.geometry(self.set_geometry())
         self.place_menubar()
-
-        # noinspection PyTypeChecker
-        self.parent.bind_all("<Escape>", self.tk_shutdown)
-        # noinspection PyTypeChecker
-        self.parent.bind_all("<Command-.>", self.tk_shutdown)
 
     @staticmethod
     def set_geometry() -> str:
@@ -161,11 +156,11 @@ class MainWindow:
         )
         movie_menu.add_command(
             label="Edit Tag…",
-            command=handlers.database.gui_search_tag,
+            command=handlers.database.gui_select_all_tags,
         )
         movie_menu.add_command(
             label="Delete Tag…",
-            command=handlers.database.gui_search_tag,
+            command=handlers.database.gui_select_all_tags,
         )
 
         # window_menu = tk.Menu(menubar)

@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/26/25, 1:26 PM by stephen.
+#  Last modified 5/8/25, 9:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,12 +13,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import pytest
-from pytest_check import check
 from unittest.mock import MagicMock, call
 
-from moviebag import MovieBag
+import pytest
+from pytest_check import check
+
 from gui import movies
+from moviebag import MovieBag
 
 
 # noinspection DuplicatedCode
@@ -140,28 +141,38 @@ class TestMovieGUI:
         # Assert
         with check:
             label_and_field.assert_called_once_with(body_frame)
-        with check:
-            assert movie_gui_obj.entry_fields == {
+        check.equal(
+            movie_gui_obj.entry_fields,
+            {
                 movies.TITLE: tk_facade_entry(),
                 movies.YEAR: tk_facade_entry(),
                 movies.DIRECTORS: tk_facade_entry(),
+                movies.STARS: tk_facade_entry(),
                 movies.DURATION: tk_facade_entry(),
+                movies.TIMESTAMP: tk_facade_entry(),
+                movies.SYNOPSIS: tk_facade_text(),
                 movies.NOTES: tk_facade_text(),
                 movies.MOVIE_TAGS: tk_facade_treeview(),
-            }
-        with check:
-            label_and_field().add_entry_row.assert_has_calls(
-                [
-                    call(movie_gui_obj.entry_fields[movies.TITLE]),
-                    call(movie_gui_obj.entry_fields[movies.YEAR]),
-                    call(movie_gui_obj.entry_fields[movies.DIRECTORS]),
-                    call(movie_gui_obj.entry_fields[movies.DURATION]),
-                ]
-            )
-        with check:
-            label_and_field().add_text_row.assert_called_once_with(
-                movie_gui_obj.entry_fields[movies.NOTES]
-            )
+            },
+        )
+        check.equal(
+            label_and_field().add_entry_row.call_args_list,
+            [
+                call(movie_gui_obj.entry_fields[movies.TITLE]),
+                call(movie_gui_obj.entry_fields[movies.YEAR]),
+                call(movie_gui_obj.entry_fields[movies.DIRECTORS]),
+                call(movie_gui_obj.entry_fields[movies.STARS]),
+                call(movie_gui_obj.entry_fields[movies.DURATION]),
+                call(movie_gui_obj.entry_fields[movies.TIMESTAMP]),
+            ],
+        )
+        check.equal(
+            label_and_field().add_text_row.call_args_list,
+            [
+                call(movie_gui_obj.entry_fields[movies.SYNOPSIS]),
+                call(movie_gui_obj.entry_fields[movies.NOTES], height=2),
+            ],
+        )
         with check:
             label_and_field().add_treeview_row.assert_called_once_with(
                 movie_gui_obj.entry_fields[movies.MOVIE_TAGS],
@@ -173,10 +184,13 @@ class TestMovieGUI:
     def test_populate(self, tk, movie_gui_obj, monkeypatch):
         # Arrange
         for field_name in [
+            movies.TIMESTAMP,
             movies.TITLE,
             movies.YEAR,
             movies.DIRECTORS,
+            movies.STARS,
             movies.DURATION,
+            movies.SYNOPSIS,
             movies.NOTES,
             movies.MOVIE_TAGS,
         ]:
@@ -187,7 +201,9 @@ class TestMovieGUI:
             "title": "Populate Title",
             "year": movies.MovieInteger(4042),
             "directors": {"Tina Tangle", "Sam Smith"},
+            "stars": {"Rachel Rackham", "Quala Quistrami"},
             "duration": movies.MovieInteger(142),
+            "synopsis": "A populate synopsis",
             "notes": "A populate note",
             "tags": {"Tag Y", "Tag X"},
         }
@@ -218,6 +234,10 @@ class TestMovieGUI:
             "Sam Smith, Tina Tangle",
         )
         check.equal(
+            movie_gui_obj.entry_fields[movies.STARS].original_value,
+            "Quala Quistrami, Rachel Rackham",
+        )
+        check.equal(
             movie_gui_obj.entry_fields[movies.DURATION].original_value,
             "142",
         )
@@ -233,11 +253,14 @@ class TestMovieGUI:
     def test_populate_with_empty_prepopulate(self, movie_gui_obj, monkeypatch):
         # Arrange
         for field_name in [
+            movies.TIMESTAMP,
             movies.TITLE,
             movies.YEAR,
             movies.DIRECTORS,
+            movies.STARS,
             movies.DURATION,
             movies.NOTES,
+            movies.SYNOPSIS,
             movies.MOVIE_TAGS,
         ]:
             mock = MagicMock(name=f"tk_facade_{field_name}", autospec=True)
@@ -273,20 +296,71 @@ class TestMovieGUI:
             [],
         )
 
+    @pytest.mark.parametrize(
+        "timestamps, output",
+        [
+            ((None, None), ""),
+            ((movies.datetime.datetime.strptime("2006/6/16", "%Y/%m/%d"), None), ""),
+            (
+                (
+                    movies.datetime.datetime.strptime("2006/6/16", "%Y/%m/%d"),
+                    movies.datetime.datetime.strptime("2007/7/17", "%Y/%m/%d"),
+                ),
+                "",
+            ),
+            (
+                (
+                    movies.datetime.datetime.strptime("2006/6/16", "%Y/%m/%d"),
+                    movies.datetime.datetime.strptime("2006/6/16", "%Y/%m/%d"),
+                ),
+                "",
+            ),
+        ],
+    )
+    def test_strftime(self, timestamps, output, movie_gui_obj):
+        """Note: When datetime's strftime function uses the %x format code the
+        result is not statically determinate. It depends on the locale’s
+        appropriate date representation.
+        """
+        # Arrange
+        created, updated = timestamps
+        if created:
+            str_created = created.strftime("%x")
+        else:
+            str_created = ""
+
+        if updated and updated != created:
+            str_updated = " edited " + updated.strftime("%x")
+        else:
+            str_updated = ""
+        expected = str_created + str_updated
+
+        # Act
+        result = movie_gui_obj.strftime(created, updated)
+
+        # Assert
+        assert result == expected
+
     def test_as_movie_bag(self, movie_gui_obj, monkeypatch):
         # Arrange
+        ef_timestamp = "garbage"
         ef_title = "AMB Title"
         ef_year = "4242"
         ef_director = "Sidney Stoneheart, Tina Tatum"
+        ef_stars = "Tom Hanks, Lara Lincoln"
         ef_duration = "42"
+        ef_synopsis = "AMB Synopsis"
         ef_notes = "AMB Notes"
         ef_tags = {"Alpha", "Beta"}
         for k, v in [
+            (movies.TIMESTAMP, ef_timestamp),
             (movies.TITLE, ef_title),
             (movies.YEAR, ef_year),
             (movies.DIRECTORS, ef_director),
+            (movies.STARS, ef_stars),
             (movies.DURATION, ef_duration),
             (movies.NOTES, ef_notes),
+            (movies.SYNOPSIS, ef_synopsis),
             (movies.MOVIE_TAGS, ef_tags),
         ]:
             widget = MagicMock(name=k)
@@ -295,12 +369,15 @@ class TestMovieGUI:
 
         mb_year = movies.MovieInteger("4242")
         mb_director = {"Sidney Stoneheart", "Tina Tatum"}
+        mb_stars = {"Lara Lincoln", "Tom Hanks"}
         mb_duration = movies.MovieInteger("42")
         expected_movie_bag = movies.MovieBag(
             title=ef_title,
             year=mb_year,
             duration=mb_duration,
             directors=mb_director,
+            stars=mb_stars,
+            synopsis=ef_synopsis,
             notes=ef_notes,
             tags=ef_tags,
         )
@@ -338,7 +415,7 @@ class TestMovieGUI:
 
         assert movie_bag == expected_movie_bag
 
-    def test_fill_buttonbox(self, ttk, movie_gui_obj, monkeypatch):
+    def test_fill_buttonbox(self, tk, ttk, movie_gui_obj, monkeypatch):
         # Arrange
         buttonbox = ttk.Frame()
         count = MagicMock(name="count", autospec=True)
@@ -347,6 +424,8 @@ class TestMovieGUI:
         monkeypatch.setattr(movie_gui_obj, "create_buttons", create_buttons)
         create_button = MagicMock(name="create_button", autospec=True)
         monkeypatch.setattr(movies.common, "create_button", create_button)
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(movies.common, "bind_key", bind_key)
 
         # Act
         movie_gui_obj.fill_buttonbox(buttonbox)
@@ -362,6 +441,10 @@ class TestMovieGUI:
                 command=movie_gui_obj.destroy,
                 default="active",
             )
+            assert bind_key.call_args_list == [
+                call(movie_gui_obj.parent, "<Escape>", create_button()),
+                call(movie_gui_obj.parent, "<Command-.>", create_button()),
+            ]
 
     def test_create_buttons(self, ttk, movie_gui_obj, monkeypatch):
         # Arrange
@@ -398,11 +481,23 @@ class TestMovieGUI:
         outer_frame = MagicMock(name="outer_frame", autospec=True)
         monkeypatch.setattr(movies.MovieGUI, "outer_frame", outer_frame)
         movie_gui_obj.outer_frame = outer_frame
+        unbind = MagicMock(name="unbind", autospec=True)
+        monkeypatch.setattr(movie_gui_obj.parent, "unbind", unbind)
 
         # Act
         movie_gui_obj.destroy()
 
         # Assert
+        check.equal(
+            unbind.call_args_list,
+            [
+                call("<Escape>"),
+                call("<Command-.>"),
+                call("<Return>"),
+                call("<KP_Enter>"),
+                call("<Delete>"),
+            ],
+        )
         with check:
             tk.Tk().after_cancel.assert_called_once_with(
                 movie_gui_obj.tmdb_consumer_recall_id
@@ -433,7 +528,7 @@ class TestMovieGUI:
         with check:
             tview.assert_called_once_with(
                 ttk.Frame,
-                columns=(movies.TITLE, movies.YEAR, movies.DIRECTORS, movies.NOTES),
+                columns=(movies.TITLE, movies.YEAR, movies.DIRECTORS, movies.SYNOPSIS),
                 show=["headings"],
                 height=20,
                 selectmode="browse",
@@ -444,7 +539,7 @@ class TestMovieGUI:
                     call(movies.TITLE, width=250, stretch=True),
                     call(movies.YEAR, width=40, stretch=True),
                     call(movies.DIRECTORS, width=200, stretch=True),
-                    call(movies.NOTES, width=400, stretch=True),
+                    call(movies.SYNOPSIS, width=400, stretch=True),
                 ]
             )
         with check:
@@ -453,7 +548,7 @@ class TestMovieGUI:
                     call(movies.TITLE, text=movies.TITLE_TEXT, anchor="w"),
                     call(movies.YEAR, text=movies.YEAR_TEXT, anchor="w"),
                     call(movies.DIRECTORS, text=movies.DIRECTORS_TEXT, anchor="w"),
-                    call(movies.NOTES, text=movies.NOTES_TEXT, anchor="w"),
+                    call(movies.SYNOPSIS, text=movies.SYNOPSIS_TEXT, anchor="w"),
                 ],
             )
         with check:
@@ -481,7 +576,7 @@ class TestMovieGUI:
             year=movies.MovieInteger(4242),
             duration=movies.MovieInteger(942),
             directors={"Simon Simple", "Rachel River"},
-            notes="Notes for 'Test TMDB Callback'",
+            synopsis="Synopsis for 'Test TMDB Callback'",
         )
         movie_gui_obj.tmdb_movies[item_id] = movie_bag
 
@@ -496,7 +591,7 @@ class TestMovieGUI:
             year="4242",
             duration="942",
             directors="Rachel River, Simon Simple",
-            notes="Notes for 'Test TMDB Callback'",
+            synopsis="Synopsis for 'Test TMDB Callback'",
         )
 
         # Act
@@ -578,12 +673,12 @@ class TestMovieGUI:
         year = 4242
         directors_in = {"II", "GG", "HH"}
         directors_out = "GG, HH, II"
-        notes = "A note"
+        synopsis = "A synopsis"
         movie_bag = movies.MovieBag(
             title=title,
             year=movies.MovieInteger(year),
             directors=directors_in,
-            notes=notes,
+            synopsis=synopsis,
         )
         iid = "item id"
         expected = {iid: movie_bag}
@@ -617,7 +712,7 @@ class TestMovieGUI:
             tview.insert.assert_called_with(
                 "",
                 "end",
-                values=(title, str(year), directors_out, notes),
+                values=(title, str(year), directors_out, synopsis),
             )
         check.equal(movie_gui_obj.tmdb_movies, expected)
         with check:
@@ -666,7 +761,9 @@ class TestAddMovieGUI:
         monkeypatch.setattr(movies.tk_facade, "Entry", year_entry_field)
         add_movie_obj.entry_fields[movies.YEAR] = year_entry_field
 
-        # Arrange partial
+        # Arrange bind and partial
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(movies.common, "bind_key", bind_key)
         partial = MagicMock(name="partial", autospec=True)
         monkeypatch.setattr(movies, "partial", partial)
 
@@ -685,24 +782,34 @@ class TestAddMovieGUI:
                 command=add_movie_obj.commit,
                 default="normal",
             )
-        with check:
-            title_entry_field.observer.register.assert_called_once_with(
-                partial(
+        check.equal(
+            bind_key.call_args_list,
+            [
+                call(add_movie_obj.parent, "<Return>", commit_button),
+                call(add_movie_obj.parent, "<KP_Enter>", commit_button),
+            ],
+        )
+        check.equal(
+            partial.call_args_list,
+            [
+                call(
                     add_movie_obj.enable_commit_button,
                     commit_button,
                     title_entry_field,
                     year_entry_field,
-                )
-            )
-        with check:
-            year_entry_field.observer.register.assert_called_once_with(
-                partial(
+                ),
+                call(
                     add_movie_obj.enable_commit_button,
                     commit_button,
                     title_entry_field,
                     year_entry_field,
-                )
-            )
+                ),
+            ],
+        )
+        with check:
+            title_entry_field.observer.register.assert_called_once_with(partial())
+        with check:
+            year_entry_field.observer.register.assert_called_once_with(partial())
 
     def test_enable_commit_button(self, add_movie_obj, monkeypatch):
         # Arrange
@@ -765,6 +872,8 @@ class TestEditMovieGUI:
         monkeypatch.setitem(edit_movie_obj.entry_fields, movies.TITLE, entry)
 
         # Arrange enable_buttons and its partial call
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(movies.common, "bind_key", bind_key)
         enable_buttons = MagicMock(name="enable_buttons", autospec=True)
         monkeypatch.setattr(edit_movie_obj, "enable_buttons", enable_buttons)
         partial = MagicMock(name="partial", autospec=True)
@@ -795,6 +904,14 @@ class TestEditMovieGUI:
         )
         with check:
             partial.assert_called_once_with(enable_buttons, button, button)
+        check.equal(
+            bind_key.call_args_list,
+            [
+                call(edit_movie_obj.parent, "<Return>", button),
+                call(edit_movie_obj.parent, "<KP_Enter>", button),
+                call(edit_movie_obj.parent, "<Delete>", button),
+            ],
+        )
         with check:
             entry.observer.register.assert_called_once_with(
                 partial(enable_buttons, button, button)
@@ -934,7 +1051,9 @@ class TestSearchMovieGUI:
         monkeypatch.setattr(movies.tk_facade, "Entry", entry_field)
         search_movie_obj.entry_fields["dummy field name"] = entry_field
 
-        # Arrange partial
+        # Arrange bind and partial
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(movies.common, "bind_key", bind_key)
         partial = MagicMock(name="partial", autospec=True)
         monkeypatch.setattr(movies, "partial", partial)
 
@@ -953,13 +1072,24 @@ class TestSearchMovieGUI:
                 command=search_movie_obj.commit,
                 default="normal",
             )
-        with check:
-            entry_field.observer.register.assert_called_once_with(
-                partial(
+        check.equal(
+            partial.call_args_list,
+            [
+                call(
                     search_movie_obj.enable_search_button,
                     search_button,
-                )
-            )
+                ),
+            ],
+        )
+        check.equal(
+            bind_key.call_args_list,
+            [
+                call(search_movie_obj.parent, "<Return>", search_button),
+                call(search_movie_obj.parent, "<KP_Enter>", search_button),
+            ],
+        )
+        with check:
+            entry_field.observer.register.assert_called_once_with(partial())
 
     @pytest.mark.parametrize(
         "data_present, state",

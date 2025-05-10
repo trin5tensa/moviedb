@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/26/25, 1:26 PM by stephen.
+#  Last modified 5/8/25, 9:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,12 +13,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import messagebox
 from collections.abc import Callable, Iterator, Collection
 from dataclasses import dataclass, KW_ONLY, field
+import datetime
 from functools import partial
 from itertools import count
 import logging
@@ -118,17 +118,27 @@ class MovieGUI:
         """
         label_and_field = common.LabelAndField(body_frame)
 
-        # Create entry rows for title, year, director, and duration.
+        # Create entry rows for timestamp, title, year, director, and duration.
         for name, text in zip(
-            (TITLE, YEAR, DIRECTORS, DURATION),
-            (TITLE_TEXT, YEAR_TEXT, DIRECTORS_TEXT, DURATION_TEXT),
+            (TITLE, YEAR, DIRECTORS, STARS, DURATION, TIMESTAMP),
+            (
+                TITLE_TEXT,
+                YEAR_TEXT,
+                DIRECTORS_TEXT,
+                STARS_TEXT,
+                DURATION_TEXT,
+                TIMESTAMP_TEXT,
+            ),
         ):
             self.entry_fields[name] = tk_facade.Entry(text, body_frame)
             label_and_field.add_entry_row(self.entry_fields[name])
+        self.entry_fields[TIMESTAMP].widget.state(["disabled"])
 
-        # Create label and text widget.
+        # Create label and text widgets.
+        self.entry_fields[SYNOPSIS] = tk_facade.Text(SYNOPSIS_TEXT, body_frame)
+        label_and_field.add_text_row(self.entry_fields[SYNOPSIS])
         self.entry_fields[NOTES] = tk_facade.Text(NOTES_TEXT, body_frame)
-        label_and_field.add_text_row(self.entry_fields[NOTES])
+        label_and_field.add_text_row(self.entry_fields[NOTES], height=2)
 
         # Create a label and treeview for movie tags.
         self.entry_fields[MOVIE_TAGS] = tk_facade.Treeview(MOVIE_TAGS_TEXT, body_frame)
@@ -141,6 +151,11 @@ class MovieGUI:
 
     def populate(self):
         """Initialises field values."""
+        created = self.prepopulate.get("created")
+        updated = self.prepopulate.get("updated")
+        timestamp_str = self.strftime(created, updated)
+        self.entry_fields[TIMESTAMP].original_value = timestamp_str
+
         self.entry_fields[TITLE].original_value = self.prepopulate.get("title", "")
         self.entry_fields[TITLE].widget.icursor(tk.END)
         if year := self.prepopulate.get("year"):
@@ -150,15 +165,43 @@ class MovieGUI:
         self.entry_fields[DIRECTORS].original_value = setstr_to_str(
             self.prepopulate.get("directors")
         )
+        self.entry_fields[STARS].original_value = setstr_to_str(
+            self.prepopulate.get("stars")
+        )
         if duration := self.prepopulate.get("duration"):
             self.entry_fields[DURATION].original_value = str(duration)
         else:
             self.entry_fields[DURATION].original_value = ""
+        self.entry_fields[SYNOPSIS].original_value = self.prepopulate.get(
+            "synopsis", ""
+        )
         self.entry_fields[NOTES].original_value = self.prepopulate.get("notes", "")
         if tags := self.prepopulate.get("tags"):
             self.entry_fields[MOVIE_TAGS].original_value = sorted(list(tags))
         else:
             self.entry_fields[MOVIE_TAGS].original_value = []
+
+    @staticmethod
+    def strftime(created: datetime.datetime, updated: datetime.datetime):
+        """Formats created and updated timestamps for display
+
+        Args:
+            created:
+            updated:
+
+        Returns:
+            Formatted display string. For example, '12/12/25 edited 1/21/26' or
+            '12/12/25' if it has not been edited.
+        """
+        if created:
+            str_created = created.strftime("%x")
+        else:
+            str_created = ""
+        if updated and updated != created:
+            str_updated = " edited " + updated.strftime("%x")
+        else:
+            str_updated = ""
+        return str_created + str_updated
 
     def as_movie_bag(self) -> MovieBag:
         """Returns the form data as a movie bag
@@ -170,6 +213,8 @@ class MovieGUI:
         for name, widget in self.entry_fields.items():
             if widget.current_value:
                 match name:
+                    case "timestamp":
+                        pass
                     case "title":
                         movie_bag["title"] = widget.current_value
                     case "year":
@@ -178,6 +223,10 @@ class MovieGUI:
                         movie_bag["duration"] = MovieInteger(widget.current_value)
                     case "directors":
                         movie_bag["directors"] = set(widget.current_value.split(", "))
+                    case "stars":
+                        movie_bag["stars"] = set(widget.current_value.split(", "))
+                    case "synopsis":
+                        movie_bag["synopsis"] = widget.current_value
                     case "notes":
                         movie_bag["notes"] = widget.current_value
                     case "tags":
@@ -201,13 +250,16 @@ class MovieGUI:
         """
         column_counter = count()
         self.create_buttons(buttonbox, column_counter)
-        common.create_button(
+
+        cancel_button = common.create_button(
             buttonbox,
             CANCEL_TEXT,
             column=next(column_counter),
             command=self.destroy,
             default="active",
         )
+        common.bind_key(self.parent, "<Escape>", cancel_button)
+        common.bind_key(self.parent, "<Command-.>", cancel_button)
 
     def create_buttons(self, buttonbox: ttk.Frame, column_counter: Iterator):
         """Create buttons within the buttonbox.
@@ -234,6 +286,17 @@ class MovieGUI:
         Args:
             *args: Not used but needed to match external caller.
         """
+        # Undo bindings on Tk/Tcl root
+        # Shipman says tkinter bindings can only be attached to root or toplevel
+        # widgets. This seems to be borne out by observation.
+        # Issue moviedb-#500 will use toplevels throughout so obviating this
+        #  need to undo bindings.
+        self.parent.unbind("<Escape>")
+        self.parent.unbind("<Command-.>")
+        self.parent.unbind("<Return>")
+        self.parent.unbind("<KP_Enter>")
+        self.parent.unbind("<Delete>")
+
         self.parent.after_cancel(self.tmdb_consumer_recall_id)
         self.outer_frame.destroy()
 
@@ -248,7 +311,7 @@ class MovieGUI:
         """
         tview = self.tmdb_treeview = ttk.Treeview(
             tmdb_frame,
-            columns=(TITLE, YEAR, DIRECTORS, NOTES),
+            columns=(TITLE, YEAR, DIRECTORS, SYNOPSIS),
             show=["headings"],
             height=20,
             selectmode="browse",
@@ -261,14 +324,14 @@ class MovieGUI:
         tview.heading(YEAR, text=YEAR_TEXT, anchor="w")
         tview.column(DIRECTORS, width=200, stretch=True)
         tview.heading(DIRECTORS, text=DIRECTORS_TEXT, anchor="w")
-        tview.column(NOTES, width=400, stretch=True)
-        tview.heading(NOTES, text=NOTES_TEXT, anchor="w")
+        tview.column(SYNOPSIS, width=400, stretch=True)
+        tview.heading(SYNOPSIS, text=SYNOPSIS_TEXT, anchor="w")
         tview.grid(column=0, row=0, sticky="nsew")
         tview.bind(
             "<<TreeviewSelect>>", func=partial(self.tmdb_treeview_callback, tview)
         )
 
-        # Start polling the consumer queue
+        # Start polling the consumer end of the producer and consumer queue.
         self.tmdb_consumer()
 
         # Register the TMDB search function with the title field's observer.
@@ -297,7 +360,7 @@ class MovieGUI:
 
         for k, v in self.tmdb_movies[item_id].items():
             match k:
-                case "title" | "year" | "duration" | "notes":
+                case "title" | "year" | "duration" | "synopsis":
                     self.entry_fields[k].current_value = str(v)
                 case "directors":  # pragma nocover
                     self.entry_fields[k].current_value = ", ".join(
@@ -359,11 +422,11 @@ class MovieGUI:
                 directors = ", ".join(  # pragma no branch
                     [director for director in sorted(list(directors))]
                 )
-                notes = movie_bag.get("notes", "")
+                synopsis = movie_bag.get("synopsis", "")
                 iid = self.tmdb_treeview.insert(
                     "",
                     "end",
-                    values=(title, year, directors, notes),
+                    values=(title, year, directors, synopsis),
                 )
                 self.tmdb_movies[iid] = movie_bag
 
@@ -395,6 +458,8 @@ class AddMovieGUI(MovieGUI):
             command=self.commit,
             default="normal",
         )
+        common.bind_key(self.parent, "<Return>", commit_button)
+        common.bind_key(self.parent, "<KP_Enter>", commit_button)
 
         self.entry_fields[TITLE].observer.register(
             partial(
@@ -454,6 +519,7 @@ class EditMovieGUI(MovieGUI):
             buttonbox:
             column_num:
         """
+        # noinspection DuplicatedCode
         commit_button = common.create_button(
             buttonbox,
             COMMIT_TEXT,
@@ -461,6 +527,9 @@ class EditMovieGUI(MovieGUI):
             command=self.commit,
             default="disabled",
         )
+        common.bind_key(self.parent, "<Return>", commit_button)
+        common.bind_key(self.parent, "<KP_Enter>", commit_button)
+
         delete_button = common.create_button(
             buttonbox,
             DELETE_TEXT,
@@ -468,6 +537,7 @@ class EditMovieGUI(MovieGUI):
             command=self.delete,
             default="active",
         )
+        common.bind_key(self.parent, "<Delete>", delete_button)
 
         # Register buttons with the fields' observers.
         for entry_field in self.entry_fields.values():
@@ -535,6 +605,9 @@ class SearchMovieGUI(MovieGUI):
             command=self.commit,
             default="normal",
         )
+        common.bind_key(self.parent, "<Return>", search_button)
+        common.bind_key(self.parent, "<KP_Enter>", search_button)
+
         for widget in self.entry_fields.values():
             widget.observer.register(
                 partial(

@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 5/9/25, 1:05 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -25,7 +25,7 @@ from gui import tviewselect as mut
 # noinspection PyMissingOrEmptyDocstring,DuplicatedCode
 class TestSelectGUI:
     def test_post_init(self, tk, ttk, monkeypatch):
-        """Test that SelectGUI.__post_init__ correctly initializes the GUI.
+        """Test SelectGUI.__post_init__ correctly initializes the GUI.
 
         This test verifies that the __post_init__ method:
         1. Creates the body and buttonbox using create_body_and_buttonbox
@@ -66,8 +66,8 @@ class TestSelectGUI:
         column = 0
         default = "active"
         selection_callback = MagicMock(name="selection_callback", autospec=True)
-        # update_idletasks = MagicMock(name="update_idletasks", autospec=True)
-        # monkeypatch.setattr("tk", update_idletasks)
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(mut.common, "bind_key", bind_key)
 
         # Act
         mut.SelectGUI(
@@ -95,6 +95,13 @@ class TestSelectGUI:
                 command=destroy,
                 default=default,
             )
+        check.equal(
+            bind_key.call_args_list,
+            [
+                call(tk.Tk, "<Escape>", create_button()),
+                call(tk.Tk, "<Command-.>", create_button()),
+            ],
+        )
         with check:
             tk.Tk.update_idletasks.assert_called_once_with()
 
@@ -191,13 +198,23 @@ class TestSelectGUI:
         # Arrange
         outer_frame = MagicMock(name="outer_frame", autospec=True)
         select_gui.outer_frame = outer_frame
+        unbind = MagicMock(name="unbind", autospec=True)
+        monkeypatch.setattr(select_gui.parent, "unbind", unbind)
+        outer_frame = MagicMock(name="outer_frame", autospec=True)
+        monkeypatch.setattr(select_gui, "outer_frame", outer_frame)
 
         # Act
         select_gui.destroy()
 
         # Assert
-        # noinspection PyUnresolvedReferences
-        select_gui.outer_frame.destroy.assert_called_once_with()
+        check.equal(
+            unbind.call_args_list,
+            [
+                call("<Escape>"),
+                call("<Command-.>"),
+            ],
+        )
+        outer_frame.destroy.assert_called_once_with()
 
 
 # noinspection PyMissingOrEmptyDocstring
@@ -217,7 +234,7 @@ class TestSelectTagGUI:
         with check:
             tree.heading.assert_called_once_with("#0", text=mut.MOVIE_TAGS_TEXT)
         with check:
-            tree.configure.assert_called_once_with(height=15)
+            tree.configure.assert_called_once_with(height=len(select_tag_gui.rows))
 
     def test_populate(self, select_tag_gui, ttk, monkeypatch):
         # Arrange
@@ -240,6 +257,7 @@ class TestSelectTagGUI:
 
 
 class TestSelectMovieGUI:
+
     def test_columns(self, select_movie_gui, ttk, monkeypatch):
         # Arrange
         tree = MagicMock(name="tree", autospec=True)
@@ -256,7 +274,7 @@ class TestSelectMovieGUI:
                     call("#1", text=mut.YEAR.title()),
                     call("#2", text=mut.DIRECTORS.title()),
                     call("#3", text=mut.DURATION.title()),
-                    call("#4", text=mut.NOTES.title()),
+                    call("#4", text=mut.SYNOPSIS.title()),
                 ]
             )
         with check:
@@ -292,7 +310,7 @@ class TestSelectMovieGUI:
                     year=MovieInteger(4042),
                     directors={"Dick Dir", "Edgar Ebo"},
                     duration=MovieInteger(42),
-                    notes="A note",
+                    synopsis="A synopsis",
                 ),
                 MovieBag(title="Test Movie 3", year=MovieInteger(4043)),
             ],
@@ -308,7 +326,7 @@ class TestSelectMovieGUI:
                         "end",
                         iid=1,
                         text="Test Movie 2",
-                        values=(4042, "Dick Dir, Edgar Ebo", 42, "A note"),
+                        values=(4042, "Dick Dir, Edgar Ebo", 42, "A synopsis"),
                     ),
                     call(
                         "", "end", iid=2, text="Test Movie 3", values=(4043, "", "", "")
@@ -376,7 +394,7 @@ def select_movie_gui(tk, monkeypatch):
                 year=MovieInteger(4042),
                 directors={"Dick Dir", "Edgar Ebo"},
                 duration=MovieInteger(42),
-                notes="A note",
+                synopsis="A synopsis",
             ),
             MovieBag(title="Test Movie 1", year=MovieInteger(4041)),
         ],

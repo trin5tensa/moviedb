@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 5/6/25, 9:19 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +30,7 @@ class TestSettings:
     save_callback: Callable = MagicMock(name="save_callback")
 
     def test_post_init(self, monkeypatch):
-        """Test that Settings.__post_init__ correctly initializes the GUI.
+        """Test Settings.__post_init__ correctly initializes the GUI.
 
         This test verifies that the __post_init__ method:
         1. Creates a Toplevel window
@@ -91,6 +91,50 @@ class TestSettings:
         with check:
             create_buttons.assert_called_once_with(buttonbox)
 
+    def test_post_init_without_tmdb_key(self, monkeypatch):
+        """Test Settings.__post_init__ calls tmdb_help."""
+        # Arrange Toplevel
+        parent = MagicMock(name="parent", autospec=True)
+        monkeypatch.setattr(settings.tk, "Tk", parent)
+        toplevel = MagicMock(name="toplevel", autospec=True)
+        monkeypatch.setattr(settings.tk, "Toplevel", toplevel)
+
+        # Arrange create_body_and_buttonbox
+        create_body_and_buttonbox = MagicMock(
+            name="create_body_and_buttonbox", autospec=True
+        )
+        outer_frame = MagicMock(name="outer_frame")
+        body_frame = MagicMock(name="body_frame", autospec=True)
+        monkeypatch.setattr(settings.ttk, "Frame", body_frame)
+        buttonbox = MagicMock(name="buttonbox", autospec=True)
+        monkeypatch.setattr(settings.ttk, "Frame", buttonbox)
+        create_body_and_buttonbox.return_value = (outer_frame, body_frame, buttonbox)
+        monkeypatch.setattr(
+            settings.common, "create_body_and_buttonbox", create_body_and_buttonbox
+        )
+
+        # Arrange fields and buttons
+        create_fields = MagicMock(name="create_fields", autospec=True)
+        monkeypatch.setattr(settings.Settings, "create_fields", create_fields)
+        create_buttons = MagicMock(name="create_buttons", autospec=True)
+        monkeypatch.setattr(settings.Settings, "create_buttons", create_buttons)
+
+        # Act
+        settings_obj = settings.Settings(
+            parent,
+            tmdb_api_key="",
+            use_tmdb=self.use_tmdb,
+            save_callback=self.save_callback,
+        )
+
+        # Assert
+        with check:
+            toplevel().after.assert_called_once_with(
+                100,
+                settings_obj.tmdb_help,
+                None,
+            )
+
     def test_create_fields(self, settings_obj, monkeypatch):
         # Arrange
         body_frame = MagicMock(name="body_frame", autospec=True)
@@ -120,6 +164,10 @@ class TestSettings:
             label_and_field().add_entry_row.assert_called_once_with(
                 settings_obj.entry_fields[settings.API_KEY_NAME]
             )
+        with check:
+            entry().widget.bind.assert_called_once_with(
+                "<Enter>", settings_obj.tmdb_help
+            )
 
         # Assert 'Use TMDB' checkbutton
         with check:
@@ -133,13 +181,28 @@ class TestSettings:
                 settings_obj.entry_fields[settings.USE_TMDB_NAME]
             )
 
+    def test_tmdb_help(self, settings_obj, monkeypatch):
+        # Arrange
+        showinfo = MagicMock(name="showinfo", autospec=True)
+        monkeypatch.setattr(settings.common, "showinfo", showinfo)
+
+        # Act
+        settings_obj.tmdb_help("test dummy")
+
+        # Assert
+        with check:
+            showinfo.assert_called_once_with(
+                settings.API_KEY_TEXT, detail=settings.TMDB_HELP
+            )
+
     def test_create_buttons(self, settings_obj, monkeypatch):
         # Arrange buttons
         buttonbox = MagicMock(name="buttonbox", autospec=True)
         monkeypatch.setattr(settings.ttk, "Frame", buttonbox)
         create_button = MagicMock(name="create_button", autospec=True)
         save_button = MagicMock(name="save_button", autospec=True)
-        create_button.return_value = save_button
+        cancel_button = MagicMock(name="cancel_button", autospec=True)
+        create_button.side_effect = [save_button, cancel_button]
         monkeypatch.setattr(settings.common, "create_button", create_button)
 
         # Arrange entry fields
@@ -156,9 +219,13 @@ class TestSettings:
             widget,
         )
 
-        # Arrange partial
+        # Arrange partial, toplevel, and bind.
+        bind_key = MagicMock(name="bind_key", autospec=True)
+        monkeypatch.setattr(settings.common, "bind_key", bind_key)
         partial = MagicMock(name="partial", autospec=True)
         monkeypatch.setattr(settings, "partial", partial)
+        settings_obj.toplevel = toplevel = MagicMock(name="toplevel", autospec=True)
+        monkeypatch.setattr(settings.tk, "Toplevel", toplevel)
 
         # Act
         settings_obj.create_buttons(buttonbox)
@@ -183,17 +250,25 @@ class TestSettings:
                 ),
             ],
         )
-
+        check.equal(
+            bind_key.call_args_list,
+            [
+                call(toplevel, "<Return>", save_button),
+                call(toplevel, "<KP_Enter>", save_button),
+                call(toplevel, "<Escape>", cancel_button),
+                call(toplevel, "<Command-.>", cancel_button),
+            ],
+        )
+        check.equal(
+            partial.call_args_list,
+            [
+                call(settings_obj.enable_save_button, save_button),
+                call(settings_obj.enable_save_button, save_button),
+            ],
+        )
         check.equal(
             widget.observer.register.call_args_list,
-            [
-                call(
-                    partial(settings_obj.enable_save_button, save_button),
-                ),
-                call(
-                    partial(settings_obj.enable_save_button, save_button),
-                ),
-            ],
+            [call(partial()), call(partial())],
         )
 
     def test_enable_save_button(self, settings_obj, monkeypatch):

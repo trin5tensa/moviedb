@@ -15,11 +15,9 @@ the gui modules and the handlers.
 
 ✅NEW Move SearchMovieGUI and SelectMovieGUI from guiwidgets to gui.tables.py.
 
-GUI Enhancement issues not otherwise covered in this list.
+⭕️GUI Enhancement and debt reduction issues not otherwise covered in this list.
 
-GUI Debt reduction issues not otherwise covered in this list.
-
-GUI Bugs not otherwise covered in this list.
+✅GUI Bugs not otherwise covered in this list.
 
 Remove old code
 

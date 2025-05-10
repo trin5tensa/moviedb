@@ -6,7 +6,7 @@ including setting the title, geometry, menubar, and key bindings.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/30/25, 10:33 AM by stephen.
+#  Last modified 5/9/25, 1:05 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -61,7 +61,7 @@ class TestMainWindow:
         monkeypatch.setattr(mainwindow.MainWindow, "set_geometry", set_geometry)
 
         # Act
-        with mainwindow_obj(parent, monkeypatch, suppress_init=False) as obj:
+        with mainwindow_obj(parent, monkeypatch, suppress_init=False):
 
             # Assert
             with check:
@@ -70,13 +70,6 @@ class TestMainWindow:
                 parent.geometry.assert_called_once_with(set_geometry())
             with check:
                 place_menubar.assert_called_once_with()
-            check.equal(
-                parent.bind_all.call_args_list,
-                [
-                    call("<Escape>", obj.tk_shutdown),
-                    call("<Command-.>", obj.tk_shutdown),
-                ],
-            )
 
     @pytest.mark.parametrize(
         "saved, cfg_geometry",
@@ -257,11 +250,11 @@ class TestMainWindow:
                     ),
                     call.add_command(
                         label="Edit Tag…",
-                        command=mainwindow.handlers.database.gui_search_tag,
+                        command=mainwindow.handlers.database.gui_select_all_tags,
                     ),
                     call.add_command(
                         label="Delete Tag…",
-                        command=mainwindow.handlers.database.gui_search_tag,
+                        command=mainwindow.handlers.database.gui_select_all_tags,
                     ),
                 ],
             )

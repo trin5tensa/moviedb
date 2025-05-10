@@ -19,7 +19,7 @@ Each test follows the Arrange-Act-Assert pattern, with comments marking each sec
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 5/8/25, 9:37 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -157,7 +157,7 @@ class TestLabelAndField:
             create_label.assert_called_once_with(entry_field.label_text, row_ix)
         with check:
             entry_field.widget.configure.assert_called_once_with(
-                width=input_zone.col_1_width
+                width=input_zone.col_1_width, state="!disabled"
             )
         with check:
             entry_field.widget.grid.assert_called_once_with(column=1, row=row_ix)
@@ -411,17 +411,13 @@ def test_create_button(tk, ttk, monkeypatch):
     """
     # Arrange
     grid = MagicMock(name="grid", autospec=True)
-    bind = MagicMock(name="bind", autospec=True)
     button = MagicMock(name="button", autospec=True)
     monkeypatch.setattr(common.ttk, "Button", button)
     button = button()
     button.grid = grid
-    button.bind = bind
     buttonbox = ttk.Frame()
     text = "Dummy"
     column = 42
-    partial = MagicMock(name="partial", autospec=True)
-    monkeypatch.setattr(common, "partial", partial)
 
     # Act
     result = common.create_button(
@@ -435,10 +431,6 @@ def test_create_button(tk, ttk, monkeypatch):
     # Assert
     with check:
         grid.assert_called_once_with(column=column, row=0)
-    with check:
-        bind.assert_called_once_with(
-            "<Return>", common.partial(common.invoke_button, button)
-        )
     check.equal(result, button)
 
 
@@ -546,6 +538,26 @@ def test_test_init_button_enablements(monkeypatch):
 
     # Assert
     notify.assert_called_once_with()
+
+
+def test_bind_button(monkeypatch, tk):
+    # Arrange
+    button = MagicMock(name="button", autospec=True)
+    monkeypatch.setattr(common.ttk, "Button", button)
+    invoke_button = MagicMock(name="invoke_button", autospec=True)
+    monkeypatch.setattr(common, "invoke_button", invoke_button)
+    key_press = "<Test_Key_Press>"
+    partial = MagicMock(name="partial", autospec=True)
+    monkeypatch.setattr(common, "partial", partial)
+
+    # Act
+    common.bind_key(tk, key_press, button)
+
+    # Assert
+    with check:
+        partial.assert_called_once_with(invoke_button, button)
+    with check:
+        tk.bind.assert_called_once_with(key_press, partial())
 
 
 # noinspection DuplicatedCode
