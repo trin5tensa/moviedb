@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/8/25, 9:37 AM by stephen.
+#  Last modified 5/10/25, 12:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -212,6 +212,7 @@ class MovieGUI:
         movie_bag = MovieBag()
         for name, widget in self.entry_fields.items():
             if widget.current_value:
+                # noinspection PyUnreachableCode
                 match name:
                     case "timestamp":
                         pass
@@ -359,6 +360,7 @@ class MovieGUI:
             return
 
         for k, v in self.tmdb_movies[item_id].items():
+            # noinspection PyUnreachableCode
             match k:
                 case "title" | "year" | "duration" | "synopsis":
                     self.entry_fields[k].current_value = str(v)
