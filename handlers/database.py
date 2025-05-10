@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/7/25, 2:01 PM by stephen.
+#  Last modified 5/9/25, 1:05 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,15 +14,17 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from functools import partial
-
 import config
 import logging
 
-import guiwidgets
-import guiwidgets_2
+
+import gui.common
+import gui.tags
+import gui.movies
+import gui.tviewselect
 from database import tables
 
-from globalconstants import MovieBag
+from moviebag import MovieBag
 
 from handlers.sundries import _tmdb_io_handler
 
@@ -49,12 +51,14 @@ def gui_add_movie(*, prepopulate: MovieBag = None):
             tag selection.
     """
     all_tags = tables.select_all_tags()
-    guiwidgets_2.AddMovieGUI(
+    if not prepopulate:
+        prepopulate = MovieBag()
+    gui.movies.AddMovieGUI(
         config.current.tk_root,
-        _tmdb_io_handler,
-        list(all_tags),
+        tmdb_callback=_tmdb_io_handler,
+        all_tags=all_tags,
         prepopulate=prepopulate,
-        add_movie_callback=db_add_movie,
+        database_callback=db_add_movie,
     )
 
 
@@ -70,7 +74,15 @@ def gui_search_movie(*, prepopulate: MovieBag = None):
             input errors.
     """
     all_tags = tables.select_all_tags()
-    guiwidgets.SearchMovieGUI(config.current.tk_root, db_match_movies, list(all_tags))
+    if not prepopulate:
+        prepopulate = MovieBag()
+    gui.movies.SearchMovieGUI(
+        config.current.tk_root,
+        database_callback=db_match_movies,
+        tmdb_callback=_tmdb_io_handler,
+        all_tags=all_tags,
+        prepopulate=prepopulate,
+    )
 
 
 def gui_select_movie(*, movies: list[MovieBag]):
@@ -79,7 +91,9 @@ def gui_select_movie(*, movies: list[MovieBag]):
     Args:
         movies:
     """
-    guiwidgets.SelectMovieGUI(config.current.tk_root, movies, db_select_movie)
+    gui.tviewselect.SelectMovieGUI(
+        config.current.tk_root, selection_callback=db_select_movie, rows=movies
+    )
 
 
 def gui_edit_movie(old_movie: MovieBag, *, prepopulate: MovieBag = None):
@@ -92,16 +106,16 @@ def gui_edit_movie(old_movie: MovieBag, *, prepopulate: MovieBag = None):
             This argument can be used to prepopulate the movie widget. This
             is useful if the initial attempt to edit a movie caused an
             exception. It gives the user the opportunity to fix input errors.
-            If present, the item "prepopulate['tags']" contains the
-            tag selection.
+            If the key "prepopulate['tags']" is present, it will contain the tag
+            selection.
     """
     all_tags = tables.select_all_tags()
-    guiwidgets_2.EditMovieGUI(
+    gui.movies.EditMovieGUI(
         config.current.tk_root,
-        _tmdb_io_handler,
-        list(all_tags),
+        tmdb_callback=_tmdb_io_handler,
+        all_tags=all_tags,
         prepopulate=prepopulate,
-        edit_movie_callback=partial(db_edit_movie, old_movie),
+        database_callback=partial(db_edit_movie, old_movie),
         delete_movie_callback=partial(db_delete_movie, old_movie),
     )
 
@@ -130,6 +144,9 @@ def db_add_movie(movie_bag: MovieBag):
         else:  # pragma nocover
             raise
 
+    else:
+        gui_add_movie()
+
 
 def db_match_movies(criteria: MovieBag):
     """Selects movies from the database which match user-entered
@@ -147,23 +164,17 @@ def db_match_movies(criteria: MovieBag):
     Args:
         criteria:
     """
-    # Cleans up old style arguments
     # Removes empty items because SQL treats them as meaningful.
     criteria = {
-        k: v
-        for k, v in criteria.items()
-        if v != "" and v != [] and v != () and v != ["", ""]
+        k: v for k, v in criteria.items() if v != "" and v != ()
     }  # pragma nocover
 
-    movies_found = tables.match_movies(match=criteria)
+    movies_found = tables.match_movies(match=MovieBag(**criteria))
     match len(movies_found):
         case 0:
-            # Informs user and represent the search window.
-            guiwidgets_2.gui_messagebox(
-                config.current.tk_root,
-                message=tables.MOVIE_NOT_FOUND,
-            )
-            gui_search_movie()
+            # Informs user and represents the search window.
+            gui.common.showinfo(tables.MOVIE_NOT_FOUND)
+            gui_search_movie(prepopulate=MovieBag(**criteria))
 
         case 1:
             # Presents an Edit/View/Delete window to user
@@ -238,39 +249,18 @@ def db_delete_movie(old_movie: MovieBag):
 
 def gui_add_tag():
     """Presents a GUI form for adding a new movie."""
-    guiwidgets_2.AddTagGUI(
+    gui.tags.AddTagGUI(
         config.current.tk_root,
         add_tag_callback=db_add_tag,
     )
 
 
-# noinspection PyUnusedLocal
-def gui_search_tag(*, prepopulate: str = None):
-    """Presents a GUI form for tag searches.
-
-    Args:
-        prepopulate:
-            This argument can be used to prepopulate the tag widget. This
-            is useful if the initial attempt to search for a tag caused
-            an exception. It gives the user the opportunity to fix
-            input errors.
-    """
-    guiwidgets_2.SearchTagGUI(
+def gui_select_all_tags():
+    """Presents a user dialog for selecting a tag from a list."""
+    gui.tviewselect.SelectTagGUI(
         config.current.tk_root,
-        search_tag_callback=db_match_tags,
-    )
-
-
-def gui_select_tag(*, tags: set[str]):
-    """Presents a user dialog for selecting a tag from a list.
-
-    Args:
-        tags:
-    """
-    guiwidgets_2.SelectTagGUI(
-        config.current.tk_root,
-        select_tag_callback=gui_edit_tag,
-        tags_to_show=list(tags),
+        selection_callback=gui_edit_tag,
+        rows=list(tables.select_all_tags()),
     )
 
 
@@ -286,7 +276,7 @@ def gui_edit_tag(tag: str, *, prepopulate: str = None):
             an exception. It gives the user the opportunity to fix
             input errors.
     """
-    guiwidgets_2.EditTagGUI(
+    gui.tags.EditTagGUI(
         config.current.tk_root,
         edit_tag_callback=partial(db_edit_tag, tag),
         delete_tag_callback=partial(db_delete_tag, tag),
@@ -301,34 +291,6 @@ def db_add_tag(tag_text: str):
         tag_text:
     """
     tables.add_tag(tag_text=tag_text)
-
-
-def db_match_tags(match: str):
-    """Selects movies from the database which match user-entered
-    criteria and tags.
-
-    If no tags match the user is alerted and the tag editing process will
-    be restarted. If a single match is found the 'edit tag' screen will
-    be presented. If multiple tags match, a selectable list of the matches
-    will be displayed.
-
-    Args:
-        match: match pattern
-    """
-    tags = tables.match_tags(match=match)
-
-    if len(tags) == 0:
-        guiwidgets_2.gui_messagebox(
-            config.current.tk_root, message=tables.TAG_NOT_FOUND
-        )
-        gui_search_tag(prepopulate=match)
-
-    elif len(tags) == 1:
-        tag = tags.pop()
-        gui_edit_tag(tag, prepopulate=match)
-
-    else:
-        gui_select_tag(tags=tags)
 
 
 def db_delete_tag(tag_text: str):
@@ -357,7 +319,7 @@ def db_edit_tag(old_tag_text: str, new_tag_text: str):
 
     except tables.NoResultFound as exc:
         _exc_messagebox(exc)
-        gui_search_tag(prepopulate=old_tag_text)
+        gui_select_all_tags()
 
     except tables.IntegrityError as exc:
         _exc_messagebox(exc)
@@ -378,16 +340,11 @@ def _exc_messagebox(exc):
         are missing.
     """
     if len(exc.__notes__) == 1:
-        guiwidgets_2.gui_messagebox(
-            config.current.tk_root,
-            message=exc.__notes__[0],
-        )
+        gui.common.showinfo(message=exc.__notes__[0])
 
     elif len(exc.__notes__) > 1:
-        guiwidgets_2.gui_messagebox(
-            config.current.tk_root,
-            message=exc.__notes__[0],
-            detail=", ".join(exc.__notes__[1:]) + ".",
+        gui.common.showinfo(
+            message=exc.__notes__[0], detail=", ".join(exc.__notes__[1:]) + "."
         )
 
     else:  # pragma nocover

@@ -1,7 +1,7 @@
 """Facade pattern for tkinter widgets."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/4/25, 1:28 PM by stephen.
+#  Last modified 4/17/25, 12:51 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -12,16 +12,16 @@
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
-
-# This tkinter import method supports accurate test mocking of tk and ttk.
 import tkinter as tk
 import tkinter.ttk as ttk
 
-type TkParentType = tk.Tk | tk.Toplevel | ttk.Frame
-type TkSequence = list[str] | tuple[str, ...]
+from gui import types
+
+type EntryFields = dict[str, Entry | Text | Treeview | Checkbutton]
 
 
 @dataclass
@@ -79,7 +79,7 @@ class TkinterFacade:
     """
 
     label_text: str
-    parent: TkParentType
+    parent: types.TkParentType
     _original_value: Any = field(default=None, init=False, repr=False)
     observer: Observer = field(default_factory=Observer, init=False, repr=False)
 
@@ -154,6 +154,12 @@ class Entry(TkinterFacade):
 
     def has_data(self) -> bool:
         return self.current_value != ""
+
+    def focus_set(self):
+        """Sets the initial focus."""
+        self.widget.focus_set()
+        self.widget.select_range(0, tk.END)
+        self.widget.icursor(tk.END)
 
 
 @dataclass
@@ -236,7 +242,7 @@ class Treeview(TkinterFacade):
 
     # noinspection PyMissingOrEmptyDocstring
     @original_value.setter
-    def original_value(self, values: TkSequence):
+    def original_value(self, values: types.TkSequence):
         self._original_value = set(values)
         self.current_value = values
 
@@ -245,14 +251,15 @@ class Treeview(TkinterFacade):
         return set(self.widget.selection())
 
     @current_value.setter
-    def current_value(self, values: TkSequence):
+    def current_value(self, values: types.TkSequence):
         self.widget.selection_set(values)
 
     def clear_current_value(self):
         self.current_value = []
 
     def has_data(self) -> bool:
-        """The current selection is inspected and True is returned if any items are selected."""
+        """The current selection is inspected and True is returned if any
+        items are selected."""
         return self.current_value != set()
 
 
