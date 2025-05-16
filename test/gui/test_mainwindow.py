@@ -6,7 +6,7 @@ including setting the title, geometry, menubar, and key bindings.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/9/25, 1:05 PM by stephen.
+#  Last modified 5/16/25, 1:30 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -303,12 +303,13 @@ def test_run_tktcl(monkeypatch):
     mainwindow.config.current = mainwindow.config.CurrentConfig()
     main_window = MagicMock(name="main_window", autospec=True)
     monkeypatch.setattr(mainwindow, "MainWindow", main_window)
+    hold_tk_root = mainwindow.common.tk_root
 
     # Act
     mainwindow.run_tktcl()
 
     # Assert
-    check.equal(mainwindow.config.current.tk_root, root)
+    check.equal(mainwindow.common.tk_root, root)
     check.equal(
         root.mock_calls,
         [
@@ -323,6 +324,7 @@ def test_run_tktcl(monkeypatch):
 
     # Cleanup
     mainwindow.config.current = hold_config_current
+    mainwindow.common.tk_root = hold_tk_root
 
 
 @contextmanager

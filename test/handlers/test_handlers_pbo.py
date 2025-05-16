@@ -5,7 +5,7 @@ pytest in Fall 2022.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 5/16/25, 1:30 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -55,34 +55,34 @@ class TestPreferencesDialog:
         yield sundries.config.persistent
         sundries.config.persistent = hold_persistent
 
-    def test_call_with_valid_display_key(self, settings, mock_config_current):
+    def test_call_with_valid_display_key(self, settings):
         with self.persistent(self.TMDB_API_KEY, self.USE_TMDB):
             sundries.settings_dialog()
             settings.assert_called_once_with(
-                mock_config_current.tk_root,
+                sundries.common.tk_root,
                 tmdb_api_key=self.TMDB_API_KEY,
                 use_tmdb=self.USE_TMDB,
                 save_callback=sundries._settings_callback,
             )
 
-    def test_unset_key_call(self, settings, mock_config_current):
+    def test_unset_key_call(self, settings):
         no_key = ""
         with self.persistent(no_key, self.USE_TMDB):
             sundries.settings_dialog()
             settings.assert_called_once_with(
-                mock_config_current.tk_root,
+                sundries.common.tk_root,
                 tmdb_api_key=no_key,
                 use_tmdb=self.USE_TMDB,
                 save_callback=sundries._settings_callback,
             )
 
-    def test_do_not_use_tmdb_call(self, settings, mock_config_current):
+    def test_do_not_use_tmdb_call(self, settings):
         no_key = ""
         use_tmdb = False
         with self.persistent(self.TMDB_API_KEY, use_tmdb):
             sundries.settings_dialog()
             settings.assert_called_once_with(
-                mock_config_current.tk_root,
+                sundries.common.tk_root,
                 tmdb_api_key=no_key,
                 use_tmdb=use_tmdb,
                 save_callback=sundries._settings_callback,
@@ -93,7 +93,7 @@ class TestPreferencesDialog:
 class TestPreferencesCallback:
     """Test Strategy:
 
-    Check that the persistent configuration os correctly updated.
+    Check the persistent configuration os correctly updated.
     """
 
     TMDB_API_KEY = "TestKey"
