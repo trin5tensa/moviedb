@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/9/25, 1:05 PM by stephen.
+#  Last modified 5/16/25, 6:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -165,9 +165,7 @@ def db_match_movies(criteria: MovieBag):
         criteria:
     """
     # Removes empty items because SQL treats them as meaningful.
-    criteria = {
-        k: v for k, v in criteria.items() if v != "" and v != ()
-    }  # pragma nocover
+    criteria = {k: v for k, v in criteria.items() if v != ""}  # pragma nocover
 
     movies_found = tables.match_movies(match=MovieBag(**criteria))
     match len(movies_found):

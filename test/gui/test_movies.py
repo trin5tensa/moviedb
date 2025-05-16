@@ -1,7 +1,7 @@
 """Test Module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/8/25, 9:37 AM by stephen.
+#  Last modified 5/16/25, 6:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -368,18 +368,58 @@ class TestMovieGUI:
             monkeypatch.setitem(movie_gui_obj.entry_fields, k, widget)
 
         mb_year = movies.MovieInteger("4242")
-        mb_director = {"Sidney Stoneheart", "Tina Tatum"}
+        mb_directors = {"Sidney Stoneheart", "Tina Tatum"}
         mb_stars = {"Lara Lincoln", "Tom Hanks"}
         mb_duration = movies.MovieInteger("42")
         expected_movie_bag = movies.MovieBag(
             title=ef_title,
             year=mb_year,
             duration=mb_duration,
-            directors=mb_director,
+            directors=mb_directors,
             stars=mb_stars,
             synopsis=ef_synopsis,
             notes=ef_notes,
             tags=ef_tags,
+        )
+
+        # Act
+        movie_bag = movie_gui_obj.as_movie_bag()
+
+        assert movie_bag == expected_movie_bag
+
+    def test_as_movie_bag_with_blank_fields(self, movie_gui_obj, monkeypatch):
+        # Arrange
+        ef_title = ""
+        ef_year = ""
+        ef_director = ""
+        ef_stars = ""
+        ef_duration = ""
+        ef_synopsis = ""
+        ef_notes = ""
+        ef_tags = ""
+        for k, v in [
+            (movies.TITLE, ef_title),
+            (movies.YEAR, ef_year),
+            (movies.DIRECTORS, ef_director),
+            (movies.STARS, ef_stars),
+            (movies.DURATION, ef_duration),
+            (movies.NOTES, ef_notes),
+            (movies.SYNOPSIS, ef_synopsis),
+            (movies.MOVIE_TAGS, ef_tags),
+        ]:
+            widget = MagicMock(name=k)
+            widget.current_value = v
+            monkeypatch.setitem(movie_gui_obj.entry_fields, k, widget)
+
+        mb_directors = set()
+        mb_stars = set()
+        mb_tags = set()
+        expected_movie_bag = movies.MovieBag(
+            directors=mb_directors,
+            stars=mb_stars,
+            synopsis=ef_synopsis,
+            notes=ef_notes,
+            tags=mb_tags,
         )
 
         # Act
@@ -399,21 +439,6 @@ class TestMovieGUI:
             with pytest.raises(KeyError, match=exc_notes):
                 movie_gui_obj.as_movie_bag()
         check.equal(caplog.messages, [exc_notes])
-
-    def test_as_movie_bag_with_blank_input_field(self, movie_gui_obj, monkeypatch):
-        ef_title = "AMB Title"
-        for k, v in [("title", ef_title), ("notes", "")]:
-            widget = MagicMock(name=k)
-            widget.current_value = v
-            monkeypatch.setitem(movie_gui_obj.entry_fields, k, widget)
-
-        expected_movie_bag = movies.MovieBag(
-            title=ef_title,
-        )
-
-        movie_bag = movie_gui_obj.as_movie_bag()
-
-        assert movie_bag == expected_movie_bag
 
     def test_fill_buttonbox(self, tk, ttk, movie_gui_obj, monkeypatch):
         # Arrange

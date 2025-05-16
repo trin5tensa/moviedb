@@ -1,7 +1,7 @@
 """Facade pattern for tkinter widgets."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 12:51 PM by stephen.
+#  Last modified 5/16/25, 6:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,7 +19,7 @@ from typing import Any
 import tkinter as tk
 import tkinter.ttk as ttk
 
-from gui import types
+from gui import moviedbtypes
 
 type EntryFields = dict[str, Entry | Text | Treeview | Checkbutton]
 
@@ -79,7 +79,7 @@ class TkinterFacade:
     """
 
     label_text: str
-    parent: types.TkParentType
+    parent: moviedbtypes.TkParentType
     _original_value: Any = field(default=None, init=False, repr=False)
     observer: Observer = field(default_factory=Observer, init=False, repr=False)
 
@@ -242,7 +242,7 @@ class Treeview(TkinterFacade):
 
     # noinspection PyMissingOrEmptyDocstring
     @original_value.setter
-    def original_value(self, values: types.TkSequence):
+    def original_value(self, values: moviedbtypes.TkSequence):
         self._original_value = set(values)
         self.current_value = values
 
@@ -251,7 +251,7 @@ class Treeview(TkinterFacade):
         return set(self.widget.selection())
 
     @current_value.setter
-    def current_value(self, values: types.TkSequence):
+    def current_value(self, values: moviedbtypes.TkSequence):
         self.widget.selection_set(values)
 
     def clear_current_value(self):
