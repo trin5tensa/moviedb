@@ -1,7 +1,22 @@
 """Main Window."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/16/25, 1:36 PM by stephen.
+#  Last modified 5/16/25, 1:45 PM by stephen.
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import logging
+
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 5/16/25, 1:41 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -23,6 +38,7 @@ from gui import common
 
 GEOMETRY_INVALID = f"The saved screen geometry is too large for this monitor."
 DEFAULT_GEOMETRY = "1200x600+30+30"
+GEOMETRY_MSG = "Using Tk/Tcl window geometry of"
 
 
 @dataclass
@@ -50,7 +66,7 @@ class MainWindow:
         """
         if not config.persistent.geometry:
             config.persistent.geometry = DEFAULT_GEOMETRY
-        # todo Log the config.persistent.geometry
+        logging.info(f"{GEOMETRY_MSG} {config.persistent.geometry}")
         return config.persistent.geometry
 
     def place_menubar(self):
