@@ -1,7 +1,7 @@
-"""Application configuration data """
+"""Application configuration data"""
 
-#  Copyright (c) 2022-2024. Stephen Rigden.
-#  Last modified 2/24/24, 1:51 PM by stephen.
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 5/16/25, 1:30 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,11 +13,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from collections import UserDict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import Optional, TypedDict
+from typing import Optional
 
 CONFIG_JSON_SUFFIX = "_config.json"
 
@@ -27,68 +26,24 @@ current: Optional["CurrentConfig"] = None
 persistent: Optional["PersistentConfig"] = None
 
 
-class MovieKeyTypedDict(TypedDict):
-    """Mandatory field for a movie."""
-
-    title: str
-    year: int
-
-
-class MovieTypedDict(MovieKeyTypedDict, total=False):
-    """Optional fields for a movie."""
-
-    director: str | list[str]
-    minutes: int
-    notes: str
-
-
-class MovieUpdateDef(MovieTypedDict, total=False):
-    """A dictionary of fields for updating.
-
-    WARNING: Only use this definition for updating existing records."""
-
-    tags: Sequence[str]
-
-
-class FindMovieTypedDict(TypedDict, total=False):
-    """A dictionary containing none or more of the following keys:
-    title: A matching column will be a superstring of this value.
-    director: A matching column will be a superstring of this value.
-    minutes: A matching column will be between the minimum and maximum values in this
-    iterable. A single value is permissible.
-    year: A matching column will be between the minimum and maximum values in this
-    iterable. A single value is permissible.
-    notes: A matching column will be a superstring of this value.
-    tag: Movies matching any tag in this list will be selected.
-    """
-
-    title: str
-    year: Sequence[str]
-    director: str
-    minutes: Sequence[str]
-    notes: str
-    tags: Sequence[str]
-
-
 @dataclass
 class CurrentConfig:
     """The application's configuration data.
 
-    This transient configuration data is created during a single program_name run and is discarded when the program_name
-    terminates.
+    This transient configuration data is created during a single program_name
+    run and is discarded when the program_name terminates.
     """
 
-    tk_root: "tk.Tk" = None
     safeprint: Callable = None
     threadpool_executor: ThreadPoolExecutor = None
-    escape_key_dict: UserDict = None
 
 
 @dataclass
 class PersistentConfig:
     """The application's configuration data.
 
-    This persistent configuration data is loaded in the application's start_up() function and saved on exit.
+    This persistent configuration data is loaded in the application's
+    start_up() function and saved on exit.
     """
 
     # Program
@@ -104,7 +59,8 @@ class PersistentConfig:
 
     @property
     def tmdb_api_key(self):
-        """Return the tmdb_api_key but raise exceptions for missing key and user suppressed access."""
+        """Return the tmdb_api_key but raise exceptions for missing key and
+        user suppressed access."""
         # User wants to use TMDB
         if self.use_tmdb:
             # …but the key has not been set so raise exception

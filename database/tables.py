@@ -7,7 +7,7 @@ movies, tags, and people (directors and stars).
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/30/25, 1:41 PM by stephen.
+#  Last modified 5/16/25, 9:13 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -26,7 +26,7 @@ from sqlalchemy.exc import NoResultFound, IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from database import schema
-from globalconstants import *
+from moviebag import *
 
 MOVIE_NOT_FOUND = "No matching movies were found."
 MOVIE_EXISTS = "This movie is already present in the database."
@@ -103,19 +103,20 @@ def select_all_movies() -> list[MovieBag]:
 def match_movies(match: MovieBag) -> list[MovieBag]:
     """Selects and returns the intersection of matching movies.
 
-    Match patterns are specified in a MovieBag object which can contain none, any,
-    or all the fields of a MovieBag object. Each supplied field will be used to
-    select compliant records.This function will return the intersection of the
-    movie records selected by each field's name criteria. The internal
-    database fields of 'id'. 'created', and 'updated' are ignored.
+    Match patterns are specified in a MovieBag object which can contain none,
+    any, or all the fields of a MovieBag object. Each supplied field will be
+    used to select compliant records.This function will return the
+    intersection of the movie records selected by each field's name
+    criteria. The internal database fields of 'id'. 'created', and 'updated'
+    are ignored.
 
     Args:
         match:
-            A movie bag object with the match fields specified below. The id, created,
-            and updated fields are ignored.
+            A movie bag object with the match fields specified below. The
+            id, created, and updated fields are ignored.
 
-            Match patterns are specified in a MovieBag object which can contain none,
-            any, or all the following fields:
+            Match patterns are specified in a MovieBag object which can
+            contain none, any, or all the following fields:
                 title. Substring match.
                 year. Contains match.
                 duration. Contains match.
@@ -126,15 +127,17 @@ def match_movies(match: MovieBag) -> list[MovieBag]:
                 tags. Substring set match.
 
             Exact match. 4 will match `movie.id` = 4
-            Substring match. The substring 'kwai' will match 'Bridge on the River Kwai'.
-            Substring set match. Each item in the set will be matched as a substring
-                match (defined above). The movie will only be selected if every item in
-                the set matches.
+            Substring match. The substring 'kwai' will match 'Bridge on the
+                River Kwai'.
+            Substring set match. Each item in the set will be matched as a
+                substring match (defined above). The movie will only be
+                selected if every item in the set matches.
                 For a movie with stars {"Edgar Ethelred", "Fanny Fullworthy"}:
                     {'ethel'} will match
                     {'ethel', 'worth'} will match
                     {'ethel', 'bogart'} will not match.
-            Contains match. A movie.year of `1955 in MovieInteger('1950-1960')` is a match.
+            Contains match. A movie.year of `1955 in MovieInteger('1950-1960')`
+                is a match.
 
     Returns:
         The intersection of the records selected by each field's search criteria.
@@ -186,7 +189,7 @@ def add_movie(*, movie_bag: MovieBag):
         with session_factory() as session:
             movie = _add_movie(movie_bag=movie_bag)
             session.add(movie)
-            update_movie_relationships(movie, movie_bag, session)
+            _update_movie_relationships(movie, movie_bag, session)
             session.commit()
 
     except IntegrityError as exc:
@@ -278,7 +281,7 @@ def edit_movie(*, old_movie_bag: MovieBag, replacement_fields: MovieBag):
 
             candidate_orphans = movie.directors | movie.stars
             _edit_movie(movie=movie, edit_fields=replacement_fields)
-            update_movie_relationships(movie, replacement_fields, session)
+            _update_movie_relationships(movie, replacement_fields, session)
             _delete_orphans(session, candidates=candidate_orphans)
             session.commit()
 
@@ -298,43 +301,6 @@ def edit_movie(*, old_movie_bag: MovieBag, replacement_fields: MovieBag):
 
         else:  # pragma nocover
             raise
-
-
-def update_movie_relationships(
-    movie: schema.Movie, movie_bag: MovieBag, session: Session
-):
-    """Updates the directors, stars, and tags relationships of the movie.
-
-    This is a support function which contains common code.
-
-    Args:
-        movie:
-        movie_bag:
-        session:
-
-    Raises:
-        A NoResultFound exception will be logged and raised if a tag was not
-        found. The added note list will contain:
-            TAG_NOT_FOUND literal,
-            tag text.
-
-    """
-    if tags := movie_bag.get("tags"):
-        movie.tags = set()
-        for tag_text in tags:
-            try:
-                # noinspection PyUnresolvedReferences
-                movie.tags.add(_select_tag(session, text=tag_text))
-            except NoResultFound as exc:
-                logging.error(TAG_NOT_FOUND, tag_text)
-                exc.add_note(TAG_NOT_FOUND)
-                exc.add_note(tag_text)
-                raise
-
-    if directors := movie_bag.get("directors"):
-        movie.directors = _getadd_people(session, names=directors)
-    if stars := movie_bag.get("stars"):
-        movie.stars = _getadd_people(session, names=stars)
 
 
 def delete_movie(*, movie_bag: MovieBag):
@@ -385,9 +351,9 @@ def delete_all_orphans():
     """Deletes all orphans.
 
     Use Case:
-        It is possible for a movie to be deleted by another process without handling orphan
-        people. This function should be run at program termination to delete any orphans
-        created in ths manner.
+        It is possible for a movie to be deleted by another process without
+        handling orphan people. This function should be run at program
+        termination to delete any orphans created in ths manner.
     """
     with session_factory() as session:
         all_people = _select_all_people(session)
@@ -574,15 +540,17 @@ def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | N
                 tags. Substring set match.
 
             Exact match. 4 will match `movie.id` = 4
-            Substring match. The substring 'kwai' will match 'Bridge on the River Kwai'.
-            Substring set match. Each item in the set will be matched as a substring
-                match (defined above). The movie will only be selected if every item in
-                the set matches.
+            Substring match. The substring 'kwai' will match 'Bridge on the
+                River Kwai'.
+            Substring set match. Each item in the set will be matched as a
+            substring match (defined above). The movie will only be selected
+            if every item in the set matches.
                 For a movie with stars {"Edgar Ethelred", "Fanny Fullworthy"}:
                     {'ethel'} will match
                     {'ethel', 'worth'} will match
                     {'ethel', 'bogart'} will not match.
-            Contains match. A movie.year of `1955 in MovieInteger('1950-1960')` is a match.
+            Contains match. A movie.year of `1955 in MovieInteger('1950-1960')`
+                is a match.
 
     Returns:
         The intersection of the ORM movies selected by each field's search criteria.
@@ -652,6 +620,8 @@ def _match_movies(session: Session, *, match: MovieBag) -> set[schema.Movie] | N
         statement = select(schema.Movie).from_statement(intersection)
         matches = session.scalars(statement).all()
         return set(matches)
+    else:
+        return None
 
 
 def _add_movie(*, movie_bag: MovieBag) -> schema.Movie:
@@ -839,6 +809,91 @@ def _add_person(session: Session, *, name: str) -> schema.Person:
     person = schema.Person(name=name)
     session.add(person)
     return person
+
+
+def _update_movie_relationships(
+    movie: schema.Movie, movie_bag: MovieBag, session: Session
+):
+    """Updates the directors, stars, and tags relationships of the movie.
+
+    This is a support function which contains common code.
+
+    Args:
+        movie:
+        movie_bag:
+        session:
+
+    Raises:
+        A NoResultFound exception will be logged and raised if a tag was not
+        found. The added note list will contain:
+            TAG_NOT_FOUND literal,
+            tag text.
+    """
+    _add_tags_to_movie(movie, movie_bag, session)
+    _getadd_directors(movie, movie_bag, session)
+    _getadd_stars(movie, movie_bag, session)
+
+
+def _add_tags_to_movie(
+    movie: schema.Movie,
+    movie_bag: MovieBag,
+    session: Session,
+):
+    tags = movie_bag.get("tags")
+    if tags or tags == set():
+        movie.tags = set()
+        for tag_text in tags:
+            try:
+                # noinspection PyUnresolvedReferences
+                tag = _select_tag(session, text=tag_text)
+            except NoResultFound as exc:
+                logging.error(f"{TAG_NOT_FOUND}: {tag_text}")
+                exc.add_note(TAG_NOT_FOUND)
+                exc.add_note(tag_text)
+                raise
+            else:
+                # noinspection PyUnresolvedReferences
+                movie.tags.add(tag)
+
+
+def _getadd_directors(
+    movie: schema.Movie,
+    movie_bag: MovieBag,
+    session: Session,
+):
+    """Links the movie's directors to the people table. If a director does not
+    exist in the people table they will be added.
+
+    Args:
+        movie:
+        movie_bag:
+        session:
+    """
+    directors = movie_bag.get("directors")
+    if directors:
+        movie.directors = _getadd_people(session, names=directors)
+    else:
+        movie.directors = set()
+
+
+def _getadd_stars(
+    movie: schema.Movie,
+    movie_bag: MovieBag,
+    session: Session,
+):
+    """Links the movie's stars to the people table. If a star does not exist
+    in the people table they will be added.
+
+    Args:
+        movie:
+        movie_bag:
+        session:
+    """
+    stars = movie_bag.get("stars")
+    if stars:
+        movie.stars = _getadd_people(session, names=stars)
+    else:
+        movie.stars = set()
 
 
 def _getadd_people(session: Session, *, names: set[str]) -> set[schema.Person]:

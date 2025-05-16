@@ -1,19 +1,21 @@
 """Test module."""
-#  Copyright (c) 2022-2022. Stephen Rigden.
-#  Last modified 12/14/22, 7:59 AM by stephen.
-#  This program_name is free software: you can redistribute it and/or modify
+
+#  Copyright© 2025. Stephen Rigden.
+#  Last modified 5/8/25, 9:37 AM by stephen.
+#  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#  This program_name is distributed in the hope that it will be useful,
+#  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #  You should have received a copy of the GNU General Public License
-#  along with this program_name.  If not, see <https://www.gnu.org/licenses/>.
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import pytest
 
+from moviebag import MovieBag, MovieInteger
 from .moxenstubs import *
 
 
@@ -23,47 +25,52 @@ def test_timeout_set():
 
 def test_api_key_set(monkeypatch):
     # noinspection PyStatementEffect
-    tmdb.tmdbsimple.API_KEY == ''
-    monkeypatch.setattr('tmdb.tmdbsimple.Search', DummyTMDBSearch)
-    monkeypatch.setattr('tmdb.tmdbsimple.Movies', DummyTMDBMovies)
+    tmdb.tmdbsimple.API_KEY == ""
+    monkeypatch.setattr("tmdb.tmdbsimple.Search", DummyTMDBSearch)
+    monkeypatch.setattr("tmdb.tmdbsimple.Movies", DummyTMDBMovies)
     tmdb.search_tmdb(API_KEY, TITLE_QUERY, tmdb.queue.Queue())
     assert tmdb.tmdbsimple.API_KEY == API_KEY
 
 
 def test_movie_data_placed_in_work_queue(monkeypatch):
-    monkeypatch.setattr('tmdb.tmdbsimple.Search', DummyTMDBSearch)
-    monkeypatch.setattr('tmdb.tmdbsimple.Movies', DummyTMDBMovies)
+    monkeypatch.setattr("tmdb.tmdbsimple.Search", DummyTMDBSearch)
+    monkeypatch.setattr("tmdb.tmdbsimple.Movies", DummyTMDBMovies)
     work_queue = tmdb.queue.Queue()
     tmdb.search_tmdb(API_KEY, TITLE_QUERY, work_queue)
 
-    expected = [dict(
-        director=TEST_DIRECTORS,
-        minutes=TEST_RUNTIME,
-        notes=TEST_NOTES,
-        title=TEST_TITLE,
-        year=TEST_RELEASE_DATE[:4], )]
+    expected = [
+        MovieBag(
+            title=TEST_TITLE,
+            year=MovieInteger(TEST_RELEASE_DATE[:4]),
+            duration=MovieInteger(TEST_RUNTIME),
+            directors=set(TEST_DIRECTORS),
+            synopsis=TEST_SYNOPSIS,
+        )
+    ]
     assert work_queue.get() == expected
 
 
 def test_movie_data_with_no_date_placed_in_work_queue(monkeypatch):
-    monkeypatch.setattr('tmdb.tmdbsimple.Search', DummyTMDBSearch)
-    monkeypatch.setattr('tmdb.tmdbsimple.Movies', DummyTMDBBlankDateMovie)
+    monkeypatch.setattr("tmdb.tmdbsimple.Search", DummyTMDBSearch)
+    monkeypatch.setattr("tmdb.tmdbsimple.Movies", DummyTMDBBlankDateMovie)
     work_queue = tmdb.queue.Queue()
     tmdb.search_tmdb(API_KEY, TITLE_QUERY, work_queue)
 
-    expected = [dict(
-        director=TEST_DIRECTORS,
-        minutes=TEST_RUNTIME,
-        notes=TEST_NOTES,
-        title=TEST_TITLE,
-        year=TEST_BLANK_RELEASE_DATE)]
+    expected = [
+        MovieBag(
+            title=TEST_TITLE,
+            duration=MovieInteger(TEST_RUNTIME),
+            directors=set(TEST_DIRECTORS),
+            synopsis=TEST_SYNOPSIS,
+        )
+    ]
     assert work_queue.get() == expected
 
 
 # noinspection DuplicatedCode
 def test_timeout_error_raised(monkeypatch):
-    monkeypatch.setattr('tmdb.tmdbsimple.Search', DummyTMDBTimeoutError)
-    monkeypatch.setattr('tmdb.tmdbsimple.Movies', DummyTMDBMovies)
+    monkeypatch.setattr("tmdb.tmdbsimple.Search", DummyTMDBTimeoutError)
+    monkeypatch.setattr("tmdb.tmdbsimple.Movies", DummyTMDBMovies)
 
     with pytest.raises(tmdb.exception.TMDBConnectionTimeout) as exc:
         tmdb.search_tmdb(API_KEY, TITLE_QUERY, tmdb.queue.Queue())
@@ -71,9 +78,9 @@ def test_timeout_error_raised(monkeypatch):
 
 
 def test_timeout_error_logged(monkeypatch, caplog):
-    caplog.set_level('INFO')
-    monkeypatch.setattr('tmdb.tmdbsimple.Search', DummyTMDBTimeoutError)
-    monkeypatch.setattr('tmdb.tmdbsimple.Movies', DummyTMDBMovies)
+    caplog.set_level("INFO")
+    monkeypatch.setattr("tmdb.tmdbsimple.Search", DummyTMDBTimeoutError)
+    monkeypatch.setattr("tmdb.tmdbsimple.Movies", DummyTMDBMovies)
 
     with pytest.raises(tmdb.exception.TMDBConnectionTimeout):
         tmdb.search_tmdb(API_KEY, TITLE_QUERY, tmdb.queue.Queue())
@@ -82,8 +89,8 @@ def test_timeout_error_logged(monkeypatch, caplog):
 
 # noinspection DuplicatedCode
 def test_http_error_raised(monkeypatch):
-    monkeypatch.setattr('tmdb.tmdbsimple.Search', DummyTMDBKeyError)
-    monkeypatch.setattr('tmdb.tmdbsimple.Movies', DummyTMDBMovies)
+    monkeypatch.setattr("tmdb.tmdbsimple.Search", DummyTMDBKeyError)
+    monkeypatch.setattr("tmdb.tmdbsimple.Movies", DummyTMDBMovies)
 
     with pytest.raises(tmdb.exception.TMDBAPIKeyException) as exc:
         tmdb.search_tmdb(API_KEY, TITLE_QUERY, tmdb.queue.Queue())
@@ -91,9 +98,9 @@ def test_http_error_raised(monkeypatch):
 
 
 def test_http_error_logged(monkeypatch, caplog):
-    caplog.set_level('ERROR')
-    monkeypatch.setattr('tmdb.tmdbsimple.Search', DummyTMDBKeyError)
-    monkeypatch.setattr('tmdb.tmdbsimple.Movies', DummyTMDBMovies)
+    caplog.set_level("ERROR")
+    monkeypatch.setattr("tmdb.tmdbsimple.Search", DummyTMDBKeyError)
+    monkeypatch.setattr("tmdb.tmdbsimple.Movies", DummyTMDBMovies)
 
     with pytest.raises(tmdb.exception.TMDBAPIKeyException):
         tmdb.search_tmdb(API_KEY, TITLE_QUERY, tmdb.queue.Queue())
@@ -102,8 +109,8 @@ def test_http_error_logged(monkeypatch, caplog):
 
 # noinspection DuplicatedCode
 def test_missing_movie_error_raised(monkeypatch):
-    monkeypatch.setattr('tmdb.tmdbsimple.Search', DummyTMDBSearch)
-    monkeypatch.setattr('tmdb.tmdbsimple.Movies', DummyTMDBMissingMovie)
+    monkeypatch.setattr("tmdb.tmdbsimple.Search", DummyTMDBSearch)
+    monkeypatch.setattr("tmdb.tmdbsimple.Movies", DummyTMDBMissingMovie)
 
     with pytest.raises(tmdb.exception.TMDBMovieIDMissing) as exc:
         tmdb.search_tmdb(API_KEY, TITLE_QUERY, tmdb.queue.Queue())
@@ -111,9 +118,9 @@ def test_missing_movie_error_raised(monkeypatch):
 
 
 def test_missing_movie_error_logged(monkeypatch, caplog):
-    caplog.set_level('ERROR')
-    monkeypatch.setattr('tmdb.tmdbsimple.Search', DummyTMDBSearch)
-    monkeypatch.setattr('tmdb.tmdbsimple.Movies', DummyTMDBMissingMovie)
+    caplog.set_level("ERROR")
+    monkeypatch.setattr("tmdb.tmdbsimple.Search", DummyTMDBSearch)
+    monkeypatch.setattr("tmdb.tmdbsimple.Movies", DummyTMDBMissingMovie)
 
     with pytest.raises(tmdb.exception.TMDBMovieIDMissing):
         tmdb.search_tmdb(API_KEY, TITLE_QUERY, tmdb.queue.Queue())
@@ -121,10 +128,10 @@ def test_missing_movie_error_logged(monkeypatch, caplog):
 
 
 def test_unexpected_http_error_logged(monkeypatch, caplog):
-    caplog.set_level('INFO')
-    monkeypatch.setattr('tmdb.tmdbsimple.Search', DummyTMDBSearch)
-    monkeypatch.setattr('tmdb.tmdbsimple.Movies', DummyUnexpectedHTTPError)
+    caplog.set_level("INFO")
+    monkeypatch.setattr("tmdb.tmdbsimple.Search", DummyTMDBSearch)
+    monkeypatch.setattr("tmdb.tmdbsimple.Movies", DummyUnexpectedHTTPError)
 
     with pytest.raises(tmdb.requests.exceptions.HTTPError):
         tmdb.search_tmdb(API_KEY, TITLE_QUERY, tmdb.queue.Queue())
-    assert caplog.messages == ['HTTPError()']
+    assert caplog.messages == ["HTTPError()"]
