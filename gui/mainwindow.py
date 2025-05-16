@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/16/25, 1:30 PM by stephen.
+#  Last modified 5/16/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -203,7 +203,6 @@ class MainWindow:
 
 def run_tktcl():
     """Run the GUI."""
-    # todo delete initialization of config.current.tk_root
     root = common.tk_root = tk.Tk()
     root.columnconfigure(0, weight=1)
     root.rowconfigure(0, weight=1)

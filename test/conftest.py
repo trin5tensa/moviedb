@@ -1,7 +1,7 @@
-"""pytest fixture plugin."""
+"""Thread fixtures"""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/16/25, 1:30 PM by stephen.
+#  Last modified 5/16/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,13 +14,9 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from dataclasses import dataclass, field
-from unittest.mock import MagicMock
-
-import pytest
-
 import exception
 
-# todo remove unused
+import pytest
 
 
 @pytest.fixture()
@@ -64,14 +60,6 @@ def mock_fut_unexpected():
 @pytest.fixture()
 def mock_executor():
     return _MockThreadPoolExecutor()
-
-
-@pytest.fixture()
-def mock_config_current(monkeypatch):
-    """Mock handlers.config.current."""
-    current = MagicMock()
-    monkeypatch.setattr("handlers.sundries.config.current", current)
-    return current
 
 
 # noinspection PyMissingOrEmptyDocstring
