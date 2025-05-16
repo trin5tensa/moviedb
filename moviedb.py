@@ -1,7 +1,7 @@
 """Main movie database program"""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/8/25, 2:02 PM by stephen.
+#  Last modified 5/16/25, 6:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -112,6 +112,7 @@ def _json_load() -> dict:
 
 def save_config_file():
     """Save the persistent config object."""
+    # todo test this function
     # noinspection PyTypeChecker
     _json_dump(asdict(config.persistent), _json_path())
 

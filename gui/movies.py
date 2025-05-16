@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/8/25, 9:37 AM by stephen.
+#  Last modified 5/16/25, 6:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -211,31 +211,38 @@ class MovieGUI:
         """
         movie_bag = MovieBag()
         for name, widget in self.entry_fields.items():
-            if widget.current_value:
-                match name:
-                    case "timestamp":
-                        pass
-                    case "title":
-                        movie_bag["title"] = widget.current_value
-                    case "year":
-                        movie_bag["year"] = MovieInteger(widget.current_value)
-                    case "duration":
-                        movie_bag["duration"] = MovieInteger(widget.current_value)
-                    case "directors":
-                        movie_bag["directors"] = set(widget.current_value.split(", "))
-                    case "stars":
-                        movie_bag["stars"] = set(widget.current_value.split(", "))
-                    case "synopsis":
-                        movie_bag["synopsis"] = widget.current_value
-                    case "notes":
-                        movie_bag["notes"] = widget.current_value
-                    case "tags":
-                        movie_bag["tags"] = {  # pragma no branch
-                            tag for tag in widget.current_value
-                        }
-                    case _:
-                        logging.error(f"Unexpected key: {name}")
-                        raise KeyError(f"Unexpected key: {name}")
+            value = widget.current_value
+            # noinspection PyUnreachableCode
+            match name:
+                case "timestamp":
+                    pass
+                case "title" if value:
+                    movie_bag["title"] = value
+                case "year" if value:
+                    movie_bag["year"] = MovieInteger(value)
+                case "duration" if value:
+                    movie_bag["duration"] = MovieInteger(value)
+                case "directors" if value:
+                    movie_bag["directors"] = set(value.split(", "))
+                case "directors":
+                    movie_bag["directors"] = set()
+                case "stars" if value:
+                    movie_bag["stars"] = set(value.split(", "))
+                case "stars":
+                    movie_bag["stars"] = set()
+                case "synopsis":
+                    movie_bag["synopsis"] = value
+                case "notes":
+                    movie_bag["notes"] = value
+                case "tags" if value:
+                    movie_bag["tags"] = {tag for tag in value}  # pragma no branch
+                case "tags":
+                    movie_bag["tags"] = set()
+                case "title" | "year" | "duration":
+                    pass
+                case _:
+                    logging.error(f"Unexpected key: {name}")
+                    raise KeyError(f"Unexpected key: {name}")
         return movie_bag
 
     def fill_buttonbox(self, buttonbox: ttk.Frame):
@@ -359,6 +366,7 @@ class MovieGUI:
             return
 
         for k, v in self.tmdb_movies[item_id].items():
+            # noinspection PyUnreachableCode
             match k:
                 case "title" | "year" | "duration" | "synopsis":
                     self.entry_fields[k].current_value = str(v)

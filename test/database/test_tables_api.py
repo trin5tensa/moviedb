@@ -1,7 +1,7 @@
 """Test module."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/17/25, 12:59 PM by stephen.
+#  Last modified 5/16/25, 6:53 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -13,9 +13,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from unittest.mock import MagicMock
+
 import pytest
 from pytest_check import check
-
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.exc import NoResultFound
 
@@ -171,30 +172,6 @@ def test_add_movie(test_database):
         )
 
 
-def test_add_movie_with_invalid_tag(test_database, log_error):
-    tag_text = "add_movie_with_invalid_tag"
-    movie_bag = MovieBag(
-        title="Test Add Movie",
-        year=MovieInteger(5042),
-        tags={tag_text},
-    )
-    exc_notes = f"{tables.TAG_NOT_FOUND}\n{tag_text}"
-
-    with check:
-        with pytest.raises(tables.NoResultFound, match=exc_notes):
-            tables.add_movie(movie_bag=movie_bag)
-
-    check.equal(
-        log_error,
-        [
-            (
-                (tables.TAG_NOT_FOUND, tag_text),
-                {},
-            )
-        ],
-    )
-
-
 def test_add_movie_with_title_year_duplication_error(test_database, log_error):
     exc_notes = f"{tables.MOVIE_EXISTS}\n{MOVIEBAG_1['title']}\n{MOVIEBAG_1['year']}"
 
@@ -307,39 +284,6 @@ def test_edit_movie(test_database):
             new_movie_bag["directors"] | new_movie_bag["stars"],
             msg=f"Either new people not added to person table or orphans not removed.",
         )
-
-
-def test_edit_movie_with_invalid_tag(test_database, log_error):
-    old_movie_bag = MovieBag(
-        title="Test Edit Movie",
-        year=MovieInteger(5042),
-    )
-    tables.add_movie(movie_bag=old_movie_bag)
-    tag_text = "edit_movie_with_invalid_tag"
-    new_movie_bag = MovieBag(
-        tags={tag_text},
-    )
-    exc_notes = f"{tables.TAG_NOT_FOUND}\n{tag_text}"
-
-    with check:
-        with pytest.raises(
-            tables.NoResultFound,
-            match=exc_notes,
-        ):
-            tables.edit_movie(
-                old_movie_bag=old_movie_bag,
-                replacement_fields=new_movie_bag,
-            )
-
-    check.equal(
-        log_error,
-        [
-            (
-                (tables.TAG_NOT_FOUND, tag_text),
-                {},
-            )
-        ],
-    )
 
 
 # noinspection PyPep8Naming
@@ -593,7 +537,8 @@ def test_delete_all_orphans(test_database, log_info):
             [
                 (
                     (
-                        "1 Orphan(s) were removed. They should have been removed before now.",
+                        "1 Orphan(s) were removed. They should"
+                        " have been removed before now.",
                     ),
                     {},
                 )
@@ -646,6 +591,155 @@ def check_movie_assignments(session: tables.Session, movie_bag: tables.MovieBag)
     check.equal({person.name for person in movie.stars}, movie_bag["stars"])
 
 
+def test_update_movie_relationships(monkeypatch):
+    # Arrange
+    movie = MagicMock(name="movie", autospec=True)
+    movie_bag = tables.MovieBag()
+    session = MagicMock(name="session", autospec=True)
+    add_tags = MagicMock(name="add_tags", autospec=True)
+    monkeypatch.setattr(tables, "_add_tags_to_movie", add_tags)
+    add_directors = MagicMock(name="add_directors", autospec=True)
+    monkeypatch.setattr(tables, "_getadd_directors", add_directors)
+    add_stars = MagicMock(name="add_stars", autospec=True)
+    monkeypatch.setattr(tables, "_getadd_stars", add_stars)
+
+    # Act
+    tables._update_movie_relationships(movie, movie_bag, session)
+
+    # Assert
+    with check:
+        add_tags.assert_called_once_with(movie, movie_bag, session)
+    with check:
+        add_directors.assert_called_once_with(movie, movie_bag, session)
+    with check:
+        add_stars.assert_called_once_with(movie, movie_bag, session)
+
+
+def test_add_tags_to_movie(test_database, monkeypatch):
+    # Arrange
+    movie_bag = tables.MovieBag(tags={SOUGHT_TAG})
+
+    with tables.session_factory() as session:
+        # Arrange
+        expected_tag = {tables._select_tag(session, text=SOUGHT_TAG)}
+        movie = tables._select_movie(session, movie_bag=MOVIEBAG_4)
+
+        # Act
+        tables._add_tags_to_movie(movie, movie_bag, session)
+
+        # Assert
+        assert movie.tags == expected_tag
+
+
+def test_add_tags_to_movie_with_no_tags(test_database, monkeypatch):
+    # Arrange
+    movie_bag = tables.MovieBag(tags=set())
+
+    with tables.session_factory() as session:
+        # Arrange
+        expected_tag = set()
+        movie = tables._select_movie(session, movie_bag=MOVIEBAG_4)
+
+        # Act
+        tables._add_tags_to_movie(movie, movie_bag, session)
+
+        # Assert
+        assert movie.tags == expected_tag
+
+
+def test_add_tags_to_movie_with_missing_tag_exception(
+    test_database, monkeypatch, caplog
+):
+    # Arrange
+    tag_text = "Definitely not a tag"
+    movie_bag = tables.MovieBag(tags={tag_text})
+    exc_notes = f"{tables.TAG_NOT_FOUND}\n{tag_text}"
+    log_msg = f"{tables.TAG_NOT_FOUND}: {tag_text}"
+
+    with tables.session_factory() as session:
+        # Arrange
+        movie = tables._select_movie(session, movie_bag=MOVIEBAG_4)
+
+        # Act
+        with pytest.raises(NoResultFound, match=exc_notes):
+            tables._add_tags_to_movie(movie, movie_bag, session)
+
+    # Assert
+    check.equal(caplog.messages, [log_msg])
+
+
+# noinspection DuplicatedCode
+@pytest.mark.parametrize(
+    "directors, expected",
+    [
+        (None, set()),
+        (set(), set()),
+        ({"a", "b", "c"}, {"a", "b", "c"}),
+    ],
+)
+def test_get_add_directors(directors, expected, monkeypatch):
+    # Arrange
+    session_cls = MagicMock(name="session_cls", autospec=True)
+    monkeypatch.setattr(tables, "Session", session_cls)
+    session = session_cls()
+    movie_bag = tables.MovieBag(directors=directors)
+    getadd_people = MagicMock(name="gap", autospec=True)
+    getadd_people.return_value = expected
+    monkeypatch.setattr(tables, "_getadd_people", getadd_people)
+
+    movie = MagicMock(name="movie", autospec=True)
+    monkeypatch.setattr(tables.schema, "Movie", movie)
+
+    # Act
+    tables._getadd_directors(movie, movie_bag, session)
+
+    # Assert
+    if directors:
+        with check:
+            getadd_people.assert_called_once_with(session, names=directors)
+    else:
+        with check:
+            getadd_people.assert_not_called()
+
+    check.equal(movie.directors, expected)
+
+
+# noinspection DuplicatedCode
+@pytest.mark.parametrize(
+    "stars, expected",
+    [
+        (None, set()),
+        (set(), set()),
+        ({"a", "b", "c"}, {"a", "b", "c"}),
+    ],
+)
+def test_get_add_stars(stars, expected, monkeypatch):
+    # Arrange
+    session_cls = MagicMock(name="session_cls", autospec=True)
+    monkeypatch.setattr(tables, "Session", session_cls)
+    session = session_cls()
+    movie_bag = tables.MovieBag(stars=stars)
+    getadd_people = MagicMock(name="gap", autospec=True)
+    getadd_people.return_value = expected
+    monkeypatch.setattr(tables, "_getadd_people", getadd_people)
+
+    movie = MagicMock(name="movie", autospec=True)
+    monkeypatch.setattr(tables.schema, "Movie", movie)
+
+    # Act
+    tables._getadd_stars(movie, movie_bag, session)
+
+    # Assert
+    if stars:
+        with check:
+            getadd_people.assert_called_once_with(session, names=stars)
+    else:
+        with check:
+            getadd_people.assert_not_called()
+
+    check.equal(movie.stars, expected)
+
+
 @pytest.fixture(scope="function")
 def session_engine():
     """Creates an engine."""
@@ -656,6 +750,9 @@ def session_engine():
 
 @pytest.fixture(scope="function")
 def test_database(session_engine):
+    """Creates a test database using the four movies MOVIEBAG_1, MOVIEBAG_2,
+    MOVIEBAG_3, MOVIEBAG_4 and TAG_TEXTS.
+    """
     with tables.session_factory() as session:
         session.add_all([schema.Tag(text=text) for text in TAG_TEXTS])
 
