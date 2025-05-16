@@ -1,7 +1,7 @@
-"""pytest fixture plugin."""
+"""Thread fixtures"""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 8:50 AM by stephen.
+#  Last modified 5/16/25, 1:36 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,18 +14,17 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from dataclasses import dataclass, field
-from unittest.mock import MagicMock
+import exception
 
 import pytest
-
-import exception
 
 
 @pytest.fixture()
 def mock_fut():
     """Return an instance of the mock future class.
 
-    The result method of this future object will return the value 42 and no exceptions were raised.
+    The result method of this future object will return the value 42 and no
+    exceptions were raised.
     """
     return _MockFuture()
 
@@ -43,7 +42,8 @@ def mock_fut_bad_key():
 def mock_fut_timeout():
     """Return an instance of the mock future class.
 
-    The result method of this future object will raise the exception TMDBConnectionTimeout.
+    The result method of this future object will raise the exception
+    TMDBConnectionTimeout.
     """
     return _MockFuture(exception.TMDBConnectionTimeout("Test timeout exception"))
 
@@ -60,14 +60,6 @@ def mock_fut_unexpected():
 @pytest.fixture()
 def mock_executor():
     return _MockThreadPoolExecutor()
-
-
-@pytest.fixture()
-def mock_config_current(monkeypatch):
-    """Mock handlers.config.current."""
-    current = MagicMock()
-    monkeypatch.setattr("handlers.sundries.config.current", current)
-    return current
 
 
 # noinspection PyMissingOrEmptyDocstring

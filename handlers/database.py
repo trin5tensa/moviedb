@@ -1,7 +1,7 @@
 """Menu handlers for the database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/16/25, 6:53 AM by stephen.
+#  Last modified 5/16/25, 1:30 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -14,18 +14,12 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from functools import partial
-import config
 import logging
 
+from gui import movies, common, tags, tviewselect
 
-import gui.common
-import gui.tags
-import gui.movies
-import gui.tviewselect
 from database import tables
-
 from moviebag import MovieBag
-
 from handlers.sundries import _tmdb_io_handler
 
 
@@ -53,8 +47,8 @@ def gui_add_movie(*, prepopulate: MovieBag = None):
     all_tags = tables.select_all_tags()
     if not prepopulate:
         prepopulate = MovieBag()
-    gui.movies.AddMovieGUI(
-        config.current.tk_root,
+    movies.AddMovieGUI(
+        common.tk_root,
         tmdb_callback=_tmdb_io_handler,
         all_tags=all_tags,
         prepopulate=prepopulate,
@@ -76,8 +70,8 @@ def gui_search_movie(*, prepopulate: MovieBag = None):
     all_tags = tables.select_all_tags()
     if not prepopulate:
         prepopulate = MovieBag()
-    gui.movies.SearchMovieGUI(
-        config.current.tk_root,
+    movies.SearchMovieGUI(
+        common.tk_root,
         database_callback=db_match_movies,
         tmdb_callback=_tmdb_io_handler,
         all_tags=all_tags,
@@ -85,14 +79,16 @@ def gui_search_movie(*, prepopulate: MovieBag = None):
     )
 
 
-def gui_select_movie(*, movies: list[MovieBag]):
+def gui_select_movie(*, movie_bags: list[MovieBag]):
     """Presents a user dialog for selecting a movie from a list.
 
     Args:
-        movies:
+        movie_bags:
     """
-    gui.tviewselect.SelectMovieGUI(
-        config.current.tk_root, selection_callback=db_select_movie, rows=movies
+    tviewselect.SelectMovieGUI(
+        common.tk_root,
+        selection_callback=db_select_movie,
+        rows=movie_bags,
     )
 
 
@@ -110,8 +106,8 @@ def gui_edit_movie(old_movie: MovieBag, *, prepopulate: MovieBag = None):
             selection.
     """
     all_tags = tables.select_all_tags()
-    gui.movies.EditMovieGUI(
-        config.current.tk_root,
+    movies.EditMovieGUI(
+        common.tk_root,
         tmdb_callback=_tmdb_io_handler,
         all_tags=all_tags,
         prepopulate=prepopulate,
@@ -171,7 +167,7 @@ def db_match_movies(criteria: MovieBag):
     match len(movies_found):
         case 0:
             # Informs user and represents the search window.
-            gui.common.showinfo(tables.MOVIE_NOT_FOUND)
+            common.showinfo(tables.MOVIE_NOT_FOUND)
             gui_search_movie(prepopulate=MovieBag(**criteria))
 
         case 1:
@@ -181,7 +177,7 @@ def db_match_movies(criteria: MovieBag):
 
         case _:
             # Presents a selection window showing the multiple compliant movies.
-            gui_select_movie(movies=movies_found)
+            gui_select_movie(movie_bags=movies_found)
 
 
 def db_select_movie(movie_bag: MovieBag):
@@ -247,16 +243,16 @@ def db_delete_movie(old_movie: MovieBag):
 
 def gui_add_tag():
     """Presents a GUI form for adding a new movie."""
-    gui.tags.AddTagGUI(
-        config.current.tk_root,
+    tags.AddTagGUI(
+        common.tk_root,
         add_tag_callback=db_add_tag,
     )
 
 
 def gui_select_all_tags():
     """Presents a user dialog for selecting a tag from a list."""
-    gui.tviewselect.SelectTagGUI(
-        config.current.tk_root,
+    tviewselect.SelectTagGUI(
+        common.tk_root,
         selection_callback=gui_edit_tag,
         rows=list(tables.select_all_tags()),
     )
@@ -274,8 +270,8 @@ def gui_edit_tag(tag: str, *, prepopulate: str = None):
             an exception. It gives the user the opportunity to fix
             input errors.
     """
-    gui.tags.EditTagGUI(
-        config.current.tk_root,
+    tags.EditTagGUI(
+        common.tk_root,
         edit_tag_callback=partial(db_edit_tag, tag),
         delete_tag_callback=partial(db_delete_tag, tag),
         tag=tag,
@@ -338,10 +334,10 @@ def _exc_messagebox(exc):
         are missing.
     """
     if len(exc.__notes__) == 1:
-        gui.common.showinfo(message=exc.__notes__[0])
+        common.showinfo(message=exc.__notes__[0])
 
     elif len(exc.__notes__) > 1:
-        gui.common.showinfo(
+        common.showinfo(
             message=exc.__notes__[0], detail=", ".join(exc.__notes__[1:]) + "."
         )
 

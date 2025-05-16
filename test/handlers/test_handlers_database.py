@@ -1,7 +1,7 @@
 """Menu handlers for movies."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/9/25, 1:05 PM by stephen.
+#  Last modified 5/16/25, 1:30 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,17 +18,15 @@ from unittest.mock import MagicMock, call
 import pytest
 from pytest_check import check
 
-import config
-
 from moviebag import MovieInteger, MovieBag
 import handlers
 
 
-def test_gui_add_movie_without_prepopulate(monkeypatch, config_current, test_tags):
+def test_gui_add_movie_without_prepopulate(monkeypatch, test_tags):
     # Arrange
     add_movie_gui = MagicMock(name="add_movie_gui", autospec=True)
     monkeypatch.setattr(
-        handlers.database.gui.movies,
+        handlers.database.movies,
         "AddMovieGUI",
         add_movie_gui,
     )
@@ -40,7 +38,7 @@ def test_gui_add_movie_without_prepopulate(monkeypatch, config_current, test_tag
 
     # Act
     add_movie_gui.assert_called_once_with(
-        handlers.database.config.current.tk_root,
+        handlers.database.common.tk_root,
         tmdb_callback=handlers.sundries._tmdb_io_handler,
         all_tags=test_tags,
         prepopulate=movie_bag(),
@@ -48,11 +46,11 @@ def test_gui_add_movie_without_prepopulate(monkeypatch, config_current, test_tag
     )
 
 
-def test_gui_add_movie_with_prepopulate(monkeypatch, config_current, test_tags):
+def test_gui_add_movie_with_prepopulate(monkeypatch, test_tags):
     # Arrange
     add_movie_gui = MagicMock(name="add_movie_gui", autospec=True)
     monkeypatch.setattr(
-        handlers.database.gui.movies,
+        handlers.database.movies,
         "AddMovieGUI",
         add_movie_gui,
     )
@@ -63,7 +61,7 @@ def test_gui_add_movie_with_prepopulate(monkeypatch, config_current, test_tags):
 
     # Assert
     add_movie_gui.assert_called_once_with(
-        handlers.database.config.current.tk_root,
+        handlers.database.common.tk_root,
         tmdb_callback=handlers.sundries._tmdb_io_handler,
         all_tags=test_tags,
         prepopulate=movie_bag,
@@ -92,7 +90,6 @@ def test_db_add_movie(monkeypatch):
 # noinspection PyPep8Naming,DuplicatedCode
 def test_db_add_movie_handles_NoResultFound_for_missing_tag(
     monkeypatch,
-    config_current,
 ):
     """Attempts to add a movie with a tag that is not in the database"""
     movie_bag = MovieBag(title="Add movie test", year=MovieInteger("4242"))
@@ -172,7 +169,6 @@ def test_db_add_movie_handles_IntegrityError_for_invalid_year(monkeypatch):
 
 def test_gui_search_movie_with_prepopulate(
     monkeypatch,
-    config_current,
     test_tags,
 ):
     # Arrange prepopulate
@@ -192,7 +188,7 @@ def test_gui_search_movie_with_prepopulate(
     # Arrange search_movie
     search_movie = MagicMock(name="search_movie", autospec=True)
     monkeypatch.setattr(
-        handlers.database.gui.movies,
+        handlers.database.movies,
         "SearchMovieGUI",
         search_movie,
     )
@@ -205,7 +201,7 @@ def test_gui_search_movie_with_prepopulate(
         select_all_tags.assert_called_once_with()
     with check:
         search_movie.assert_called_once_with(
-            handlers.database.config.current.tk_root,
+            handlers.database.common.tk_root,
             database_callback=handlers.database.db_match_movies,
             tmdb_callback=handlers.database._tmdb_io_handler,
             all_tags=test_tags,
@@ -215,7 +211,6 @@ def test_gui_search_movie_with_prepopulate(
 
 def test_gui_search_movie_without_prepopulate(
     monkeypatch,
-    config_current,
     test_tags,
 ):
     # Arrange select_all_tags
@@ -230,7 +225,7 @@ def test_gui_search_movie_without_prepopulate(
     # Arrange search_movie
     search_movie = MagicMock(name="search_movie", autospec=True)
     monkeypatch.setattr(
-        handlers.database.gui.movies,
+        handlers.database.movies,
         "SearchMovieGUI",
         search_movie,
     )
@@ -243,7 +238,7 @@ def test_gui_search_movie_without_prepopulate(
         select_all_tags.assert_called_once_with()
     with check:
         search_movie.assert_called_once_with(
-            handlers.database.config.current.tk_root,
+            handlers.database.common.tk_root,
             database_callback=handlers.database.db_match_movies,
             tmdb_callback=handlers.database._tmdb_io_handler,
             all_tags=test_tags,
@@ -251,23 +246,23 @@ def test_gui_search_movie_without_prepopulate(
         )
 
 
-def test_gui_select_movie(monkeypatch, config_current):
+def test_gui_select_movie(monkeypatch):
     select_movie_gui = MagicMock(name="select_movie_gui")
     monkeypatch.setattr(
-        handlers.database.gui.tviewselect, "SelectMovieGUI", select_movie_gui
+        handlers.database.tviewselect, "SelectMovieGUI", select_movie_gui
     )
     movies = [MovieBag(title="", year=MovieInteger(0))]
 
-    handlers.database.gui_select_movie(movies=movies)
+    handlers.database.gui_select_movie(movie_bags=movies)
 
     select_movie_gui.assert_called_once_with(
-        config.current.tk_root,
+        handlers.database.common.tk_root,
         selection_callback=handlers.database.db_select_movie,
         rows=movies,
     )
 
 
-def test_db_match_movies(monkeypatch, config_current, new_movie):
+def test_db_match_movies(monkeypatch, new_movie):
     # Arrange
     match_movies = MagicMock(name="match_movies", return_value=[])
     monkeypatch.setattr(
@@ -281,7 +276,7 @@ def test_db_match_movies(monkeypatch, config_current, new_movie):
         lambda prepopulate: None,
     )
     showinfo = MagicMock(name="showinfo", autospec=True)
-    monkeypatch.setattr(handlers.database.gui.common, "showinfo", showinfo)
+    monkeypatch.setattr(handlers.database.common, "showinfo", showinfo)
 
     # Act
     handlers.database.db_match_movies(new_movie)
@@ -290,7 +285,7 @@ def test_db_match_movies(monkeypatch, config_current, new_movie):
     match_movies.assert_called_once_with(match=new_movie)
 
 
-def test_db_match_movies_with_year_range(monkeypatch, config_current, new_movie):
+def test_db_match_movies_with_year_range(monkeypatch, new_movie):
     match_movies = MagicMock(name="match_movies", return_value=[])
     monkeypatch.setattr(handlers.database.tables, "match_movies", match_movies)
     year_1 = "4242"
@@ -298,13 +293,13 @@ def test_db_match_movies_with_year_range(monkeypatch, config_current, new_movie)
     new_movie["year"] = MovieInteger(f"{year_1}-{year_2}")
     monkeypatch.setattr(handlers.database, "gui_search_movie", lambda prepopulate: None)
     showinfo = MagicMock(name="showinfo", autospec=True)
-    monkeypatch.setattr(handlers.database.gui.common, "showinfo", showinfo)
+    monkeypatch.setattr(handlers.database.common, "showinfo", showinfo)
     handlers.database.db_match_movies(new_movie)
 
     match_movies.assert_called_once_with(match=new_movie)
 
 
-def test_db_match_movies_returning_0_movies(monkeypatch, config_current):
+def test_db_match_movies_returning_0_movies(monkeypatch):
     title = "title search"
     year = "4242"
     criteria = MovieBag(title=title, year=MovieInteger(year))
@@ -313,7 +308,7 @@ def test_db_match_movies_returning_0_movies(monkeypatch, config_current):
     gui_search_movie = MagicMock(name="gui_search_movie")
     monkeypatch.setattr(handlers.database, "gui_search_movie", gui_search_movie)
     showinfo = MagicMock(name="showinfo", autospec=True)
-    monkeypatch.setattr(handlers.database.gui.common, "showinfo", showinfo)
+    monkeypatch.setattr(handlers.database.common, "showinfo", showinfo)
 
     handlers.database.db_match_movies(criteria)
 
@@ -325,7 +320,7 @@ def test_db_match_movies_returning_0_movies(monkeypatch, config_current):
         gui_search_movie.assert_called_once_with(prepopulate=criteria)
 
 
-def test_db_match_movies_returning_1_movie(monkeypatch, config_current, test_tags):
+def test_db_match_movies_returning_1_movie(monkeypatch, test_tags):
     year = "4242"
     title = "title search"
     movie_1 = handlers.database.MovieBag(title=title, year=MovieInteger(year))
@@ -341,7 +336,7 @@ def test_db_match_movies_returning_1_movie(monkeypatch, config_current, test_tag
     gui_edit_movie.assert_called_once_with(movie_1, prepopulate=movie_1)
 
 
-def test_db_match_movies_returning_2_movies(monkeypatch, config_current):
+def test_db_match_movies_returning_2_movies(monkeypatch):
     movie_1 = dict(title="Old Movie", year=4242)
     movie_2 = dict(title="Son of Old Movie", year=4243)
     movies_found = [movie_1, movie_2]
@@ -360,7 +355,7 @@ def test_db_match_movies_returning_2_movies(monkeypatch, config_current):
 
     handlers.database.db_match_movies(criteria)
 
-    gui_select_movie.assert_called_once_with(movies=movies_found)
+    gui_select_movie.assert_called_once_with(movie_bags=movies_found)
 
 
 def test_db_edit_movie(monkeypatch, old_movie_bag, new_movie):
@@ -448,10 +443,10 @@ def edit_movie_exception_handler(
         )
 
 
-def test_exc_messagebox_with_one_note(config_current, monkeypatch):
+def test_exc_messagebox_with_one_note(monkeypatch):
     item_1 = "item_1"
     showinfo = MagicMock(name="showinfo", autospec=True)
-    monkeypatch.setattr(handlers.database.gui.common, "showinfo", showinfo)
+    monkeypatch.setattr(handlers.database.common, "showinfo", showinfo)
 
     try:
         raise Exception
@@ -462,12 +457,12 @@ def test_exc_messagebox_with_one_note(config_current, monkeypatch):
     showinfo.assert_called_once_with(message=item_1)
 
 
-def test_exc_messagebox_with_multiple_notes(monkeypatch, config_current):
+def test_exc_messagebox_with_multiple_notes(monkeypatch):
     item_1 = "item_1"
     item_2 = "item_2"
     item_3 = "item_3"
     showinfo = MagicMock(name="showinfo", autospec=True)
-    monkeypatch.setattr(handlers.database.gui.common, "showinfo", showinfo)
+    monkeypatch.setattr(handlers.database.common, "showinfo", showinfo)
 
     try:
         raise Exception
@@ -521,17 +516,17 @@ def test_db_select_movies_handles_missing_movie_exception(monkeypatch):
     select_movie.side_effect.__notes__ = [notes_0, notes_1, notes_2]
     monkeypatch.setattr(handlers.database.tables, "select_movie", select_movie)
     showinfo = MagicMock(name="showinfo", autospec=True)
-    monkeypatch.setattr(handlers.database.gui.common, "showinfo", showinfo)
+    monkeypatch.setattr(handlers.database.common, "showinfo", showinfo)
 
     handlers.database.db_select_movie(movie)
 
     showinfo.assert_called_once_with(message=notes_0, detail=f"{notes_1}, {notes_2}.")
 
 
-def test_gui_add_tag(monkeypatch, config_current):
+def test_gui_add_tag(monkeypatch):
     add_tag_gui = MagicMock(name="add_tag_gui")
     monkeypatch.setattr(
-        handlers.database.gui.tags,
+        handlers.database.tags,
         "AddTagGUI",
         add_tag_gui,
     )
@@ -539,13 +534,14 @@ def test_gui_add_tag(monkeypatch, config_current):
     handlers.database.gui_add_tag()
 
     add_tag_gui.assert_called_once_with(
-        config.current.tk_root, add_tag_callback=handlers.database.db_add_tag
+        handlers.database.common.tk_root,
+        add_tag_callback=handlers.database.db_add_tag,
     )
 
 
-def test_gui_edit_tag(monkeypatch, config_current):
+def test_gui_edit_tag(monkeypatch):
     widget_edit_tag = MagicMock(name="widget_edit_tag")
-    monkeypatch.setattr(handlers.database.gui.tags, "EditTagGUI", widget_edit_tag)
+    monkeypatch.setattr(handlers.database.tags, "EditTagGUI", widget_edit_tag)
     tag = "old_tag"
     partial = MagicMock(name="partial")
     monkeypatch.setattr(handlers.database, "partial", partial)
@@ -561,28 +557,28 @@ def test_gui_edit_tag(monkeypatch, config_current):
     )
     with check:
         widget_edit_tag.assert_called_once_with(
-            config.current.tk_root,
+            handlers.database.common.tk_root,
             edit_tag_callback=partial(),
             delete_tag_callback=partial(),
             tag=tag,
         )
 
 
-def test_select_all_tags(monkeypatch, config_current):
+def test_select_all_tags(monkeypatch):
     # Arrange
     tags = {"tag 1", "tag 2"}
     db_tag_list = MagicMock(name="db_tag_list", autospec=True)
     db_tag_list.return_value = tags
     monkeypatch.setattr(handlers.database.tables, "select_all_tags", db_tag_list)
     select_tags = MagicMock(name="select_tags")
-    monkeypatch.setattr(handlers.database.gui.tviewselect, "SelectTagGUI", select_tags)
+    monkeypatch.setattr(handlers.database.tviewselect, "SelectTagGUI", select_tags)
 
     # Act
     handlers.database.gui_select_all_tags()
 
     # Assert
     select_tags.assert_called_once_with(
-        config.current.tk_root,
+        handlers.database.common.tk_root,
         selection_callback=handlers.database.gui_edit_tag,
         rows=list(tags),
     )
@@ -623,7 +619,7 @@ def test_db_edit_tag_with_old_tag_not_found(monkeypatch):
     gui_select_all_tags = MagicMock(name="gui_select_all_tags")
     monkeypatch.setattr(handlers.database, "gui_select_all_tags", gui_select_all_tags)
     showinfo = MagicMock(name="showinfo", autospec=True)
-    monkeypatch.setattr(handlers.database.gui.common, "showinfo", showinfo)
+    monkeypatch.setattr(handlers.database.common, "showinfo", showinfo)
 
     handlers.database.db_edit_tag(old_tag_text, new_tag_text)
 
@@ -651,7 +647,7 @@ def test_db_edit_tag_with_duplicate_new_tag(monkeypatch):
     notes_0 = handlers.database.tables.TAG_EXISTS
     db_edit_tag.side_effect.__notes__ = [notes_0, notes_1]
     showinfo = MagicMock(name="showinfo", autospec=True)
-    monkeypatch.setattr(handlers.database.gui.common, "showinfo", showinfo)
+    monkeypatch.setattr(handlers.database.common, "showinfo", showinfo)
 
     # Act
     handlers.database.db_edit_tag(old_tag_text, new_tag_text)
@@ -674,13 +670,13 @@ def test_db_delete_tag(monkeypatch):
     delete_tag.assert_called_once_with(tag_text=tag_text)
 
 
-def test_gui_edit_movie(monkeypatch, config_current, test_tags):
+def test_gui_edit_movie(monkeypatch, test_tags):
     # Arrange
     partial = MagicMock(name="partial")
     monkeypatch.setattr(handlers.database, "partial", partial)
     old_movie = MovieBag(title="test gui movie title", year=MovieInteger(42))
     edit_movie = MagicMock(name="edit_movie", autospec=True)
-    monkeypatch.setattr(handlers.database.gui.movies, "EditMovieGUI", edit_movie)
+    monkeypatch.setattr(handlers.database.movies, "EditMovieGUI", edit_movie)
 
     # Act
     handlers.database.gui_edit_movie(old_movie, prepopulate=old_movie)
@@ -688,7 +684,7 @@ def test_gui_edit_movie(monkeypatch, config_current, test_tags):
     # Assert
     with check:
         edit_movie.assert_called_once_with(
-            handlers.database.config.current.tk_root,
+            handlers.database.common.tk_root,
             tmdb_callback=handlers.sundries._tmdb_io_handler,
             all_tags=test_tags,
             prepopulate=old_movie,
@@ -704,16 +700,6 @@ def test_gui_edit_movie(monkeypatch, config_current, test_tags):
             call(),
         ],
     )
-
-
-@pytest.fixture(scope="function")
-def config_current(monkeypatch):
-    """This fixture patches a call to current.tk_root to suppress initiation of tk/tcl.
-
-    Args:
-        monkeypatch:
-    """
-    monkeypatch.setattr(handlers.database.config, "current", MagicMock(name="current"))
 
 
 @pytest.fixture(scope="function")

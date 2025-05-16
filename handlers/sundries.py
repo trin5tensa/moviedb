@@ -1,7 +1,7 @@
 """Sundry Menu handlers."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 4/19/25, 1:55 PM by stephen.
+#  Last modified 5/16/25, 1:30 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -44,7 +44,7 @@ def settings_dialog():
         display_key = ""
     # noinspection PyArgumentList
     settings.Settings(
-        config.current.tk_root,
+        common.tk_root,
         tmdb_api_key=display_key,
         use_tmdb=config.persistent.use_tmdb,
         save_callback=_settings_callback,

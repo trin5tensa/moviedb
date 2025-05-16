@@ -7,7 +7,7 @@ movies, tags, and people (directors and stars).
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/16/25, 6:53 AM by stephen.
+#  Last modified 5/16/25, 9:13 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -189,7 +189,6 @@ def add_movie(*, movie_bag: MovieBag):
         with session_factory() as session:
             movie = _add_movie(movie_bag=movie_bag)
             session.add(movie)
-            # todo Rewrite test to just test the call
             _update_movie_relationships(movie, movie_bag, session)
             session.commit()
 
@@ -282,7 +281,6 @@ def edit_movie(*, old_movie_bag: MovieBag, replacement_fields: MovieBag):
 
             candidate_orphans = movie.directors | movie.stars
             _edit_movie(movie=movie, edit_fields=replacement_fields)
-            # todo Rewrite test to just test the call
             _update_movie_relationships(movie, replacement_fields, session)
             _delete_orphans(session, candidates=candidate_orphans)
             session.commit()

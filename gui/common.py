@@ -1,7 +1,7 @@
 """This module contains common code to support gui API modules."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/16/25, 6:53 AM by stephen.
+#  Last modified 5/16/25, 1:30 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,8 +16,9 @@
 import itertools
 
 
-import tkinter.messagebox as messagebox
+import tkinter as tk
 import tkinter.ttk as ttk
+import tkinter.messagebox as messagebox
 from collections.abc import Callable, Collection, Iterator
 from dataclasses import field, dataclass
 from functools import partial
@@ -28,6 +29,9 @@ from gui.moviedbtypes import TkParentType
 
 BUTTON_STATE = Literal["normal", "active", "disabled"]
 ENTRY_STATE = Literal["disabled", "!disabled"]
+
+
+tk_root: tk.Tk | None = None
 
 
 @dataclass
