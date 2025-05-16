@@ -1,7 +1,7 @@
 """Tests for movie database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 1/8/25, 1:01 PM by stephen.
+#  Last modified 5/16/25, 9:13 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -211,15 +211,26 @@ def test_close_down(monkeypatch):
 
 
 def test_save_config_file(monkeypatch):
-    persistent = moviedb.config.PersistentConfig(
-        program_name="test_program", program_version="42"
-    )
-    path = moviedb._json_path()
-    calls = []
-    monkeypatch.setattr(moviedb, "_json_dump", lambda *args: calls.append(args))
-    moviedb._json_dump(persistent, path)
+    # Arrange
+    path = MagicMock(name="path", autospec=True)
+    monkeypatch.setattr(moviedb, "_json_path", path)
+    config_persistent = MagicMock(name="config_persistent", autospec=True)
+    monkeypatch.setattr(moviedb.config, "persistent", config_persistent)
+    asdict = MagicMock(name="asdict", autospec=True)
+    monkeypatch.setattr(moviedb, "asdict", asdict)
+    json_dump = MagicMock(name="json_dump", autospec=True)
+    monkeypatch.setattr(moviedb, "_json_dump", json_dump)
 
-    assert calls == [(persistent, path)]
+    # Act
+    moviedb.save_config_file()
+
+    # Assert
+    with check:
+        path.assert_called_once_with()
+    with check:
+        asdict.assert_called_once_with(config_persistent)
+    with check:
+        json_dump.assert_called_once_with(asdict(), path())
 
 
 def test_start_logger(monkeypatch):

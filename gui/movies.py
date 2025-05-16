@@ -1,7 +1,7 @@
 """This module contains code for movie maintenance."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/16/25, 6:53 AM by stephen.
+#  Last modified 5/16/25, 9:13 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -296,8 +296,6 @@ class MovieGUI:
         # Undo bindings on Tk/Tcl root
         # Shipman says tkinter bindings can only be attached to root or toplevel
         # widgets. This seems to be borne out by observation.
-        # Issue moviedb-#500 will use toplevels throughout so obviating this
-        #  need to undo bindings.
         self.parent.unbind("<Escape>")
         self.parent.unbind("<Command-.>")
         self.parent.unbind("<Return>")
