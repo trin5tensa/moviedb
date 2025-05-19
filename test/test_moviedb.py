@@ -1,7 +1,7 @@
 """Tests for movie database."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/16/25, 9:13 AM by stephen.
+#  Last modified 5/19/25, 11:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -36,7 +36,8 @@ class TestMain:
     Then:
         start_up() is called.
         A successful start message is logged.
-        The target of the SafePrinter() context manager is stored in config.current.safeprint.
+        The target of the SafePrinter() context manager is stored in
+            config.current.safeprint.
         The target of the ThreadPoolExecutor() context manager is stored in
         config.current.executor.
         gui.run_tktcl() is called.
@@ -168,10 +169,17 @@ class TestLoadConfigFile:
             assert config.persistent == expected
 
     def test_absent_file_initializes_config_persistent(self, monkeypatch):
+        # Arrange
+        hold_program_version = moviedb.PROGRAM_VERSION
         expected = moviedb.PROGRAM_VERSION = "test first use"
         data = None
+
+        # Act/Assert
         with self.fut_runner(self.program, data, monkeypatch, file_not_found=True):
             assert config.persistent.program_version == expected
+
+        # Cleanup
+        moviedb.PROGRAM_VERSION = hold_program_version
 
     @contextmanager
     def fut_runner(self, program, data, monkeypatch, file_not_found=False):
@@ -186,6 +194,11 @@ class TestLoadConfigFile:
 
     def dummy__json_load(self, *args):
         raise FileNotFoundError
+
+
+def test_version():
+    # Assert
+    assert moviedb.PROGRAM_VERSION == "1.1.0"
 
 
 def test_close_down(monkeypatch):

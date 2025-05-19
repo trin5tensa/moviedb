@@ -1,7 +1,7 @@
 """Thread fixtures"""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/16/25, 1:36 PM by stephen.
+#  Last modified 5/19/25, 11:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -19,41 +19,41 @@ import exception
 import pytest
 
 
-@pytest.fixture()
-def mock_fut():
-    """Return an instance of the mock future class.
-
-    The result method of this future object will return the value 42 and no
-    exceptions were raised.
-    """
-    return _MockFuture()
-
-
-@pytest.fixture()
-def mock_fut_bad_key():
-    """Return an instance of the mock future class.
-
-    The result method of this future object will raise the exception TMDBAPIKeyException.
-    """
-    return _MockFuture(exception.TMDBAPIKeyException("Test bad key"))
-
-
-@pytest.fixture()
-def mock_fut_timeout():
-    """Return an instance of the mock future class.
-
-    The result method of this future object will raise the exception
-    TMDBConnectionTimeout.
-    """
-    return _MockFuture(exception.TMDBConnectionTimeout("Test timeout exception"))
-
-
-@pytest.fixture()
-def mock_fut_unexpected():
-    """Return an instance of the mock future class.
-
-    The result method of this future object will raise Exception."""
-    return _MockFuture(Exception("Test unexpected exception"))
+# @pytest.fixture()
+# def mock_fut():
+#     """Return an instance of the mock future class.
+#
+#     The result method of this future object will return the value 42 and no
+#     exceptions were raised.
+#     """
+#     return _MockFuture()
+#
+#
+# @pytest.fixture()
+# def mock_fut_bad_key():
+#     """Return an instance of the mock future class.
+#
+#     The result method of this future object will raise the exception TMDBAPIKeyException.
+#     """
+#     return _MockFuture(exception.TMDBAPIKeyException("Test bad key"))
+#
+#
+# @pytest.fixture()
+# def mock_fut_timeout():
+#     """Return an instance of the mock future class.
+#
+#     The result method of this future object will raise the exception
+#     TMDBConnectionTimeout.
+#     """
+#     return _MockFuture(exception.TMDBConnectionTimeout("Test timeout exception"))
+#
+#
+# @pytest.fixture()
+# def mock_fut_unexpected():
+#     """Return an instance of the mock future class.
+#
+#     The result method of this future object will raise Exception."""
+#     return _MockFuture(Exception("Test unexpected exception"))
 
 
 # noinspection PyMissingOrEmptyDocstring

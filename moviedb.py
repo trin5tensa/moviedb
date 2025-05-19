@@ -1,7 +1,7 @@
 """Main movie database program"""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/16/25, 9:13 AM by stephen.
+#  Last modified 5/19/25, 11:41 AM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -28,7 +28,7 @@ from gui import mainwindow
 from threadsafe_printer import SafePrinter
 
 
-PROGRAM_VERSION = "1.0.0"
+PROGRAM_VERSION = "1.1.0"
 
 
 def main():
@@ -128,8 +128,8 @@ def _json_dump(obj: Any, path: Path):
     """
     Dump json to file.
 
-    The separation of save_config_file and _save_config_file allows the test module to use a
-    temporary in-memory file location during file operations.
+    The separation of save_config_file and _save_config_file allows the test
+    module to use a temporary in-memory file location during file operations.
 
     Args:
         obj: A json formatted string.
