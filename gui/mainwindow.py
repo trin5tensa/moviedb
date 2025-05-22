@@ -1,7 +1,7 @@
 """Main Window."""
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/16/25, 1:45 PM by stephen.
+#  Last modified 5/22/25, 1:22 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -178,6 +178,14 @@ class MainWindow:
         movie_menu.add_command(
             label="Delete Tag…",
             command=handlers.database.gui_select_all_tags,
+        )
+
+        # Prototype menu
+        prototype_menu = tk.Menu(menubar, name="prototype")
+        menubar.add_cascade(menu=prototype_menu, label="Prototype")
+        prototype_menu.add_command(
+            label="TMDB prototype…",
+            command=handlers.prototype.handlers_proto,
         )
 
         # window_menu = tk.Menu(menubar)

@@ -33,7 +33,7 @@ removed as part of the next GUI upgrade.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 2/6/25, 11:41 AM by stephen.
+#  Last modified 5/22/25, 1:22 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -46,4 +46,4 @@ removed as part of the next GUI upgrade.
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from . import sundries, database
+from . import sundries, database, prototype

@@ -6,7 +6,7 @@ including setting the title, geometry, menubar, and key bindings.
 """
 
 #  Copyright© 2025. Stephen Rigden.
-#  Last modified 5/16/25, 1:30 PM by stephen.
+#  Last modified 5/22/25, 1:22 PM by stephen.
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -119,12 +119,14 @@ class TestMainWindow:
         moviedb_menu = MagicMock(name="moviedb_menu", autospec=True)
         edit_menu = MagicMock(name="edit_menu", autospec=True)
         movie_menu = MagicMock(name="movie_menu", autospec=True)
+        prototype_menu = MagicMock(name="prototype_menu", autospec=True)
         window_menu = MagicMock(name="window_menu", autospec=True)
         tk_menu.side_effect = [
             menubar,
             moviedb_menu,
             edit_menu,
             movie_menu,
+            prototype_menu,
             window_menu,
         ]
         monkeypatch.setattr(tk, "Menu", tk_menu)
@@ -154,6 +156,7 @@ class TestMainWindow:
                     call(menubar, name="moviedb"),
                     call(menubar, name="edit"),
                     call(menubar, name="movie"),
+                    call(menubar, name="prototype"),
                     call(menubar, name="window"),
                 ],
             )
@@ -163,6 +166,7 @@ class TestMainWindow:
                     call(menu=moviedb_menu, label="Moviedb"),
                     call(menu=edit_menu, label="Edit"),
                     call(menu=movie_menu, label="Movie"),
+                    call(menu=prototype_menu, label="Prototype"),
                     call(menu=window_menu, label="Window"),
                 ],
             )

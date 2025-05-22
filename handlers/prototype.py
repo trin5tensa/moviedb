@@ -13,6 +13,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import web.prototype
 
-def tmdb_proto():
-    print("\nCode tmdb_proto starting.")
+
+def handlers_proto():
+    web.prototype.tmdb_proto()
